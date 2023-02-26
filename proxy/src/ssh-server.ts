@@ -6,7 +6,7 @@ import path from 'path'
 import ssh2, { utils as sshUtils } from 'ssh2'
 import { Duplex, EventEmitter, Writable } from 'stream'
 
-const HOST_KEY_FILENAME = path.resolve(path.join(__dirname, ".."), process.env["SSH_HOST_KEY_FILE"] ?? './ssh/ssh_host_key')
+const HOST_KEY_FILENAME = path.resolve("./", process.env["SSH_HOST_KEY_FILE"] ?? './ssh/ssh_host_key')
 
 const idFromPublicSsh = (key: Buffer) => crypto.createHash('sha1')
   .update(key)

@@ -5,3 +5,4 @@ README.md
 .vscode
 .dockerignore
 .idea
+dist
