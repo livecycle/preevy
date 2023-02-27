@@ -28,15 +28,20 @@ export const proxyRoutes: FastifyPluginAsync<{ envStore: PreviewEnvStore }> = as
 
       req.raw.url = `/${url}`
 
-      proxy.web(req.raw, res.raw, {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        target: {
-          socketPath: env.target,
+      proxy.web(
+        req.raw,
+        res.raw,
+        {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          target: {
+            socketPath: env.target,
+          },
         },
-      }, (err) => {
-        req.log.warn('error in proxy %j', err, { targetHost, url })
-      })
+        (err) => {
+          req.log.warn('error in proxy %j', err, { targetHost, url })
+        }
+      )
 
       return res
     },

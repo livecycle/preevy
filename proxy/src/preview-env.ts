@@ -14,7 +14,6 @@ export const inMemoryPreviewEnvStore = (initial?: Record<string, PreviewEnv>): P
     get: async (key) => map.get(key),
     set: async (key, value) => {
       map.set(key, value)
-      console.log(key,value)
     },
     delete: async (key) => map.delete(key),
   }

@@ -14,4 +14,6 @@ CMD [ "yarn", "dev" ]
 
 FROM base as production
 RUN yarn build
+LABEL org.opencontainers.image.source=https://github.com/livecycle/preview
+LABEL org.opencontainers.image.description="Preview Proxy"
 CMD [ "yarn", "start" ]
