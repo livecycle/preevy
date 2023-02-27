@@ -13,21 +13,19 @@ export const proxyRoutes: FastifyPluginAsync<{ envStore: PreviewEnvStore }> = as
   app.addHook('onClose', () => proxy.close())
 
   app.route<{
-    Params: { targetHost: string; targetService: string; ['*']: string }
+    Params: { targetHost: string; ['*']: string }
   }>({
-    url: ':targetHost/:targetService/*',
+    url: ':targetHost/*',
     method: ALL_METHODS,
     handler: async (req, res) => {
-      const { targetHost, targetService, ['*']: url } = req.params
-      req.log.debug('proxy request', { targetHost, targetService, url })
+      const { targetHost, ['*']: url } = req.params
+      req.log.debug('proxy request', { targetHost, url })
       const env = await envStore.get(targetHost)
 
       if (!env) {
         throw new NotFoundError(`host ${targetHost}`)
       }
 
-      const host = `${targetService}${env.serviceHostSuffix}`
-      req.log.info(`host: ${host}`)
       req.raw.url = `/${url}`
 
       proxy.web(req.raw, res.raw, {
@@ -36,9 +34,8 @@ export const proxyRoutes: FastifyPluginAsync<{ envStore: PreviewEnvStore }> = as
         target: {
           socketPath: env.target,
         },
-        headers: { Host: host },
       }, (err) => {
-        req.log.warn('error in proxy %j', err, { targetHost, targetService, url })
+        req.log.warn('error in proxy %j', err, { targetHost, url })
       })
 
       return res

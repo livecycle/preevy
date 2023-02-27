@@ -12,7 +12,7 @@ const idFromPublicSsh = (key: Buffer) => crypto.createHash('sha1')
   .update(key)
   .digest('base64url')
   .replace(/[_-]/g, '')
-  .slice(0, 6)
+  .slice(0, 8)
   .toLowerCase()
 
   
@@ -20,15 +20,13 @@ interface TunnelClient{
   clientId: string 
   on(event:"pipe-created", fn:(args:{tunnelName:string, socketPath: string})=>void):void
   on(event:"pipe-closed", fn:( args:{tunnelName:string, socketPath: string})=>void):void
-  on(event:"shell", fn:(args: {stream:Duplex})=>void):void
-  on(event:"exec", fn:(args: {command: string, stream: Writable})=>void):void
+  on(event: "hello", fn:(args:{isShell: boolean, stream: Duplex})=>void):void
 }
 
 interface TunnelClientEmitter {
   emit(event: "pipe-created", args:{tunnelName: string, socketPath: string}):void
   emit(event: "pipe-closed", args: {tunnelName:string, socketPath: string}):void
-  emit(event: "shell", args:{stream: Duplex}):void
-  emit(event: "exec", args: {command: string, stream: Writable}):void
+  emit(event: "hello", args:{ isShell: boolean, stream: Duplex}):void
 }
 
 
@@ -143,56 +141,45 @@ export const sshServer = ({ log, onClient }: {
       if (!tunnels) {
         return reject()
       }
-      const session = accept();
-      session.on("pty", (accept, reject, info) => {
-        reject()
-      })
-      session.on("shell", (accept, reject) => {
-        const shell = accept();
-        
-        const duplex = new Duplex({
+      function createDuplex(channel: ssh2.ServerChannel){
+        const duplex =  new Duplex({
           read(){
             if (!tunnels) {
-              shell.stdout.exit(0)
-              shell.stdout.end()
+              channel.stdout.exit(0)
+              channel.stdout.end()
               return;
             }
-            return shell.stdin.read()
+            return channel.stdin.read()
           },
           write(chunk, encoding, callback){
             if (!tunnels) {
-              shell.stdout.exit(0)
-              shell.stdout.end()
+              channel.stdout.exit(0)
+              channel.stdout.end()
               return;
             }
-            return shell.stdout.write(chunk, encoding, callback)
+            return channel.stdout.write(chunk, encoding, callback)
           }
         })
-        duplex.once('error', (err) => {
+        duplex.on("error", (err)=> {
           log.error('error interacting with stream: %j', err)
         })
-        emitter.emit("shell", {stream: duplex})
+        return duplex;
+      }
+      const session = accept();
+      session.on("shell", (accept, reject) => {
+        const channel = accept();
+        const duplex = createDuplex(channel)
+        emitter.emit("hello", {isShell: true, stream: duplex})
       })
 
       session.on('exec', (accept, reject, info) => {
         if (info.command !== "info") {
           reject()
         }
-        const stream = accept()
-        const writable = new Writable({
-          write(chunk, encoding, callback){
-            if (!tunnels) {
-              stream.exit(0)
-              stream.end()
-            }
-            stream.stdout.write(chunk, encoding, callback)
-          }
-        })
-        writable.once('error', (err) => {
-          log.error('error writing to command stdout: %j', err)
-        });
+        const channel = accept();
+        const duplex = createDuplex(channel)
 
-        emitter.emit("exec", {command: info.command,  stream: writable})
+        emitter.emit("hello", {isShell: false, stream: duplex})
       })
     })
   },

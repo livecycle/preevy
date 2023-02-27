@@ -15,12 +15,12 @@ const rewriteUrl = ({ url, headers: { host } }: RawRequestDefaultExpression): st
     throw new InternalServerError('no host header in request')
   }
 
-  const target = parseHostAndPort(host)
-  if (!target) {
+  const target = host.split(".")[0];
+  if (target === host) {
     return url
   }
 
-  return `/proxy/${target.host}/${target.service}${url}`
+  return `/proxy/${target}/${url}`
 }
 
 export const app = ({ envStore }: { envStore: PreviewEnvStore }) =>

@@ -1,6 +1,5 @@
 export type PreviewEnv = {
   target: string
-  serviceHostSuffix: string
 }
 
 export type PreviewEnvStore = {

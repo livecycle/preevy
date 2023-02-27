@@ -13,7 +13,6 @@ const TUNNEL_PORT = process.env['TUNNEL_PORT'] || '443'
 
 const envStore = inMemoryPreviewEnvStore({
   test: {
-    serviceHostSuffix: '-app',
     target: 'http://3.73.126.120',
   },
 })
@@ -35,28 +34,24 @@ const sshServer = createSshServer({
       sshLogger.info(`machine connected: %j`, { clientId, socketPath })
       const envName  = `${tunnelName}-${clientId}`
       envs.add(envName)
-      await envStore.set(envName, { serviceHostSuffix: '-app', target: socketPath })
+      await envStore.set(envName, { target: socketPath })
     })
 
     client.on("pipe-closed", async ({tunnelName, socketPath})=> {
       sshLogger.info(`machine connected: %j`, { clientId, socketPath })
       const envName  = `${tunnelName}-${clientId}`
       envs.delete(envName)
-      await envStore.set(envName, { serviceHostSuffix: '-app', target: socketPath })
+      await envStore.set(envName, {  target: socketPath })
     })
 
-    client.on("shell", ({stream}) => {
-      stream.write(`connected to ${clientId} (${envs.size} tunnels) \n`)
-      stream.write(`${[...envs].map((l)=>getTunnelUrl(l)).join('\n')}\n`)
-    });
-
-    client.on("exec", ({command, stream}) => {
-      if (command === "info"){
-          stream.write(`${JSON.stringify({ type: "active-tunnels", clientId, tunnels: Object.fromEntries([...envs].map((l)=>[l, getTunnelUrl(l)]))})}\n`)
+    client.on("hello", ({ isShell, stream}) => {
+      if (isShell){
+        stream.write(`connected to ${clientId} (${envs.size} tunnels) \n`)
+        stream.write(`${[...envs].map((l)=>getTunnelUrl(l)).join('\n')}\n`)
+      } else {
+        stream.write(`${JSON.stringify({ type: "active-tunnels", clientId, tunnels: Object.fromEntries([...envs].map((l)=>[l, getTunnelUrl(l)]))})}\n`)
       }
     });
-    
-    return;
   }
 }).listen(SSH_PORT, LISTEN_HOST, () => {
   app.log.debug('ssh server listening on port %j', SSH_PORT)
