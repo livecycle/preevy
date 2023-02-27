@@ -1,0 +1,36 @@
+{
+  "name": "preview-proxy",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@fastify/request-context": "^4.2.0",
+    "@sinclair/typebox": "^0.25.21",
+    "@types/http-proxy": "^1.17.9",
+    "fastify": "^4.12.0",
+    "http-proxy": "^1.18.1",
+    "pino-pretty": "^9.1.1",
+    "ssh2": "^1.11.0",
+    "ts-node": "^10.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "18",
+    "@types/ssh2": "^1.11.7",
+    "@typescript-eslint/eslint-plugin": "^5.51.0",
+    "@typescript-eslint/parser": "^5.51.0",
+    "eslint": "^8.33.0",
+    "patch-package": "^6.5.1",
+    "postinstall-postinstall": "^2.1.0",
+    "prettier": "^2.8.4",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^4.9.5"
+  },
+  "scripts": {
+    "build": "tsc --outDir ./dist",
+    "start": "node ./dist/index.js",
+    "dev": "DEBUG=1 tsnd --poll --respawn --transpile-only -- ./index.ts",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+    "lint": "eslint . --ext .ts,.tsx",
+    "postinstall": "patch-package"
+  }
+}

@@ -1,0 +1,42 @@
+version: '3.7'
+## NEED TO ADD TLS CONFIGURATION for traefik and stunnel
+
+secrets:
+  tls-key:
+    file: ./local-tls/key.pem
+configs:
+  tls-cert:
+    file: ./local-tls/cert.pem
+  sslh-config:
+    file: ./local-tls/sslh.conf
+  
+services:
+  proxy:   
+    environment:
+    - TUNNEL_SCHEME=https
+    - TUNNEL_PORT=8044
+
+
+  sslh:
+    image: oorabona/sslh:v2.0-rc1
+    command: [sslh-ev, --config=/etc/sslh/config]
+    configs:
+    - source: sslh-config
+      target: /etc/sslh/config
+  stunnel:
+    image: dweomer/stunnel
+    environment:
+    - STUNNEL_SERVICE=proxy
+    - STUNNEL_ACCEPT=0.0.0.0:443
+    - STUNNEL_CONNECT=sslh:2443
+    - STUNNEL_KEY=/etc/certs/preview-proxy/key.pem
+    - STUNNEL_CRT=/etc/certs/preview-proxy/cert.pem
+    - STUNNEL_DEBUG=err
+    ports:
+      - "8044:443"
+    secrets:
+      - source: tls-key
+        target: /etc/certs/preview-proxy/key.pem
+    configs:
+    - source: tls-cert
+      target: /etc/certs/preview-proxy/cert.pem
