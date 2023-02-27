@@ -8,7 +8,9 @@ services:
     environment:
     - TUNNEL_SCHEME=http
     - TUNNEL_PORT=8030
-    - SSH_HOST_KEY_FILE=./ssh/sample
+    - SSH_HOST_KEY_FILE=/ssh/sample
+    volumes:
+    - ./ssh:/ssh
 
     ports:
     - "8030:3000"

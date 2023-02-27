@@ -4,9 +4,9 @@ import fs from 'fs'
 import net from 'net'
 import path from 'path'
 import ssh2, { utils as sshUtils } from 'ssh2'
-import { Duplex, EventEmitter, Writable } from 'stream'
+import { Duplex, EventEmitter } from 'stream'
 
-const HOST_KEY_FILENAME = path.resolve('./', process.env['SSH_HOST_KEY_FILE'] ?? './ssh/ssh_host_key')
+const HOST_KEY_FILENAME = process.env['SSH_HOST_KEY_FILE']
 
 const idFromPublicSsh = (key: Buffer) =>
   crypto.createHash('sha1').update(key).digest('base64url').replace(/[_-]/g, '').slice(0, 8).toLowerCase()
@@ -24,11 +24,21 @@ interface TunnelClientEmitter {
   emit(event: 'hello', args: { isShell: boolean; stream: Duplex }): void
 }
 
-export const sshServer = ({ log, onClient }: { log: FastifyBaseLogger; onClient?: (client: TunnelClient) => void }) =>
-  new ssh2.Server(
+export const sshServer = ({ log, onClient }: { log: FastifyBaseLogger; onClient?: (client: TunnelClient) => void }) =>{
+
+  let sshKey = HOST_KEY_FILENAME ? fs.readFileSync(path.resolve('./',HOST_KEY_FILENAME)) : undefined;
+  if (!sshKey && process.env['SSH_HOST_KEY']) {
+    sshKey = Buffer.from(process.env['SSH_HOST_KEY'], 'base64')
+  }
+  if (!sshKey) {
+    throw new Error("missing ssh host key configuration, use SSH_HOST_KEY or SSH_HOST_KEY_FILE");
+    
+  }
+
+  return new ssh2.Server(
     {
       //debug: (x)=> log.debug(x),
-      hostKeys: [fs.readFileSync(HOST_KEY_FILENAME)],
+      hostKeys: [sshKey],
     },
     (client) => {
       log.debug('client connected!', client)
@@ -175,4 +185,5 @@ export const sshServer = ({ log, onClient }: { log: FastifyBaseLogger; onClient?
           })
         })
     }
-  )
+)
+}
