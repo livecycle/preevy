@@ -51,10 +51,8 @@ const sshServer = createSshServer({
     });
 
     client.on("exec", ({command, stream}) => {
-      if (command === "hello"){
-        for (const l of envs){
-          stream.write(`${JSON.stringify({ id: l })}\n`)
-        }
+      if (command === "info"){
+          stream.write(`${JSON.stringify({ type: "active-tunnels", clientId, tunnels: Object.fromEntries([...envs].map((l)=>[l, getTunnelUrl(l)]))})}\n`)
       }
     });
     

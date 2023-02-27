@@ -33,11 +33,8 @@ interface TunnelClientEmitter {
 
 
 export const sshServer = ({ log, onClient }: {
-  log: FastifyBaseLogger
+  log: FastifyBaseLogger,
   onClient?: (client: TunnelClient) => void
-  //onPipeCreated?: (args: { socketPath: string, clientId: string }) => void
-  //onPipeDestroyed?: (args: { socketPath: string, clientId: string }) => void
-  //onClientShell?: (args: {clientId: string, stream: Duplex}) => void
 }) => new ssh2.Server(
   {
     
@@ -178,7 +175,7 @@ export const sshServer = ({ log, onClient }: {
       })
 
       session.on('exec', (accept, reject, info) => {
-        if (info.command !== "hello") {
+        if (info.command !== "info") {
           reject()
         }
         const stream = accept()
