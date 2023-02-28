@@ -140,27 +140,19 @@ export const sshServer = ({ log, onClient }: { log: FastifyBaseLogger; onClient?
         })
         .on('session', (accept, reject) => {
           log.debug('session')
-          if (!tunnels) {
-            return reject()
-          }
           function createDuplex(channel: ssh2.ServerChannel) {
             const duplex = new Duplex({
               read() {
-                if (!tunnels) {
-                  channel.stdout.exit(0)
-                  channel.stdout.end()
-                  return
-                }
                 return channel.stdin.read()
               },
               write(chunk, encoding, callback) {
-                if (!tunnels) {
-                  channel.stdout.exit(0)
-                  channel.stdout.end()
-                  return
-                }
                 return channel.stdout.write(chunk, encoding, callback)
               },
+              destroy(err, callback) {
+                channel.close()
+                channel.stdout.exit(0);
+                callback(err)
+              }
             })
             duplex.on('error', (err) => {
               log.error('error interacting with stream: %j', err)
@@ -175,8 +167,9 @@ export const sshServer = ({ log, onClient }: { log: FastifyBaseLogger; onClient?
           })
 
           session.on('exec', (accept, reject, info) => {
-            if (info.command !== 'info') {
+            if (info.command !== 'hello') {
               reject()
+              return
             }
             const channel = accept()
             const duplex = createDuplex(channel)

@@ -51,6 +51,9 @@ const sshServer = createSshServer({
       } else {
         stream.write(`${JSON.stringify({ type: "active-tunnels", clientId, tunnels: Object.fromEntries([...envs].map((l)=>[l, getTunnelUrl(l)]))})}\n`)
       }
+      if (envs.size === 0) {
+        stream.destroy();
+      }
     });
   }
 }).listen(SSH_PORT, LISTEN_HOST, () => {
