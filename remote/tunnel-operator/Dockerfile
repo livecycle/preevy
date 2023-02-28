@@ -1,6 +1,8 @@
 FROM node:18 as base
-COPY index.mjs /app/index.mjs
-
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY index.mts ./
 ## Need to replace this with external ssh key
 RUN ssh-keygen -t rsa -b 4096 -f /root/.ssh/id_rsa -q -N "" 
-ENTRYPOINT [ "npx", "zx", "--install", "/app/index.mjs" ]
+CMD [ "npm", "start" ]

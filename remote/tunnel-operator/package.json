@@ -1,0 +1,16 @@
+{
+  "name": "tunnel-operator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "start": "tsx index.mts"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dockerode": "^3.3.4",
+    "tsx": "^3.12.3"
+  }
+}
