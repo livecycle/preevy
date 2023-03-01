@@ -1,0 +1,12 @@
+composeFiles = ['./docker-compose.yml']
+if os.getenv('PREVIEW_PROXY_USE_TLS') == '1':
+    composeFiles.append('./docker-compose.tls.yml')
+
+docker_compose(composeFiles)
+
+docker_build("preview-proxy", ".", target="development",
+live_update=[
+        sync('index.ts', '/app/index.ts'),
+        sync('./src', '/app/src'),
+    ]
+)

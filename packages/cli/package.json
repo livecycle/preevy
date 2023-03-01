@@ -1,0 +1,91 @@
+{
+  "name": "@livecycle/preview",
+  "version": "0.0.0",
+  "description": "Quickly deploy preview environments to the cloud!",
+  "author": "Livecycle",
+  "bin": {
+    "preview": "./bin/run"
+  },
+  "homepage": "https://github.com/livecycle/livecycle",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "repository": "livecycle/livecycle",
+  "files": [
+    "/bin",
+    "/dist",
+    "/yarn.lock",
+    "/oclif.manifest.json"
+  ],
+  "dependencies": {
+    "@aws-sdk/client-lightsail": "^3.271.0",
+    "@aws-sdk/client-s3": "^3.271.0",
+    "@aws-sdk/util-waiter": "^3.271.0",
+    "@oclif/core": "^2",
+    "@oclif/plugin-help": "^5",
+    "@oclif/plugin-plugins": "^2.3.0",
+    "@types/ssh2": "^1.11.7",
+    "cli-color": "^2.0.3",
+    "iter-tools-es": "^7.5.1",
+    "lodash": "^4.17.21",
+    "lodash.mapvalues": "^4.6.0",
+    "node-ssh": "^13.0.1",
+    "p-retry": "^4.6.2",
+    "rimraf": "^4.1.2",
+    "shell-escape": "^0.2.0",
+    "yaml": "^2.2.1"
+  },
+  "devDependencies": {
+    "@oclif/test": "^2.3.4",
+    "@types/chai": "^4",
+    "@types/lodash": "^4.14.191",
+    "@types/mocha": "^9.0.0",
+    "@types/node": "^16.18.11",
+    "@types/shell-escape": "^0.2.1",
+    "@types/ssh2-streams": "^0.1.9",
+    "chai": "^4",
+    "eslint": "^7.32.0",
+    "eslint-config-oclif": "^4",
+    "eslint-config-oclif-typescript": "^1.0.3",
+    "mocha": "^9",
+    "oclif": "^3",
+    "shx": "^0.3.3",
+    "ts-node": "^10.9.1",
+    "tslib": "^2.5.0",
+    "typescript": "^4.9.5",
+    "wtfnode": "^0.9.1"
+  },
+  "oclif": {
+    "bin": "preview",
+    "dirname": "preview",
+    "commands": "./dist/commands",
+    "plugins": [
+      "@oclif/plugin-help",
+      "@oclif/plugin-plugins"
+    ],
+    "topicSeparator": " ",
+    "topics": {
+      "hello": {
+        "description": "Say hello to the world and others"
+      }
+    }
+  },
+  "scripts": {
+    "copy-statics-to-dist": "cp -R static dist",
+    "copy-dockerproxy": "rm -rf static/docker-proxy && cp -a ../docker-proxy/dist-for-cli static/docker-proxy",
+    "build": "shx rm -rf dist && tsc -b && yarn copy-statics-to-dist",
+    "lint": "eslint . --ext .ts --config .eslintrc",
+    "postpack": "shx rm -f oclif.manifest.json",
+    "posttest": "yarn lint",
+    "prepack": "yarn build && oclif manifest && oclif readme",
+    "test": "mocha --forbid-only \"test/**/*.test.ts\"",
+    "version": "oclif readme && git add README.md"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "bugs": "https://github.com/livecycle/livecycle/issues",
+  "keywords": [
+    "preview"
+  ],
+  "types": "dist/index.d.ts"
+}
