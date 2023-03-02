@@ -7,8 +7,6 @@ import { inspect } from 'util'
 import { Logger } from '../../log'
 import { randomBytes } from 'crypto'
 import rimraf from 'rimraf'
-import { SFTPWrapper } from 'ssh2'
-import { asyncReduce } from 'iter-tools-es'
 import { partition } from 'lodash'
 
 export type CommandResult = {
@@ -27,6 +25,7 @@ export type SshClient = {
   execCommand(command: string, opts?: {
     cwd?: string
     env?: Record<string, string | undefined>
+    ignoreExitCode?: boolean
   }): Promise<CommandResult>
   forwardOutStreamLocal(
     remoteSocket: string, 
@@ -59,7 +58,6 @@ export const nodeSshClient = async ({ host, username, privateKey, log }: {
   const stepFunc = (total_transferred: number, chunk: number, total: number) => {
     log.debug(`transferred ${total_transferred} of ${total} bytes`)
   }
-  let sftp: SFTPWrapper | undefined
 
   return {
     putDirectory: async (local, destination) => {
@@ -83,7 +81,7 @@ export const nodeSshClient = async ({ host, username, privateKey, log }: {
       ])
     },
     
-    execCommand: async (command, { cwd, env } = {}) => {
+    execCommand: async (command, { cwd, env, ignoreExitCode } = {}) => {
       log.debug(`executing command`, { command, cwd, env })
 
       // specifying the env at the ssh level may not work, depending on the ssh server
@@ -100,7 +98,7 @@ export const nodeSshClient = async ({ host, username, privateKey, log }: {
         onStdout: (chunk: Buffer) => log.debug(`stdout: ${chunk.toString()}`),
         onStderr: (chunk: Buffer) => log.debug(`stderr: ${chunk.toString()}`),
       })
-      return checkResult(command, result)
+      return ignoreExitCode ? result : checkResult(command, result)
     },
     
     forwardOutStreamLocal: (remoteSocket, opts = {}) => new Promise((resolve, reject) => {

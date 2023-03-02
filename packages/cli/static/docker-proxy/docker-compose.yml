@@ -11,6 +11,7 @@ services:
     environment: 
       - SSH_URL=${SSH_URL}
     volumes:
+      - /root/.ssh:/root/.ssh
       - /var/run/docker.sock:/var/run/docker.sock
 
     ports:

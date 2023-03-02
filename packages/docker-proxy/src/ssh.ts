@@ -2,6 +2,8 @@ import { ChildProcessWithoutNullStreams, spawn } from "child_process"
 import { isEqual } from "lodash-es"
 import { RunningService } from "./docker.js"
 import shellEscape from 'shell-escape'
+import { TunnelNameResolver } from "./tunnel-name.js"
+import { tryParseJson } from "./json.js"
 
 type SshConnectionConfig = {
   hostname: string
@@ -54,20 +56,29 @@ const calcSshArgs = ({
   return { args, env }
 }
 
-export const tunnelNames = (s: RunningService) => s.ports.map(p => ({ port: p, name: `${s.name}-${p}-${s.project}` }))
+const hasClientId = (
+  o: unknown,
+): o is { clientId: string } => Boolean(
+  o && typeof o === 'object' && 'clientId' in o && typeof o.clientId === 'string'
+)
 
-const sshClient = ({ onClientId, serverPublicKey, sshUrl, debug }: { 
+const sshClient = ({ serverPublicKey, sshUrl, debug, tunnelNameResolver, onError }: { 
   serverPublicKey?: string,
   sshUrl: string,
-  onClientId?: (clientId: string) => void
   debug: boolean
+  tunnelNameResolver: TunnelNameResolver
+  onError: (err: Error) => void
 }) => {
-  let currentSshProcess: ChildProcessWithoutNullStreams | undefined
-  let currentRouteParams: Set<string>
   const connectionConfig = parseSshUrl(sshUrl)
   const { args: sshArgs, env } = calcSshArgs({ config: connectionConfig, serverPublicKey, debug })
 
-  const startSsh = (routeParams: string[]) => {
+  const startSsh = (
+    services: RunningService[],
+  ): Promise<{ sshProcess: ChildProcessWithoutNullStreams, clientId: string }> => {
+    const routeParams = services.map(
+      s => tunnelNameResolver(s).map(({ port, tunnel }) => ['-R', `/${tunnel}:${s.name}:${port}`])
+    ).flat(2)
+
     const args = [
       '-nT',
       ...routeParams,
@@ -81,53 +92,55 @@ const sshClient = ({ onClientId, serverPublicKey, sshUrl, debug }: {
     sshProcess.stderr.pipe(process.stderr)
     sshProcess.stdout.pipe(process.stdout)
 
-    sshProcess.on('exit', (code, signal) => {
-      const message = `ssh process ${sshProcess.pid} exited with code ${code}${signal ? `and signal ${signal}` : ''}`
-      if (!sshProcess.killed && code !== 0) {
-        console.error(message)
-        process.exit(1)
-      }
-      console.debug(message)
+    return new Promise((resolve, reject) => {
+      sshProcess.on('exit', (code, signal) => {
+        const message = `ssh process ${sshProcess.pid} exited with code ${code}${signal ? `and signal ${signal}` : ''}`
+        if (!sshProcess.killed && code !== 0) {
+          const err = new Error(message)
+          reject(err)
+          onError(err)
+          return
+        }
+        console.debug(message)
+      })
+
+      sshProcess.stdout.on('data', data => {
+        const o: unknown = tryParseJson(data.toString())
+
+        if (hasClientId(o)) {
+          const { clientId } = o
+          console.log('got clientId', clientId)
+          resolve({ sshProcess, clientId })
+          return
+        }
+      })
+
+      console.log(`started ssh process ${sshProcess.pid}`)
     })
-    
-    sshProcess.stdout.on('data', data => {
-      const o: unknown = (() => {
-        try { return JSON.parse(data.toString()) }
-        catch { return undefined }
-      })()
-
-      if (o && typeof o === 'object' && 'clientId' in o && typeof o.clientId === 'string') {
-        console.log('got clientId', o.clientId)
-        onClientId?.(o.clientId)
-        return
-      }
-
-      console.error('invalid output in ssh stdout:', data.toString())
-    })
-
-    console.log(`started ssh process ${sshProcess.pid}`)
-
-    return sshProcess
   }
 
-  return {
-    updateTunnels: (services: RunningService[]) => {
-      const routeParams = new Set(
-        services.flatMap(s => tunnelNames(s).map(({ port, name }) => `-R /${name}:${s.name}:${port}`))
-      )
+  let currentSshProcess: ChildProcessWithoutNullStreams | undefined
+  let currentServices: RunningService[] = []
+  let clientId: string
 
+  return {
+    updateTunnels: async (services: RunningService[]): Promise<{ clientId: string }> => {
       if (currentSshProcess) {
-        if (currentRouteParams && isEqual(routeParams, currentRouteParams)) {
+        if (isEqual(services, currentServices)) {
           console.log('no changes, ignoring')
-          return
+          return { clientId }
         }
 
         console.log(`killing current ssh process ${currentSshProcess.pid}`)
-        process.kill(currentSshProcess.pid as number)
+        currentSshProcess.kill()
       }
 
-      currentRouteParams = routeParams
-      currentSshProcess = startSsh([...routeParams])
+      currentServices = services
+      const r = await startSsh(services)
+      currentSshProcess = r.sshProcess
+      clientId = r.clientId
+
+      return { clientId }
     },
   }
 }

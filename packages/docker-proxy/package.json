@@ -1,6 +1,6 @@
 {
-  "name": "docker-proxy",
-  "version": "1.0.0",
+  "name": "@livecycle/docker-proxy",
+  "version": "0.0.0",
   "description": "",
   "type": "module",
   "license": "MIT",
@@ -28,7 +28,7 @@
   },
   "scripts": {
     "start": "ts-node ./index.ts",
-    "dev": "DEBUG=1 yarn nodemon ./index.ts",
+    "dev": "yarn nodemon ./index.ts",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "lint": "eslint . --ext .ts,.tsx",
     "build": "tsc --outDir ./dist",

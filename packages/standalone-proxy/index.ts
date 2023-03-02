@@ -37,7 +37,9 @@ const sshServer = createSshServer({
   sshPrivateKey,
   socketDir: '/tmp', // TODO
   onPipeCreated: async (clientId, remotePath, localSocket) => {
-    await envStore.set(tunnelName(clientId, remotePath), { target: localSocket })
+    const key = tunnelName(clientId, remotePath);
+    sshLogger.debug('creating tunnel %s for localSocket %s', key, localSocket)
+    await envStore.set(key, { target: localSocket })
   },
   onPipeDestroyed: async (clientId, remotePath) => {
     await envStore.delete(tunnelName(clientId, remotePath))

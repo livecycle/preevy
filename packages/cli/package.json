@@ -9,10 +9,11 @@
   "homepage": "https://github.com/livecycle/livecycle",
   "license": "MIT",
   "main": "dist/index.js",
-  "repository": "livecycle/livecycle",
+  "repository": "livecycle/preview",
   "files": [
     "/bin",
     "/dist",
+    "/static",
     "/yarn.lock",
     "/oclif.manifest.json"
   ],
@@ -20,6 +21,7 @@
     "@aws-sdk/client-lightsail": "^3.271.0",
     "@aws-sdk/client-s3": "^3.271.0",
     "@aws-sdk/util-waiter": "^3.271.0",
+    "@livecycle/docker-proxy": "0.0.0",
     "@oclif/core": "^2",
     "@oclif/plugin-help": "^5",
     "@oclif/plugin-plugins": "^2.3.0",

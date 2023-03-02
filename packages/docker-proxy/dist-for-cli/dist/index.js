@@ -1,52 +1,46 @@
 import Docker from 'dockerode';
 import createDockerClient from './src/docker.js';
 import createWebServer from './src/web.js';
-import createSshClient, { tunnelNames } from './src/ssh.js';
+import createSshClient from './src/ssh.js';
 import { requiredEnv } from './src/env.js';
+import { tunnelNameResolver } from './src/tunnel-name.js';
+import { inspect } from 'node:util';
 const main = async () => {
     const docker = new Docker({ socketPath: '/var/run/docker.sock' });
     const dockerClient = createDockerClient({ docker, debounceWait: 500 });
-    let clientId;
     const sshClient = createSshClient({
-        onClientId: clId => { clientId = clId; },
+        onError: err => {
+            console.error(err);
+            process.exit(1);
+        },
+        tunnelNameResolver,
         sshUrl: requiredEnv('SSH_URL'),
         serverPublicKey: process.env.SSH_SERVER_PUBLIC_KEY,
         debug: Boolean(process.env.DEBUG),
     });
-    let services = [];
-    dockerClient.listenToContainers({
-        onChange: updatedServices => {
-            services = updatedServices;
-            sshClient.updateTunnels(services);
-        },
+    let services;
+    let clientId;
+    const initPromise = new Promise(resolve => {
+        dockerClient.listenToContainers({
+            onChange: async (updatedServices) => {
+                services = updatedServices;
+                clientId = (await sshClient.updateTunnels(services)).clientId;
+                resolve();
+            },
+        });
     });
     const webServer = createWebServer({
-        getTunnels: async () => ({
-            projects: services.reduce((acc, s) => ({
-                ...acc,
-                [s.project]: {
-                    ...acc[s.project],
-                    [s.name]: Object.fromEntries(tunnelNames(s).map(({ name, port }) => [port, name])),
-                },
-            }), {}),
-            services: services.map(s => ({
-                project: s.project,
-                service: s.name,
-                ports: tunnelNames(s),
-            })),
-            tunnels: services.flatMap(s => tunnelNames(s).map(({ name }) => name)),
-        }),
-        getClientId: async () => clientId,
-    });
-    const port = process.env.PORT ?? 3000;
-    webServer.listen(port, () => {
-        console.log(`listening on port ${port}`);
-    });
-    webServer.on('error', (err) => {
+        tunnelNameResolver,
+        getTunnels: () => initPromise.then(() => ({ services, clientId })),
+    })
+        .listen(process.env.PORT ?? 3000, () => {
+        console.log(`listening on ${inspect(webServer.address())}`);
+    })
+        .on('error', (err) => {
         console.error(err);
         process.exit(1);
-    });
-    webServer.unref();
+    })
+        .unref();
 };
 main();
 //# sourceMappingURL=index.js.map

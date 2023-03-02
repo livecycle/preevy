@@ -1,9 +1,10 @@
 import { randomBytes } from 'crypto'
-import { inspect, promisify } from 'util'
+import { promisify } from 'util'
 import childProcess from 'child_process'
 import fs from 'fs'
 import retry from 'p-retry';
 import yaml from 'yaml'
+import shellEscape from 'shell-escape';
 import { Logger } from "../../../log";
 import { Machine, MachineDriver, scripts } from "../../machine";
 import { CommandResult, nodeSshClient, SshClient } from "../../ssh/client";
@@ -13,6 +14,7 @@ import path from 'path';
 import { addDockerProxyService, ComposeModel, fixModelForRemote } from '../../compose';
 import { DOCKER_PROXY_DIR } from '../../../static';
 import { TunnelOpts } from '../../ssh/url';
+import { spawnPromise } from '../../child-process';
 
 const exec = promisify(childProcess.exec);
 
@@ -130,6 +132,26 @@ const withDockerSocket = async <Return>({ sshClient, log, dataDir }: {
 }
 
 const DOCKER_PROXY_PORT = 3000
+const DOCKER_PROXY_SERVICE_NAME = 'preview-proxy'
+
+const queryDockerProxyTunnels = async ({ sshClient, log, dataDir, composeFilePath }: { 
+  sshClient: SshClient 
+  log: Logger
+  dataDir: string
+  composeFilePath: string
+}) => {
+  const dockerProxyUrl = await withDockerSocket({ sshClient, log, dataDir }, async () => {
+    const command = `docker compose -f ${composeFilePath} port ${DOCKER_PROXY_SERVICE_NAME} ${DOCKER_PROXY_PORT}`
+    const { stdout } = await exec(command)
+    return stdout.trim()
+  })
+
+  const { tunnels, clientId: tunnelId } = await retry(async () => JSON.parse((
+    await sshClient.execCommand(`curl -sf http://${dockerProxyUrl}/tunnels`)
+  ).stdout), { minTimeout: 1000, maxTimeout: 1000, retries: 10 })
+
+  return { tunnels, tunnelId }
+}
 
 const up = async ({
   machineDriver,
@@ -171,16 +193,11 @@ const up = async ({
 
     log.debug('Executing instance-specific scripts')
 
-    // const env = instanceScriptEnvFromTunnelOpts(tunnelOpts)
     for (const script of scripts.INSTANCE_SPECIFIC) {
       await execScript(script)
     }
 
-    // const tunnelId = await getTunnelId({ sshClient });
-    // log.debug(`Tunnel id: ${tunnelId}`)
-
-    const appDir = '/var/run/preview'
-    await sshClient.execCommand(`sudo rm -rf "${appDir}" && sudo mkdir -p "${appDir}" && sudo chown $USER:docker "${appDir}"`)
+    const remoteTempDir = (await sshClient.execCommand(`mktemp -d`)).stdout
 
     log.debug('Normalizing compose files')
     composeFiles = composeFiles || []
@@ -188,13 +205,13 @@ const up = async ({
     const composeFileArgs = composeFiles.flatMap(file => ['-f', file]);
 
     const model = await withDockerSocket({ sshClient, log, dataDir }, async () => {
-      const command = `docker compose ${composeFileArgs.join(' ')} convert`
+      const command = `docker compose ${shellEscape(composeFileArgs)} convert`
       const { stdout } = await exec(command)
       return yaml.parse(stdout) as ComposeModel
     })
 
     let { model: remoteModel, filesToCopy } = fixModelForRemote({ 
-      appDir, 
+      remoteDir: remoteTempDir, 
       localDir: process.cwd(),
     }, model)
 
@@ -205,10 +222,19 @@ const up = async ({
     log.debug('Files to copy', filesToCopy)
 
     await sshClient.putFiles(filesToCopy)
+    const remoteDir = '/var/run/preview'
 
+    // const hasRsync = (await sshClient.execCommand('which rsync', { ignoreExitCode: true })).code == 0
+
+    await sshClient.execCommand(`sudo mkdir -p "${remoteDir}" && sudo chown $USER:docker "${remoteDir}"`)
+    await sshClient.execCommand(`rsync -r "${remoteTempDir}/" "${remoteDir}"`)
 
     addDockerProxyService({
-      tunnelOpts, buildDir: DOCKER_PROXY_DIR, port: DOCKER_PROXY_PORT,
+      tunnelOpts, 
+      buildDir: DOCKER_PROXY_DIR, 
+      port: DOCKER_PROXY_PORT,
+      serviceName: DOCKER_PROXY_SERVICE_NAME,
+      debug: true,
     }, remoteModel)
 
     const composeFilePath = path.join(dataDir, 'docker-compose.yml')
@@ -216,40 +242,21 @@ const up = async ({
 
     log.debug('Running compose up')
 
-    await withDockerSocket({ sshClient: sshClient, log, dataDir }, async () => {
-      const compose = childProcess.spawn(
-        'docker',
-        ['compose', '-f', composeFilePath, 'up', '-d'],
-        { 
-          env: {
-            ...process.env,
-            SSH_URL: tunnelOpts.url,
-            TLS_SERVERNAME: tunnelOpts.tlsServername,
-          },
-          stdio: 'inherit',
-        }
-      )
-
-      // compose.stdout.pipe(process.stdout)
-      // compose.stderr.pipe(process.stderr)
-      
-      await new Promise<void>((resolve, reject) => {
-        compose.on('exit', (code, signal) => {
-          if (code !== 0) {
-            const message = `docker-compose exited with code ${code}${signal ? `and signal ${signal}` : ''}`;
-            log.error(message)
-            reject(new Error(message))
-            return
-          }
-          resolve()
-        })
-      })
-    })
+    await withDockerSocket({ sshClient: sshClient, log, dataDir }, () => spawnPromise(
+      'docker',
+      ['compose', '-f', composeFilePath, 'up', '-d'],
+      { 
+        env: {
+          ...process.env,
+          SSH_URL: tunnelOpts.url,
+          TLS_SERVERNAME: tunnelOpts.tlsServername,
+        },
+        stdio: 'inherit',
+      }
+    ))
 
     log.info('Getting tunnels')
-
-    const tunnels = JSON.parse((await sshClient.execCommand(`curl -sf http://$(docker compose port preview_proxy 3000)/tunnels`)).stdout)
-    const tunnelId = JSON.parse((await sshClient.execCommand(`curl -sf http://$(docker compose port preview_proxy 3000)/client-id`)).stdout)
+    const { tunnelId, tunnels } = await queryDockerProxyTunnels({ sshClient, log, dataDir, composeFilePath })
 
     return { machine, keyPair, tunnelId, tunnels }
   } finally {

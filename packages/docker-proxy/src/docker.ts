@@ -1,5 +1,6 @@
 import Docker from 'dockerode'
 import { debounce } from 'lodash-es'
+import { tryParseJson } from './json.js'
 
 const composeFilter = {
   label: ['com.docker.compose.project'],
@@ -9,7 +10,7 @@ const client = ({ docker, debounceWait }:  {
   docker: Pick<Docker, 'getEvents' | 'listContainers'>,
   debounceWait: number
 }) => {
-  const getRunningServices = async () => (
+  const getRunningServices = async (): Promise<RunningService[]> => (
     await docker.listContainers({
       filters: {
         ...composeFilter,
@@ -20,7 +21,7 @@ const client = ({ docker, debounceWait }:  {
     project: x.Labels['com.docker.compose.project'],
     name: x.Labels['com.docker.compose.service'],
     networks: Object.keys(x.NetworkSettings.Networks),
-    ports: x.Ports.map(x => x.PrivatePort),
+    ports: x.Ports.filter(p => p.Type === 'tcp').map(x => x.PrivatePort),
   }))
 
   return {
@@ -28,7 +29,7 @@ const client = ({ docker, debounceWait }:  {
       onChange: (services: RunningService[]) => void,
     }) => {
       const handler = debounce(async (data?: Buffer) => {
-        console.log('handler', data && JSON.parse(data.toString()))
+        console.log('handler', data && tryParseJson(data.toString()))
 
         const services = await getRunningServices()
         onChange(services)

@@ -28,7 +28,7 @@
   },
   "scripts": {
     "start": "ts-node ./index.ts",
-    "dev": "DEBUG=1 yarn nodemon ./index.ts",
+    "dev": "yarn nodemon ./index.ts",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "lint": "eslint . --ext .ts,.tsx",
     "build": "tsc --outDir ./dist",

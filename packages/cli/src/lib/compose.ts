@@ -47,13 +47,13 @@ export type ComposeService = {
 }
 
 export const fixModelForRemote = (
-  { appDir, localDir }: { 
-    appDir: string, 
+  { remoteDir, localDir }: { 
+    remoteDir: string, 
     localDir: string, 
   },
   model: ComposeModel,
 ): { model: Required<ComposeModel>, filesToCopy: FileToCopy[] } => {
-  const remoteVolumeDir = path.join(appDir, 'volumes')
+  const remoteVolumeDir = path.join(remoteDir, 'volumes')
 
   const filesToCopy: FileToCopy[] = []
 
@@ -65,7 +65,7 @@ export const fixModelForRemote = (
     return result
   }
 
-  const remoteSecretOrConfigPath = (type: 'secret' | 'config', { file }: Pick<ComposeSecretOrConfig, 'file'>) => path.join(appDir, `${type}s`, relativePath(file))
+  const remoteSecretOrConfigPath = (type: 'secret' | 'config', { file }: Pick<ComposeSecretOrConfig, 'file'>) => path.join(remoteDir, `${type}s`, relativePath(file))
 
   const overrideSecretsOrConfigs = (
     type: 'secret' | 'config', 
@@ -115,15 +115,16 @@ export const fixModelForRemote = (
 }
 
 export const addDockerProxyService = (
-  { tunnelOpts, buildDir, port }: { 
+  { tunnelOpts, buildDir, port, serviceName, debug }: { 
     tunnelOpts: TunnelOpts
     buildDir: string,
     port: number
+    serviceName: string
+    debug: boolean
   },
   model: ComposeModel
 ): void => {
-  model.services ||= {}
-  model.services.preview_proxy = {
+  (model.services ||= {})[serviceName] = {
     build: {
       context: buildDir,
     },
@@ -146,6 +147,7 @@ export const addDockerProxyService = (
     environment: {
       SSH_URL: tunnelOpts.url,
       TLS_SERVERNAME: tunnelOpts.tlsServername ?? '',
+      DEBUG: debug ? '1' : '',
     },
   }
 }
