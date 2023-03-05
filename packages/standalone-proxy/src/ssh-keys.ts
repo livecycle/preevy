@@ -1,6 +1,6 @@
 import path from 'path'
 import fs from 'fs/promises'
-import {utils} from "ssh2"
+import ssh2 from "ssh2"
 
 export async function getSSHKeys({
   defaultKeyLocation,
@@ -21,7 +21,7 @@ export async function getSSHKeys({
       process.exit(1)
     }
   
-    const pkey = utils.parseKey(privateKeyContents)
+    const pkey = ssh2.utils.parseKey(privateKeyContents)
     if (pkey instanceof Error) {
       console.error("Failed to load SSH host key: " + pkey.message)
       process.exit(1)
