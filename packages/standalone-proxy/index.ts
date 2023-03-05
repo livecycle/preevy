@@ -7,8 +7,10 @@ import { getSSHKeys } from './src/ssh-keys'
 import url from 'url'
 import path from 'path'
 
+const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
+
 const {sshPrivateKey, sshPublicKey} = await getSSHKeys({
-  defaultKeyLocation: path.resolve(url.fileURLToPath(new URL('.', import.meta.url)), "./ssh/ssh_host_key")
+  defaultKeyLocation: path.join(__dirname, "./ssh/ssh_host_key")
 })
 
 const PORT = numberFromEnv('PORT') || 3000
