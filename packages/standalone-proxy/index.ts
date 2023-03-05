@@ -44,10 +44,7 @@ const sshServer = createSshServer({
   onPipeDestroyed: async (clientId, remotePath) => {
     await envStore.delete(tunnelName(clientId, remotePath))
   },
-  onHello: (clientId, tunnels) => JSON.stringify({ 
-    clientId, 
-    tunnels: tunnels.map(remotePath => tunnelName(clientId, remotePath)) 
-  }),
+  onHello: clientId => JSON.stringify({ clientId }) + '\r\n',
 })
   .listen(SSH_PORT, LISTEN_HOST, () => {
     app.log.debug('ssh server listening on port %j', SSH_PORT)

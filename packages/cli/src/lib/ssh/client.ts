@@ -76,8 +76,8 @@ export const nodeSshClient = async ({ host, username, privateKey, log }: {
       await ssh.execCommand(baseRemoteDirs.map(dir => `mkdir -p "${dir}"`).join(' && '))
 
       await Promise.all([
-        ssh.putFiles(files, { transferOptions: { step: stepFunc } }),
-        ...dirs.map(({ local, remote }) => ssh.putDirectory(local, remote, { transferOptions: { step: stepFunc } })),
+        ssh.putFiles(files, { transferOptions: { step: stepFunc, concurrency: 2 } }),
+        ...dirs.map(({ local, remote }) => ssh.putDirectory(local, remote, { transferOptions: { step: stepFunc }, concurrency: 2 })),
       ])
     },
     
@@ -143,6 +143,8 @@ export const nodeSshClient = async ({ host, username, privateKey, log }: {
           connection.removeListener('close', onConnectionClose)
           rimraf(socketPath)
         })
+
+      process.on('exit', () => rimraf(socketPath))
 
       connection.on('close', onConnectionClose)
     }),

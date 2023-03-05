@@ -13,5 +13,4 @@ FROM base as development
 CMD [ "yarn", "dev" ]
 
 FROM base as production
-RUN yarn build
-CMD [ "node", "./dist/index.js" ]
+CMD [ "yarn", "start" ]

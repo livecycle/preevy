@@ -4,6 +4,7 @@ import { FileToCopy } from "./ssh/client"
 import { TunnelOpts } from "./ssh/url"
 
 export type ComposeModel = {
+  name: string
   secrets?: Record<string, ComposeSecretOrConfig>
   configs?: Record<string, ComposeSecretOrConfig>
   services?: Record<string, ComposeService>
@@ -53,8 +54,6 @@ export const fixModelForRemote = (
   },
   model: ComposeModel,
 ): { model: Required<ComposeModel>, filesToCopy: FileToCopy[] } => {
-  const remoteVolumeDir = path.join(remoteDir, 'volumes')
-
   const filesToCopy: FileToCopy[] = []
 
   const relativePath = (p: string) => {
@@ -65,7 +64,10 @@ export const fixModelForRemote = (
     return result
   }
 
-  const remoteSecretOrConfigPath = (type: 'secret' | 'config', { file }: Pick<ComposeSecretOrConfig, 'file'>) => path.join(remoteDir, `${type}s`, relativePath(file))
+  const remoteSecretOrConfigPath = (
+    type: 'secret' | 'config', 
+    { file }: Pick<ComposeSecretOrConfig, 'file'>,
+  ) => path.join(`${type}s`, relativePath(file))
 
   const overrideSecretsOrConfigs = (
     type: 'secret' | 'config', 
@@ -73,7 +75,7 @@ export const fixModelForRemote = (
   ) => mapValues(c ?? {}, secretOrConfig => {
     const remote = remoteSecretOrConfigPath(type, secretOrConfig);
     filesToCopy.push({ local: secretOrConfig.file, remote })
-    return { ...secretOrConfig, file: remote }
+    return { ...secretOrConfig, file: path.join(remoteDir, remote) }
   })
 
   const overrideSecrets = overrideSecretsOrConfigs('secret', model.secrets)
@@ -83,7 +85,7 @@ export const fixModelForRemote = (
 
   const remoteVolumePath = (
     { source }: Pick<ComposeBindVolume, 'source'>,
-  ) => path.join(remoteVolumeDir, relativePath(source))
+  ) => path.join(path.join('volumes'), relativePath(source))
 
   const overrideServices = mapValues(services, (service, serviceName) => ({
     ...service,
@@ -98,7 +100,7 @@ export const fixModelForRemote = (
 
       const remote = remoteVolumePath(volume)
       filesToCopy.push({ local: volume.source, remote })
-      return { ...volume, source: remote }
+      return { ...volume, source: path.join(remoteDir, remote) }
     })
   }))
 
@@ -123,31 +125,35 @@ export const addDockerProxyService = (
     debug: boolean
   },
   model: ComposeModel
-): void => {
-  (model.services ||= {})[serviceName] = {
-    build: {
-      context: buildDir,
-    },
-    networks: Object.keys(model.networks || {}),
-    volumes: [
-      {
-        type: 'bind',
-        source: '/var/run/docker.sock',
-        target: '/var/run/docker.sock',
+): ComposeModel => ({
+  ...model,
+  services: {
+    ...model.services,
+    [serviceName]: {
+      build: {
+        context: buildDir,
       },
-      {
-        type: 'bind',
-        source: '/root/.ssh',
-        target: '/root/.ssh',
+      networks: Object.keys(model.networks || {}),
+      volumes: [
+        {
+          type: 'bind',
+          source: '/var/run/docker.sock',
+          target: '/var/run/docker.sock',
+        },
+        {
+          type: 'bind',
+          source: '/root/.ssh',
+          target: '/root/.ssh',
+        },
+      ],
+      ports: [
+        { mode: 'ingress', target: port, protocol: 'tcp' },
+      ],
+      environment: {
+        SSH_URL: tunnelOpts.url,
+        TLS_SERVERNAME: tunnelOpts.tlsServername ?? '',
+        DEBUG: debug ? '1' : '',
       },
-    ],
-    ports: [
-      { mode: 'ingress', target: port, protocol: 'tcp' },
-    ],
-    environment: {
-      SSH_URL: tunnelOpts.url,
-      TLS_SERVERNAME: tunnelOpts.tlsServername ?? '',
-      DEBUG: debug ? '1' : '',
-    },
-  }
-}
+    }
+  },
+})

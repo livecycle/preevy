@@ -47,6 +47,7 @@ export default class Up extends DriverCommand<typeof Up> {
       composeFiles: flags.file,
       log: this.logger, state,
       dataDir: this.config.dataDir,
+      projectDir: process.cwd(),
     })
     this.log(`Preview environment ${envId} provisioned: ${machine.publicIPAddress}`)
   }

@@ -13,7 +13,6 @@
   "files": [
     "/bin",
     "/dist",
-    "/static",
     "/yarn.lock",
     "/oclif.manifest.json"
   ],
@@ -27,11 +26,14 @@
     "@oclif/plugin-plugins": "^2.3.0",
     "@types/ssh2": "^1.11.7",
     "cli-color": "^2.0.3",
+    "glob": "^9.2.1",
     "iter-tools-es": "^7.5.1",
     "lodash": "^4.17.21",
     "lodash.mapvalues": "^4.6.0",
     "node-ssh": "^13.0.1",
     "p-retry": "^4.6.2",
+    "read-package-json": "^6.0.0",
+    "remove": "^0.1.5",
     "rimraf": "^4.1.2",
     "shell-escape": "^0.2.0",
     "yaml": "^2.2.1"
@@ -64,12 +66,7 @@
       "@oclif/plugin-help",
       "@oclif/plugin-plugins"
     ],
-    "topicSeparator": " ",
-    "topics": {
-      "hello": {
-        "description": "Say hello to the world and others"
-      }
-    }
+    "topicSeparator": " "
   },
   "scripts": {
     "copy-statics-to-dist": "cp -R static dist",

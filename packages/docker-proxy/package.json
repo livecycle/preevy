@@ -3,6 +3,13 @@
   "version": "0.0.0",
   "description": "",
   "type": "module",
+  "main": "index.ts",
+  "files": [
+    "Dockerfile",
+    "src",
+    "yarn.lock",
+    "tsconfig.json"
+  ],
   "license": "MIT",
   "dependencies": {
     "dockerode": "^3.3.4",
@@ -11,7 +18,7 @@
     "pino-pretty": "^9.1.1",
     "shell-escape": "^0.2.0",
     "ssh2": "^1.11.0",
-    "ts-node": "^10.9.1"
+    "tsx": "^3.12.3"
   },
   "devDependencies": {
     "@types/dockerode": "^3.3.14",
@@ -27,11 +34,10 @@
     "typescript": "^4.9.5"
   },
   "scripts": {
-    "start": "ts-node ./index.ts",
-    "dev": "yarn nodemon ./index.ts",
+    "start": "tsx ./index.ts",
+    "dev": "tsx watch ./index.ts",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "lint": "eslint . --ext .ts,.tsx",
-    "build": "tsc --outDir ./dist",
-    "build-for-cli": "./build-for-cli.sh"
+    "build": "tsc --noEmit"
   }
 }

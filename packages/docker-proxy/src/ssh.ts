@@ -62,6 +62,9 @@ const hasClientId = (
   o && typeof o === 'object' && 'clientId' in o && typeof o.clientId === 'string'
 )
 
+const clientIdRe = /{\s*"clientId"\s*:\s*"([^"]+)"/
+const extractClientId = (s: string) => s.match(clientIdRe)?.[1]
+
 const sshClient = ({ serverPublicKey, sshUrl, debug, tunnelNameResolver, onError }: { 
   serverPublicKey?: string,
   sshUrl: string,
@@ -104,16 +107,20 @@ const sshClient = ({ serverPublicKey, sshUrl, debug, tunnelNameResolver, onError
         console.debug(message)
       })
 
-      sshProcess.stdout.on('data', data => {
-        const o: unknown = tryParseJson(data.toString())
-
-        if (hasClientId(o)) {
-          const { clientId } = o
+      // the "hello" response might be split between data chunks and prefixed or suffixed with other output
+      let stdOutData = Buffer.from([])
+      const clientIdGetter = (data: Buffer) => {
+        stdOutData = Buffer.concat([stdOutData, data])
+        const clientId = extractClientId(stdOutData.toString('utf-8'))
+        if (clientId) {
           console.log('got clientId', clientId)
+          stdOutData = Buffer.from([])
+          sshProcess.removeListener('data', clientIdGetter)
           resolve({ sshProcess, clientId })
-          return
         }
-      })
+      }
+
+      sshProcess.stdout.on('data', clientIdGetter)
 
       console.log(`started ssh process ${sshProcess.pid}`)
     })
