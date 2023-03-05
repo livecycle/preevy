@@ -1,11 +1,10 @@
-import retry from 'p-retry';
-import { Logger } from "../../../log";
-import { MachineDriver, scripts } from "../../machine";
-import { nodeSshClient, SshClient } from "../../ssh/client";
-import { NamedSshKeyPair } from "../../ssh/keypair";
-import { TunnelOpts } from "../../ssh/url";
-import { PersistentState } from "../../state";
-import { scriptExecuter } from "./scripts";
+import retry from 'p-retry'
+import { Logger } from '../../../log'
+import { MachineDriver, scripts } from '../../machine'
+import { nodeSshClient } from '../../ssh/client'
+import { NamedSshKeyPair } from '../../ssh/keypair'
+import { PersistentState } from '../../state'
+import { scriptExecuter } from './scripts'
 
 const ensureMachine = async ({
   machineDriver,
@@ -13,10 +12,10 @@ const ensureMachine = async ({
   state,
   log,
 }: {
-  machineDriver: MachineDriver,
-  envId: string,
-  state: PersistentState,
-  log: Logger,
+  machineDriver: MachineDriver
+  envId: string
+  state: PersistentState
+  log: Logger
 }) => {
   const getFirstExistingKeyPair = async () => {
     for await (const keyPairName of machineDriver.listKeyPairs()) {
@@ -29,12 +28,13 @@ const ensureMachine = async ({
   }
 
   const createAndWriteKeyPair = async (): Promise<NamedSshKeyPair> => {
-    log.info(`Creating key pair`)
+    log.info('Creating key pair')
     const keyPair = await machineDriver.createKeyPair({ envId })
     await state.sshKeys.write(keyPair.name, keyPair)
     return keyPair
   }
 
+  let removePromise: Promise<void> | undefined
   const existingMachine = await machineDriver.getMachine({ envId })
 
   if (existingMachine) {
@@ -44,13 +44,14 @@ const ensureMachine = async ({
     }
 
     log.info(`No matching key pair found for ${existingMachine.sshKeyName}, recreating machine`)
-    machineDriver.removeMachine(existingMachine.providerId)
+    removePromise = machineDriver.removeMachine(existingMachine.providerId)
   }
 
-  log.info(`Fetching key pair`)
+  log.info('Fetching key pair')
   const keyPair = (await getFirstExistingKeyPair()) || (await createAndWriteKeyPair())
-  log.info(`Creating machine`)
+  log.info('Creating machine')
   const machine = await machineDriver.createMachine({ envId, keyPairName: keyPair.name })
+  await removePromise
 
   return { machine, keyPair, installed: machine.fromSnapshot }
 }
@@ -61,10 +62,10 @@ export const ensureCustomizedMachine = async ({
   state,
   log,
 }: {
-  machineDriver: MachineDriver,
-  envId: string,
-  state: PersistentState,
-  log: Logger,
+  machineDriver: MachineDriver
+  envId: string
+  state: PersistentState
+  log: Logger
 }) => {
   const { machine, keyPair, installed } = await ensureMachine({ machineDriver, envId, state, log })
 
@@ -81,6 +82,7 @@ export const ensureCustomizedMachine = async ({
     if (!installed) {
       log.debug('Executing machine scripts')
       for (const script of scripts.CUSTOMIZE_BARE_MACHINE) {
+        // eslint-disable-next-line no-await-in-loop
         await execScript(script)
       }
       log.info('Creating snapshot')
@@ -90,9 +92,10 @@ export const ensureCustomizedMachine = async ({
     log.debug('Executing instance-specific scripts')
 
     for (const script of scripts.INSTANCE_SPECIFIC) {
+      // eslint-disable-next-line no-await-in-loop
       await execScript(script)
     }
-  } catch(e) {
+  } catch (e) {
     sshClient.dispose()
     throw e
   }

@@ -1,4 +1,4 @@
-import { NamedSshKeyPair } from "../../ssh/keypair"
+import { NamedSshKeyPair } from '../../ssh/keypair'
 
 export type Machine = {
   providerId: string
@@ -10,20 +10,20 @@ export type Machine = {
 }
 
 export type MachineDriver = {
-  getMachine: ({ envId }: { envId: string }) => Promise<Machine | undefined>,
+  getMachine: ({ envId }: { envId: string }) => Promise<Machine | undefined>
 
-  createKeyPair: ({ envId }: { envId: string }) => Promise<NamedSshKeyPair>,
+  createKeyPair: ({ envId }: { envId: string }) => Promise<NamedSshKeyPair>
 
   createMachine: (args: {
-    envId: string,
-    keyPairName: string,
-  }) => Promise<Machine & { fromSnapshot: boolean }>,
+    envId: string
+    keyPairName: string
+  }) => Promise<Machine & { fromSnapshot: boolean }>
 
-  ensureMachineSnapshot: ({ providerId, envId }: { providerId: string, envId: string }) => Promise<void>,
+  ensureMachineSnapshot: ({ providerId, envId }: { providerId: string; envId: string }) => Promise<void>
 
-  listMachines: () => AsyncIterableIterator<Machine & { envId: string }>,
+  listMachines: () => AsyncIterableIterator<Machine & { envId: string }>
 
-  removeMachine: (providerId: string) => Promise<void>,
+  removeMachine: (providerId: string) => Promise<void>
 
   listKeyPairs: () => AsyncIterableIterator<string>
 }

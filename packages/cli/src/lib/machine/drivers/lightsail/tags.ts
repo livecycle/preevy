@@ -1,5 +1,5 @@
-import { inspect } from "util"
-import { extractDefined } from "../../../aws-utils/nulls"
+import { inspect } from 'util'
+import { extractDefined } from '../../../aws-utils/nulls'
 
 export const CURRENT_MACHINE_VERSION = 'm-2023-02-16'
 
@@ -13,18 +13,18 @@ export const KEYPAIR_TAGS = {
 }
 
 const tagPredicate = ({ key, value }: {
-  key: string,
-  value: string,
-}) => (tag: { key?: string, value?: string }) => tag.key === key && tag.value === value
+  key: string
+  value: string
+}) => (tag: { key?: string; value?: string }) => tag.key === key && tag.value === value
 
-export const allTagsPredicate = (...tagsToFind: { key: string, value: string }[]) => (
-  tags: { key?: string, value?: string }[],
+export const allTagsPredicate = (...tagsToFind: { key: string; value: string }[]) => (
+  tags: { key?: string; value?: string }[],
 ) => {
   const predicates = tagsToFind.map(tagPredicate)
-  return predicates.every(predicate => tags.some(predicate));
+  return predicates.every(predicate => tags.some(predicate))
 }
 
-export const requiredTag = (tags: { key?: string, value?: string }[], key: string) => {
+export const requiredTag = (tags: { key?: string; value?: string }[], key: string) => {
   const found = tags.find(t => t.key === key)
   if (!found) {
     throw new Error(`Could not find required tag ${key} in ${inspect(tags)}`)

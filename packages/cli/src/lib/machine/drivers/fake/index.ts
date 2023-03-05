@@ -1,8 +1,8 @@
-import { Command, Flags, Interfaces } from "@oclif/core"
-import { asyncMap } from "iter-tools-es"
-import { NamedSshKeyPair } from "../../../ssh/keypair"
-import { Machine, MachineDriver } from "../../driver"
-import { removeDriverPrefix } from "../../driver/flags"
+import { Command, Flags, Interfaces } from '@oclif/core'
+import { asyncMap } from 'iter-tools-es'
+import { NamedSshKeyPair } from '../../../ssh/keypair'
+import { Machine, MachineDriver } from '../../driver'
+import { removeDriverPrefix } from '../../driver/flags'
 
 const fakeMachine: Machine = {
   privateIPAddress: '1.1.1.1',
@@ -21,7 +21,7 @@ const fakeNamedSshKey: NamedSshKeyPair = {
   privateKey: '',
 }
 
-const machineDriver = (_args: { someFlag: string, someFlag2?: string }): MachineDriver => ({
+const machineDriver = (_args: { someFlag: string; someFlag2?: string }): MachineDriver => ({
   getMachine: async () => fakeMachine,
 
   listMachines: () => asyncMap(x => x, [fakeMachineWithEnvId()]),
@@ -38,12 +38,12 @@ const machineDriver = (_args: { someFlag: string, someFlag2?: string }): Machine
 })
 
 machineDriver.flags = {
-  ['some-flag']: Flags.string({
+  'some-flag': Flags.string({
     description: 'Fake flag',
     required: false,
     hidden: true,
   }),
-  ['some-flag2']: Flags.string({
+  'some-flag2': Flags.string({
     description: 'Fake flag 2',
     required: false,
     hidden: true,

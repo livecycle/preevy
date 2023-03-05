@@ -1,5 +1,5 @@
-import { Logger } from "../../../log";
-import { SshClient } from "../../ssh/client";
+import { Logger } from '../../../log'
+import { SshClient } from '../../ssh/client'
 
 export type FuncWrapper = <Return>(
   f: () => Promise<Return>,
@@ -7,9 +7,9 @@ export type FuncWrapper = <Return>(
 
 export const wrapWithDockerSocket = (
   { sshClient, log, dataDir }: {
-    sshClient: SshClient,
-    log: Logger,
-    dataDir: string,
+    sshClient: SshClient
+    log: Logger
+    dataDir: string
   },
 ): FuncWrapper => async <Return>(
   f: () => Promise<Return>,
@@ -27,7 +27,6 @@ export const wrapWithDockerSocket = (
 
   return f().finally(close)
 }
-
 
 // export const withDockerSocket = async <Return>({ sshClient, log, dataDir }: {
 //   sshClient: SshClient,
@@ -49,4 +48,3 @@ export const wrapWithDockerSocket = (
 
 //   return f().finally(close)
 // }
-

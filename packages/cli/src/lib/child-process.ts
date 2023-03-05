@@ -1,4 +1,4 @@
-import childProcess from "child_process";
+import childProcess from 'child_process'
 
 type Spawn = typeof childProcess['spawn']
 
@@ -14,7 +14,7 @@ export const spawnPromise = (
   const process = childProcess.spawn(...args)
   process.on('exit', (code, signal) => {
     if (code !== 0) {
-      const message = `process exited with code ${code}${signal ? `and signal ${signal}` : ''}`;
+      const message = `process exited with code ${code}${signal ? `and signal ${signal}` : ''}`
       reject(new ProcessError(message, process))
       return
     }

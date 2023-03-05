@@ -42,7 +42,9 @@ const sshServer = createSshServer({
     await envStore.set(key, { target: localSocket })
   },
   onPipeDestroyed: async (clientId, remotePath) => {
-    await envStore.delete(tunnelName(clientId, remotePath))
+    const key = tunnelName(clientId, remotePath);
+    sshLogger.debug('deleting tunnel %s', key)
+    await envStore.delete(key)
   },
   onHello: clientId => JSON.stringify({ clientId }) + '\r\n',
 })

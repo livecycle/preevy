@@ -16,21 +16,20 @@ type TunnelsResponse = {
   clientId: string
 }
 
-const servicesResponse = (
-  tunnelNameResolver: TunnelNameResolver, 
-  clientId: string, 
-  services: RunningService[],
-) => ({
-  projects: services.reduce((acc: TunnelsResponse['projects'], s) => ({
-    ...acc,
-    [s.project]: {
-      ...acc[s.project],
-      [s.name]: tunnelNameResolver(s).reduce((obj: Record<number, string[]>, { port, tunnel }) => { 
-        (obj[port] ||= []).push(tunnel)
-        return obj
-      }, {}),
-    },
-  }), {}),
+const servicesResponse = (tunnelNameResolver: TunnelNameResolver, clientId: string, services: RunningService[]) => ({
+  projects: services.reduce(
+    (acc: TunnelsResponse['projects'], s) => ({
+      ...acc,
+      [s.project]: {
+        ...acc[s.project],
+        [s.name]: tunnelNameResolver(s).reduce((obj: Record<number, string[]>, { port, tunnel }) => {
+          (obj[port] ||= []).push(tunnel)
+          return obj
+        }, {}),
+      },
+    }),
+    {}
+  ),
   services: services.map(s => ({
     project: s.project,
     service: s.name,
@@ -40,8 +39,11 @@ const servicesResponse = (
   clientId,
 })
 
-const createWebServer = ({ getTunnels, tunnelNameResolver }: { 
-  getTunnels: () => Promise<{ services: RunningService[], clientId: string }>
+const createWebServer = ({
+  getTunnels,
+  tunnelNameResolver,
+}: {
+  getTunnels: () => Promise<{ services: RunningService[]; clientId: string }>
   tunnelNameResolver: TunnelNameResolver
 }) => {
   const server = http.createServer(async (req, res) => {

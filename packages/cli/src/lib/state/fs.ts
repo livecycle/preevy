@@ -1,6 +1,5 @@
 import fs from 'fs'
-import path from 'path'
-import { dirname } from 'path'
+import path, { dirname } from 'path'
 import { rimraf } from 'rimraf'
 
 export type SimpleFS = {
@@ -22,6 +21,7 @@ export const realFs = (baseDir: string): SimpleFS => ({
       if (isNotFoundError(e)) {
         return undefined
       }
+      throw e
     }
   },
   write: async (filename: string, content: Buffer | string) => {
@@ -33,9 +33,9 @@ export const realFs = (baseDir: string): SimpleFS => ({
       if (isNotFoundError(e)) {
         return fs.promises.mkdir(dirname(filepath), { recursive: true }).then(f)
       }
+      throw e
     }
   },
   delete: (filename: string) => rimraf(filename),
   flush: async () => undefined,
 })
-

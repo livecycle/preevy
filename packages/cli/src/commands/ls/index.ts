@@ -18,7 +18,7 @@ export default class Ls extends DriverCommand<typeof Ls> {
   static enableJsonFlag = true
 
   async run(): Promise<unknown> {
-    const {args, flags} = await this.parse(Ls)
+    const { flags } = await this.parse(Ls)
 
     const state = fsState(realFs(this.config.dataDir))
 
@@ -29,15 +29,17 @@ export default class Ls extends DriverCommand<typeof Ls> {
     }
 
     ux.table(
-      machines, 
+      machines,
       {
         envId: { header: 'Env' },
         providerId: { header: 'Driver ID' },
         publicIPAddress: { header: 'IP address' },
         haveSshKey: { header: 'SSH Key' },
         version: { header: 'Version', extended: true },
-      }, 
+      },
       this.flags,
     )
+
+    return undefined
   }
 }

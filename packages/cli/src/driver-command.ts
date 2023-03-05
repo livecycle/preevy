@@ -1,8 +1,8 @@
-import BaseCommand, { InferredFlags } from './base-command'
-import { Command, Flags, Interfaces } from "@oclif/core"
+import { Command, Flags, Interfaces } from '@oclif/core'
+import BaseCommand from './base-command'
 import { allDriverFlags, DriverName, driverRelationships, MachineDriver, machineDrivers } from './lib/machine'
-import { FlagInput, FlagOutput } from '@oclif/core/lib/interfaces/parser'
 
+// eslint-disable-next-line no-use-before-define
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof DriverCommand['baseFlags'] & T['flags']>
 export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>
 

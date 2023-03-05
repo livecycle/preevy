@@ -1,16 +1,16 @@
-import { Command, Flags, Interfaces, ux } from "@oclif/core"
-import { FlagInput, FlagOutput } from "@oclif/core/lib/interfaces/parser";
-import { ProgressReporter } from "./lib/progress"
-import { commandLogger, Logger, LogLevel, logLevels, nullLogger } from "./log"
+import { Command, Flags, Interfaces } from '@oclif/core'
+import { FlagInput } from '@oclif/core/lib/interfaces/parser'
+import { commandLogger, Logger, LogLevel, logLevels } from './log'
 
 export type InferredFlags<T> = T extends FlagInput<infer F> ? F & {
-  json: boolean | undefined;
+  json: boolean | undefined
 } : never;
 
 // export type InferredFlags<T extends FlagOutput> = T & {
 //   json: boolean | undefined;
 // }
 
+// eslint-disable-next-line no-use-before-define
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof BaseCommand['baseFlags'] & T['flags']>
 export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>
 
@@ -46,29 +46,14 @@ abstract class BaseCommand<T extends typeof Command> extends Command {
 
   public get logLevel(): LogLevel {
     return this.flags['log-level'] as LogLevel
-  } 
+  }
 
-  public log(message?: string, ...args: any[]): void {
+  public log(message?: string, ...args: unknown[]): void {
     this.logger.info(message, ...args)
   }
 
-  public logToStderr(message?: string | undefined, ...args: any[]): void {
+  public logToStderr(message?: string | undefined, ...args: unknown[]): void {
     this.stdErrLogger.info(message, ...args)
-  }
-
-  public createProgressReporter(action: string): ProgressReporter {
-    ux.action.start(action)
-    let current = 0
-    return {
-      increment: (increment: number, status?: string) => {
-        current += increment
-        if (current >= 1) {
-          ux.action.stop()
-        } else {
-          ux.action.status = `${Math.floor(current * 100)}% complete: ${status}`
-        }
-      },
-    }
   }
 }
 

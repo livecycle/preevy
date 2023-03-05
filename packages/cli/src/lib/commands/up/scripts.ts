@@ -1,8 +1,8 @@
 import { randomBytes } from 'crypto'
-import { Logger } from "../../../log";
-import { scripts } from "../../machine";
-import { CommandResult, SshClient } from "../../ssh/client";
-import path from 'path';
+import path from 'path'
+import { Logger } from '../../../log'
+import { scripts } from '../../machine'
+import { CommandResult, SshClient } from '../../ssh/client'
 
 export type ScriptExecuter = (
   script: string,
@@ -12,8 +12,8 @@ export type ScriptExecuter = (
 const removeFileExtension = (f: string) => f.replace(/\.[^.]+$/, '')
 
 export const scriptExecuter = ({ sshClient, log }: {
-  sshClient: SshClient,
-  log: Logger,
+  sshClient: SshClient
+  log: Logger
 }): ScriptExecuter => async (script, opts = {}) => {
   const destination = `/tmp/scripts/${removeFileExtension(script)}.${randomBytes(16).toString('hex')}`
   log.debug(`executing script ${script} at ${destination}`)
@@ -23,7 +23,6 @@ export const scriptExecuter = ({ sshClient, log }: {
   try {
     return await sshClient.execCommand(`pwd; env; chmod +x ${script} && ./${script}`, { cwd: destination, env: opts.env })
   } finally {
-    sshClient.execCommand(`rm -rf ${destination}`)
+    await sshClient.execCommand(`rm -rf ${destination}`)
   }
 }
-

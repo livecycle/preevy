@@ -29,15 +29,16 @@
     "@typescript-eslint/eslint-plugin": "^5.51.0",
     "@typescript-eslint/parser": "^5.51.0",
     "eslint": "^8.33.0",
+    "husky": ">=6",
+    "lint-staged": ">=10",
     "nodemon": "^2.0.20",
-    "prettier": "^2.8.4",
     "typescript": "^4.9.5"
   },
   "scripts": {
     "start": "tsx ./index.ts",
     "dev": "tsx watch ./index.ts",
-    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "lint": "eslint . --ext .ts,.tsx",
-    "build": "tsc --noEmit"
+    "build": "tsc --noEmit",
+    "prepare": "husky install"
   }
 }

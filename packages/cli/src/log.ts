@@ -1,6 +1,5 @@
-import { Command } from "@oclif/core"
+import { Command } from '@oclif/core'
 import { mapValues } from 'lodash'
-
 
 export const logLevels = {
   debug: 10,
@@ -26,7 +25,7 @@ export const commandLogger = (
   const logFunc = (stream === 'stdout' ? Command.prototype.log : Command.prototype.logToStderr).bind(command)
   const commandVal = logLevels[command.logLevel]
 
-  return mapValues(logLevels, val => val < commandVal ? nullLogFunc : logFunc)
+  return mapValues(logLevels, val => (val < commandVal ? nullLogFunc : logFunc))
 }
 
 export const nullLogger = mapValues(logLevels, () => nullLogFunc)

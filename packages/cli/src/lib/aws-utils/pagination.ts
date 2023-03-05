@@ -1,17 +1,17 @@
-import { extractDefined } from "./nulls"
+import { extractDefined } from './nulls'
 
 export type HasNextPageToken = {
   nextPageToken?: string
 }
 
 export const paginationIterator = <
-  T, 
-  K extends string, 
+  T,
+  K extends string,
   P extends HasNextPageToken & { [Prop in K]?: T[] },
 >(
-  fetch: (pageToken?: string) => Promise<P>, 
-  key: K,
-): AsyncIterableIterator<T> => {
+    fetch: (pageToken?: string) => Promise<P>,
+    key: K,
+  ): AsyncIterableIterator<T> => {
   let currentResponsePromise = fetch()
   let currentPageIter: Iterator<T> | null = null
 
