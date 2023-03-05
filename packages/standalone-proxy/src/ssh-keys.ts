@@ -3,7 +3,7 @@ import fs from 'fs/promises'
 import {utils} from "ssh2"
 
 export async function getSSHKeys({
-  defaultKeyLocation = '/etc/livecycle-preview/ssh_host_key',
+  defaultKeyLocation,
 }: {defaultKeyLocation: string}){
     const ssh_host_key_inline = process.env["SSH_HOST_KEY"]
     let privateKeyContents = ""
