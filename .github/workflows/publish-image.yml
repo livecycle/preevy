@@ -29,7 +29,7 @@ jobs:
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=edge,branch=master
+            type=sha,enable={{is_default_branch}},prefix={{branch}}-
           labels: |
             org.opencontainers.image.title=preview-proxy
             org.opencontainers.image.description=Supporting proxy and tunneling service for preview cli
