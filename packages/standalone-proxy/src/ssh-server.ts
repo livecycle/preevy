@@ -17,7 +17,7 @@ export const sshServer = ({
   onHello,
 }: {
   log: FastifyBaseLogger
-  sshPrivateKey: string,
+  sshPrivateKey: string
   socketDir: string
   onPipeCreated?: (clientId: string, remotePath: string, localSocketPath: string) => void
   onPipeDestroyed?: (clientId: string, remotePath: string, localSocketPath: string) => void

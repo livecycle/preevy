@@ -8,7 +8,8 @@ services:
       
     restart: always
     image: preview-proxy
-    environment: {}
+    environment:
+      BASE_URL: ${BASE_URL}
     volumes:
       - ./ssh:/app/ssh
       - ./src:/app/src
