@@ -16,8 +16,8 @@ export default class Down extends DriverCommand<typeof Down> {
   }
 
   static args = {
-    id: Args.string({ 
-      description: 'Environment IDs to delete', 
+    id: Args.string({
+      description: 'Environment IDs to delete',
       required: true,
       multiple: true,
     }),
@@ -28,18 +28,18 @@ export default class Down extends DriverCommand<typeof Down> {
   static enableJsonFlag = true
 
   async run(): Promise<unknown> {
-    const {args, flags, raw} = await this.parse(Down)
+    const { flags, raw } = await this.parse(Down)
 
     const envIds = raw.filter(({ type }) => type === 'arg').map(({ input }) => input)
 
     const state = fsState(realFs(this.config.dataDir))
 
     const result = (
-      await down({ 
-        machineDriver: this.machineDriver, 
-        state, 
-        log: this.logger, 
-        envIds, 
+      await down({
+        machineDriver: this.machineDriver,
+        state,
+        log: this.logger,
+        envIds,
         throwOnNotFound: !flags.force,
       })
     ).map(({ envId }) => envId)
@@ -49,5 +49,6 @@ export default class Down extends DriverCommand<typeof Down> {
     }
 
     result.forEach(envId => this.log(envId))
+    return undefined
   }
 }

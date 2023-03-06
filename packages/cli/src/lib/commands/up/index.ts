@@ -1,23 +1,19 @@
-import { promisify } from 'util'
-import childProcess from 'child_process'
 import fs from 'fs'
-import retry from 'p-retry';
+import retry from 'p-retry'
 import yaml from 'yaml'
-import { Logger } from "../../../log";
-import { Machine, MachineDriver } from "../../machine";
-import { FileToCopy, SshClient } from "../../ssh/client";
-import { SshKeyPair } from "../../ssh/keypair";
-import { PersistentState } from "../../state";
-import path from 'path';
-import { addDockerProxyService, fixModelForRemote } from '../../compose';
-import { DOCKER_PROXY_DIR, DOCKER_PROXY_PORT } from '../../../static';
-import { TunnelOpts } from '../../ssh/url';
-import { spawnPromise } from '../../child-process';
-import { ensureCustomizedMachine } from './machine';
-import { wrapWithDockerSocket } from './docker';
-import { getComposeModel, getComposeServiceUrl } from './compose-runner';
-
-const exec = promisify(childProcess.exec);
+import path from 'path'
+import { Logger } from '../../../log'
+import { Machine, MachineDriver } from '../../machine'
+import { FileToCopy, SshClient } from '../../ssh/client'
+import { SshKeyPair } from '../../ssh/keypair'
+import { PersistentState } from '../../state'
+import { addDockerProxyService, fixModelForRemote } from '../../compose'
+import { DOCKER_PROXY_DIR, DOCKER_PROXY_PORT } from '../../../static'
+import { TunnelOpts } from '../../ssh/url'
+import { spawnPromise } from '../../child-process'
+import { ensureCustomizedMachine } from './machine'
+import { wrapWithDockerSocket } from './docker'
+import { getComposeModel, getComposeServiceUrl } from './compose-runner'
 
 const DOCKER_PROXY_SERVICE_NAME = 'preview-proxy'
 const REMOTE_DIR_BASE = '/var/run/preview'
@@ -31,7 +27,7 @@ const queryTunnels = async (sshClient: SshClient, dockerProxyUrl: string) => {
 }
 
 const copyFilesWithoutRecreatingDir = async (
-  sshClient: SshClient, 
+  sshClient: SshClient,
   remoteDir: string,
   filesToCopy: FileToCopy[],
 ) => {
@@ -52,16 +48,16 @@ const up = async ({
   composeFiles,
   dataDir,
   projectDir,
-}: { 
-  machineDriver: MachineDriver,
-  tunnelOpts: TunnelOpts,
-  envId: string,
-  state: PersistentState,
-  log: Logger,
-  composeFiles?: string[],
+}: {
+  machineDriver: MachineDriver
+  tunnelOpts: TunnelOpts
+  envId: string
+  state: PersistentState
+  log: Logger
+  composeFiles?: string[]
   dataDir: string
   projectDir: string
-}): Promise<{ machine: Machine, keyPair: SshKeyPair, tunnelId: string, tunnels: Record<string, string> }> => {
+}): Promise<{ machine: Machine; keyPair: SshKeyPair; tunnelId: string; tunnels: Record<string, string> }> => {
   const { machine, keyPair, sshClient } = await ensureCustomizedMachine({ machineDriver, envId, state, log })
   const withDockerSocket = wrapWithDockerSocket({ sshClient, log, dataDir })
 
@@ -77,7 +73,7 @@ const up = async ({
     await sshClient.execCommand(`sudo mkdir -p "${remoteDir}" && sudo chown $USER:docker "${remoteDir}"`)
 
     const { model: remoteModel, filesToCopy } = fixModelForRemote({
-      remoteDir, 
+      remoteDir,
       localDir: projectDir,
     }, userModel)
 
@@ -91,7 +87,7 @@ const up = async ({
     const composeFilePath = path.join(projectLocalDataDir, 'docker-compose.yml')
 
     await fs.promises.writeFile(
-      composeFilePath, 
+      composeFilePath,
       yaml.stringify(addDockerProxyService({
         tunnelOpts,
         buildDir: DOCKER_PROXY_DIR,
@@ -106,7 +102,7 @@ const up = async ({
     await withDockerSocket(() => spawnPromise(
       'docker',
       ['compose', '-f', composeFilePath, 'up', '-d', '--remove-orphans'],
-      { 
+      {
         env: {
           ...process.env,
           SSH_URL: tunnelOpts.url,
@@ -119,9 +115,9 @@ const up = async ({
     log.info('Getting tunnels')
 
     const composeServiceUrl = await getComposeServiceUrl(
-      withDockerSocket, 
-      composeFilePath, 
-      DOCKER_PROXY_SERVICE_NAME, 
+      withDockerSocket,
+      composeFilePath,
+      DOCKER_PROXY_SERVICE_NAME,
       DOCKER_PROXY_PORT,
     )
 

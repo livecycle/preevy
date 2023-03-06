@@ -3,14 +3,14 @@ import {
   Instance,
   InstanceSnapshot,
   KeyPair,
-  Lightsail, LightsailClient
-} from "@aws-sdk/client-lightsail";
-import { asyncFilter, asyncFind } from "iter-tools-es";
+  Lightsail, LightsailClient,
+} from '@aws-sdk/client-lightsail'
+import { asyncFilter, asyncFind } from 'iter-tools-es'
 
-import { ensureDefined, extractDefined } from "../../../aws-utils/nulls";
-import { paginationIterator } from "../../../aws-utils/pagination";
-import { waitUntilAllOperationsSucceed, waitUntilOperationSucceeds } from "./operation-waiter";
-import { allTagsPredicate, INSTANCE_TAGS, KEYPAIR_TAGS } from "./tags";
+import { ensureDefined, extractDefined } from '../../../aws-utils/nulls'
+import { paginationIterator } from '../../../aws-utils/pagination'
+import { waitUntilAllOperationsSucceed, waitUntilOperationSucceeds } from './operation-waiter'
+import { allTagsPredicate, INSTANCE_TAGS, KEYPAIR_TAGS } from './tags'
 
 const getFirstAvailabilityZoneForRegion = async (ls: Lightsail) => {
   const regions = await extractDefined(ls.getRegions({ includeAvailabilityZones: true }), 'regions')
@@ -48,12 +48,10 @@ const client = ({ region }: { region: string }) => {
       )
     },
 
-    listInstances: () => {
-      return asyncFilter(
-        ({ tags }: Instance) => (tags || []).some(tag => tag.key === INSTANCE_TAGS.ENV_ID),
-        paginationIterator(pageToken => ls.getInstances({ pageToken }), 'instances'),
-      )
-    },
+    listInstances: () => asyncFilter(
+      ({ tags }: Instance) => (tags || []).some(tag => tag.key === INSTANCE_TAGS.ENV_ID),
+      paginationIterator(pageToken => ls.getInstances({ pageToken }), 'instances'),
+    ),
 
     ensureInstanceIsRunning: async (instance: Instance) => {
       if (instance.state?.name !== 'running') {
@@ -61,11 +59,11 @@ const client = ({ region }: { region: string }) => {
           { client: lsClient, maxWaitTime: 120 },
           ls.startInstance({ instanceName: instance.name }),
         )
-        return extractDefined(ls.getInstance({ instanceName: instance.name }), 'instance')
       }
+      return extractDefined(ls.getInstance({ instanceName: instance.name }), 'instance')
     },
 
-    createKeyPair: async ({ name, envId }: { name: string, envId: string }) => {
+    createKeyPair: async ({ name, envId }: { name: string; envId: string }) => {
       const { publicKeyBase64, privateKeyBase64, keyPair } = await ensureDefined(ls.createKeyPair({
         keyPairName: name,
         tags: [
@@ -91,25 +89,21 @@ const client = ({ region }: { region: string }) => {
     },
 
     listKeyPairs: () => paginationIterator<KeyPair, 'keyPairs', GetKeyPairsCommandOutput>(
-      pageToken => ls.getKeyPairs({ pageToken }), 
+      pageToken => ls.getKeyPairs({ pageToken }),
       'keyPairs',
     ),
 
     createInstance: async ({ name, envId, versionTag, availabilityZone, keyPairName, instanceSnapshotName }: {
-      envId: string,
-      versionTag: string,
-      availabilityZone?: string,
-      instanceSnapshotName?: string,
-      keyPairName: string,
-      name: string,
+      envId: string
+      versionTag: string
+      availabilityZone?: string
+      instanceSnapshotName?: string
+      keyPairName: string
+      name: string
     }) => {
-      if (!availabilityZone) {
-        availabilityZone = await getFirstAvailabilityZoneForRegion(ls)
-      }
-
       const commonArgs = {
         bundleId: 'small_2_0',
-        availabilityZone,
+        availabilityZone: availabilityZone ?? await getFirstAvailabilityZoneForRegion(ls),
         instanceNames: [name],
         keyPairName,
         tags: [
@@ -118,32 +112,34 @@ const client = ({ region }: { region: string }) => {
         ],
       }
 
-      const res = instanceSnapshotName 
+      const res = instanceSnapshotName
         ? ls.createInstancesFromSnapshot({ ...commonArgs, instanceSnapshotName })
         : ls.createInstances({ ...commonArgs, blueprintId: 'ubuntu_20_04' })
-      
+
       await waitUntilAllOperationsSucceed(
         { client: lsClient, maxWaitTime: 120 },
         res,
       )
 
       await ls.putInstancePublicPorts({
-        instanceName: name, portInfos: [{
+        instanceName: name,
+        portInfos: [{
           fromPort: 22, toPort: 22, protocol: 'TCP', cidrs: ['0.0.0.0/0'], ipv6Cidrs: ['::/0'],
-        }]
+        }],
       })
 
       return extractDefined(ls.getInstance({ instanceName: name }), 'instance')
     },
 
-    closeAllPortsExceptSsh: async ({ instanceName }: { 
-      instanceName: string 
+    closeAllPortsExceptSsh: async ({ instanceName }: {
+      instanceName: string
     }) => waitUntilAllOperationsSucceed(
       { client: lsClient, maxWaitTime: 120 },
       ls.putInstancePublicPorts({
-        instanceName, portInfos: [{
+        instanceName,
+        portInfos: [{
           fromPort: 22, toPort: 22, protocol: 'TCP', cidrs: ['0.0.0.0/0'], ipv6Cidrs: ['::/0'],
-        }]
+        }],
       })
     ),
 
@@ -158,11 +154,11 @@ const client = ({ region }: { region: string }) => {
     },
 
     createInstanceSnapshot: async (
-      { envId, instanceName, instanceSnapshotName, version }: { 
-        instanceName: string, 
-        envId: string,
-        instanceSnapshotName: string,
-        version: string,
+      { envId, instanceName, instanceSnapshotName, version }: {
+        instanceName: string
+        envId: string
+        instanceSnapshotName: string
+        version: string
       },
     ) => waitUntilAllOperationsSucceed(
       { client: lsClient, maxWaitTime: 120 },
@@ -191,8 +187,8 @@ const client = ({ region }: { region: string }) => {
     deleteKeyPair: async (name: string) => waitUntilOperationSucceeds(
       { client: lsClient, maxWaitTime: 120 },
       await ls.deleteKeyPair({ keyPairName: name }),
-    )
-  };
+    ),
+  }
 }
 
 export default client

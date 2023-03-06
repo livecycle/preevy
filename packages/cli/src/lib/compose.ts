@@ -1,22 +1,14 @@
-import { mapValues } from "lodash"
-import path from "path"
-import { FileToCopy } from "./ssh/client"
-import { TunnelOpts } from "./ssh/url"
-
-export type ComposeModel = {
-  name: string
-  secrets?: Record<string, ComposeSecretOrConfig>
-  configs?: Record<string, ComposeSecretOrConfig>
-  services?: Record<string, ComposeService>
-  networks?: Record<string, ComposeNetwork>
-}
-
-export type ComposeNetwork = null | {}
+import { mapValues } from 'lodash'
+import path from 'path'
+import { FileToCopy } from './ssh/client'
+import { TunnelOpts } from './ssh/url'
 
 export type ComposeSecretOrConfig = {
   name: string
   file: string
 }
+
+export type ComposeNetwork = null | {}
 
 export type ComposeBindVolume = {
   type: 'bind'
@@ -31,10 +23,10 @@ type ComposeBuild = {
 }
 
 type ComposePort = {
-  mode: 'ingress',
-  target: number,
-  published?: string,
-  protocol: 'tcp' | 'udp',
+  mode: 'ingress'
+  target: number
+  published?: string
+  protocol: 'tcp' | 'udp'
 }
 
 type EnvString = `${string}=${string}`
@@ -47,13 +39,21 @@ export type ComposeService = {
   environment?: Record<string, string> | EnvString[]
 }
 
+export type ComposeModel = {
+  name: string
+  secrets?: Record<string, ComposeSecretOrConfig>
+  configs?: Record<string, ComposeSecretOrConfig>
+  services?: Record<string, ComposeService>
+  networks?: Record<string, ComposeNetwork>
+}
+
 export const fixModelForRemote = (
-  { remoteDir, localDir }: { 
-    remoteDir: string, 
-    localDir: string, 
+  { remoteDir, localDir }: {
+    remoteDir: string
+    localDir: string
   },
   model: ComposeModel,
-): { model: Required<ComposeModel>, filesToCopy: FileToCopy[] } => {
+): { model: Required<ComposeModel>; filesToCopy: FileToCopy[] } => {
   const filesToCopy: FileToCopy[] = []
 
   const relativePath = (p: string) => {
@@ -65,15 +65,15 @@ export const fixModelForRemote = (
   }
 
   const remoteSecretOrConfigPath = (
-    type: 'secret' | 'config', 
+    type: 'secret' | 'config',
     { file }: Pick<ComposeSecretOrConfig, 'file'>,
   ) => path.join(`${type}s`, relativePath(file))
 
   const overrideSecretsOrConfigs = (
-    type: 'secret' | 'config', 
+    type: 'secret' | 'config',
     c?: Record<string, ComposeSecretOrConfig>,
   ) => mapValues(c ?? {}, secretOrConfig => {
-    const remote = remoteSecretOrConfigPath(type, secretOrConfig);
+    const remote = remoteSecretOrConfigPath(type, secretOrConfig)
     filesToCopy.push({ local: secretOrConfig.file, remote })
     return { ...secretOrConfig, file: path.join(remoteDir, remote) }
   })
@@ -101,7 +101,7 @@ export const fixModelForRemote = (
       const remote = remoteVolumePath(volume)
       filesToCopy.push({ local: volume.source, remote })
       return { ...volume, source: path.join(remoteDir, remote) }
-    })
+    }),
   }))
 
   return {
@@ -117,9 +117,9 @@ export const fixModelForRemote = (
 }
 
 export const addDockerProxyService = (
-  { tunnelOpts, buildDir, port, serviceName, debug }: { 
+  { tunnelOpts, buildDir, port, serviceName, debug }: {
     tunnelOpts: TunnelOpts
-    buildDir: string,
+    buildDir: string
     port: number
     serviceName: string
     debug: boolean
@@ -154,6 +154,6 @@ export const addDockerProxyService = (
         TLS_SERVERNAME: tunnelOpts.tlsServername ?? '',
         DEBUG: debug ? '1' : '',
       },
-    }
+    },
   },
 })

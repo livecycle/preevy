@@ -15,14 +15,14 @@ export default class Up extends DriverCommand<typeof Up> {
       required: false,
       char: 'f',
     }),
-    ['tunnel-url']: Flags.string({ 
-      description: 'Tunnel url, specify ssh://hostname[:port] or ssh+tls://hostname[:port]', 
+    'tunnel-url': Flags.string({
+      description: 'Tunnel url, specify ssh://hostname[:port] or ssh+tls://hostname[:port]',
       char: 't',
-      default: process.env.NODE_ENV 
+      default: process.env.NODE_ENV
         ? 'machines.preview.livecycle.dev'
         : 'machines.preview.local.livecycle.xyz',
     }),
-    ['tls-hostname']: Flags.string({
+    'tls-hostname': Flags.string({
       description: 'Override TLS servername when tunneling via HTTPS',
       required: false,
     }),
@@ -32,20 +32,21 @@ export default class Up extends DriverCommand<typeof Up> {
   }
 
   async run(): Promise<void> {
-    const {args, flags} = await this.parse(Up)
+    const { flags } = await this.parse(Up)
     const { id: envId } = flags
 
     const state = fsState(realFs(this.config.dataDir))
 
-    const { machine } = await up({ 
-      machineDriver: this.machineDriver, 
+    const { machine } = await up({
+      machineDriver: this.machineDriver,
       tunnelOpts: {
         url: flags['tunnel-url'],
         tlsServername: flags['tls-hostname'],
       },
-      envId, 
+      envId,
       composeFiles: flags.file,
-      log: this.logger, state,
+      log: this.logger,
+      state,
       dataDir: this.config.dataDir,
       projectDir: process.cwd(),
     })

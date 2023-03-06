@@ -11,6 +11,9 @@ configs:
     file: ./tls/sslh.conf
 
 services:
+  proxy:
+    environment:
+      BASE_URL: ${BASE_URL:-https://local.livecycle.run:8044}
   sslh:
     image: oorabona/sslh:v2.0-rc1
     command: [sslh-ev, --config=/etc/sslh/config]

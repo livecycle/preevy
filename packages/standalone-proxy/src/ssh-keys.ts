@@ -26,7 +26,6 @@ export async function getSSHKeys({
       console.error("Failed to load SSH host key: " + pkey.message)
       process.exit(1)
     } else {
-      return {sshPrivateKey: privateKeyContents, sshPublicKey: pkey.getPublicSSH().toString("utf-8")}
+      return {sshPrivateKey: privateKeyContents, sshPublicKey: `${pkey.type} ${pkey.getPublicSSH().toString("base64")}`}
     }
-    
   }

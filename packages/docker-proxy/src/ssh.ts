@@ -1,9 +1,8 @@
-import { ChildProcessWithoutNullStreams, spawn } from "child_process"
-import { isEqual } from "lodash-es"
-import { RunningService } from "./docker.js"
+import { ChildProcessWithoutNullStreams, spawn } from 'child_process'
+import { isEqual } from 'lodash-es'
 import shellEscape from 'shell-escape'
-import { TunnelNameResolver } from "./tunnel-name.js"
-import { tryParseJson } from "./json.js"
+import { RunningService } from './docker.js'
+import { TunnelNameResolver } from './tunnel-name.js'
 
 type SshConnectionConfig = {
   hostname: string
@@ -21,16 +20,24 @@ export const parseSshUrl = (s: string): SshConnectionConfig => {
   }
 }
 
-const calcSshArgs = ({ 
-  config: { hostname, port, isTls }, 
+const calcSshArgs = ({
+  config: { hostname, port, isTls },
   serverPublicKey,
   debug,
-}: { config: SshConnectionConfig, serverPublicKey?: string, debug: boolean }) => {
+}: {
+  config: SshConnectionConfig
+  serverPublicKey?: string
+  debug: boolean
+}) => {
   const args = [
-    '-o', 'ExitOnForwardFailure=yes',
-    '-o', 'ServerAliveCountMax=2',
-    '-o', 'ServerAliveInterval=20',
-    '-o', 'PubkeyAcceptedKeyTypes +ssh-rsa'
+    '-o',
+    'ExitOnForwardFailure=yes',
+    '-o',
+    'ServerAliveCountMax=2',
+    '-o',
+    'ServerAliveInterval=20',
+    '-o',
+    'PubkeyAcceptedKeyTypes +ssh-rsa',
   ]
 
   const env: Record<string, string> = {}
@@ -41,14 +48,19 @@ const calcSshArgs = ({
 
   if (serverPublicKey) {
     env.SSH_SERVER_PUBLIC_KEY = serverPublicKey
-    args.push('-o', `KnownHostsCommand /bin/sh -c 'echo [%h]:%p ssh-rsa $SSH_SERVER_PUBLIC_KEY'`)
+    args.push('-o', 'KnownHostsCommand /bin/sh -c \'echo [%h]:%p ssh-rsa $SSH_SERVER_PUBLIC_KEY\'')
   } else {
     console.warn('server public key not given, will not verify host key')
     args.push('-o', 'StrictHostKeyChecking=no')
   }
 
   if (isTls) {
-    args.push('-o', `ProxyCommand openssl s_client -quiet -verify_quiet -servername ${process.env.TLS_SERVERNAME ?? '%h'} -connect %h:%p`)
+    args.push(
+      '-o',
+      `ProxyCommand openssl s_client -quiet -verify_quiet -servername ${
+        process.env.TLS_SERVERNAME ?? '%h'
+      } -connect %h:%p`
+    )
   }
 
   args.push('-p', String(port))
@@ -56,18 +68,18 @@ const calcSshArgs = ({
   return { args, env }
 }
 
-const hasClientId = (
-  o: unknown,
-): o is { clientId: string } => Boolean(
-  o && typeof o === 'object' && 'clientId' in o && typeof o.clientId === 'string'
-)
-
 const clientIdRe = /{\s*"clientId"\s*:\s*"([^"]+)"/
 const extractClientId = (s: string) => s.match(clientIdRe)?.[1]
 
-const sshClient = ({ serverPublicKey, sshUrl, debug, tunnelNameResolver, onError }: { 
-  serverPublicKey?: string,
-  sshUrl: string,
+const sshClient = ({
+  serverPublicKey,
+  sshUrl,
+  debug,
+  tunnelNameResolver,
+  onError,
+}: {
+  serverPublicKey?: string
+  sshUrl: string
   debug: boolean
   tunnelNameResolver: TunnelNameResolver
   onError: (err: Error) => void
@@ -76,18 +88,13 @@ const sshClient = ({ serverPublicKey, sshUrl, debug, tunnelNameResolver, onError
   const { args: sshArgs, env } = calcSshArgs({ config: connectionConfig, serverPublicKey, debug })
 
   const startSsh = (
-    services: RunningService[],
-  ): Promise<{ sshProcess: ChildProcessWithoutNullStreams, clientId: string }> => {
-    const routeParams = services.map(
-      s => tunnelNameResolver(s).map(({ port, tunnel }) => ['-R', `/${tunnel}:${s.name}:${port}`])
-    ).flat(2)
+    services: RunningService[]
+  ): Promise<{ sshProcess: ChildProcessWithoutNullStreams; clientId: string }> => {
+    const routeParams = services
+      .map(s => tunnelNameResolver(s).map(({ port, tunnel }) => ['-R', `/${tunnel}:${s.name}:${port}`]))
+      .flat(2)
 
-    const args = [
-      '-nT',
-      ...routeParams,
-      ...sshArgs,
-      'hello',
-    ]
+    const args = ['-nT', ...routeParams, ...sshArgs, 'hello']
 
     console.log(`spawning: ssh ${shellEscape(args)}`)
     const sshProcess = spawn('ssh', args, { env: { ...process.env, ...env } })

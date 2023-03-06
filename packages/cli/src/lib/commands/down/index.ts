@@ -1,19 +1,17 @@
-import { asyncMap, asyncToArray } from "iter-tools-es";
-import { Logger } from "../../../log";
-import { Machine, MachineDriver } from "../../machine";
-import { PersistentState } from "../../state";
+import { asyncMap, asyncToArray } from 'iter-tools-es'
+import { Logger } from '../../../log'
+import { Machine, MachineDriver } from '../../machine'
+import { PersistentState } from '../../state'
 
 const down = async ({
   machineDriver,
-  state,
-  log,
   envIds,
-  throwOnNotFound
-}: { 
-  machineDriver: MachineDriver,
-  state: PersistentState,
-  log: Logger,
-  envIds: string[],
+  throwOnNotFound,
+}: {
+  machineDriver: MachineDriver
+  state: PersistentState
+  log: Logger
+  envIds: string[]
   throwOnNotFound: boolean
 }): Promise<(Machine & { envId: string })[]> => {
   const machines = await asyncToArray(asyncMap(async envId => {
@@ -22,7 +20,7 @@ const down = async ({
       if (throwOnNotFound) {
         throw new Error(`Machine for ${envId} not found`)
       }
-      return
+      return undefined
     }
     await machineDriver.removeMachine(machine.providerId)
     return { ...machine, envId }

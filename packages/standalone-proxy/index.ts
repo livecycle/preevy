@@ -1,6 +1,6 @@
 import { promisify } from 'util'
 import { app as createApp } from './src/app'
-import { numberFromEnv } from './src/env'
+import { numberFromEnv, requiredEnv } from './src/env'
 import { inMemoryPreviewEnvStore } from './src/preview-env'
 import { sshServer as createSshServer } from './src/ssh-server'
 import { getSSHKeys } from './src/ssh-keys'
@@ -16,7 +16,16 @@ const {sshPrivateKey, sshPublicKey} = await getSSHKeys({
 const PORT = numberFromEnv('PORT') || 3000
 const SSH_PORT = numberFromEnv('SSH_PORT') || 2222
 const LISTEN_HOST = '0.0.0.0'
-  
+const BASE_URL = (() => {
+  const result = new URL(requiredEnv('BASE_URL'))
+  if (result.pathname !== '/' || result.search || result.username || result.password || result.hash) {
+    throw new Error(`Invalid URL: ${result} - cannot specify path, search, username, password, or hash`)
+  }
+  return { hostname: result.hostname, port: result.port, protocol: result.protocol }
+})()
+
+type BaseUrl = typeof BASE_URL
+
 const envStore = inMemoryPreviewEnvStore({
   test: {
     target: 'http://3.73.126.120',
@@ -31,6 +40,10 @@ const tunnelName = (clientId: string, remotePath: string) => {
   return `${serviceName}-${clientId}`
 }
 
+const tunnelUrl = ({ hostname, protocol, port }: BaseUrl, clientId: string, tunnel: string) => new URL(
+  `${protocol}//${tunnelName(clientId, tunnel)}.${hostname}:${port}`
+).toString()
+
 const sshServer = createSshServer({
   log: sshLogger,
   sshPrivateKey,
@@ -41,9 +54,17 @@ const sshServer = createSshServer({
     await envStore.set(key, { target: localSocket })
   },
   onPipeDestroyed: async (clientId, remotePath) => {
-    await envStore.delete(tunnelName(clientId, remotePath))
+    const key = tunnelName(clientId, remotePath);
+    sshLogger.debug('deleting tunnel %s', key)
+    await envStore.delete(key)
   },
-  onHello: clientId => JSON.stringify({ clientId }) + '\r\n',
+  onHello: (clientId, tunnels) => JSON.stringify({ 
+    clientId,
+    tunnels: Object.fromEntries(tunnels.map(tunnel => [
+      tunnel, 
+      tunnelUrl(BASE_URL, clientId, tunnel),
+    ])),
+  }) + '\r\n',
 })
   .listen(SSH_PORT, LISTEN_HOST, () => {
     app.log.debug('ssh server listening on port %j', SSH_PORT)

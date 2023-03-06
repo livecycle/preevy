@@ -13,8 +13,8 @@ const rewriteUrl = ({ url, headers: { host } }: RawRequestDefaultExpression): st
     throw new InternalServerError('no host header in request')
   }
 
-  const target = host.split('.')[0]
-  if (target === host) {
+  const target = host.split('.', 1)[0]
+  if (!target.includes('-')) {
     return url
   }
 

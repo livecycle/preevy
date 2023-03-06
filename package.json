@@ -2,5 +2,20 @@
   "private": true,
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "husky": "^8.0.0",
+    "lint-staged": "^13.1.2",
+    "lodash": "^4.17.21"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --cache --fix"
+    ]
+  },
+  "scripts": {
+    "lint": "yarn workspaces run lint",
+    "prepare": "husky install"
+  }
 }
