@@ -1,8 +1,11 @@
-import { ChildProcessWithoutNullStreams, spawn } from 'child_process'
-import { isEqual } from 'lodash-es'
-import shellEscape from 'shell-escape'
+import tls, { TLSSocket } from 'tls'
+import net from 'net'
+import ssh2, { ParsedKey } from 'ssh2'
+import { inspect } from 'util'
 import { RunningService } from './docker.js'
 import { TunnelNameResolver } from './tunnel-name.js'
+import * as maps from './maps.js'
+import { tryParseJson } from './json.js'
 
 type SshConnectionConfig = {
   hostname: string
@@ -20,143 +23,233 @@ export const parseSshUrl = (s: string): SshConnectionConfig => {
   }
 }
 
-const calcSshArgs = ({
-  config: { hostname, port, isTls },
-  serverPublicKey,
-  debug,
-}: {
-  config: SshConnectionConfig
-  serverPublicKey?: string
-  debug: boolean
-}) => {
-  const args = [
-    '-o',
-    'ExitOnForwardFailure=yes',
-    '-o',
-    'ServerAliveCountMax=2',
-    '-o',
-    'ServerAliveInterval=20',
-    '-o',
-    'PubkeyAcceptedKeyTypes +ssh-rsa',
-  ]
-
-  const env: Record<string, string> = {}
-
-  if (debug) {
-    args.push('-v')
-  }
-
-  if (serverPublicKey) {
-    env.SSH_SERVER_PUBLIC_KEY = serverPublicKey
-    args.push('-o', 'KnownHostsCommand /bin/sh -c \'echo [%h]:%p ssh-rsa $SSH_SERVER_PUBLIC_KEY\'')
-  } else {
-    console.warn('server public key not given, will not verify host key')
-    args.push('-o', 'StrictHostKeyChecking=no')
-  }
-
-  if (isTls) {
-    args.push(
-      '-o',
-      `ProxyCommand openssl s_client -quiet -verify_quiet -servername ${
-        process.env.TLS_SERVERNAME ?? '%h'
-      } -connect %h:%p`
-    )
-  }
-
-  args.push('-p', String(port))
-  args.push(hostname)
-  return { args, env }
+type HelloResponse = {
+  clientId: string
+  tunnels: Record<string, string>
 }
 
-const clientIdRe = /{\s*"clientId"\s*:\s*"([^"]+)"/
-const extractClientId = (s: string) => s.match(clientIdRe)?.[1]
+export type Tunnel = {
+  project: string
+  service: string
+  ports: Record<number, string[]>
+}
 
-const sshClient = ({
+export type SshState = {
+  clientId: string
+  tunnels: Tunnel[]
+}
+
+const connectTls = (
+  { hostname: host, port }: Pick<SshConnectionConfig, 'hostname' | 'port'>
+) => new Promise<TLSSocket>((resolve, reject) => {
+  const socket: TLSSocket = tls.connect({
+    ALPNProtocols: ['ssh'],
+    host,
+    port,
+  }, () => resolve(socket))
+  socket.on('error', reject)
+})
+
+const parseKey = (...args: Parameters<typeof ssh2.utils.parseKey>): ParsedKey => {
+  const parsedKey = ssh2.utils.parseKey(...args)
+  if (!('verify' in parsedKey)) {
+    throw new Error(`Could not parse key: ${inspect(parsedKey)}`)
+  }
+  return parsedKey
+}
+
+const hostVerifier = (serverPublicKey: string) => {
+  const serverPublicKeyParsed = parseKey(serverPublicKey)
+
+  return (key: Buffer) => {
+    const parsedKey = parseKey(key)
+    const validationResult = serverPublicKeyParsed.getPublicPEM() === parsedKey.getPublicPEM()
+    console.log('hostVerifier result', validationResult)
+    return validationResult
+  }
+}
+
+const sshClient = async ({
   serverPublicKey,
+  clientPrivateKey,
   sshUrl,
-  debug,
+  username,
   tunnelNameResolver,
   onError,
 }: {
   serverPublicKey?: string
+  clientPrivateKey: string
   sshUrl: string
-  debug: boolean
+  username: string
   tunnelNameResolver: TunnelNameResolver
   onError: (err: Error) => void
 }) => {
   const connectionConfig = parseSshUrl(sshUrl)
-  const { args: sshArgs, env } = calcSshArgs({ config: connectionConfig, serverPublicKey, debug })
 
-  const startSsh = (
-    services: RunningService[]
-  ): Promise<{ sshProcess: ChildProcessWithoutNullStreams; clientId: string }> => {
-    const routeParams = services
-      .map(s => tunnelNameResolver(s).map(({ port, tunnel }) => ['-R', `/${tunnel}:${s.name}:${port}`]))
-      .flat(2)
+  const ssh = new ssh2.Client()
 
-    const args = ['-nT', ...routeParams, ...sshArgs, 'hello']
+  type ExistingForward = { service: RunningService; host: string; port: number; sockets: Set<net.Socket> }
 
-    console.log(`spawning: ssh ${shellEscape(args)}`)
-    const sshProcess = spawn('ssh', args, { env: { ...process.env, ...env } })
+  const existingForwards = new Map<string, ExistingForward>()
+  const forwardKey = (socketPath: string) => socketPath.replace(/^\//, '')
 
-    sshProcess.stderr.pipe(process.stderr)
-    sshProcess.stdout.pipe(process.stdout)
+  ssh.on('unix connection', ({ socketPath }, accept, reject) => {
+    const key = forwardKey(socketPath)
+    const forward = existingForwards.get(key)
+    if (!forward) {
+      console.error(`no such unix connection: ${key}`)
+      reject()
+      return
+    }
 
-    return new Promise((resolve, reject) => {
-      sshProcess.on('exit', (code, signal) => {
-        const message = `ssh process ${sshProcess.pid} exited with code ${code}${signal ? `and signal ${signal}` : ''}`
-        if (!sshProcess.killed && code !== 0) {
-          const err = new Error(message)
-          reject(err)
-          onError(err)
-          return
-        }
-        console.debug(message)
+    const { host, port, sockets } = forward
+    console.log(`forwarding ${socketPath} to ${host}:${port}`)
+
+    const localServiceSocket = net.connect({ host, port }, () => {
+      sockets.add(localServiceSocket)
+      const channel = accept()
+      channel.pipe(localServiceSocket).pipe(channel)
+      channel.on('close', () => localServiceSocket.destroy())
+      localServiceSocket.on('close', () => {
+        sockets.delete(localServiceSocket)
+        channel.close()
       })
-
-      // the "hello" response might be split between data chunks and prefixed or suffixed with other output
-      let stdOutData = Buffer.from([])
-      const clientIdGetter = (data: Buffer) => {
-        stdOutData = Buffer.concat([stdOutData, data])
-        const clientId = extractClientId(stdOutData.toString('utf-8'))
-        if (clientId) {
-          console.log('got clientId', clientId)
-          stdOutData = Buffer.from([])
-          sshProcess.removeListener('data', clientIdGetter)
-          resolve({ sshProcess, clientId })
-        }
-      }
-
-      sshProcess.stdout.on('data', clientIdGetter)
-
-      console.log(`started ssh process ${sshProcess.pid}`)
     })
+    localServiceSocket.on('error', reject)
+  })
+
+  const createForward = (
+    service: RunningService,
+    tunnel: string,
+    host: string,
+    port: number,
+  ) => new Promise<void>((resolve, reject) => {
+    ssh.openssh_forwardInStreamLocal(`/${tunnel}`, err => {
+      if (err) {
+        console.error(`error creating forward ${tunnel}`, err)
+        reject(err)
+      }
+      console.log('created forward', tunnel)
+      existingForwards.set(tunnel, { service, host, port, sockets: new Set() })
+      resolve()
+    })
+  })
+
+  const destroyForward = (tunnel: string) => new Promise<void>((resolve, reject) => {
+    const forward = existingForwards.get(tunnel)
+    if (!forward) {
+      const message = `no such forward: ${tunnel}`
+      console.error(message)
+      reject(new Error(message))
+      return
+    }
+
+    const { sockets } = forward
+    sockets.forEach(socket => socket.end())
+
+    ssh.openssh_unforwardInStreamLocal(`/${tunnel}`, () => {
+      console.log('destroyed forward', tunnel)
+      existingForwards.delete(tunnel)
+      resolve()
+    })
+  })
+
+  const execHello = () => new Promise<HelloResponse>((resolve, reject) => {
+    ssh.exec('hello', (err, stream) => {
+      if (err) {
+        console.error(`error running hello: ${err}`)
+        reject(err)
+        return
+      }
+      let buf = Buffer.from([])
+      stream.stdout.on('data', (data: Buffer) => {
+        console.log('got data', data?.toString())
+        buf = Buffer.concat([buf, data])
+        const obj = tryParseJson(buf.toString()) as HelloResponse | undefined
+        if (obj) {
+          console.log('got hello response', obj)
+          resolve(obj)
+          stream.close()
+        }
+      })
+    })
+  })
+
+  const tunnelsFromHelloResponse = (helloTunnels: HelloResponse['tunnels']): Tunnel[] => {
+    const serviceKey = ({ name, project }: RunningService) => `${name}/${project}`
+
+    const r = Object.entries(helloTunnels).map(([socketPath, url]) => ({ socketPath, url }))
+      .reduce(
+        (res, { socketPath, url }) => {
+          const key = forwardKey(socketPath)
+          const forward = existingForwards.get(key)
+          if (!forward) {
+            throw new Error(`no such forward: ${key}`)
+          }
+          const { service, port } = forward;
+          ((res[serviceKey(service)] ||= {
+            service: service.name,
+            project: service.project,
+            ports: {},
+          }).ports[port] ||= []).push(url)
+          return res
+        },
+        {} as Record<string, Tunnel>,
+      )
+
+    return Object.values(r)
   }
 
-  let currentSshProcess: ChildProcessWithoutNullStreams | undefined
-  let currentServices: RunningService[] = []
-  let clientId: string
+  const stateFromHelloResponse = ({ clientId, tunnels }: HelloResponse): SshState => ({
+    clientId, tunnels: tunnelsFromHelloResponse(tunnels),
+  })
 
-  return {
-    updateTunnels: async (services: RunningService[]): Promise<{ clientId: string }> => {
-      if (currentSshProcess) {
-        if (isEqual(services, currentServices)) {
-          console.log('no changes, ignoring')
-          return { clientId }
-        }
+  let state: SshState
 
-        console.log(`killing current ssh process ${currentSshProcess.pid}`)
-        currentSshProcess.kill()
+  const result = {
+    updateTunnels: async (services: RunningService[]): Promise<SshState> => {
+      const forwards = new Map(
+        services.flatMap(service => tunnelNameResolver(service)
+          .map(({ port, tunnel }) => ([tunnel, { host: service.name, port, service }])))
+      )
+
+      const inserts = maps.difference(forwards, existingForwards)
+      const deletes = maps.difference(existingForwards, forwards)
+
+      const haveChanges = inserts.size > 0 || deletes.size > 0
+
+      await Promise.all([
+        [...inserts.entries()].map(([tunnel, { host, port, service }]) => createForward(service, tunnel, host, port)),
+        [...deletes.entries()].map(([tunnel]) => destroyForward(tunnel)),
+      ])
+
+      if (haveChanges || !state) {
+        state = stateFromHelloResponse(await execHello())
       }
 
-      currentServices = services
-      const r = await startSsh(services)
-      currentSshProcess = r.sshProcess
-      clientId = r.clientId
-
-      return { clientId }
+      return state
     },
   }
+
+  const sock = connectionConfig.isTls ? await connectTls(connectionConfig) : undefined
+
+  return new Promise<typeof result>((resolve, reject) => {
+    ssh.on('ready', () => resolve(result))
+    ssh.on('error', err => {
+      reject(err)
+      onError(err)
+    })
+    ssh.connect({
+      sock,
+      username,
+      host: connectionConfig.hostname,
+      port: connectionConfig.port,
+      privateKey: clientPrivateKey,
+      keepaliveInterval: 20000,
+      keepaliveCountMax: 3,
+      hostVerifier: serverPublicKey ? hostVerifier(serverPublicKey) : undefined,
+    })
+  })
 }
 
 export default sshClient
