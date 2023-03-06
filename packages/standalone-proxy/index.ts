@@ -1,23 +1,21 @@
-import path from 'path'
-import fs from 'fs'
-import url from 'url'
 import { promisify } from 'util'
 import { app as createApp } from './src/app'
 import { numberFromEnv, requiredEnv } from './src/env'
 import { inMemoryPreviewEnvStore } from './src/preview-env'
 import { sshServer as createSshServer } from './src/ssh-server'
+import { getSSHKeys } from './src/ssh-keys'
+import url from 'url'
+import path from 'path'
+
+const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
+
+const {sshPrivateKey, sshPublicKey} = await getSSHKeys({
+  defaultKeyLocation: path.join(__dirname, "./ssh/ssh_host_key")
+})
 
 const PORT = numberFromEnv('PORT') || 3000
 const SSH_PORT = numberFromEnv('SSH_PORT') || 2222
 const LISTEN_HOST = '0.0.0.0'
-
-const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
-
-const HOST_KEY_FILENAME = path.join(__dirname, 'ssh', 'ssh_host_key')
-const [sshPrivateKey, sshPublicKey] = await Promise.all([HOST_KEY_FILENAME, `${HOST_KEY_FILENAME}.pub`]
-  .map(f => fs.promises.readFile(f, 'utf8'))
-)
-
 const BASE_URL = (() => {
   const result = new URL(requiredEnv('BASE_URL'))
   if (result.pathname !== '/' || result.search || result.username || result.password || result.hash) {

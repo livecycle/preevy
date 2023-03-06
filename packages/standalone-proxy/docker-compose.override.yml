@@ -1,0 +1,8 @@
+version: '3.7'
+
+services:
+  proxy:
+    volumes:
+      - ./ssh:/app/ssh
+      - ./src:/app/src
+      - ./index.ts:/app/index.ts
