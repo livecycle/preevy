@@ -43,7 +43,7 @@ const tunnelName = (clientId: string, remotePath: string) => {
 }
 
 const tunnelUrl = ({ hostname, protocol, port }: BaseUrl, clientId: string, tunnel: string) => new URL(
-  `${protocol}//${tunnelName(clientId, tunnel)}-${hostname}:${port}`
+  `${protocol}//${tunnelName(clientId, tunnel)}.${hostname}:${port}`
 ).toString()
 
 const sshServer = createSshServer({

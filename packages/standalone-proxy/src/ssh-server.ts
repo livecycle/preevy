@@ -3,7 +3,7 @@ import { FastifyBaseLogger } from 'fastify/types/logger'
 import net from 'net'
 import path from 'path'
 import ssh2 from 'ssh2'
-import os from 'os'
+import { inspect } from 'util'
 
 const idFromPublicSsh = (key: Buffer) =>
   crypto.createHash('sha1').update(key).digest('base64url').replace(/[_-]/g, '').slice(0, 8).toLowerCase()
@@ -24,7 +24,7 @@ export const sshServer = ({
   onHello: (clientId: string, tunnels: string[]) => string
 }) => new ssh2.Server(
   {
-    //debug: (x)=> log.debug(x),
+    // debug: (x)=> log.debug(x),
     hostKeys: [sshPrivateKey],
   },
   (client) => {
@@ -32,6 +32,7 @@ export const sshServer = ({
     const tunnels = new Set<string>()
 
     client
+      .on('error', (err) => log.error(`client error: %j`, inspect(err)))
       .on('authentication', (ctx) => {
         log.debug('authentication: %j', ctx)
         if (ctx.method !== 'publickey') {
@@ -55,6 +56,7 @@ export const sshServer = ({
         }
 
         clientId = idFromPublicSsh(keyOrError.getPublicSSH())
+        log.debug('accepting clientId %j', clientId)
         ctx.accept()
       })
       .on('request', (accept, reject, name, info) => {
@@ -135,13 +137,14 @@ export const sshServer = ({
         const session = accept()
 
         session.on('exec', (accept, reject, info) => {
+          log.debug('exec %j', info)
           if (info.command !== 'hello') {
+            log.error('invalid exec command %j', info.command)
             reject()
             return
           }
           const channel = accept()
           channel.stdout.write(onHello?.(clientId, [...tunnels]))
-          channel.stdout.write(os.EOL)
           channel.stdout.exit(0)
           if (tunnels.size === 0) {
             channel.close()
