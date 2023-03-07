@@ -4,25 +4,32 @@ import Docker from 'dockerode'
 import { inspect } from 'node:util'
 import createDockerClient, { RunningService } from './src/docker.js'
 import createWebServer from './src/web.js'
-import createSshClient, { SshState } from './src/ssh.js'
+import { SshState, sshClient as createSshClient, connectionChecker } from './src/ssh/index.js'
 import { requiredEnv } from './src/env.js'
 import { tunnelNameResolver } from './src/tunnel-name.js'
+import { SshClientOpts } from './src/ssh/base-client.js'
 
 const main = async () => {
-  const docker = new Docker({ socketPath: '/var/run/docker.sock' })
-  const dockerClient = createDockerClient({ docker, debounceWait: 500 })
-
-  const sshClient = await createSshClient({
+  const sshConfig: SshClientOpts = {
     onError: err => {
       console.error(err)
       process.exit(1)
     },
     username: process.env.USER ?? 'foo',
     clientPrivateKey: fs.readFileSync(path.join(process.env.HOME || '/root', '.ssh', 'id_rsa'), { encoding: 'utf8' }),
-    tunnelNameResolver,
     sshUrl: requiredEnv('SSH_URL'),
     serverPublicKey: process.env.SSH_SERVER_PUBLIC_KEY,
-  })
+  }
+
+  if (process.argv.includes('check')) {
+    console.log(JSON.stringify(await connectionChecker(sshConfig)))
+    process.exit(0)
+  }
+
+  const docker = new Docker({ socketPath: '/var/run/docker.sock' })
+  const dockerClient = createDockerClient({ docker, debounceWait: 500 })
+
+  const sshClient = await createSshClient({ ...sshConfig, tunnelNameResolver })
 
   let services: RunningService[]
   let state: SshState

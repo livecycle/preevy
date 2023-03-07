@@ -1,5 +1,5 @@
 import http from 'node:http'
-import { SshState } from './ssh.js'
+import { SshState } from './ssh/index.js'
 
 const createWebServer = ({
   getSshState,
