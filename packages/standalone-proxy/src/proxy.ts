@@ -23,7 +23,7 @@ export const proxyRoutes: FastifyPluginAsync<{ envStore: PreviewEnvStore }> = as
     method: ALL_METHODS,
     handler: async (req, res) => {
       const { targetHost, ['*']: url } = req.params
-      req.log.debug('proxy request: %j', { targetHost, url })
+      req.log.debug('proxy request: %j', { targetHost, url, params: req.params })
       const env = await envStore.get(targetHost)
 
       if (!env) {
