@@ -106,7 +106,7 @@ export const fixModelForRemote = (
           throw new Error(`Unsupported volume type: ${volume.type} in service ${serviceName}`)
         }
 
-        if (volume.source === "/var/run/docker.sock") {
+        if (volume.source === '/var/run/docker.sock') {
           return volume
         }
 
