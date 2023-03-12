@@ -1,7 +1,5 @@
-import { Args, Flags, ux } from '@oclif/core'
-import { mapKeys, pickBy } from 'lodash'
+import { Args, ux } from '@oclif/core'
 import DriverCommand from '../../driver-command'
-import { DriverName } from '../../lib/machine'
 
 export default class RemoveProfile extends DriverCommand<typeof RemoveProfile> {
     static description = 'Remove a profile'
