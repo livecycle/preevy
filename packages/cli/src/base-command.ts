@@ -1,5 +1,11 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
 import { FlagInput } from '@oclif/core/lib/interfaces/parser'
+import path from 'path'
+import { ProfileManager, profileManager } from './lib/profile'
+import { createStore } from './lib/store'
+import { realFs } from './lib/store/fs'
+import { s3fs } from './lib/store/s3'
+import { tarSnapshotter } from './lib/store/tar'
 import { commandLogger, Logger, LogLevel, logLevels } from './log'
 
 export type InferredFlags<T> = T extends FlagInput<infer F> ? F & {
@@ -14,7 +20,7 @@ export type InferredFlags<T> = T extends FlagInput<infer F> ? F & {
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof BaseCommand['baseFlags'] & T['flags']>
 export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>
 
-abstract class BaseCommand<T extends typeof Command> extends Command {
+abstract class BaseCommand<T extends typeof Command=typeof Command> extends Command {
   static baseFlags = {
     'log-level': Flags.custom<LogLevel>({
       summary: 'Specify level for logging.',
@@ -54,6 +60,24 @@ abstract class BaseCommand<T extends typeof Command> extends Command {
 
   public logToStderr(message?: string | undefined, ...args: unknown[]): void {
     this.stdErrLogger.info(message, ...args)
+  }
+
+  #profileManger: ProfileManager | undefined
+  get profileManager(): ProfileManager {
+    if (!this.#profileManger) {
+      const root = path.join(this.config.dataDir, 'v2')
+      this.debug('init profile manager at:', root)
+      this.#profileManger = profileManager(root, async location => {
+        const { protocol, hostname } = new URL(location)
+        if (protocol === 'local:') {
+          return createStore(realFs(path.join(root, 'profiles', hostname)), tarSnapshotter())
+        } if (protocol === 's3:') {
+          return createStore(await s3fs(location), tarSnapshotter())
+        }
+        throw new Error(`Unsupported blob prefix: ${protocol}`)
+      })
+    }
+    return this.#profileManger
   }
 }
 
