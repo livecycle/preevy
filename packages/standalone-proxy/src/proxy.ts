@@ -12,6 +12,9 @@ export const proxyRoutes: FastifyPluginAsync<{ envStore: PreviewEnvStore }> = as
 
   app.addHook('onClose', () => proxy.close())
 
+  app.removeAllContentTypeParsers()
+  app.addContentTypeParser("*", (_req, _payload, done) => {done(null)})
+
   app.route<{
     Params: { targetHost: string; ['*']: string }
   }>({

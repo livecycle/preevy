@@ -24,8 +24,8 @@ const rewriteUrl = ({ url, headers: { host } }: RawRequestDefaultExpression): st
 export const app = ({ envStore, sshPublicKey }: { 
   envStore: PreviewEnvStore
   sshPublicKey: string
-}) =>{
-  const fastify = Fastify({
+}) =>
+  Fastify({
     logger: appLoggerFromEnv(),
     rewriteUrl,
   })
@@ -35,10 +35,6 @@ export const app = ({ envStore, sshPublicKey }: {
     .get('/ssh-public-key', async () => sshPublicKey)
     .register(proxyRoutes, { prefix: '/proxy/', envStore })
 
-  fastify.addContentTypeParser("*", (_req, _payload, done) => {done(null)})
-
-  return fastify;
-}
   
     
     
