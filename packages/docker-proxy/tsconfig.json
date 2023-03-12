@@ -3,9 +3,9 @@
     "lib": [
       "ES2022"
     ],
-    "module": "ES2022",
+    "module": "CommonJS",
     "target": "ES2022",
-    "moduleResolution": "node16",
+    "moduleResolution": "node",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -20,12 +20,9 @@
     "noUnusedParameters": false,
     "noImplicitAny": true,
     "noImplicitThis": true,
-    "strictNullChecks": true
+    "strictNullChecks": true,
+    "composite": true,
   },
 
-  "include": ["index.ts", "src/**/*"],
-
-  "ts-node": {
-    "esm": true,
-  }
+  "include": ["index.ts", "main.ts", "src/**/*"],
 }

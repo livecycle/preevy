@@ -9,7 +9,7 @@
     "@sinclair/typebox": "^0.25.21",
     "fastify": "^4.12.0",
     "http-proxy": "^1.18.1",
-    "pino-pretty": "^9.1.1",
+    "pino-pretty": "^9.4.0",
     "ssh2": "^1.11.0",
     "ts-node": "^10.9.1"
   },

@@ -1,8 +1,9 @@
 import net from 'net'
-import { RunningService } from '../docker.js'
-import { TunnelNameResolver } from '../tunnel-name.js'
-import * as maps from '../maps.js'
-import { baseSshClient, HelloResponse, knownKeyHostVerifier, SshClientOpts } from './base-client.js'
+import { inspect } from 'util'
+import { RunningService } from '../docker'
+import { TunnelNameResolver } from '../tunnel-name'
+import * as maps from '../maps'
+import { baseSshClient, HelloResponse, SshClientOpts } from './base-client'
 
 export type Tunnel = {
   project: string
@@ -16,21 +17,17 @@ export type SshState = {
 }
 
 export const sshClient = async ({
-  serverPublicKey,
-  clientPrivateKey,
-  sshUrl,
-  username,
+  log,
+  connectionConfig,
   tunnelNameResolver,
   onError,
-}: Pick<SshClientOpts, 'clientPrivateKey' | 'sshUrl' | 'username' | 'onError' | 'serverPublicKey'> & {
+}: Pick<SshClientOpts, 'connectionConfig' | 'onError' | 'log'> & {
   tunnelNameResolver: TunnelNameResolver
 }) => {
   const { ssh, execHello } = await baseSshClient({
-    clientPrivateKey,
-    sshUrl,
-    username,
+    log,
+    connectionConfig,
     onError,
-    hostVerifier: serverPublicKey ? knownKeyHostVerifier(serverPublicKey) : undefined,
   })
 
   type ExistingForward = { service: RunningService; host: string; port: number; sockets: Set<net.Socket> }
@@ -42,13 +39,13 @@ export const sshClient = async ({
     const key = forwardKey(socketPath)
     const forward = existingForwards.get(key)
     if (!forward) {
-      console.error(`no such unix connection: ${key}`)
+      log.error(`no such unix connection: ${key}`)
       reject()
       return
     }
 
     const { host, port, sockets } = forward
-    console.log(`forwarding ${socketPath} to ${host}:${port}`)
+    log.debug(`forwarding ${socketPath} to ${host}:${port}`)
 
     const localServiceSocket = net.connect({ host, port }, () => {
       sockets.add(localServiceSocket)
@@ -71,10 +68,10 @@ export const sshClient = async ({
   ) => new Promise<void>((resolve, reject) => {
     ssh.openssh_forwardInStreamLocal(`/${tunnel}`, err => {
       if (err) {
-        console.error(`error creating forward ${tunnel}`, err)
+        log.error(`error creating forward ${tunnel}: %j`, inspect(err))
         reject(err)
       }
-      console.log('created forward', tunnel)
+      log.debug('created forward %j', tunnel)
       existingForwards.set(tunnel, { service, host, port, sockets: new Set() })
       resolve()
     })
@@ -84,7 +81,7 @@ export const sshClient = async ({
     const forward = existingForwards.get(tunnel)
     if (!forward) {
       const message = `no such forward: ${tunnel}`
-      console.error(message)
+      log.error(message)
       reject(new Error(message))
       return
     }
@@ -93,7 +90,7 @@ export const sshClient = async ({
     sockets.forEach(socket => socket.end())
 
     ssh.openssh_unforwardInStreamLocal(`/${tunnel}`, () => {
-      console.log('destroyed forward', tunnel)
+      log.debug('destroyed forward %j', tunnel)
       existingForwards.delete(tunnel)
       resolve()
     })
@@ -149,6 +146,7 @@ export const sshClient = async ({
 
       if (haveChanges || !state) {
         state = stateFromHelloResponse(await execHello())
+        log.info('tunnel state: %j', state)
       }
 
       return state

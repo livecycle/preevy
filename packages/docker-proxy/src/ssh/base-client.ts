@@ -1,15 +1,37 @@
 import tls, { TLSSocket } from 'tls'
-import ssh2, { ParsedKey, VerifyCallback } from 'ssh2'
+import ssh2, { ParsedKey } from 'ssh2'
 import { inspect } from 'util'
-import { tryParseJson } from '../json.js'
+import { tryParseJson } from '../json'
+import { Logger } from '../log'
+import { formatPublicKey, parseKey } from './keys'
 
-export type SshConnectionConfig = {
+export type SshBaseConnectionConfig = {
   hostname: string
   port: number
-  isTls: boolean
+  username: string
+  clientPrivateKey: string | Buffer
+  insecureSkipVerify: boolean
+  knownServerPublicKeys: (string | Buffer)[]
 }
 
-export const parseSshUrl = (s: string): SshConnectionConfig => {
+export type SshTlsConnectionConfig = SshBaseConnectionConfig & {
+  isTls: true
+  tlsServerName?: string
+}
+
+export type SshPlainConnectionConfig = SshBaseConnectionConfig & {
+  isTls: false
+}
+
+export type SshConnectionConfig = SshTlsConnectionConfig | SshPlainConnectionConfig
+
+export const formatSshConnectionConfig = (connectionConfig: SshConnectionConfig) => ({
+  ...connectionConfig,
+  clientPrivateKey: '*** REDACTED ***',
+  clientPublicKey: formatPublicKey(connectionConfig.clientPrivateKey),
+})
+
+export const parseSshUrl = (s: string): Pick<SshConnectionConfig, 'hostname' | 'port' | 'isTls'> => {
   const u = new URL(s)
   const isTls = Boolean(u.protocol.match(/(tls)|(https)/))
   return {
@@ -25,9 +47,11 @@ export type HelloResponse = {
 }
 
 const connectTls = (
-  { hostname: host, port }: Pick<SshConnectionConfig, 'hostname' | 'port'>
+  { hostname: host, port, tlsServerName, insecureSkipVerify }: Pick<SshTlsConnectionConfig, 'hostname' | 'port' | 'tlsServerName' | 'insecureSkipVerify'>
 ) => new Promise<TLSSocket>((resolve, reject) => {
   const socket: TLSSocket = tls.connect({
+    servername: tlsServerName,
+    rejectUnauthorized: !insecureSkipVerify,
     ALPNProtocols: ['ssh'],
     host,
     port,
@@ -35,53 +59,41 @@ const connectTls = (
   socket.on('error', reject)
 })
 
-export const parseKey = (...args: Parameters<typeof ssh2.utils.parseKey>): ParsedKey => {
-  const parsedKey = ssh2.utils.parseKey(...args)
-  if (!('verify' in parsedKey)) {
-    throw new Error(`Could not parse key: ${inspect(parsedKey)}`)
-  }
-  return parsedKey
-}
+export const knownKeyHostVerifier = (serverPublicKeys: (string | Buffer)[]) => {
+  const serverPublicKeysParsed = serverPublicKeys.map(k => parseKey(k))
 
-export const knownKeyHostVerifier = (serverPublicKey: string) => {
-  const serverPublicKeyParsed = parseKey(serverPublicKey)
-
-  return async (key: Buffer | ParsedKey) => {
+  return (key: Buffer | ParsedKey) => {
     const parsedKey = parseKey(key)
-    const validationResult = serverPublicKeyParsed.getPublicPEM() === parsedKey.getPublicPEM()
-    console.log('hostVerifier result', validationResult)
-    return validationResult
+    return serverPublicKeysParsed.some(s => s.getPublicPEM() === parsedKey.getPublicPEM())
   }
 }
 
 export type SshClientOpts = {
-  clientPrivateKey: string
-  serverPublicKey?: string
-  sshUrl: string
-  username: string
-  onError: (err: Error) => void
-  hostVerifier?: (key: Buffer, connectionConfig: SshConnectionConfig) => Promise<boolean>
+  log: Logger
+  connectionConfig: SshConnectionConfig
+  onError?: (err: Error) => void
+  onHostKey?: (key: Buffer, isVerified: boolean) => void
 }
 
-export const baseSshClient = async ({ clientPrivateKey, sshUrl, username, onError, hostVerifier }: SshClientOpts) => {
-  const connectionConfig = parseSshUrl(sshUrl)
-
+export const baseSshClient = async (
+  { log, onError, connectionConfig, onHostKey }: SshClientOpts,
+) => {
   const ssh = new ssh2.Client()
 
   const execHello = () => new Promise<HelloResponse>((resolve, reject) => {
     ssh.exec('hello', (err, stream) => {
       if (err) {
-        console.error(`error running hello: ${err}`)
+        log.error('error running hello: %j', inspect(err))
         reject(err)
         return
       }
       let buf = Buffer.from([])
       stream.stdout.on('data', (data: Buffer) => {
-        console.log('got data', data?.toString())
+        log.debug('got data %j', data?.toString())
         buf = Buffer.concat([buf, data])
         const obj = tryParseJson(buf.toString()) as HelloResponse | undefined
         if (obj) {
-          console.log('got hello response', obj)
+          log.debug('got hello response %j', obj)
           resolve(obj)
           stream.close()
         }
@@ -91,25 +103,36 @@ export const baseSshClient = async ({ clientPrivateKey, sshUrl, username, onErro
 
   const result = { ssh, execHello }
 
-  const sock = connectionConfig.isTls ? await connectTls(connectionConfig) : undefined
+  const {
+    isTls, hostname, port, username, clientPrivateKey, insecureSkipVerify, knownServerPublicKeys,
+  } = connectionConfig
+
+  const sock = isTls ? await connectTls(connectionConfig) : undefined
+
+  const hostVerifier = (key: Buffer) => {
+    const isVerified = insecureSkipVerify
+        || (knownKeyHostVerifier(knownServerPublicKeys)(key))
+        || isTls
+
+    onHostKey?.(key, isVerified)
+    return isVerified
+  }
 
   return new Promise<typeof result>((resolve, reject) => {
     ssh.on('ready', () => resolve(result))
     ssh.on('error', err => {
       reject(err)
-      onError(err)
+      onError?.(err)
     })
     ssh.connect({
       sock,
       username,
-      host: connectionConfig.hostname,
-      port: connectionConfig.port,
+      host: hostname,
+      port,
       privateKey: clientPrivateKey,
       keepaliveInterval: 20000,
       keepaliveCountMax: 3,
-      hostVerifier: hostVerifier && (async (key: Buffer, callback: VerifyCallback) => {
-        callback(await hostVerifier(key, connectionConfig))
-      }),
+      hostVerifier,
     })
   })
 }

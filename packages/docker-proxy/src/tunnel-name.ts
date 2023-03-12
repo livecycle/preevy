@@ -1,9 +1,16 @@
+import { RunningService } from './docker'
+
 const concat = (...v: (string | number)[]) => v.join('-')
 const tunnel = (port: number, v: (string | number)[]) => ({ port, tunnel: concat(...v) })
 
-export const tunnelNameResolver = ({ project, name, ports }: { project: string; name: string; ports: number[] }) => [
-  ...ports.map(port => tunnel(port, [name, port, project])),
-  ...(ports.length === 1 ? [tunnel(ports[0], [name, project])] : []),
-]
+export type TunnelNameResolver = (x: Pick<RunningService, 'name' | 'project' | 'ports'>) => {
+  port: number
+  tunnel: string
+}[]
 
-export type TunnelNameResolver = typeof tunnelNameResolver
+export const tunnelNameResolver: TunnelNameResolver = (
+  { project, name, ports }: { project: string; name: string; ports: number[] }
+) => [
+  ...(ports.length === 1 ? [tunnel(ports[0], [name, project])] : []),
+  ...ports.map(port => tunnel(port, [name, port, project])),
+]

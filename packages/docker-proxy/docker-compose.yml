@@ -4,22 +4,24 @@ services:
   preview_proxy:
     build: 
       context: .
-      target: development
       
     restart: always
-    image: preview-proxy
+
     environment: 
       - SSH_URL=${SSH_URL}
+      - TLS_SERVERNAME=${TLS_SERVERNAME}
+      - SSH_PRIVATE_KEY=${SSH_PRIVATE_KEY}
+      - DEBUG=1
+
     volumes:
-      - /root/.ssh:/root/.ssh
       - /var/run/docker.sock:/var/run/docker.sock
 
     ports:
-      - '3000:3000'
+      - 3000
 
-    healthcheck:
-      test: wget --no-verbose --tries=1 --spider http://localhost:3000/healthz || exit 1
-      interval: 10s
-      retries: 4
-      start_period: 20s
-      timeout: 10s
+    # healthcheck:
+    #   test: wget --no-verbose --tries=1 --spider http://localhost:3000/healthz || exit 1
+    #   interval: 10s
+    #   retries: 4
+    #   start_period: 20s
+    #   timeout: 10s

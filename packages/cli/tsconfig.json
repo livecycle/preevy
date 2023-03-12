@@ -13,4 +13,7 @@
     "src/**/*",
     "test/**/*",
   ],
+  "references": [
+    { "path": "../docker-proxy" },
+  ]
 }

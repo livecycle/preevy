@@ -19,7 +19,7 @@ const ensureMachine = async ({
 }) => {
   const getFirstExistingKeyPair = async () => {
     for await (const keyPairName of machineDriver.listKeyPairs()) {
-      const keyPair = await state.sshKeys.read(keyPairName)
+      const keyPair = await state.machineSshKeys.read(keyPairName)
       if (keyPair) {
         return Object.assign(keyPair, { name: keyPairName })
       }
@@ -30,7 +30,7 @@ const ensureMachine = async ({
   const createAndWriteKeyPair = async (): Promise<NamedSshKeyPair> => {
     log.info('Creating key pair')
     const keyPair = await machineDriver.createKeyPair({ envId })
-    await state.sshKeys.write(keyPair.name, keyPair)
+    await state.machineSshKeys.write(keyPair.name, keyPair)
     return keyPair
   }
 
@@ -38,7 +38,7 @@ const ensureMachine = async ({
   const existingMachine = await machineDriver.getMachine({ envId })
 
   if (existingMachine) {
-    const keyPair = await state.sshKeys.read(existingMachine.sshKeyName)
+    const keyPair = await state.machineSshKeys.read(existingMachine.sshKeyName)
     if (keyPair) {
       return { machine: existingMachine, keyPair, installed: true }
     }

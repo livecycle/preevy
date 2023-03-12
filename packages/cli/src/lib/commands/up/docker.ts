@@ -21,7 +21,10 @@ export const wrapWithDockerSocket = (
 
   log.debug(`Local socket: ${localSocket}`)
 
-  Object.keys(process.env).filter(k => k.startsWith('DOCKER_')).forEach(k => { delete process.env[k] })
+  Object.keys(process.env).filter(k => k.startsWith('DOCKER_')).forEach(k => {
+    log.warn(`deleting conflicting env var ${k}`)
+    delete process.env[k]
+  })
 
   process.env.DOCKER_HOST = `unix://${localSocket}`
 

@@ -15,7 +15,7 @@ const ls = async ({
 }>> => {
   const machines = machineDriver.listMachines()
   return asyncMap(
-    async machine => ({ ...machine, haveSshKey: Boolean(await state.sshKeys.read(machine.sshKeyName)) }),
+    async machine => ({ ...machine, haveSshKey: Boolean(await state.machineSshKeys.read(machine.sshKeyName)) }),
     machines,
   )
 }

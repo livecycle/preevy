@@ -33,7 +33,7 @@ const envStore = inMemoryPreviewEnvStore({
 })
 
 const app = createApp({ envStore, sshPublicKey })
-const sshLogger = app.log.child({ component: 'ssh_server' })
+const sshLogger = app.log.child({ name: 'ssh_server' })
 
 const tunnelName = (clientId: string, remotePath: string) => {
   const serviceName = remotePath.replace(/^\//, '')

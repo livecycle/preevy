@@ -1,7 +1,6 @@
 import { mapValues } from 'lodash'
 import path from 'path'
 import { FileToCopy } from './ssh/client'
-import { TunnelOpts } from './ssh/url'
 
 export type ComposeSecretOrConfig = {
   name: string
@@ -33,10 +32,11 @@ type EnvString = `${string}=${string}`
 
 export type ComposeService = {
   build?: ComposeBuild
+  restart?: 'always' | 'on-failure'
   volumes?: ComposeVolume[]
   networks?: string[]
   ports?: ComposePort[]
-  environment?: Record<string, string> | EnvString[]
+  environment?: Record<string, string | undefined> | EnvString[]
 }
 
 export type ComposeModel = {
@@ -48,9 +48,10 @@ export type ComposeModel = {
 }
 
 export const fixModelForRemote = (
-  { remoteDir, localDir }: {
+  { remoteDir, localDir, skipServices = [] }: {
     remoteDir: string
     localDir: string
+    skipServices?: string[]
   },
   model: ComposeModel,
 ): { model: Required<ComposeModel>; filesToCopy: FileToCopy[] } => {
@@ -87,22 +88,29 @@ export const fixModelForRemote = (
     { source }: Pick<ComposeBindVolume, 'source'>,
   ) => path.join(path.join('volumes'), relativePath(source))
 
-  const overrideServices = mapValues(services, (service, serviceName) => ({
-    ...service,
-    volumes: service.volumes?.map(volume => {
-      if (volume.type === 'volume') {
-        return volume
-      }
+  const overrideServices = mapValues(services, (service, serviceName) => {
+    if (skipServices.includes(serviceName)) {
+      return service
+    }
 
-      if (volume.type !== 'bind') {
-        throw new Error(`Unsupported volume type: ${volume.type} in service ${serviceName}`)
-      }
+    return ({
+      ...service,
 
-      const remote = remoteVolumePath(volume)
-      filesToCopy.push({ local: volume.source, remote })
-      return { ...volume, source: path.join(remoteDir, remote) }
-    }),
-  }))
+      volumes: service.volumes?.map(volume => {
+        if (volume.type === 'volume') {
+          return volume
+        }
+
+        if (volume.type !== 'bind') {
+          throw new Error(`Unsupported volume type: ${volume.type} in service ${serviceName}`)
+        }
+
+        const remote = remoteVolumePath(volume)
+        filesToCopy.push({ local: volume.source, remote })
+        return { ...volume, source: path.join(remoteDir, remote) }
+      }),
+    })
+  })
 
   return {
     model: {
@@ -116,44 +124,45 @@ export const fixModelForRemote = (
   }
 }
 
-export const addDockerProxyService = (
-  { tunnelOpts, buildDir, port, serviceName, debug }: {
-    tunnelOpts: TunnelOpts
-    buildDir: string
-    port: number
-    serviceName: string
-    debug: boolean
-  },
-  model: ComposeModel
-): ComposeModel => ({
-  ...model,
-  services: {
-    ...model.services,
-    [serviceName]: {
-      build: {
-        context: buildDir,
-      },
-      networks: Object.keys(model.networks || {}),
-      volumes: [
-        {
-          type: 'bind',
-          source: '/var/run/docker.sock',
-          target: '/var/run/docker.sock',
-        },
-        {
-          type: 'bind',
-          source: '/root/.ssh',
-          target: '/root/.ssh',
-        },
-      ],
-      ports: [
-        { mode: 'ingress', target: port, protocol: 'tcp' },
-      ],
-      environment: {
-        SSH_URL: tunnelOpts.url,
-        TLS_SERVERNAME: tunnelOpts.tlsServername ?? '',
-        DEBUG: debug ? '1' : '',
-      },
-    },
-  },
-})
+// export const addDockerProxyService = (
+//   { tunnelOpts, buildDir, port, serviceName }: {
+//     tunnelOpts: TunnelOpts
+//     buildDir: string
+//     port: number
+//     serviceName: string
+//   },
+//   model: ComposeModel
+// ): ComposeModel => ({
+//   ...model,
+//   services: {
+//     ...model.services,
+//     [serviceName]: {
+//       build: {
+//         context: buildDir,
+//       },
+//       // restart: 'always',
+//       networks: Object.keys(model.networks || {}),
+//       volumes: [
+//         {
+//           type: 'bind',
+//           source: '/var/run/docker.sock',
+//           target: '/var/run/docker.sock',
+//         },
+//         {
+//           type: 'bind',
+//           source: '/root/.ssh',
+//           target: '/root/.ssh',
+//         },
+//       ],
+//       ports: [
+//         { mode: 'ingress', target: port, protocol: 'tcp' },
+//       ],
+//       environment: {
+//         SSH_URL: tunnelOpts.url,
+//         TLS_SERVERNAME: tunnelOpts.tlsServerName,
+//         // eslint-disable-next-line no-template-curly-in-string
+//         SSH_CHECK_ONLY: '${SSH_CHECK_ONLY}',
+//       },
+//     },
+//   },
+// })

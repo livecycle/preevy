@@ -1,0 +1,11 @@
+version: '3.7'
+
+services:
+  preview_proxy:
+    build: 
+      context: .
+      target: development
+    volumes:
+      - ${HOME}/.ssh:/root/.ssh
+
+
