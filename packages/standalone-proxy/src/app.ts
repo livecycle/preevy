@@ -18,7 +18,7 @@ const rewriteUrl = ({ url, headers: { host } }: RawRequestDefaultExpression): st
     return url
   }
 
-  return `/proxy/${target}/${url}`
+  return `/proxy/${target}${url}`
 }
 
 export const app = ({ envStore, sshPublicKey }: { 
@@ -29,8 +29,12 @@ export const app = ({ envStore, sshPublicKey }: {
     logger: appLoggerFromEnv(),
     rewriteUrl,
   })
+    
     .register(fastifyRequestContext)
     .get('/healthz', { logLevel: 'warn' }, async () => 'OK')
     .get('/ssh-public-key', async () => sshPublicKey)
     .register(proxyRoutes, { prefix: '/proxy/', envStore })
+
+  
+    
     
