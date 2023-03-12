@@ -6,9 +6,7 @@ import httpProxy from 'http-proxy'
 const ALL_METHODS = Object.freeze(['DELETE', 'GET', 'HEAD', 'PATCH', 'POST', 'PUT', 'OPTIONS']) as HTTPMethods[]
 
 export const proxyRoutes: FastifyPluginAsync<{ envStore: PreviewEnvStore }> = async (app, { envStore }) => {
-  const proxy = httpProxy.createProxy({
-    autoRewrite: true,
-  })
+  const proxy = httpProxy.createProxy({})
 
   app.addHook('onClose', () => proxy.close())
 
