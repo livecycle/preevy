@@ -10,7 +10,6 @@ const fakeMachine: Machine = {
   providerId: 'fake-provider-id',
   sshKeyName: 'fake-ssh-key',
   sshUsername: 'fake-ssh-user',
-  version: 'fake-version',
 }
 
 const fakeMachineWithEnvId = (envId = 'fake-env-id') => ({ ...fakeMachine, envId })
@@ -22,7 +21,7 @@ const fakeNamedSshKey: NamedSshKeyPair = {
 }
 
 const machineDriver = (_args: { someFlag: string; someFlag2?: string }): MachineDriver => ({
-  getMachine: async () => fakeMachine,
+  getMachine: async () => ({ ...fakeMachine, version: 'fake-version' }),
 
   listMachines: () => asyncMap(x => x, [fakeMachineWithEnvId()]),
 
@@ -30,7 +29,7 @@ const machineDriver = (_args: { someFlag: string; someFlag2?: string }): Machine
 
   createMachine: async () => ({ ...fakeMachine, fromSnapshot: true }),
 
-  ensureMachineSnapshot: async () => undefined,
+  onMachineCreated: async () => undefined,
 
   removeMachine: async () => undefined,
 

@@ -24,8 +24,8 @@ export const allTagsPredicate = (...tagsToFind: { key: string; value: string }[]
   return predicates.every(predicate => tags.some(predicate))
 }
 
-export const requiredTag = (tags: { key?: string; value?: string }[], key: string) => {
-  const found = tags.find(t => t.key === key)
+export const requiredTag = (tags: { key?: string; value?: string }[] | undefined, key: string) => {
+  const found = (tags ?? []).find(t => t.key === key)
   if (!found) {
     throw new Error(`Could not find required tag ${key} in ${inspect(tags)}`)
   }

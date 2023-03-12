@@ -2,6 +2,7 @@ import {
   GetKeyPairsCommandOutput,
   Instance,
   InstanceSnapshot,
+  InstanceSnapshotState,
   KeyPair,
   Lightsail, LightsailClient,
 } from '@aws-sdk/client-lightsail'
@@ -28,6 +29,16 @@ const getFirstAvailabilityZoneForRegion = async (ls: Lightsail) => {
 const client = ({ region }: { region: string }) => {
   const lsClient = new LightsailClient({ region })
   const ls = new Lightsail({ region })
+
+  const closeAllPortsExceptSsh = async ({ instanceName }: { instanceName: string }) => waitUntilAllOperationsSucceed(
+    { client: lsClient, maxWaitTime: 120 },
+    ls.putInstancePublicPorts({
+      instanceName,
+      portInfos: [{
+        fromPort: 22, toPort: 22, protocol: 'TCP', cidrs: ['0.0.0.0/0'], ipv6Cidrs: ['::/0'],
+      }],
+    })
+  )
 
   return {
     findInstance: async (
@@ -93,9 +104,7 @@ const client = ({ region }: { region: string }) => {
       'keyPairs',
     ),
 
-    createInstance: async ({ name, envId, versionTag, availabilityZone, keyPairName, instanceSnapshotName }: {
-      envId: string
-      versionTag: string
+    createInstance: async ({ name, availabilityZone, keyPairName, instanceSnapshotName }: {
       availabilityZone?: string
       instanceSnapshotName?: string
       keyPairName: string
@@ -106,10 +115,6 @@ const client = ({ region }: { region: string }) => {
         availabilityZone: availabilityZone ?? await getFirstAvailabilityZoneForRegion(ls),
         instanceNames: [name],
         keyPairName,
-        tags: [
-          { key: INSTANCE_TAGS.ENV_ID, value: envId },
-          { key: INSTANCE_TAGS.MACHINE_VERSION, value: versionTag },
-        ],
       }
 
       const res = instanceSnapshotName
@@ -121,56 +126,68 @@ const client = ({ region }: { region: string }) => {
         res,
       )
 
-      await ls.putInstancePublicPorts({
-        instanceName: name,
-        portInfos: [{
-          fromPort: 22, toPort: 22, protocol: 'TCP', cidrs: ['0.0.0.0/0'], ipv6Cidrs: ['::/0'],
-        }],
-      })
+      await closeAllPortsExceptSsh({ instanceName: name })
 
       return extractDefined(ls.getInstance({ instanceName: name }), 'instance')
     },
 
-    closeAllPortsExceptSsh: async ({ instanceName }: {
-      instanceName: string
-    }) => waitUntilAllOperationsSucceed(
-      { client: lsClient, maxWaitTime: 120 },
-      ls.putInstancePublicPorts({
-        instanceName,
-        portInfos: [{
-          fromPort: 22, toPort: 22, protocol: 'TCP', cidrs: ['0.0.0.0/0'], ipv6Cidrs: ['::/0'],
-        }],
-      })
-    ),
+    tagResource: async ({ name, envId, versionTag }: {
+      name: string
+      envId: string
+      versionTag: string
+    }) => {
+      await waitUntilAllOperationsSucceed(
+        { client: lsClient, maxWaitTime: 120 },
+        ls.tagResource({
+          resourceName: name,
+          tags: [
+            { key: INSTANCE_TAGS.ENV_ID, value: envId },
+            { key: INSTANCE_TAGS.MACHINE_VERSION, value: versionTag },
+          ],
+        }),
+      )
+    },
 
-    findInstanceSnapshot: async ({ version }: { version: string }) => {
+    closeAllPortsExceptSsh,
+
+    findInstanceSnapshot: async (
+      { version, requestedState }: { version: string; requestedState?: InstanceSnapshotState },
+    ) => {
       const tagsPredicate = allTagsPredicate(
         { key: INSTANCE_TAGS.MACHINE_VERSION, value: version },
       )
       return asyncFind(
-        ({ tags }: InstanceSnapshot) => tagsPredicate(tags ?? []),
+        ({ tags, state }: InstanceSnapshot) =>
+          (!requestedState || requestedState === state) && tagsPredicate(tags ?? []),
         paginationIterator(pageToken => ls.getInstanceSnapshots({ pageToken }), 'instanceSnapshots'),
       )
     },
 
     createInstanceSnapshot: async (
-      { envId, instanceName, instanceSnapshotName, version }: {
+      { envId, instanceName, instanceSnapshotName, version, wait }: {
         instanceName: string
         envId: string
         instanceSnapshotName: string
         version: string
+        wait: boolean
       },
-    ) => waitUntilAllOperationsSucceed(
-      { client: lsClient, maxWaitTime: 120 },
-      ls.createInstanceSnapshot({
+    ) => {
+      const op = ls.createInstanceSnapshot({
         instanceSnapshotName,
         instanceName,
         tags: [
           { key: INSTANCE_TAGS.ENV_ID, value: envId },
           { key: INSTANCE_TAGS.MACHINE_VERSION, value: version },
         ],
-      }),
-    ),
+      })
+
+      return wait
+        ? waitUntilAllOperationsSucceed(
+          { client: lsClient, maxWaitTime: 120 },
+          op,
+        )
+        : undefined
+    },
 
     deleteInstanceSnapshot: async (
       { instanceSnapshotName }: { instanceSnapshotName: string },

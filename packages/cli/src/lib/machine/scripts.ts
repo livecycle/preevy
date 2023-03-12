@@ -6,8 +6,4 @@ export const CUSTOMIZE_BARE_MACHINE = [
   'make-work-dir.sh',
 ]
 
-export const INSTANCE_SPECIFIC = [
-  'ensure-ssh-key-pair.sh',
-]
-
-export const ALL = [...CUSTOMIZE_BARE_MACHINE, ...INSTANCE_SPECIFIC]
+export const INSTANCE_SPECIFIC = []

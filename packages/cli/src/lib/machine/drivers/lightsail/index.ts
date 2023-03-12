@@ -1,5 +1,5 @@
 import {
-  Instance,
+  Instance, InstanceSnapshotState,
 } from '@aws-sdk/client-lightsail'
 import { asyncMap } from 'iter-tools-es'
 
@@ -10,17 +10,22 @@ import { Machine, MachineDriver } from '../../driver'
 import { removeDriverPrefix } from '../../driver/flags'
 import createClient from './client'
 import { CURRENT_MACHINE_VERSION, INSTANCE_TAGS, requiredTag } from './tags'
+import { CustomizedMachine } from '../../driver/driver'
 
-const machineFromInstance = (
-  instance: Instance,
-): Machine & { envId: string } => ({
+const bareMachineFromInstance = (instance: Instance): Omit<Machine, 'version'> => ({
   privateIPAddress: extractDefined(instance, 'privateIpAddress'),
   publicIPAddress: extractDefined(instance, 'publicIpAddress'),
   sshKeyName: extractDefined(instance, 'sshKeyName'),
-  sshUsername: 'ubuntu',
+  sshUsername: extractDefined(instance, 'username'),
   providerId: extractDefined(instance, 'name'),
-  version: requiredTag(instance.tags || [], INSTANCE_TAGS.MACHINE_VERSION),
-  envId: requiredTag(instance.tags || [], INSTANCE_TAGS.ENV_ID),
+})
+
+const machineFromTaggedInstance = (
+  instance: Instance,
+): CustomizedMachine & { envId: string } => ({
+  ...bareMachineFromInstance(instance),
+  version: requiredTag(instance.tags, INSTANCE_TAGS.MACHINE_VERSION),
+  envId: requiredTag(instance.tags, INSTANCE_TAGS.ENV_ID),
 })
 
 export type DriverContext = {
@@ -37,11 +42,11 @@ const machineDriver = ({
   return {
     getMachine: async ({ envId }) => {
       const instance = await client.findInstance(envId)
-      return instance && machineFromInstance(instance)
+      return instance && machineFromTaggedInstance(instance)
     },
 
     listMachines: () => asyncMap(
-      machineFromInstance,
+      machineFromTaggedInstance,
       client.listInstances(),
     ),
 
@@ -51,21 +56,28 @@ const machineDriver = ({
     }),
 
     createMachine: async ({ envId, keyPairName }) => {
-      const instanceSnapshot = await client.findInstanceSnapshot({ version: CURRENT_MACHINE_VERSION })
+      const instanceSnapshot = await client.findInstanceSnapshot({
+        version: CURRENT_MACHINE_VERSION,
+        requestedState: InstanceSnapshotState.Available,
+      })
 
       const instance = await client.createInstance({
         instanceSnapshotName: instanceSnapshot?.name,
         availabilityZone,
         name: `preview-${envId}-${randomBytes(16).toString('hex')}`,
-        envId,
-        versionTag: CURRENT_MACHINE_VERSION,
         keyPairName,
       })
 
-      return { ...machineFromInstance(instance), fromSnapshot: instanceSnapshot !== undefined }
+      return { ...bareMachineFromInstance(instance), fromSnapshot: instanceSnapshot !== undefined }
     },
 
-    ensureMachineSnapshot: async ({ providerId, envId }) => {
+    onMachineCreated: async ({ providerId, envId, fromSnapshot }) => {
+      await client.tagResource({ name: providerId, envId, versionTag: CURRENT_MACHINE_VERSION })
+
+      if (fromSnapshot) {
+        return
+      }
+
       const instanceSnapshot = await client.findInstanceSnapshot({ version: CURRENT_MACHINE_VERSION })
       if (instanceSnapshot) {
         return
@@ -75,6 +87,7 @@ const machineDriver = ({
         envId,
         instanceName: providerId,
         version: CURRENT_MACHINE_VERSION,
+        wait: false,
       })
     },
 

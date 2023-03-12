@@ -2,15 +2,18 @@ import { NamedSshKeyPair } from '../../ssh/keypair'
 
 export type Machine = {
   providerId: string
-  version: string
   publicIPAddress: string
   privateIPAddress: string
   sshKeyName: string
   sshUsername: string
 }
 
+export type CustomizedMachine = Machine & {
+  version: string
+}
+
 export type MachineDriver = {
-  getMachine: ({ envId }: { envId: string }) => Promise<Machine | undefined>
+  getMachine: ({ envId }: { envId: string }) => Promise<CustomizedMachine | undefined>
 
   createKeyPair: ({ envId }: { envId: string }) => Promise<NamedSshKeyPair>
 
@@ -19,7 +22,9 @@ export type MachineDriver = {
     keyPairName: string
   }) => Promise<Machine & { fromSnapshot: boolean }>
 
-  ensureMachineSnapshot: ({ providerId, envId }: { providerId: string; envId: string }) => Promise<void>
+  onMachineCreated: (
+    { providerId, envId, fromSnapshot }: { providerId: string; envId: string; fromSnapshot: boolean },
+  ) => Promise<void>
 
   listMachines: () => AsyncIterableIterator<Machine & { envId: string }>
 
