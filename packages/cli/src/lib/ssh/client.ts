@@ -7,6 +7,7 @@ import { inspect } from 'util'
 import { randomBytes } from 'crypto'
 import rimraf from 'rimraf'
 import { partition } from 'lodash'
+import { asyncMap, asyncToArray } from 'iter-tools-es'
 import { Logger } from '../../log'
 
 export type CommandResult = {
@@ -16,7 +17,15 @@ export type CommandResult = {
   signal: string | null
 }
 
-export type FileToCopy = { local: string; remote: string }
+export type FileToCopy = {
+  local: string | { path: string; stats: fs.Stats }
+  remote: string
+}
+
+const normalizeFileToCopy = async ({ local, remote }: FileToCopy) => ({
+  local: typeof local === 'string' ? { path: local, stats: await fs.promises.stat(local) } : local,
+  remote,
+})
 
 export type SshClient = {
   dispose(): void
@@ -67,18 +76,20 @@ export const nodeSshClient = async ({ host, username, privateKey, log }: {
     },
 
     putFiles: async paths => {
-      const stats: Record<string, fs.Stats> = Object.fromEntries(
-        await Promise.all(paths.map(async ({ local }) => [local, await fs.promises.stat(local)]))
-      )
-      const [dirs, files] = partition(paths, ({ local }) => stats[local].isDirectory())
+      const normalizedPaths = await asyncToArray(asyncMap(normalizeFileToCopy, paths))
+
+      const [dirs, files] = partition(normalizedPaths, ({ local: { stats } }) => stats.isDirectory())
 
       const baseRemoteDirs = [...new Set(paths.map(({ remote }) => path.dirname(remote)))]
       await ssh.execCommand(baseRemoteDirs.map(dir => `mkdir -p "${dir}"`).join(' && '))
 
       await Promise.all([
-        ssh.putFiles(files, { transferOptions: { step: stepFunc, concurrency: 2 } }),
+        ssh.putFiles(
+          files.map(({ local: { path: local }, remote }) => ({ local, remote })),
+          { transferOptions: { step: stepFunc, concurrency: 2 } },
+        ),
         ...dirs.map(({ local, remote }) => ssh.putDirectory(
-          local,
+          local.path,
           remote,
           { transferOptions: { step: stepFunc }, concurrency: 2 },
         )),

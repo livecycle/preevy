@@ -163,7 +163,7 @@ const up = async ({
   const tunnelKeyPair = await ensureTunnelKeyPair({ state: state.tunnelKeyPair, log })
   const remoteDir = path.join(REMOTE_DIR_BASE, userModel.name)
 
-  const { model: fixedModel, filesToCopy } = fixModelForRemote({
+  const { model: fixedModel, filesToCopy } = await fixModelForRemote({
     remoteDir,
     localDir: projectDir,
   }, userModel)

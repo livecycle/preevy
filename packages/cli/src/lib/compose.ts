@@ -1,5 +1,8 @@
+import fs from 'fs'
+import { asyncMap, asyncToArray } from 'iter-tools-es'
 import { mapValues } from 'lodash'
 import path from 'path'
+import { asyncMapValues } from './async'
 import { FileToCopy } from './ssh/client'
 import { TunnelOpts } from './ssh/url'
 
@@ -48,14 +51,14 @@ export type ComposeModel = {
   networks?: Record<string, ComposeNetwork>
 }
 
-export const fixModelForRemote = (
+export const fixModelForRemote = async (
   { remoteDir, localDir, skipServices = [] }: {
     remoteDir: string
     localDir: string
     skipServices?: string[]
   },
   model: ComposeModel,
-): { model: Required<ComposeModel>; filesToCopy: FileToCopy[] } => {
+): Promise<{ model: Required<ComposeModel>; filesToCopy: FileToCopy[] }> => {
   const filesToCopy: FileToCopy[] = []
 
   const relativePath = (p: string) => {
@@ -89,7 +92,7 @@ export const fixModelForRemote = (
     { source }: Pick<ComposeBindVolume, 'source'>,
   ) => path.join(path.join('volumes'), relativePath(source))
 
-  const overrideServices = mapValues(services, (service, serviceName) => {
+  const overrideServices = await asyncMapValues(services, async (service, serviceName) => {
     if (skipServices.includes(serviceName)) {
       return service
     }
@@ -97,7 +100,7 @@ export const fixModelForRemote = (
     return ({
       ...service,
 
-      volumes: service.volumes?.map(volume => {
+      volumes: service.volumes && await asyncToArray(asyncMap(async volume => {
         if (volume.type === 'volume') {
           return volume
         }
@@ -106,10 +109,16 @@ export const fixModelForRemote = (
           throw new Error(`Unsupported volume type: ${volume.type} in service ${serviceName}`)
         }
 
+        const stats = await fs.promises.stat(volume.source)
+
+        if (!stats.isDirectory() && !stats.isFile() && !stats.isSymbolicLink()) {
+          return volume
+        }
+
         const remote = remoteVolumePath(volume)
-        filesToCopy.push({ local: volume.source, remote })
+        filesToCopy.push({ local: { path: volume.source, stats }, remote })
         return { ...volume, source: path.join(remoteDir, remote) }
-      }),
+      }, service.volumes)),
     })
   })
 
