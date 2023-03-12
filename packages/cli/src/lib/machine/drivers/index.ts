@@ -1,5 +1,4 @@
-import { flatMap, map } from 'lodash'
-import { Relationship } from '@oclif/core/lib/interfaces/parser'
+import { map } from 'lodash'
 import lightsail from './lightsail'
 import fake from './fake'
 
@@ -32,17 +31,3 @@ export const allDriverFlags = {
   ...driverFlags('lightsail'),
   ...driverFlags('fake'),
 }
-
-export const driverRelationships = (driverFlagName = 'driver'): Relationship[] => [
-  {
-    type: 'all',
-    flags: flatMap(
-      machineDrivers,
-      ({ flags }, driverName) => Object.entries(flags).filter(([, { required }]) => required)
-        .map(([flagName, { name }]) => ({
-          name: `${driverName}-${name ?? flagName}`,
-          when: async flags2 => flags2[driverFlagName] === driverName,
-        })),
-    ),
-  },
-]

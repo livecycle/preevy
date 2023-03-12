@@ -2,8 +2,6 @@ import { ux } from '@oclif/core'
 import { asyncToArray } from 'iter-tools-es'
 import DriverCommand from '../../driver-command'
 import { ls } from '../../lib/commands'
-import { fsState } from '../../lib/state'
-import { realFs } from '../../lib/state/fs'
 
 export default class Ls extends DriverCommand<typeof Ls> {
   static description = 'List preview environments'
@@ -19,10 +17,8 @@ export default class Ls extends DriverCommand<typeof Ls> {
 
   async run(): Promise<unknown> {
     const { flags } = await this.parse(Ls)
-
-    const state = fsState(realFs(this.config.dataDir))
-
-    const machines = await asyncToArray(await ls({ machineDriver: this.machineDriver, log: this.logger, state }))
+    const driver = await this.machineDriver()
+    const machines = await asyncToArray(await ls({ machineDriver: driver, log: this.logger }))
 
     if (flags.json) {
       return machines
@@ -34,7 +30,6 @@ export default class Ls extends DriverCommand<typeof Ls> {
         envId: { header: 'Env' },
         providerId: { header: 'Driver ID' },
         publicIPAddress: { header: 'IP address' },
-        haveSshKey: { header: 'SSH Key' },
         version: { header: 'Version', extended: true },
       },
       this.flags,

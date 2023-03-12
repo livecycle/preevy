@@ -1,7 +1,6 @@
 import { asyncMap, asyncToArray } from 'iter-tools-es'
 import { Logger } from '../../../log'
 import { Machine, MachineDriver } from '../../machine'
-import { PersistentState } from '../../state'
 
 const down = async ({
   machineDriver,
@@ -9,7 +8,6 @@ const down = async ({
   throwOnNotFound,
 }: {
   machineDriver: MachineDriver
-  state: PersistentState
   log: Logger
   envIds: string[]
   throwOnNotFound: boolean

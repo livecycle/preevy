@@ -7,8 +7,6 @@ export type SshKeyPair = {
   publicKey: Buffer | string
 }
 
-export type NamedSshKeyPair = SshKeyPair & { name: string }
-
 const gen = promisify(crypto.generateKeyPair)
 const exportOpts = { type: 'pkcs1', format: 'pem' } as const
 
@@ -24,3 +22,4 @@ export const generateSshKeyPair = async (): Promise<{ privateKey: string; public
     publicKey: forge.ssh.publicKeyToOpenSSH(forge.pki.publicKeyFromPem(publicKey)),
   }
 }
+export type SSHKeyConfig = SshKeyPair & { alias: string; metadata?: Record<string, object> }

@@ -3,13 +3,15 @@ import { extractDefined } from '../../../aws-utils/nulls'
 
 export const CURRENT_MACHINE_VERSION = 'm-2023-02-16'
 
+export const KEYPAIR_TAGS = {
+  PROFILE_ID: 'preview-profile-id',
+  ALIAS: 'preview-keypair-alias',
+}
+
 export const INSTANCE_TAGS = {
   MACHINE_VERSION: 'preview-machine-version',
   ENV_ID: 'preview-env-id',
-}
-
-export const KEYPAIR_TAGS = {
-  ENV_ID: 'preview-env-id',
+  PROFILE_ID: 'preview-profile-id',
 }
 
 const tagPredicate = ({ key, value }: {
