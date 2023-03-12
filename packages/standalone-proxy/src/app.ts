@@ -24,13 +24,21 @@ const rewriteUrl = ({ url, headers: { host } }: RawRequestDefaultExpression): st
 export const app = ({ envStore, sshPublicKey }: { 
   envStore: PreviewEnvStore
   sshPublicKey: string
-}) =>
-  Fastify({
+}) =>{
+  const fastify = Fastify({
     logger: appLoggerFromEnv(),
     rewriteUrl,
   })
+    
     .register(fastifyRequestContext)
     .get('/healthz', { logLevel: 'warn' }, async () => 'OK')
     .get('/ssh-public-key', async () => sshPublicKey)
     .register(proxyRoutes, { prefix: '/proxy/', envStore })
+
+  fastify.addContentTypeParser("*", (_req, _payload, done) => {done(null)})
+
+  return fastify;
+}
+  
+    
     
