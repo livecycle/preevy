@@ -106,6 +106,10 @@ export const fixModelForRemote = (
           throw new Error(`Unsupported volume type: ${volume.type} in service ${serviceName}`)
         }
 
+        if (volume.source === "/var/run/docker.sock") {
+          return volume
+        }
+
         const remote = remoteVolumePath(volume)
         filesToCopy.push({ local: volume.source, remote })
         return { ...volume, source: path.join(remoteDir, remote) }
