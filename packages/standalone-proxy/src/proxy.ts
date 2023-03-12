@@ -12,8 +12,9 @@ export const proxyRoutes: FastifyPluginAsync<{ envStore: PreviewEnvStore }> = as
 
   app.addHook('onClose', () => proxy.close())
 
+  // prevent FST_ERR_CTP_INVALID_MEDIA_TYPE error
   app.removeAllContentTypeParsers()
-  app.addContentTypeParser("*", (_req, _payload, done) => {done(null)})
+  app.addContentTypeParser('*', function (_request, _payload, done) { done(null) })
 
   app.route<{
     Params: { targetHost: string; ['*']: string }

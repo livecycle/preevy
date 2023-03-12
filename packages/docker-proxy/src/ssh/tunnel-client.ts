@@ -30,6 +30,8 @@ export const sshClient = async ({
     onError,
   })
 
+  ssh.on('close', () => onError?.(new Error('ssh connection closed')))
+
   type ExistingForward = { service: RunningService; host: string; port: number; sockets: Set<net.Socket> }
 
   const existingForwards = new Map<string, ExistingForward>()

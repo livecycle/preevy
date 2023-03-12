@@ -24,7 +24,9 @@ export const sshServer = ({
   onHello: (clientId: string, tunnels: string[]) => string
 }) => new ssh2.Server(
   {
-    // debug: (x)=> log.debug(x),
+    debug: x => log.debug(x),
+    // keepaliveInterval: 1000,
+    // keepaliveCountMax: 5,
     hostKeys: [sshPrivateKey],
   },
   (client) => {

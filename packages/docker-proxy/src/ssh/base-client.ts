@@ -125,12 +125,13 @@ export const baseSshClient = async (
       onError?.(err)
     })
     ssh.connect({
+      debug: msg => log.debug(msg),
       sock,
       username,
       host: hostname,
       port,
       privateKey: clientPrivateKey,
-      keepaliveInterval: 20000,
+      keepaliveInterval: 15000,
       keepaliveCountMax: 3,
       hostVerifier,
     })
