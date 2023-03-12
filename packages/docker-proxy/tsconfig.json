@@ -22,7 +22,7 @@
     "noImplicitThis": true,
     "strictNullChecks": true,
     "composite": true,
+    "outDir": "dist",
   },
-
   "include": ["index.ts", "main.ts", "src/**/*"],
 }
