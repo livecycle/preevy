@@ -18,7 +18,7 @@ const rewriteUrl = ({ url, headers: { host } }: RawRequestDefaultExpression): st
     return url
   }
 
-  return `/proxy/${target}/${url}`
+  return `/proxy/${target}${url}`
 }
 
 export const app = ({ envStore, sshPublicKey }: { 
