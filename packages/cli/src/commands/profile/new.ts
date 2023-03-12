@@ -2,7 +2,6 @@ import { Args, Flags } from '@oclif/core'
 import { mapKeys, pickBy } from 'lodash'
 import DriverCommand from '../../driver-command'
 import { DriverName } from '../../lib/machine'
-import { profileStore } from '../../lib/profile/store'
 import { ensureTunnelKeyPair } from '../../lib/tunneling'
 
 export default class NewProfile extends DriverCommand<typeof NewProfile> {

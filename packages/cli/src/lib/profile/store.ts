@@ -56,7 +56,7 @@ export const profileStore = (store: Store) => {
         write: async (hostname: string, port: number | undefined, ...newKeys: Buffer[]) => {
           const keys = new Set(await readStrings(hostname, port))
           newKeys.forEach(key => keys.add(publicKeyToString(key)))
-          await store.transaction(filename(hostname, port), [...keys.values()].join('\n'))
+          await store.transaction(profileDir, ({ write }) => write(filename(hostname, port), [...keys.values()].join('\n')))
         },
       }
     },

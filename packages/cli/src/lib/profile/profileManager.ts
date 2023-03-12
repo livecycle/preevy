@@ -46,7 +46,7 @@ export const profileManager = (localDir:string, profileStoreResolver: (location:
       data.current = alias
       await localStore.write(profileListFileName, JSON.stringify(data))
     },
-    async ls(): Promise<ProfileListing[]> {
+    async list(): Promise<ProfileListing[]> {
       return Object.entries((await getProfileList()).profiles).map(([alias, profile]) => ({ alias, ...profile }))
     },
     async get(alias: string) {
@@ -67,24 +67,12 @@ export const profileManager = (localDir:string, profileStoreResolver: (location:
         store,
       }
     },
-    async delete(_alias: string) {
-      throw new Error('Method not implemented.')
-    },
-    async import(alias: string, location: string) {
+    async delete(alias: string) {
       const data = await getProfileList()
       if (data.profiles[alias]) {
-        throw new Error(`Profile ${alias} already exists`)
+        throw new Error(`Profile ${alias} doesn't exists`)
       }
-      let profileInfo: Profile
-      try {
-        profileInfo = await profileStoreResolver(location).then(x => profileStore(x).info())
-      } catch (error) {
-        throw new Error(`Failed to import store for profile ${alias}, error: ${error}}`)
-      }
-      data.profiles[alias] = {
-        id: profileInfo.id,
-        location,
-      }
+      delete data.profiles[alias]
       await localStore.write(profileListFileName, JSON.stringify(data))
     },
     async importExisting(alias: string, location: string) {
@@ -92,7 +80,6 @@ export const profileManager = (localDir:string, profileStoreResolver: (location:
       if (data.profiles[alias]) {
         throw new Error(`Profile ${alias} already exists`)
       }
-      // const id = `${alias}-${Math.random().toString(36).substring(2, 9)}`
       const remoteStore = await profileStoreResolver(location)
       const info = await profileStore(remoteStore).info()
       data.profiles[alias] = {

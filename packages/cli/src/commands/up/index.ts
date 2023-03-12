@@ -2,10 +2,9 @@ import os from 'os'
 import { Flags, ux } from '@oclif/core'
 import DriverCommand from '../../driver-command'
 import { up } from '../../lib/commands'
-import { HostKeySignatureConfirmer } from '../../lib/commands/up'
 import { sshKeysStore } from '../../lib/state/ssh'
 import { profileStore } from '../../lib/profile'
-import { performTunnelConnectionCheck } from '../../lib/tunneling'
+import { HostKeySignatureConfirmer, performTunnelConnectionCheck } from '../../lib/tunneling'
 
 type FlatTunnel = {
   project: string

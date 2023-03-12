@@ -24,7 +24,7 @@ export default class Init extends BaseCommand {
     }
 
     async run(): Promise<unknown> {
-      const existingProfiles = await this.profileManager.ls()
+      const existingProfiles = await this.profileManager.list()
       let profileAlias = this.args['profile-alias']
       const profileExists = existingProfiles.find(p => p.alias === profileAlias)
 

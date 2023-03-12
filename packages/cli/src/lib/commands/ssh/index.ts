@@ -4,32 +4,26 @@ import { spawn } from 'child_process'
 import rimraf from 'rimraf'
 import { Logger } from '../../../log'
 import { MachineDriver } from '../../machine'
-import { PersistentState } from '../../state'
+import { SshKeyPair } from '../../ssh/keypair'
 
 const ssh = async ({
   envId,
   args,
   dataDir,
   machineDriver,
-  state,
+  sshKeyPair,
 }: {
   envId: string
   args: string[]
   dataDir: string
   machineDriver: MachineDriver
-  state: PersistentState
+  sshKeyPair: SshKeyPair
   log: Logger
 }) => {
   const machine = await machineDriver.getMachine({ envId })
   if (!machine) {
     throw new Error(`Machine ${envId} not found`)
   }
-
-  const sshKeyPair = await state.machineSshKeys.read(machine.sshKeyName)
-  if (!sshKeyPair) {
-    throw new Error(`No ssh keypair for machine ${envId}`)
-  }
-
   const keyDirBase = path.join(dataDir, 'interactive-ssh-keys', envId)
   await mkdir(keyDirBase, { recursive: true })
   const keyDir = await mkdtemp(`${keyDirBase}${path.sep}`)
