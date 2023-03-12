@@ -47,7 +47,7 @@ const formatConnectionCheckResult = (
 
 const main = async () => {
   const log = pino({
-    level: process.env.DEBUG ? 'debug' : 'info',
+    level: process.env.DEBUG || process.env.DOCKER_PROXY_DEBUG ? 'debug' : 'info',
   }, pinoPretty({ destination: pino.destination(process.stderr) }))
 
   const { connectionConfig, sshUrl } = sshConnectionConfigFromEnv()

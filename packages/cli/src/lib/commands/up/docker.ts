@@ -21,7 +21,7 @@ export const wrapWithDockerSocket = (
 
   log.debug(`Local socket: ${localSocket}`)
 
-  Object.keys(process.env).filter(k => k.startsWith('DOCKER_')).forEach(k => {
+  Object.keys(process.env).filter(k => k !== 'DOCKER_HOST' && k.startsWith('DOCKER_')).forEach(k => {
     log.warn(`deleting conflicting env var ${k}`)
     delete process.env[k]
   })
@@ -30,24 +30,3 @@ export const wrapWithDockerSocket = (
 
   return f().finally(close)
 }
-
-// export const withDockerSocket = async <Return>({ sshClient, log, dataDir }: {
-//   sshClient: SshClient,
-//   log: Logger,
-//   dataDir: string,
-// },
-//   f: () => Promise<Return>,
-// ): Promise<Return> => {
-//   const { localSocket, close } = await sshClient.forwardOutStreamLocal(
-//     '/var/run/docker.sock',
-//     { localDir: dataDir },
-//   )
-
-//   log.debug(`Local socket: ${localSocket}`)
-
-//   Object.keys(process.env).filter(k => k.startsWith('DOCKER_')).forEach(k => { delete process.env[k] })
-
-//   process.env.DOCKER_HOST = `unix://${localSocket}`
-
-//   return f().finally(close)
-// }

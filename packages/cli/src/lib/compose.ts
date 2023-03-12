@@ -1,6 +1,7 @@
 import { mapValues } from 'lodash'
 import path from 'path'
 import { FileToCopy } from './ssh/client'
+import { TunnelOpts } from './ssh/url'
 
 export type ComposeSecretOrConfig = {
   name: string
@@ -124,45 +125,40 @@ export const fixModelForRemote = (
   }
 }
 
-// export const addDockerProxyService = (
-//   { tunnelOpts, buildDir, port, serviceName }: {
-//     tunnelOpts: TunnelOpts
-//     buildDir: string
-//     port: number
-//     serviceName: string
-//   },
-//   model: ComposeModel
-// ): ComposeModel => ({
-//   ...model,
-//   services: {
-//     ...model.services,
-//     [serviceName]: {
-//       build: {
-//         context: buildDir,
-//       },
-//       // restart: 'always',
-//       networks: Object.keys(model.networks || {}),
-//       volumes: [
-//         {
-//           type: 'bind',
-//           source: '/var/run/docker.sock',
-//           target: '/var/run/docker.sock',
-//         },
-//         {
-//           type: 'bind',
-//           source: '/root/.ssh',
-//           target: '/root/.ssh',
-//         },
-//       ],
-//       ports: [
-//         { mode: 'ingress', target: port, protocol: 'tcp' },
-//       ],
-//       environment: {
-//         SSH_URL: tunnelOpts.url,
-//         TLS_SERVERNAME: tunnelOpts.tlsServerName,
-//         // eslint-disable-next-line no-template-curly-in-string
-//         SSH_CHECK_ONLY: '${SSH_CHECK_ONLY}',
-//       },
-//     },
-//   },
-// })
+export const addDockerProxyService = (
+  { tunnelOpts, buildDir, port, serviceName, sshPrivateKey }: {
+    tunnelOpts: TunnelOpts
+    buildDir: string
+    port: number
+    serviceName: string
+    sshPrivateKey: string
+  },
+  model: ComposeModel,
+) => ({
+  ...model,
+  services: {
+    ...model.services,
+    [serviceName]: {
+      build: {
+        context: buildDir,
+      },
+      restart: 'always',
+      networks: Object.keys(model.networks || {}),
+      volumes: [
+        {
+          type: 'bind',
+          source: '/var/run/docker.sock',
+          target: '/var/run/docker.sock',
+        },
+      ],
+      ports: [
+        { mode: 'ingress', target: port, protocol: 'tcp' },
+      ],
+      environment: {
+        SSH_URL: tunnelOpts.url,
+        TLS_SERVERNAME: tunnelOpts.tlsServerName,
+        SSH_PRIVATE_KEY: sshPrivateKey,
+      },
+    },
+  },
+})

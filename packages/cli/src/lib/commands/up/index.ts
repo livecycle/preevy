@@ -8,8 +8,8 @@ import { Machine, MachineDriver } from '../../machine'
 import { FileToCopy, SshClient } from '../../ssh/client'
 import { generateSshKeyPair, SshKeyPair } from '../../ssh/keypair'
 import { PersistentState } from '../../state'
-import { fixModelForRemote } from '../../compose'
-import { readDockerProxyServiceName, DOCKER_PROXY_COMPOSE_FILE, DOCKER_PROXY_PORT } from '../../../static'
+import { addDockerProxyService, fixModelForRemote } from '../../compose'
+import { DOCKER_PROXY_PORT, DOCKER_PROXY_DIR } from '../../../static'
 import { TunnelOpts } from '../../ssh/url'
 import { ensureCustomizedMachine } from './machine'
 import { wrapWithDockerSocket } from './docker'
@@ -134,6 +134,8 @@ const ensureTunnelKeyPair = async (
   return keyPair
 }
 
+const DOCKER_PROXY_SERVICE_NAME = 'preview_proxy'
+
 const up = async ({
   machineDriver,
   tunnelOpts,
@@ -156,13 +158,24 @@ const up = async ({
   confirmHostFingerprint: HostKeySignatureConfirmer
 }): Promise<{ machine: Machine; keyPair: SshKeyPair; tunnelId: string; tunnels: Tunnel[] }> => {
   log.debug('Normalizing compose files')
+
   const userModel = await dockerCompose(...userComposeFiles || []).getModel()
+  const tunnelKeyPair = await ensureTunnelKeyPair({ state: state.tunnelKeyPair, log })
   const remoteDir = path.join(REMOTE_DIR_BASE, userModel.name)
-  const { model: remoteModel, filesToCopy } = fixModelForRemote({
+
+  const { model: fixedModel, filesToCopy } = fixModelForRemote({
     remoteDir,
     localDir: projectDir,
-    // skipServices: [dockerProxyServiceName],
   }, userModel)
+
+  const remoteModel = addDockerProxyService({
+    tunnelOpts,
+    buildDir: DOCKER_PROXY_DIR,
+    port: DOCKER_PROXY_PORT,
+    serviceName: DOCKER_PROXY_SERVICE_NAME,
+    sshPrivateKey: tunnelKeyPair.privateKey,
+  }, fixedModel)
+
   log.debug('model', yaml.stringify(remoteModel))
   const projectLocalDataDir = path.join(dataDir, userModel.name)
   await fs.promises.mkdir(projectLocalDataDir, { recursive: true })
@@ -171,8 +184,6 @@ const up = async ({
 
   // though not needed, it's useful for debugging to have the compose file at the remote machine
   filesToCopy.push({ local: composeFilePath, remote: 'docker-compose.yml' })
-
-  const tunnelKeyPair = await ensureTunnelKeyPair({ state: state.tunnelKeyPair, log })
 
   await performTunnelConnectionCheck({
     log,
@@ -195,28 +206,19 @@ const up = async ({
     log.info('Copying files')
     await copyFilesWithoutRecreatingDir(sshClient, remoteDir, filesToCopy)
 
-    const compose = dockerCompose(composeFilePath, DOCKER_PROXY_COMPOSE_FILE)
+    const compose = dockerCompose(composeFilePath)
 
     log.debug('Running compose up')
 
     await withDockerSocket(() => compose.spawnPromise(
       ['--verbose', 'up', '-d', '--remove-orphans', '--build', '--wait'],
-      {
-        stdio: 'inherit',
-        env: {
-          ...process.env,
-          SSH_URL: tunnelOpts.url,
-          TLS_SERVERNAME: tunnelOpts.tlsServerName,
-          SSH_PRIVATE_KEY: tunnelKeyPair.privateKey,
-        },
-      }
+      { stdio: 'inherit' },
     ))
 
     log.info('Getting tunnels')
 
-    const dockerProxyServiceName = await readDockerProxyServiceName()
     const dockerProxyServiceUrl = await withDockerSocket(
-      () => compose.getServiceUrl(dockerProxyServiceName, DOCKER_PROXY_PORT)
+      () => compose.getServiceUrl(DOCKER_PROXY_SERVICE_NAME, DOCKER_PROXY_PORT)
     )
 
     const { tunnelId, tunnels } = await queryTunnels(sshClient, dockerProxyServiceUrl)
@@ -225,7 +227,7 @@ const up = async ({
       machine,
       keyPair,
       tunnelId,
-      tunnels: tunnels.filter((t: Tunnel) => t.service !== dockerProxyServiceName),
+      tunnels: tunnels.filter((t: Tunnel) => t.service !== DOCKER_PROXY_SERVICE_NAME),
     }
   } finally {
     sshClient.dispose()

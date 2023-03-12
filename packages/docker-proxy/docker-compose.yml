@@ -3,7 +3,7 @@ version: '3.7'
 services:
   preview_proxy:
     build: 
-      context: .
+      context: ${DOCKER_PROXY_DIR:-.}
       
     restart: always
 
@@ -11,7 +11,6 @@ services:
       - SSH_URL=${SSH_URL}
       - TLS_SERVERNAME=${TLS_SERVERNAME}
       - SSH_PRIVATE_KEY=${SSH_PRIVATE_KEY}
-      - DEBUG=1
 
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
