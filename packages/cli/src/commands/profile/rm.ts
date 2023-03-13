@@ -17,7 +17,7 @@ export default class RemoveProfile extends DriverCommand<typeof RemoveProfile> {
 
     async run(): Promise<unknown> {
       const alias = this.args.name
-      await this.profileManager.delete(alias)
+      await this.profileConfig.delete(alias)
       ux.info(`Profile ${alias} removed`)
       ux.info('the files are still available in the store if you want to restore it')
       return undefined

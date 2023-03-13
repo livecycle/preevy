@@ -27,14 +27,14 @@ abstract class DriverCommand<T extends typeof Command> extends BaseCommand<T> {
 
   public async init(): Promise<void> {
     await super.init()
-    const pm = this.profileManager
+    this.#driver = this.flags.driver as DriverName
+    const pm = this.profileConfig
     const currentProfile = await pm.current().then(x => x && pm.get(x.alias))
     if (currentProfile) {
       this.#profile = currentProfile.info
       this.#store = currentProfile.store
       this.#driver = currentProfile.info.driver as DriverName
     }
-    this.#driver = this.driver as DriverName
   }
 
   #driver: DriverName | undefined

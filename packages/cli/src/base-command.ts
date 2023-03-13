@@ -1,7 +1,7 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
 import { FlagInput } from '@oclif/core/lib/interfaces/parser'
 import path from 'path'
-import { ProfileManager, profileManager } from './lib/profile'
+import { ProfileConfig, profileConfig } from './lib/profile'
 import { createStore } from './lib/store'
 import { realFs } from './lib/store/fs'
 import { s3fs } from './lib/store/s3'
@@ -62,12 +62,12 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
     this.stdErrLogger.info(message, ...args)
   }
 
-  #profileManger: ProfileManager | undefined
-  get profileManager(): ProfileManager {
-    if (!this.#profileManger) {
+  #profileConfig: ProfileConfig | undefined
+  get profileConfig(): ProfileConfig {
+    if (!this.#profileConfig) {
       const root = path.join(this.config.dataDir, 'v2')
-      this.debug('init profile manager at:', root)
-      this.#profileManger = profileManager(root, async location => {
+      this.debug('init profile config at:', root)
+      this.#profileConfig = profileConfig(root, async location => {
         const { protocol, hostname } = new URL(location)
         if (protocol === 'local:') {
           return createStore(realFs(path.join(root, 'profiles', hostname)), tarSnapshotter())
@@ -77,7 +77,7 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
         throw new Error(`Unsupported blob prefix: ${protocol}`)
       })
     }
-    return this.#profileManger
+    return this.#profileConfig
   }
 }
 

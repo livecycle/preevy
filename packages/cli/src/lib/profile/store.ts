@@ -38,9 +38,11 @@ export const profileStore = (store: Store) => {
         port: number | undefined,
       ) => path.join('known-hosts', [hostname, port].filter(Boolean).join('_'))
 
-      const readStrings = async (hostname: string, port: number | undefined) => {
-        const lines = ((await ref.read(filename(hostname, port))) ?? Buffer.from([])).toString('utf-8')
-        return lines.split('\n').filter(Boolean)
+      const readStrings = (buffer: Buffer | undefined) => {
+        if (!buffer) {
+          return []
+        }
+        return buffer?.toString('utf-8').split('\n').filter(Boolean)
       }
 
       const publicKeyToString = (publicKey: Buffer) => {
@@ -50,13 +52,16 @@ export const profileStore = (store: Store) => {
 
       return {
         read: async (hostname: string, port: number | undefined) => (
-          await readStrings(hostname, port)
+          readStrings(await ref.read(filename(hostname, port)))
         ).map(s => Buffer.from(s, 'utf-8')),
 
         write: async (hostname: string, port: number | undefined, ...newKeys: Buffer[]) => {
-          const keys = new Set(await readStrings(hostname, port))
-          newKeys.forEach(key => keys.add(publicKeyToString(key)))
-          await store.transaction(profileDir, ({ write }) => write(filename(hostname, port), [...keys.values()].join('\n')))
+          await store.transaction(profileDir, async ({ write, read }) => {
+            const keys = new Set(readStrings(await read(filename(hostname, port))))
+            newKeys.forEach(key => keys.add(publicKeyToString(key)))
+
+            await write(filename(hostname, port), [...keys.values()].join('\n'))
+          })
         },
       }
     },

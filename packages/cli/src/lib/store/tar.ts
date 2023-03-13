@@ -1,4 +1,4 @@
-import fs from 'fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'fs/promises'
 import { tmpdir } from 'os'
 import path, { dirname } from 'path'
 import { rimraf } from 'rimraf'
@@ -22,11 +22,7 @@ async function readStream(stream: Readable): Promise<Buffer> {
 export function tarSnapshotter(): Snapshotter {
   return {
     open: async (existingSnapshot: Buffer | undefined) => {
-      const transactionDir = path.join(
-        tmpdir(),
-        `transcation-${Math.random().toString(36).substring(7)}`
-      )
-      await fs.mkdir(transactionDir, { recursive: true })
+      const transactionDir = await mkdtemp(path.join(tmpdir(), 'preview-transactions-'))
       if (existingSnapshot) {
         await pipeline(
           Readable.from(existingSnapshot),
@@ -37,26 +33,36 @@ export function tarSnapshotter(): Snapshotter {
       }
       return {
         snapshot: {
-          read: async (file: string) => fs.readFile(path.join(transactionDir, file)),
+          read: async (file: string) => {
+            try {
+              return await readFile(path.join(transactionDir, file))
+            } catch (error) {
+              if (isNotFoundError(error)) {
+                return undefined
+              }
+              throw error
+            }
+            return undefined
+          },
           list: async () => {
-            const files = await fs.readdir(transactionDir)
+            const files = await readdir(transactionDir)
             return files
           },
           write: async (file: string, content: string | Buffer) => {
             const target = path.join(transactionDir, file)
             try {
-              await fs.writeFile(target, content)
+              await writeFile(target, content)
             } catch (e) {
               if (isNotFoundError(e)) {
-                await fs.mkdir(dirname(target), { recursive: true })
-                await fs.writeFile(target, content)
+                await mkdir(dirname(target), { recursive: true })
+                await writeFile(target, content)
                 return
               }
               throw e
             }
           },
           delete: async (fileName: string) => {
-            await fs.rm(path.join(transactionDir, fileName))
+            await rm(path.join(transactionDir, fileName))
           },
         },
         close: async () => {

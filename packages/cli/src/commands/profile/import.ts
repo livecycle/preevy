@@ -26,7 +26,7 @@ export default class ImportProfile extends BaseCommand<typeof ImportProfile> {
     async run(): Promise<void> {
       const alias = this.flags.name
 
-      const { info } = await this.profileManager.importExisting(alias, this.args.location)
+      const { info } = await this.profileConfig.importExisting(alias, this.args.location)
       ux.info(`Profile ${info.id} imported successfully`)
     }
 }

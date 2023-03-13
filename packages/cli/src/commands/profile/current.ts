@@ -8,7 +8,7 @@ export default class CurrentProfile extends BaseCommand<typeof CurrentProfile> {
     static enableJsonFlag = true
 
     async run(): Promise<unknown> {
-      const currentProfile = await this.profileManager.current()
+      const currentProfile = await this.profileConfig.current()
       if (!currentProfile) {
         return ux.info('No profile is loaded, use init command to create or import a new profile')
       }

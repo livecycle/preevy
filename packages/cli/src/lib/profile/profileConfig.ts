@@ -16,14 +16,14 @@ type ProfileList = {
 
 const profileListFileName = 'profileList.json'
 
-export const profileManager = (localDir:string, profileStoreResolver: (location: string)=> Promise<Store>) => {
+export const profileConfig = (localDir:string, profileStoreResolver: (location: string)=> Promise<Store>) => {
   const localStore = realFs(localDir)
 
   async function getProfileList(): Promise<ProfileList> {
     const data = await localStore.read(profileListFileName)
     if (!data) {
       const initData = { current: undefined, profiles: {} }
-      await localStore.write(profileListFileName, JSON.stringify({ current: undefined, profiles: {} }))
+      await localStore.write(profileListFileName, JSON.stringify(initData))
       return initData
     }
     return JSON.parse(data.toString())
@@ -100,13 +100,14 @@ export const profileManager = (localDir:string, profileStoreResolver: (location:
       }
       const id = `${alias}-${Math.random().toString(36).substring(2, 9)}`
       const remoteStore = await profileStoreResolver(location)
-      await profileStore(remoteStore).init({ id, ...profile })
+      const pStore = profileStore(remoteStore)
+      await pStore.init({ id, ...profile })
       data.profiles[alias] = {
         id,
         location,
       }
       data.current = alias
-      await init(profileStore(remoteStore))
+      await init(pStore)
       await localStore.write(profileListFileName, JSON.stringify(data))
       return {
         info: {
@@ -119,4 +120,4 @@ export const profileManager = (localDir:string, profileStoreResolver: (location:
   }
 }
 
-export type ProfileManager = ReturnType<typeof profileManager>
+export type ProfileConfig = ReturnType<typeof profileConfig>

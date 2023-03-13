@@ -37,7 +37,6 @@ async function ensureBucketExists(s3: S3Client, bucket: string) {
 }
 
 export type S3Url = {
-  url: string
   region: string
   bucket: string
   path: string

@@ -6,7 +6,7 @@ import path from 'path'
 export const DIR = path.join(__dirname, '../static')
 export const SCRIPT_DIR = path.join(DIR, 'scripts')
 
-export const DOCKER_PROXY_DIR = path.dirname(require.resolve('@livecycle/docker-proxy'))
+export const DOCKER_PROXY_DIR = path.dirname(path.join(require.resolve('@livecycle/docker-proxy'), '..'))
 // export const DOCKER_PROXY_COMPOSE_FILE = path.join(DOCKER_PROXY_DIR, 'docker-compose.yml')
 // export const readDockerProxyServiceName = async () => Object.keys(
 //   yaml.parse(await fs.promises.readFile(DOCKER_PROXY_COMPOSE_FILE, 'utf-8')).services

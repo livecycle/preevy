@@ -12,7 +12,7 @@ export function createStore(
       async function read(file: string) {
         const dirData = await vfs.read(dir)
         if (!dirData) return undefined
-        return transactor.readFromSnapshot(dirData, s => s.read(file))
+        return transactor.readFromSnapshot(dirData, async s => s.read(file))
       }
       async function readOrThrow(file: string) {
         const data = await read(file)

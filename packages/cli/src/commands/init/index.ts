@@ -1,4 +1,4 @@
-import { Flags, Args } from '@oclif/core'
+import { Flags, Args, ux } from '@oclif/core'
 import inquirer from 'inquirer'
 import { pickBy } from 'lodash'
 import BaseCommand from '../../base-command'
@@ -24,9 +24,14 @@ export default class Init extends BaseCommand {
     }
 
     async run(): Promise<unknown> {
-      const existingProfiles = await this.profileManager.list()
+      const existingProfiles = await this.profileConfig.list()
       let profileAlias = this.args['profile-alias']
       const profileExists = existingProfiles.find(p => p.alias === profileAlias)
+      if (profileExists) {
+        ux.info(`Profile ${profileAlias} already exists`)
+        ux.info('Use `init <profile-alias>` to create a new profile')
+        return undefined
+      }
 
       if (this.flags.from) {
         await this.config.runCommand('profile:import', [this.flags.from])
@@ -34,15 +39,14 @@ export default class Init extends BaseCommand {
         if (profileExists) {
           if (profileAlias !== 'default') {
             throw new Error(`Profile ${profileAlias} already exists`)
-          } else {
-            profileAlias = await inquirer.prompt<{
-              profileName: string
-            }>([{
-              type: 'input',
-              name: 'profileAlias',
-              message: 'What is the name of your profile?',
-            }])
           }
+          profileAlias = await inquirer.prompt<{
+            profileName: string
+          }>([{
+            type: 'input',
+            name: 'profileAlias',
+            message: 'What is the name of your profile?',
+          }])
         }
 
         const { driver } = await inquirer.prompt<{
@@ -69,7 +73,6 @@ export default class Init extends BaseCommand {
         }))
 
         const driverFlags = await inquirer.prompt<Record<string, string>>(questions)
-
         const { locationType } = await inquirer.prompt<{
           locationType: string
         }>([
@@ -102,7 +105,7 @@ export default class Init extends BaseCommand {
           location = `local://${profileAlias}`
         }
 
-        await this.config.runCommand('profile:new', ['--log-level', this.flags['log-level'] ?? 'info', profileAlias, '--driver', driver, '--url', location, ...Object.entries(driverFlags).map(([key, value]) => `--${driver}-${key}=${value}`)])
+        await this.config.runCommand('profile:create', ['--log-level', this.flags['log-level'] ?? 'info', profileAlias, location, '--driver', driver, ...Object.entries(driverFlags).map(([key, value]) => `--${driver}-${key}=${value}`)])
       }
       this.log('Initialized profile')
 

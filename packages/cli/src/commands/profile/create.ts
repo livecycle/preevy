@@ -1,22 +1,21 @@
-import { Args, Flags } from '@oclif/core'
+import { Args } from '@oclif/core'
 import { mapKeys, pickBy } from 'lodash'
 import DriverCommand from '../../driver-command'
 import { DriverName } from '../../lib/machine'
 import { ensureTunnelKeyPair } from '../../lib/tunneling'
 
-export default class NewProfile extends DriverCommand<typeof NewProfile> {
+export default class CreateProfile extends DriverCommand<typeof CreateProfile> {
     static description = 'Create a new profile'
 
-    static flags = {
-      url: Flags.string({
-        description: 'url of the new profile store',
-        required: true,
-      }),
-    }
+    static flags = {}
 
     static args = {
       name: Args.string({
         description: 'name of the new profile',
+        required: true,
+      }),
+      url: Args.string({
+        description: 'url of the new profile store',
         required: true,
       }),
     }
@@ -31,7 +30,7 @@ export default class NewProfile extends DriverCommand<typeof NewProfile> {
 
       const driverFlags = mapKeys(pickBy(this.flags, (v, k) => k.startsWith(`${driver}-`)), (v, k) => k.substring(`${driver}-`.length))
 
-      await this.profileManager.create(alias, this.flags.url, { driver }, async pStore => {
+      await this.profileConfig.create(alias, this.args.url, { driver }, async pStore => {
         await pStore.setDefaultFlags(
           driver,
           driverFlags
