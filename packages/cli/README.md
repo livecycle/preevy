@@ -29,9 +29,9 @@ USAGE
 <!-- usagestop -->
 # Commands
 <!-- commands -->
-* [`preview hello PERSON`](#preview-hello-person)
-* [`preview hello world`](#preview-hello-world)
+* [`preview down ID`](#preview-down-id)
 * [`preview help [COMMANDS]`](#preview-help-commands)
+* [`preview ls`](#preview-ls)
 * [`preview plugins`](#preview-plugins)
 * [`preview plugins:install PLUGIN...`](#preview-pluginsinstall-plugin)
 * [`preview plugins:inspect PLUGIN...`](#preview-pluginsinspect-plugin)
@@ -41,46 +41,37 @@ USAGE
 * [`preview plugins:uninstall PLUGIN...`](#preview-pluginsuninstall-plugin-1)
 * [`preview plugins:uninstall PLUGIN...`](#preview-pluginsuninstall-plugin-2)
 * [`preview plugins update`](#preview-plugins-update)
+* [`preview up`](#preview-up)
 
-## `preview hello PERSON`
+## `preview down ID`
 
-Say hello
+Delete preview environments
 
 ```
 USAGE
-  $ preview hello [PERSON] -f <value>
+  $ preview down ID [--log-level debug|info|warn|error] [-d lightsail|fake] [--lightsail-region <value>]
+    [--lightsail-availability-zone <value>] [-f] [--json]
 
 ARGUMENTS
-  PERSON  Person to say hello to
+  ID  Environment IDs to delete
 
 FLAGS
-  -f, --from=<value>  (required) Who is saying hello
+  -d, --driver=<option>                  [default: lightsail] Machine driver to use
+                                         <options: lightsail|fake>
+  -f, --force                            Do not error if the environment is not found
+  --lightsail-availability-zone=<value>  AWS availability zone to provision resources in region
+  --lightsail-region=<value>             AWS region to provision resources in
+
+GLOBAL FLAGS
+  --json                Format output as json.
+  --log-level=<option>  [default: info] Specify level for logging.
+                        <options: debug|info|warn|error>
 
 DESCRIPTION
-  Say hello
-
-EXAMPLES
-  $ oex hello friend --from oclif
-  hello friend from oclif! (./src/commands/hello/index.ts)
+  Delete preview environments
 ```
 
-_See code: [dist/commands/hello/index.ts](https://github.com/livecycle/livecycle/blob/v0.0.0/dist/commands/hello/index.ts)_
-
-## `preview hello world`
-
-Say hello world
-
-```
-USAGE
-  $ preview hello world
-
-DESCRIPTION
-  Say hello world
-
-EXAMPLES
-  $ preview hello world
-  hello world! (./src/commands/hello/world.ts)
-```
+_See code: [dist/commands/down/index.ts](https://github.com/livecycle/preview/blob/v0.0.0/dist/commands/down/index.ts)_
 
 ## `preview help [COMMANDS]`
 
@@ -100,7 +91,43 @@ DESCRIPTION
   Display help for preview.
 ```
 
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v5.2.2/src/commands/help.ts)_
+_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v5.2.6/src/commands/help.ts)_
+
+## `preview ls`
+
+List preview environments
+
+```
+USAGE
+  $ preview ls [--log-level debug|info|warn|error] [-d lightsail|fake] [--lightsail-region <value>]
+    [--lightsail-availability-zone <value>] [--columns <value> | -x] [--sort <value>] [--filter <value>] [--output
+    csv|json|yaml |  | [--csv | --no-truncate]] [--no-header | ] [--json]
+
+FLAGS
+  -d, --driver=<option>                  [default: lightsail] Machine driver to use
+                                         <options: lightsail|fake>
+  -x, --extended                         show extra columns
+  --columns=<value>                      only show provided columns (comma-separated)
+  --csv                                  output is csv format [alias: --output=csv]
+  --filter=<value>                       filter property by partial string matching, ex: name=foo
+  --lightsail-availability-zone=<value>  AWS availability zone to provision resources in region
+  --lightsail-region=<value>             AWS region to provision resources in
+  --no-header                            hide table header from output
+  --no-truncate                          do not truncate output to fit screen
+  --output=<option>                      output in a more machine friendly format
+                                         <options: csv|json|yaml>
+  --sort=<value>                         property to sort by (prepend '-' for descending)
+
+GLOBAL FLAGS
+  --json                Format output as json.
+  --log-level=<option>  [default: info] Specify level for logging.
+                        <options: debug|info|warn|error>
+
+DESCRIPTION
+  List preview environments
+```
+
+_See code: [dist/commands/ls/index.ts](https://github.com/livecycle/preview/blob/v0.0.0/dist/commands/ls/index.ts)_
 
 ## `preview plugins`
 
@@ -120,7 +147,7 @@ EXAMPLES
   $ preview plugins
 ```
 
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v2.3.0/src/commands/plugins/index.ts)_
+_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v2.3.2/src/commands/plugins/index.ts)_
 
 ## `preview plugins:install PLUGIN...`
 
@@ -334,4 +361,46 @@ FLAGS
 DESCRIPTION
   Update installed plugins.
 ```
+
+## `preview up`
+
+Bring up a preview environment
+
+```
+USAGE
+  $ preview up --id <value> [--log-level debug|info|warn|error] [-d lightsail|fake] [--lightsail-region
+    <value>] [--lightsail-availability-zone <value>] [-f <value>] [-t <value>] [--tls-hostname <value>]
+    [--insecure-skip-verify] [--columns <value> | -x] [--sort <value>] [--filter <value>] [--output csv|json|yaml |  |
+    [--csv | --no-truncate]] [--no-header | ]
+
+FLAGS
+  -d, --driver=<option>                  [default: lightsail] Machine driver to use
+                                         <options: lightsail|fake>
+  -f, --file=<value>...                  Compose configuration file
+  -t, --tunnel-url=<value>               [default: livecycle.run] Tunnel url, specify ssh://hostname[:port] or
+                                         ssh+tls://hostname[:port]
+  -x, --extended                         show extra columns
+  --columns=<value>                      only show provided columns (comma-separated)
+  --csv                                  output is csv format [alias: --output=csv]
+  --filter=<value>                       filter property by partial string matching, ex: name=foo
+  --id=<value>                           (required) Environment id
+  --insecure-skip-verify                 Skip TLS or SSH certificate verification
+  --lightsail-availability-zone=<value>  AWS availability zone to provision resources in region
+  --lightsail-region=<value>             AWS region to provision resources in
+  --no-header                            hide table header from output
+  --no-truncate                          do not truncate output to fit screen
+  --output=<option>                      output in a more machine friendly format
+                                         <options: csv|json|yaml>
+  --sort=<value>                         property to sort by (prepend '-' for descending)
+  --tls-hostname=<value>                 Override TLS servername when tunneling via HTTPS
+
+GLOBAL FLAGS
+  --log-level=<option>  [default: info] Specify level for logging.
+                        <options: debug|info|warn|error>
+
+DESCRIPTION
+  Bring up a preview environment
+```
+
+_See code: [dist/commands/up/index.ts](https://github.com/livecycle/preview/blob/v0.0.0/dist/commands/up/index.ts)_
 <!-- commandsstop -->

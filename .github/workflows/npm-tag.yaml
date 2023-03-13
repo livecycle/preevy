@@ -1,0 +1,30 @@
+name: Tag NPM packages as stable
+on:
+  push:
+    tags: [stable-*, alpha-*, beta-*]
+
+jobs:
+  tag-packages:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: setup NPM auth
+      run: | 
+        echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
+        echo "registry=https://registry.npmjs.org/" >> .npmrc
+
+    - name: npm tag
+      run: |
+        set -eou pipefail
+        set -x
+
+        for packageDir in docker-proxy cli; do
+          package=$(jq .name packages/${packageDir}/package.json -r)
+          version=$(jq .version packages/${packageDir}/package.json -r)
+
+          tag=${{ github.ref_name }}
+          npm dist-tag add ${package}@${version} "${tag}"
+        done
+
