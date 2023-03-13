@@ -2,7 +2,7 @@ import { Args, Flags, ux } from '@oclif/core'
 import BaseCommand from '../../base-command'
 
 export default class ImportProfile extends BaseCommand<typeof ImportProfile> {
-    static description = 'Delete preview environments'
+    static description = 'Import an existing profile'
 
     static flags = {
       name: Flags.string({
@@ -14,7 +14,7 @@ export default class ImportProfile extends BaseCommand<typeof ImportProfile> {
 
     static args = {
       location: Args.string({
-        description: 'name of the profile',
+        description: 'location of the profile',
         required: true,
       }),
     }

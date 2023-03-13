@@ -34,7 +34,7 @@ export default class Init extends BaseCommand {
       }
 
       if (this.flags.from) {
-        await this.config.runCommand('profile:import', [this.flags.from])
+        await this.config.runCommand('profile:import', [this.flags.from, '--name', profileAlias])
       } else {
         if (profileExists) {
           if (profileAlias !== 'default') {

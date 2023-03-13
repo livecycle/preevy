@@ -37,7 +37,7 @@ export const profileConfig = (localDir:string, profileStoreResolver: (location: 
       }
       return {
         alias: profileData.current,
-        id: profileData.current,
+        id: profileData.profiles[profileData.current].id,
         location: profileData.profiles[profileData.current].location,
       }
     },
@@ -69,7 +69,7 @@ export const profileConfig = (localDir:string, profileStoreResolver: (location: 
     },
     async delete(alias: string) {
       const data = await getProfileList()
-      if (data.profiles[alias]) {
+      if (!data.profiles[alias]) {
         throw new Error(`Profile ${alias} doesn't exists`)
       }
       delete data.profiles[alias]

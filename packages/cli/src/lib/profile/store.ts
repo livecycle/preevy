@@ -9,7 +9,10 @@ export const profileStore = (store: Store) => {
 
   return {
     async init(profile: Profile) {
-      await store.transaction(profileDir, async ({ write }) => {
+      await store.transaction(profileDir, async ({ write, read }) => {
+        if (await read('info.json')) {
+          throw new Error('Existing profile found in store')
+        }
         await write('info.json', JSON.stringify(profile))
       })
     },
