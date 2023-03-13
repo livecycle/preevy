@@ -17,6 +17,12 @@ export type ComposeBindVolume = {
   type: 'bind'
   source: string
   target: string
+  // eslint-disable-next-line camelcase
+  read_only?: boolean
+  bind?: {
+    // eslint-disable-next-line camelcase
+    create_host_path?: boolean
+  }
 }
 
 export type ComposeVolume = { type: 'volume' | 'tmpfs' | 'npipe' } | ComposeBindVolume
@@ -135,15 +141,16 @@ export const fixModelForRemote = async (
 }
 
 export const addDockerProxyService = (
-  { tunnelOpts, buildDir, port, serviceName, sshPrivateKey }: {
+  { tunnelOpts, buildDir, port, serviceName, sshPrivateKeyPath, knownServerPublicKeyPath }: {
     tunnelOpts: TunnelOpts
     buildDir: string
     port: number
     serviceName: string
-    sshPrivateKey: string
+    sshPrivateKeyPath: string
+    knownServerPublicKeyPath: string
   },
   model: ComposeModel,
-) => ({
+): ComposeModel => ({
   ...model,
   services: {
     ...model.services,
@@ -159,6 +166,20 @@ export const addDockerProxyService = (
           source: '/var/run/docker.sock',
           target: '/var/run/docker.sock',
         },
+        {
+          type: 'bind',
+          source: sshPrivateKeyPath,
+          target: '/root/.ssh/id_rsa',
+          read_only: true,
+          bind: { create_host_path: true },
+        },
+        {
+          type: 'bind',
+          source: knownServerPublicKeyPath,
+          target: '/root/.ssh/known_server_keys/tunnel_server',
+          read_only: true,
+          bind: { create_host_path: true },
+        },
       ],
       ports: [
         { mode: 'ingress', target: port, protocol: 'tcp' },
@@ -166,7 +187,6 @@ export const addDockerProxyService = (
       environment: {
         SSH_URL: tunnelOpts.url,
         TLS_SERVERNAME: tunnelOpts.tlsServerName,
-        SSH_PRIVATE_KEY: sshPrivateKey,
       },
     },
   },

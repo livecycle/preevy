@@ -36,6 +36,6 @@ export const realFs = (baseDir: string): SimpleFS => ({
       throw e
     }
   },
-  delete: (filename: string) => rimraf(filename),
+  delete: async (filename: string) => { await rimraf(filename) },
   flush: async () => undefined,
 })

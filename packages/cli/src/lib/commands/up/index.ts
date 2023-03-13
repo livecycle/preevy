@@ -3,6 +3,7 @@ import retry from 'p-retry'
 import yaml from 'yaml'
 import path from 'path'
 import { checkConnection, keyFingerprint, parseSshUrl, formatSshConnectionConfig } from '@livecycle/docker-proxy'
+import { rimraf } from 'rimraf'
 import { Logger } from '../../../log'
 import { Machine, MachineDriver } from '../../machine'
 import { FileToCopy, SshClient } from '../../ssh/client'
@@ -84,7 +85,7 @@ const performTunnelConnectionCheck = async ({
     insecureSkipVerify: tunnelOpts.insecureSkipVerify,
   }
 
-  const check = async (): Promise<void> => {
+  const check = async (): Promise<{ hostKey: Buffer }> => {
     const knownServerPublicKeys = await keysState.read(parsed.hostname, parsed.port)
     const connectionConfig = { ...connectionConfigBase, knownServerPublicKeys }
 
@@ -96,7 +97,7 @@ const performTunnelConnectionCheck = async ({
       if (!knownServerPublicKeys.includes(result.hostKey)) {
         await keysState.write(parsed.hostname, parsed.port, result.hostKey)
       }
-      return undefined
+      return { hostKey: result.hostKey }
     }
 
     if ('error' in result) {
@@ -136,6 +137,23 @@ const ensureTunnelKeyPair = async (
 
 const DOCKER_PROXY_SERVICE_NAME = 'preview_proxy'
 
+const createCopiedFileInDataDir = (
+  { projectLocalDataDir, filesToCopy, remoteDir } : {
+    projectLocalDataDir: string
+    filesToCopy: FileToCopy[]
+    remoteDir: string
+  }
+) => async (
+  filename: string,
+  content: string | Buffer
+): Promise<{ local: string; remote: string }> => {
+  const local = path.join(projectLocalDataDir, filename)
+  await fs.promises.mkdir(path.dirname(local), { recursive: true })
+  await fs.promises.writeFile(local, content, { flag: 'w' })
+  filesToCopy.push({ local, remote: filename })
+  return { local, remote: path.join(remoteDir, filename) }
+}
+
 const up = async ({
   machineDriver,
   tunnelOpts,
@@ -161,31 +179,18 @@ const up = async ({
 
   const userModel = await dockerCompose(...userComposeFiles || []).getModel()
   const tunnelKeyPair = await ensureTunnelKeyPair({ state: state.tunnelKeyPair, log })
-  const remoteDir = path.join(REMOTE_DIR_BASE, userModel.name)
+  const remoteDir = path.join(REMOTE_DIR_BASE, 'projects', userModel.name)
 
   const { model: fixedModel, filesToCopy } = await fixModelForRemote({
     remoteDir,
     localDir: projectDir,
   }, userModel)
 
-  const remoteModel = addDockerProxyService({
-    tunnelOpts,
-    buildDir: DOCKER_PROXY_DIR,
-    port: DOCKER_PROXY_PORT,
-    serviceName: DOCKER_PROXY_SERVICE_NAME,
-    sshPrivateKey: tunnelKeyPair.privateKey,
-  }, fixedModel)
-
-  log.debug('model', yaml.stringify(remoteModel))
   const projectLocalDataDir = path.join(dataDir, userModel.name)
-  await fs.promises.mkdir(projectLocalDataDir, { recursive: true })
-  const composeFilePath = path.join(projectLocalDataDir, 'docker-compose.yml')
-  await fs.promises.writeFile(composeFilePath, yaml.stringify(remoteModel), { flag: 'w' })
+  await rimraf(projectLocalDataDir)
+  const createCopiedFile = createCopiedFileInDataDir({ projectLocalDataDir, filesToCopy, remoteDir })
 
-  // though not needed, it's useful for debugging to have the compose file at the remote machine
-  filesToCopy.push({ local: composeFilePath, remote: 'docker-compose.yml' })
-
-  await performTunnelConnectionCheck({
+  const { hostKey } = await performTunnelConnectionCheck({
     log,
     tunnelOpts,
     clientPrivateKey: tunnelKeyPair.privateKey,
@@ -194,9 +199,28 @@ const up = async ({
     keysState: state.knownServerPublicKeys,
   })
 
+  const [sshPrivateKeyFile, knownServerPublicKey] = await Promise.all([
+    createCopiedFile('tunnel_client_private_key', tunnelKeyPair.privateKey),
+    createCopiedFile('tunnel_server_public_key', hostKey),
+  ])
+
+  const remoteModel = addDockerProxyService({
+    tunnelOpts,
+    buildDir: DOCKER_PROXY_DIR,
+    port: DOCKER_PROXY_PORT,
+    serviceName: DOCKER_PROXY_SERVICE_NAME,
+    sshPrivateKeyPath: sshPrivateKeyFile.remote,
+    knownServerPublicKeyPath: knownServerPublicKey.remote,
+  }, fixedModel)
+
+  log.debug('model', yaml.stringify(remoteModel))
+
+  // though not needed, it's useful for debugging to have the compose file at the remote machine
+  const composeFilePath = (await createCopiedFile('docker-compose.yml', yaml.stringify(remoteModel))).local
+
   const { machine, keyPair, sshClient } = await ensureCustomizedMachine({ machineDriver, envId, state, log })
 
-  const withDockerSocket = wrapWithDockerSocket({ sshClient, log, dataDir })
+  const withDockerSocket = wrapWithDockerSocket({ sshClient, log, dataDir: projectLocalDataDir })
 
   try {
     await sshClient.execCommand(`sudo mkdir -p "${remoteDir}" && sudo chown $USER:docker "${remoteDir}"`)

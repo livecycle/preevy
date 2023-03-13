@@ -18,7 +18,6 @@
   ],
   "dependencies": {
     "@aws-sdk/client-lightsail": "^3.271.0",
-    "@aws-sdk/client-s3": "^3.271.0",
     "@aws-sdk/util-waiter": "^3.271.0",
     "@livecycle/docker-proxy": "0.0.0",
     "@oclif/core": "^2",
@@ -35,7 +34,7 @@
     "p-retry": "^4.6.2",
     "read-package-json": "^6.0.0",
     "remove": "^0.1.5",
-    "rimraf": "^4.1.2",
+    "rimraf": "^4.4.0",
     "shell-escape": "^0.2.0",
     "yaml": "^2.2.1"
   },

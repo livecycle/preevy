@@ -12,13 +12,37 @@ import { requiredEnv } from './src/env'
 import { tunnelNameResolver } from './src/tunnel-name'
 import { ConnectionCheckResult } from './src/ssh/connection-checker'
 
-const sshConnectionConfigFromEnv = (): { connectionConfig: SshConnectionConfig; sshUrl: string } => {
+const homeDir = process.env.HOME || '/root'
+
+const readDir = async (dir: string) => {
+  try {
+    return (await fs.promises.readdir(dir, { withFileTypes: true }) ?? [])
+      .filter(d => d.isFile()).map(f => f.name)
+  } catch (e) {
+    if ((e as { code: string }).code === 'ENOENT') {
+      return []
+    }
+    throw e
+  }
+}
+
+const readAllFiles = async (dir: string) => {
+  const files = await readDir(dir)
+  return Promise.all(
+    files.map(file => fs.promises.readFile(path.join(dir, file), { encoding: 'utf8' }))
+  )
+}
+
+const sshConnectionConfigFromEnv = async (): Promise<{ connectionConfig: SshConnectionConfig; sshUrl: string }> => {
   const sshUrl = requiredEnv('SSH_URL')
   const parsed = parseSshUrl(sshUrl)
+
   const clientPrivateKey = process.env.SSH_PRIVATE_KEY || fs.readFileSync(
-    path.join(process.env.HOME || '/root', '.ssh', 'id_rsa'),
+    path.join(homeDir, '.ssh', 'id_rsa'),
     { encoding: 'utf8' },
   )
+
+  const knownServerPublicKeys = await readAllFiles(path.join(homeDir, 'known_server_keys'))
 
   return {
     sshUrl,
@@ -26,7 +50,7 @@ const sshConnectionConfigFromEnv = (): { connectionConfig: SshConnectionConfig; 
       ...parsed,
       clientPrivateKey,
       username: process.env.USER ?? 'foo',
-      knownServerPublicKeys: [process.env.SSH_SERVER_PUBLIC_KEY].filter(Boolean) as string[],
+      knownServerPublicKeys,
       insecureSkipVerify: Boolean(process.env.INSECURE_SKIP_VERIFY),
       tlsServerName: process.env.TLS_SERVERNAME || undefined,
     },
@@ -50,7 +74,7 @@ const main = async () => {
     level: process.env.DEBUG || process.env.DOCKER_PROXY_DEBUG ? 'debug' : 'info',
   }, pinoPretty({ destination: pino.destination(process.stderr) }))
 
-  const { connectionConfig, sshUrl } = sshConnectionConfigFromEnv()
+  const { connectionConfig, sshUrl } = await sshConnectionConfigFromEnv()
 
   log.debug('ssh config: %j', {
     ...connectionConfig,
