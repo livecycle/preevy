@@ -32,7 +32,7 @@ export const profileConfig = (localDir:string, profileStoreResolver: (location: 
   return {
     async current() {
       const profileData = await getProfileList()
-      if (!profileData.current) {
+      if (!profileData.current || !profileData.profiles[profileData.current]) {
         return undefined
       }
       return {
@@ -43,6 +43,9 @@ export const profileConfig = (localDir:string, profileStoreResolver: (location: 
     },
     async setCurrent(alias: string) {
       const data = await getProfileList()
+      if (!data.profiles[alias]) {
+        throw new Error(`Profile ${alias} doesn't exists`)
+      }
       data.current = alias
       await localStore.write(profileListFileName, JSON.stringify(data))
     },

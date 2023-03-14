@@ -30,5 +30,7 @@ export const realFs = (baseDir: string): VirtualFS => ({
       throw e
     }
   },
-  delete: async (filename: string) => rimraf(filename),
+  delete: async (filename: string) => {
+    await rimraf(filename)
+  },
 })
