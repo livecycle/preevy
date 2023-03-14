@@ -48,7 +48,7 @@ export const performTunnelConnectionCheck = async ({
     insecureSkipVerify: tunnelOpts.insecureSkipVerify,
   }
 
-  const check = async (): Promise<void> => {
+  const check = async (): Promise<{ hostKey: Buffer }> => {
     const knownServerPublicKeys = await keysState.read(parsed.hostname, parsed.port)
     const connectionConfig = { ...connectionConfigBase, knownServerPublicKeys }
 
@@ -57,10 +57,10 @@ export const performTunnelConnectionCheck = async ({
     const result = await checkConnection({ log, connectionConfig })
 
     if ('clientId' in result) {
-      if (!knownServerPublicKeys.includes(result.hostKey)) {
+      if (!knownServerPublicKeys.includes(result.hostKey)) { // TODO: check if this is correct
         await keysState.write(parsed.hostname, parsed.port, result.hostKey)
       }
-      return undefined
+      return { hostKey: result.hostKey }
     }
 
     if ('error' in result) {

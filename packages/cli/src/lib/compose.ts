@@ -1,5 +1,8 @@
+import fs from 'fs'
+import { asyncMap, asyncToArray } from 'iter-tools-es'
 import { mapValues } from 'lodash'
 import path from 'path'
+import { asyncMapValues } from './async'
 import { FileToCopy } from './ssh/client'
 import { TunnelOpts } from './ssh/url'
 
@@ -14,6 +17,12 @@ export type ComposeBindVolume = {
   type: 'bind'
   source: string
   target: string
+  // eslint-disable-next-line camelcase
+  read_only?: boolean
+  bind?: {
+    // eslint-disable-next-line camelcase
+    create_host_path?: boolean
+  }
 }
 
 export type ComposeVolume = { type: 'volume' | 'tmpfs' | 'npipe' } | ComposeBindVolume
@@ -48,14 +57,14 @@ export type ComposeModel = {
   networks?: Record<string, ComposeNetwork>
 }
 
-export const fixModelForRemote = (
+export const fixModelForRemote = async (
   { remoteDir, localDir, skipServices = [] }: {
     remoteDir: string
     localDir: string
     skipServices?: string[]
   },
   model: ComposeModel,
-): { model: Required<ComposeModel>; filesToCopy: FileToCopy[] } => {
+): Promise<{ model: Required<ComposeModel>; filesToCopy: FileToCopy[] }> => {
   const filesToCopy: FileToCopy[] = []
 
   const relativePath = (p: string) => {
@@ -89,7 +98,7 @@ export const fixModelForRemote = (
     { source }: Pick<ComposeBindVolume, 'source'>,
   ) => path.join(path.join('volumes'), relativePath(source))
 
-  const overrideServices = mapValues(services, (service, serviceName) => {
+  const overrideServices = await asyncMapValues(services, async (service, serviceName) => {
     if (skipServices.includes(serviceName)) {
       return service
     }
@@ -97,7 +106,7 @@ export const fixModelForRemote = (
     return ({
       ...service,
 
-      volumes: service.volumes?.map(volume => {
+      volumes: service.volumes && await asyncToArray(asyncMap(async volume => {
         if (volume.type === 'volume') {
           return volume
         }
@@ -106,10 +115,16 @@ export const fixModelForRemote = (
           throw new Error(`Unsupported volume type: ${volume.type} in service ${serviceName}`)
         }
 
+        const stats = await fs.promises.stat(volume.source)
+
+        if (!stats.isDirectory() && !stats.isFile() && !stats.isSymbolicLink()) {
+          return volume
+        }
+
         const remote = remoteVolumePath(volume)
-        filesToCopy.push({ local: volume.source, remote })
+        filesToCopy.push({ local: { path: volume.source, stats }, remote })
         return { ...volume, source: path.join(remoteDir, remote) }
-      }),
+      }, service.volumes)),
     })
   })
 
@@ -126,15 +141,16 @@ export const fixModelForRemote = (
 }
 
 export const addDockerProxyService = (
-  { tunnelOpts, buildDir, port, serviceName, sshPrivateKey }: {
+  { tunnelOpts, buildDir, port, serviceName, sshPrivateKeyPath, knownServerPublicKeyPath }: {
     tunnelOpts: TunnelOpts
     buildDir: string
     port: number
     serviceName: string
-    sshPrivateKey: string
+    sshPrivateKeyPath: string
+    knownServerPublicKeyPath: string
   },
   model: ComposeModel,
-) => ({
+): ComposeModel => ({
   ...model,
   services: {
     ...model.services,
@@ -150,6 +166,20 @@ export const addDockerProxyService = (
           source: '/var/run/docker.sock',
           target: '/var/run/docker.sock',
         },
+        {
+          type: 'bind',
+          source: sshPrivateKeyPath,
+          target: '/root/.ssh/id_rsa',
+          read_only: true,
+          bind: { create_host_path: true },
+        },
+        {
+          type: 'bind',
+          source: knownServerPublicKeyPath,
+          target: '/root/.ssh/known_server_keys/tunnel_server',
+          read_only: true,
+          bind: { create_host_path: true },
+        },
       ],
       ports: [
         { mode: 'ingress', target: port, protocol: 'tcp' },
@@ -157,7 +187,6 @@ export const addDockerProxyService = (
       environment: {
         SSH_URL: tunnelOpts.url,
         TLS_SERVERNAME: tunnelOpts.tlsServerName,
-        SSH_PRIVATE_KEY: sshPrivateKey,
       },
     },
   },

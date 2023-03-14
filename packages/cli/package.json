@@ -37,7 +37,7 @@
     "p-retry": "^4.6.2",
     "read-package-json": "^6.0.0",
     "remove": "^0.1.5",
-    "rimraf": "^4.1.2",
+    "rimraf": "^4.4.0",
     "shell-escape": "^0.2.0",
     "tar": "^6.1.13",
     "yaml": "^2.2.1"

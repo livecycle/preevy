@@ -94,7 +94,7 @@ export default class Up extends DriverCommand<typeof Up> {
       insecureSkipVerify: flags['insecure-skip-verify'],
     }
 
-    await performTunnelConnectionCheck({
+    const { hostKey } = await performTunnelConnectionCheck({
       log: this.logger,
       tunnelOpts,
       clientPrivateKey: tunnelingKey,
@@ -119,6 +119,7 @@ export default class Up extends DriverCommand<typeof Up> {
       projectDir: process.cwd(),
       sshKey: keyPair,
       sshTunnelPrivateKey: tunnelingKey,
+      AllowedSshHostKeys: hostKey,
     })
 
     const flatTunnels: FlatTunnel[] = tunnels

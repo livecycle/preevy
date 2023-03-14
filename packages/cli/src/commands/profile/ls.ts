@@ -1,4 +1,4 @@
-import { Args, ux } from '@oclif/core'
+import { ux } from '@oclif/core'
 import DriverCommand from '../../driver-command'
 
 export default class ListProfile extends DriverCommand<typeof ListProfile> {
