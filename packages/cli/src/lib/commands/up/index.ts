@@ -2,19 +2,18 @@ import fs from 'fs'
 import retry from 'p-retry'
 import yaml from 'yaml'
 import path from 'path'
-import { checkConnection, keyFingerprint, parseSshUrl, formatSshConnectionConfig } from '@livecycle/docker-proxy'
 import { rimraf } from 'rimraf'
 import { Logger } from '../../../log'
 import { Machine, MachineDriver } from '../../machine'
 import { FileToCopy, SshClient } from '../../ssh/client'
-import { generateSshKeyPair, SshKeyPair } from '../../ssh/keypair'
-import { PersistentState } from '../../state'
+import { SSHKeyConfig } from '../../ssh/keypair'
 import { addDockerProxyService, fixModelForRemote } from '../../compose'
 import { DOCKER_PROXY_PORT, DOCKER_PROXY_DIR } from '../../../static'
 import { TunnelOpts } from '../../ssh/url'
 import { ensureCustomizedMachine } from './machine'
 import { wrapWithDockerSocket } from './docker'
 import { dockerCompose } from './compose-runner'
+import { Tunnel } from '../../tunneling'
 
 const REMOTE_DIR_BASE = '/var/run/preview'
 
@@ -40,101 +39,6 @@ const copyFilesWithoutRecreatingDir = async (
   await sshClient.execCommand(`rsync -ac --delete "${remoteTempDir}/" "${remoteDir}" && sudo rm -rf "${remoteTempDir}"`)
 }
 
-export type Tunnel = {
-  project: string
-  service: string
-  ports: Record<string, string[]>
-}
-
-export class UnverifiedHostKeyError extends Error {
-  constructor(
-    readonly tunnelOpts: TunnelOpts,
-    readonly hostKeySignature: string,
-  ) {
-    super(`Host key verification failed for connection ${tunnelOpts.url}`)
-    this.name = 'UnverifiedHostKeyError'
-  }
-}
-
-export type HostKeySignatureConfirmer = (
-  o: { hostKeyFingerprint: string; hostname: string; port: number | undefined }
-) => Promise<void>
-
-const performTunnelConnectionCheck = async ({
-  log,
-  tunnelOpts,
-  clientPrivateKey,
-  username,
-  keysState,
-  confirmHostFingerprint,
-}: {
-  log: Logger
-  tunnelOpts: TunnelOpts
-  clientPrivateKey: string | Buffer
-  username: string
-  keysState: PersistentState['knownServerPublicKeys']
-  confirmHostFingerprint: HostKeySignatureConfirmer
-}) => {
-  const parsed = parseSshUrl(tunnelOpts.url)
-
-  const connectionConfigBase = {
-    ...parsed,
-    clientPrivateKey,
-    username,
-    tlsServerName: tunnelOpts.tlsServerName,
-    insecureSkipVerify: tunnelOpts.insecureSkipVerify,
-  }
-
-  const check = async (): Promise<{ hostKey: Buffer }> => {
-    const knownServerPublicKeys = await keysState.read(parsed.hostname, parsed.port)
-    const connectionConfig = { ...connectionConfigBase, knownServerPublicKeys }
-
-    log.debug('connection check with config', formatSshConnectionConfig(connectionConfig))
-
-    const result = await checkConnection({ log, connectionConfig })
-
-    if ('clientId' in result) {
-      if (!knownServerPublicKeys.includes(result.hostKey)) {
-        await keysState.write(parsed.hostname, parsed.port, result.hostKey)
-      }
-      return { hostKey: result.hostKey }
-    }
-
-    if ('error' in result) {
-      log.error('error checking connection', result.error)
-      throw new Error(`Cannot connect to ${tunnelOpts.url}: ${result.error.message}`)
-    }
-
-    await confirmHostFingerprint({
-      hostKeyFingerprint: keyFingerprint(result.unverifiedHostKey),
-      hostname: parsed.hostname,
-      port: parsed.port,
-    })
-
-    await keysState.write(parsed.hostname, parsed.port, result.unverifiedHostKey)
-
-    return check()
-  }
-
-  return check()
-}
-
-const ensureTunnelKeyPair = async (
-  { state, log }: {
-    state: PersistentState['tunnelKeyPair']
-    log: Logger
-  },
-) => {
-  const existingKeyPair = await state.read()
-  if (existingKeyPair) {
-    return existingKeyPair
-  }
-  log.info('Creating new SSH key pair')
-  const keyPair = await generateSshKeyPair()
-  await state.write(keyPair)
-  return keyPair
-}
-
 const DOCKER_PROXY_SERVICE_NAME = 'preview_proxy'
 
 const createCopiedFileInDataDir = (
@@ -158,29 +62,29 @@ const up = async ({
   machineDriver,
   tunnelOpts,
   envId,
-  state,
   log,
   composeFiles: userComposeFiles,
   dataDir,
   projectDir,
-  confirmHostFingerprint,
+  sshKey,
+  AllowedSshHostKeys: hostKey,
+  sshTunnelPrivateKey,
 }: {
   machineDriver: MachineDriver
   tunnelOpts: TunnelOpts
   envId: string
-  state: PersistentState
   log: Logger
   composeFiles?: string[]
   dataDir: string
   projectDir: string
-  confirmHostFingerprint: HostKeySignatureConfirmer
-}): Promise<{ machine: Machine; keyPair: SshKeyPair; tunnelId: string; tunnels: Tunnel[] }> => {
+  sshKey: SSHKeyConfig
+  sshTunnelPrivateKey: string
+  AllowedSshHostKeys: Buffer
+}): Promise<{ machine: Machine; tunnels: Tunnel[] }> => {
   log.debug('Normalizing compose files')
 
   const userModel = await dockerCompose(...userComposeFiles || []).getModel()
-  const tunnelKeyPair = await ensureTunnelKeyPair({ state: state.tunnelKeyPair, log })
   const remoteDir = path.join(REMOTE_DIR_BASE, 'projects', userModel.name)
-
   const { model: fixedModel, filesToCopy } = await fixModelForRemote({
     remoteDir,
     localDir: projectDir,
@@ -188,19 +92,10 @@ const up = async ({
 
   const projectLocalDataDir = path.join(dataDir, userModel.name)
   await rimraf(projectLocalDataDir)
+
   const createCopiedFile = createCopiedFileInDataDir({ projectLocalDataDir, filesToCopy, remoteDir })
-
-  const { hostKey } = await performTunnelConnectionCheck({
-    log,
-    tunnelOpts,
-    clientPrivateKey: tunnelKeyPair.privateKey,
-    username: process.env.USER || 'preview',
-    confirmHostFingerprint,
-    keysState: state.knownServerPublicKeys,
-  })
-
   const [sshPrivateKeyFile, knownServerPublicKey] = await Promise.all([
-    createCopiedFile('tunnel_client_private_key', tunnelKeyPair.privateKey),
+    createCopiedFile('tunnel_client_private_key', sshTunnelPrivateKey),
     createCopiedFile('tunnel_server_public_key', hostKey),
   ])
 
@@ -215,10 +110,9 @@ const up = async ({
 
   log.debug('model', yaml.stringify(remoteModel))
 
-  // though not needed, it's useful for debugging to have the compose file at the remote machine
   const composeFilePath = (await createCopiedFile('docker-compose.yml', yaml.stringify(remoteModel))).local
 
-  const { machine, keyPair, sshClient } = await ensureCustomizedMachine({ machineDriver, envId, state, log })
+  const { machine, sshClient } = await ensureCustomizedMachine({ machineDriver, sshKey, envId, log })
 
   const withDockerSocket = wrapWithDockerSocket({ sshClient, log, dataDir: projectLocalDataDir })
 
@@ -245,12 +139,10 @@ const up = async ({
       () => compose.getServiceUrl(DOCKER_PROXY_SERVICE_NAME, DOCKER_PROXY_PORT)
     )
 
-    const { tunnelId, tunnels } = await queryTunnels(sshClient, dockerProxyServiceUrl)
+    const { tunnels } = await queryTunnels(sshClient, dockerProxyServiceUrl)
 
     return {
       machine,
-      keyPair,
-      tunnelId,
       tunnels: tunnels.filter((t: Tunnel) => t.service !== DOCKER_PROXY_SERVICE_NAME),
     }
   } finally {

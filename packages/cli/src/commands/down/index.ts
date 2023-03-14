@@ -1,8 +1,6 @@
 import { Args, Flags } from '@oclif/core'
 import DriverCommand from '../../driver-command'
 import { down } from '../../lib/commands'
-import { fsState } from '../../lib/state'
-import { realFs } from '../../lib/state/fs'
 
 export default class Down extends DriverCommand<typeof Down> {
   static description = 'Delete preview environments'
@@ -32,12 +30,11 @@ export default class Down extends DriverCommand<typeof Down> {
 
     const envIds = raw.filter(({ type }) => type === 'arg').map(({ input }) => input)
 
-    const state = fsState(realFs(this.config.dataDir))
+    const driver = await this.machineDriver()
 
     const result = (
       await down({
-        machineDriver: this.machineDriver,
-        state,
+        machineDriver: driver,
         log: this.logger,
         envIds,
         throwOnNotFound: !flags.force,

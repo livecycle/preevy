@@ -1,8 +1,8 @@
-import { Command, Flags, Interfaces } from '@oclif/core'
+import { Flags, Interfaces } from '@oclif/core'
 import { asyncMap } from 'iter-tools-es'
-import { NamedSshKeyPair } from '../../../ssh/keypair'
+import { SSHKeyConfig } from '../../../ssh/keypair'
 import { Machine, MachineDriver } from '../../driver'
-import { removeDriverPrefix } from '../../driver/flags'
+import { MachineDriverFactory } from '../../driver/driver'
 
 const fakeMachine: Machine = {
   privateIPAddress: '1.1.1.1',
@@ -15,8 +15,8 @@ const fakeMachine: Machine = {
 
 const fakeMachineWithEnvId = (envId = 'fake-env-id') => ({ ...fakeMachine, envId })
 
-const fakeNamedSshKey: NamedSshKeyPair = {
-  name: 'fake-ssh-key',
+const fakeNamedSshKey: SSHKeyConfig = {
+  alias: 'fake-ssh-key',
   publicKey: '',
   privateKey: '',
 }
@@ -34,7 +34,7 @@ const machineDriver = (_args: { someFlag: string; someFlag2?: string }): Machine
 
   removeMachine: async () => undefined,
 
-  listKeyPairs: () => asyncMap(x => x, [fakeNamedSshKey.name]),
+  getKeyPairAlias: async () => fakeNamedSshKey.alias,
 })
 
 machineDriver.flags = {
@@ -50,9 +50,7 @@ machineDriver.flags = {
   }),
 } as const
 
-machineDriver.fromFlags = <Command extends typeof Command>(driverName: string, flags: Interfaces.InferredFlags<Command['flags']>) => {
-  const f = removeDriverPrefix<Interfaces.InferredFlags<typeof machineDriver.flags>>(driverName, flags)
-  return machineDriver({ someFlag: f['some-flag'] as string, someFlag2: f['some-flag2'] })
-}
+const factory: MachineDriverFactory<Interfaces.InferredFlags<typeof machineDriver.flags>> = (f, _profile) => machineDriver({ someFlag: f['some-flag'] as string, someFlag2: f['some-flag2'] })
+machineDriver.factory = factory
 
 export default machineDriver

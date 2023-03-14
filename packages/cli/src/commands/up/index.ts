@@ -2,9 +2,9 @@ import os from 'os'
 import { Flags, ux } from '@oclif/core'
 import DriverCommand from '../../driver-command'
 import { up } from '../../lib/commands'
-import { fsState } from '../../lib/state'
-import { realFs } from '../../lib/state/fs'
-import { HostKeySignatureConfirmer } from '../../lib/commands/up'
+import { sshKeysStore } from '../../lib/state/ssh'
+import { profileStore } from '../../lib/profile'
+import { HostKeySignatureConfirmer, performTunnelConnectionCheck } from '../../lib/tunneling'
 
 type FlatTunnel = {
   project: string
@@ -48,7 +48,9 @@ export default class Up extends DriverCommand<typeof Up> {
     'tunnel-url': Flags.string({
       description: 'Tunnel url, specify ssh://hostname[:port] or ssh+tls://hostname[:port]',
       char: 't',
-      default: 'livecycle.run',
+      default: process.env.NODE_ENV
+        ? 'ssh+tls://livecycle.run'
+        : 'ssh+tls://local.livecycle.run:8044',
     }),
     'tls-hostname': Flags.string({
       description: 'Override TLS servername when tunneling via HTTPS',
@@ -66,23 +68,37 @@ export default class Up extends DriverCommand<typeof Up> {
 
   async run(): Promise<unknown> {
     const { flags } = await this.parse(Up)
+
     const { id: envId } = flags
+    const driver = await this.machineDriver()
+    const keyAlias = await driver.getKeyPairAlias()
 
-    const state = fsState(realFs(this.config.dataDir))
+    const keyStore = sshKeysStore(this.store)
+    let keyPair = await keyStore.getKey(keyAlias)
+    if (!keyPair) {
+      this.logger.info(`keypair ${keyAlias} not found, creating new one`)
+      keyPair = await driver.createKeyPair()
+      await keyStore.addKey(keyPair)
+      this.logger.info(`keypair ${keyAlias} created`)
+    }
 
-    const { machine, tunnels } = await up({
-      machineDriver: this.machineDriver,
-      tunnelOpts: {
-        url: flags['tunnel-url'],
-        tlsServerName: flags['tls-hostname'],
-        insecureSkipVerify: flags['insecure-skip-verify'],
-      },
-      envId,
-      composeFiles: flags.file,
+    const pStore = profileStore(this.store)
+    const tunnelingKey = await pStore.getTunnelingKey()
+    if (!tunnelingKey) {
+      throw new Error('Tunneling key is not configured correctly, please recrate the profile')
+    }
+
+    const tunnelOpts = {
+      url: flags['tunnel-url'],
+      tlsServerName: flags['tls-hostname'],
+      insecureSkipVerify: flags['insecure-skip-verify'],
+    }
+
+    const { hostKey } = await performTunnelConnectionCheck({
       log: this.logger,
-      state,
-      dataDir: this.config.dataDir,
-      projectDir: process.cwd(),
+      tunnelOpts,
+      clientPrivateKey: tunnelingKey,
+      username: process.env.USER || 'preview',
       confirmHostFingerprint: async o => {
         const confirmed = await confirmHostFingerprint(o)
         if (!confirmed) {
@@ -90,6 +106,20 @@ export default class Up extends DriverCommand<typeof Up> {
           this.exit(0)
         }
       },
+      keysState: pStore.knownServerPublicKeys,
+    })
+
+    const { machine, tunnels } = await up({
+      machineDriver: driver,
+      envId,
+      tunnelOpts,
+      composeFiles: flags.file,
+      log: this.logger,
+      dataDir: this.config.dataDir,
+      projectDir: process.cwd(),
+      sshKey: keyPair,
+      sshTunnelPrivateKey: tunnelingKey,
+      AllowedSshHostKeys: hostKey,
     })
 
     const flatTunnels: FlatTunnel[] = tunnels

@@ -1,4 +1,5 @@
-import { NamedSshKeyPair } from '../../ssh/keypair'
+import { Profile } from '../../profile/types'
+import { SSHKeyConfig } from '../../ssh/keypair'
 
 export type Machine = {
   providerId: string
@@ -10,20 +11,22 @@ export type Machine = {
 }
 
 export type MachineDriver = {
-  getMachine: ({ envId }: { envId: string }) => Promise<Machine | undefined>
+  getMachine: (args: { envId: string }) => Promise<Machine | undefined>
 
-  createKeyPair: ({ envId }: { envId: string }) => Promise<NamedSshKeyPair>
+  getKeyPairAlias: () => Promise<string>
+
+  createKeyPair: () => Promise<SSHKeyConfig>
 
   createMachine: (args: {
     envId: string
-    keyPairName: string
+    keyConfig: SSHKeyConfig
   }) => Promise<Machine & { fromSnapshot: boolean }>
 
-  ensureMachineSnapshot: ({ providerId, envId }: { providerId: string; envId: string }) => Promise<void>
+  ensureMachineSnapshot: (args: { driverMachineId: string; envId: string }) => Promise<void>
 
   listMachines: () => AsyncIterableIterator<Machine & { envId: string }>
 
-  removeMachine: (providerId: string) => Promise<void>
-
-  listKeyPairs: () => AsyncIterableIterator<string>
+  removeMachine: (driverMachineId: string) => Promise<void>
 }
+
+export type MachineDriverFactory<T> = (flags: T, profile: Profile) => MachineDriver
