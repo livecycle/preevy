@@ -5,10 +5,23 @@ import { generateSshKeyPair } from '../ssh/keypair'
 import { TunnelOpts } from '../ssh/url'
 
 export type Tunnel = {
-    project: string
-    service: string
-    ports: Record<string, string[]>
-  }
+  project: string
+  service: string
+  ports: Record<string, string[]>
+}
+
+export type FlatTunnel = {
+  project: string
+  service: string
+  port: number
+  url: string
+}
+
+export const flattenTunnels = (
+  tunnels: Tunnel[],
+): FlatTunnel[] => tunnels
+  .map(t => Object.entries(t.ports).map(([port, urls]) => urls.map(url => ({ ...t, port: Number(port), url }))))
+  .flat(2)
 
 export class UnverifiedHostKeyError extends Error {
   constructor(

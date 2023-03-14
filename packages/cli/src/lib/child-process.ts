@@ -1,4 +1,5 @@
 import childProcess from 'child_process'
+import { promisify } from 'util'
 
 type Spawn = typeof childProcess['spawn']
 
@@ -21,3 +22,7 @@ export const spawnPromise = (
     resolve(process)
   })
 })
+
+export const execPromise = promisify(childProcess.exec)
+
+export const execPromiseStdout = async (command: string) => (await execPromise(command)).stdout.trim()

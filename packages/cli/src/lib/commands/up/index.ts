@@ -7,23 +7,24 @@ import { Logger } from '../../../log'
 import { Machine, MachineDriver } from '../../machine'
 import { FileToCopy, SshClient } from '../../ssh/client'
 import { SSHKeyConfig } from '../../ssh/keypair'
-import { addDockerProxyService, fixModelForRemote } from '../../compose'
-import { DOCKER_PROXY_PORT, DOCKER_PROXY_DIR } from '../../../static'
+import { fixModelForRemote } from '../../compose/model'
 import { TunnelOpts } from '../../ssh/url'
 import { ensureCustomizedMachine } from './machine'
 import { wrapWithDockerSocket } from './docker'
-import { dockerCompose } from './compose-runner'
+import { localComposeClient } from '../../compose/client'
 import { Tunnel } from '../../tunneling'
+import { findAmbientEnvId } from '../../env-id'
+import { addDockerProxyService, findDockerProxyUrl, queryTunnels } from '../../docker-proxy-client'
 
 const REMOTE_DIR_BASE = '/var/lib/preview'
 
-const queryTunnels = async (sshClient: SshClient, dockerProxyUrl: string) => {
-  const { tunnels, clientId: tunnelId } = await retry(async () => JSON.parse((
-    await sshClient.execCommand(`curl -sf http://${dockerProxyUrl}/tunnels`)
-  ).stdout), { minTimeout: 1000, maxTimeout: 2000, retries: 10 })
-
-  return { tunnels, tunnelId }
-}
+const queryTunnelsWithRetry = async (
+  sshClient: SshClient,
+  dockerProxyUrl: string,
+) => retry(
+  () => queryTunnels(sshClient, dockerProxyUrl),
+  { minTimeout: 1000, maxTimeout: 2000, retries: 10 },
+)
 
 const copyFilesWithoutRecreatingDir = async (
   sshClient: SshClient,
@@ -38,8 +39,6 @@ const copyFilesWithoutRecreatingDir = async (
   await sshClient.putFiles(filesToCopyToTempDir)
   await sshClient.execCommand(`rsync -ac --delete "${remoteTempDir}/" "${remoteDir}" && sudo rm -rf "${remoteTempDir}"`)
 }
-
-const DOCKER_PROXY_SERVICE_NAME = 'preview_proxy'
 
 const createCopiedFileInDataDir = (
   { projectLocalDataDir, filesToCopy, remoteDir } : {
@@ -61,29 +60,31 @@ const createCopiedFileInDataDir = (
 const up = async ({
   machineDriver,
   tunnelOpts,
-  envId,
+  userSpecifiedProjectName,
+  userSpecifiedEnvId,
   log,
   composeFiles: userComposeFiles,
   dataDir,
   projectDir,
   sshKey,
-  AllowedSshHostKeys: hostKey,
+  allowedSshHostKeys: hostKey,
   sshTunnelPrivateKey,
 }: {
   machineDriver: MachineDriver
   tunnelOpts: TunnelOpts
-  envId: string
+  userSpecifiedProjectName: string | undefined
+  userSpecifiedEnvId: string | undefined
   log: Logger
-  composeFiles?: string[]
+  composeFiles: string[]
   dataDir: string
   projectDir: string
   sshKey: SSHKeyConfig
   sshTunnelPrivateKey: string
-  AllowedSshHostKeys: Buffer
-}): Promise<{ machine: Machine; tunnels: Tunnel[] }> => {
+  allowedSshHostKeys: Buffer
+}): Promise<{ machine: Machine; tunnels: Tunnel[]; envId: string }> => {
   log.debug('Normalizing compose files')
 
-  const userModel = await dockerCompose(...userComposeFiles || []).getModel()
+  const userModel = await localComposeClient(userComposeFiles).getModel()
   const remoteDir = path.join(REMOTE_DIR_BASE, 'projects', userModel.name)
   const { model: fixedModel, filesToCopy } = await fixModelForRemote({
     remoteDir,
@@ -99,11 +100,15 @@ const up = async ({
     createCopiedFile('tunnel_server_public_key', hostKey),
   ])
 
+  const envId = userSpecifiedEnvId || await findAmbientEnvId(
+    userSpecifiedProjectName || userModel.name
+  )
+
+  log.info(`Using envId: ${envId}`)
+
   const remoteModel = addDockerProxyService({
     tunnelOpts,
-    buildDir: DOCKER_PROXY_DIR,
-    port: DOCKER_PROXY_PORT,
-    serviceName: DOCKER_PROXY_SERVICE_NAME,
+    urlSuffix: envId,
     sshPrivateKeyPath: sshPrivateKeyFile.remote,
     knownServerPublicKeyPath: knownServerPublicKey.remote,
   }, fixedModel)
@@ -124,7 +129,7 @@ const up = async ({
     log.info('Copying files')
     await copyFilesWithoutRecreatingDir(sshClient, remoteDir, filesToCopy)
 
-    const compose = dockerCompose(composeFilePath)
+    const compose = localComposeClient([composeFilePath])
 
     log.debug('Running compose up')
 
@@ -135,16 +140,11 @@ const up = async ({
 
     log.info('Getting tunnels')
 
-    const dockerProxyServiceUrl = await withDockerSocket(
-      () => compose.getServiceUrl(DOCKER_PROXY_SERVICE_NAME, DOCKER_PROXY_PORT)
-    )
+    const dockerProxyServiceUrl = await withDockerSocket(() => findDockerProxyUrl(compose))
 
-    const { tunnels } = await queryTunnels(sshClient, dockerProxyServiceUrl)
+    const { tunnels } = await queryTunnelsWithRetry(sshClient, dockerProxyServiceUrl)
 
-    return {
-      machine,
-      tunnels: tunnels.filter((t: Tunnel) => t.service !== DOCKER_PROXY_SERVICE_NAME),
-    }
+    return { envId, machine, tunnels }
   } finally {
     sshClient.dispose()
   }
