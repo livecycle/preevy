@@ -4,7 +4,7 @@ import path from 'path'
 import { VirtualFS } from './types'
 
 export async function suggestDefaultUrl(profileAlias: string) {
-  const sts = new STSClient({})
+  const sts = new STSClient({ region: 'us-east-1' })
   const { Account: AccountId } = await sts.send(new GetCallerIdentityCommand({}))
   return `s3://preview-${AccountId}-${profileAlias}?region=us-east-1`
 }
