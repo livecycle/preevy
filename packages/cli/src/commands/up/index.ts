@@ -38,9 +38,7 @@ export default class Up extends DriverCommand<typeof Up> {
     'tunnel-url': Flags.string({
       description: 'Tunnel url, specify ssh://hostname[:port] or ssh+tls://hostname[:port]',
       char: 't',
-      default: process.env.NODE_ENV
-        ? 'ssh+tls://livecycle.run'
-        : 'ssh+tls://local.livecycle.run:8044',
+      default: 'ssh+tls://livecycle.run' ?? process.env.PREVIEW_TUNNEL_OVERRIDE
     }),
     'tls-hostname': Flags.string({
       description: 'Override TLS server name when tunneling via HTTPS',
@@ -73,7 +71,7 @@ export default class Up extends DriverCommand<typeof Up> {
     const pStore = profileStore(this.store)
     const tunnelingKey = await pStore.getTunnelingKey()
     if (!tunnelingKey) {
-      throw new Error('Tunneling key is not configured correctly, please recrate the profile')
+      throw new Error('Tunneling key is not configured correctly, please recreate the profile')
     }
 
     const tunnelOpts = {
