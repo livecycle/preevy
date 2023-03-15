@@ -38,7 +38,7 @@ export default class Up extends DriverCommand<typeof Up> {
     'tunnel-url': Flags.string({
       description: 'Tunnel url, specify ssh://hostname[:port] or ssh+tls://hostname[:port]',
       char: 't',
-      default: 'ssh+tls://livecycle.run' ?? process.env.PREVIEW_TUNNEL_OVERRIDE
+      default: 'ssh+tls://livecycle.run' ?? process.env.PREVIEW_TUNNEL_OVERRIDE,
     }),
     'tls-hostname': Flags.string({
       description: 'Override TLS server name when tunneling via HTTPS',

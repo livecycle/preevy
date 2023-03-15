@@ -3,6 +3,7 @@ import { asyncMap, asyncToArray } from 'iter-tools-es'
 import { mapValues } from 'lodash'
 import path from 'path'
 import { asyncMapValues } from '../async'
+import { statOrUndefined } from '../files'
 import { FileToCopy } from '../ssh/client'
 
 export type ComposeSecretOrConfig = {
@@ -114,7 +115,13 @@ export const fixModelForRemote = async (
           throw new Error(`Unsupported volume type: ${volume.type} in service ${serviceName}`)
         }
 
-        const stats = await fs.promises.stat(volume.source)
+        const stats = await statOrUndefined(volume.source) as fs.Stats | undefined
+
+        if (!stats) {
+          // ignore non-existing files like docker and compose do,
+          //  they will be created as directories in the container
+          return volume
+        }
 
         if (!stats.isDirectory() && !stats.isFile() && !stats.isSymbolicLink()) {
           return volume

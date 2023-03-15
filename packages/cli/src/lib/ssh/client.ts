@@ -11,6 +11,7 @@ import rimraf, { rimrafSync } from 'rimraf'
 import { partition } from 'lodash'
 import { asyncMap, asyncToArray } from 'iter-tools-es'
 import { Logger } from '../../log'
+import { lazyTempDir } from '../files'
 
 export type CommandResult = {
   stdout: string
@@ -53,21 +54,6 @@ const checkResult = (name: string, result: CommandResult) => {
     throw new CommandError(name, result)
   }
   return result
-}
-
-const lazyTempDir = (name: string) => {
-  let value: string
-  const dispose = () => value && rimrafSync(value)
-  return {
-    get path() {
-      if (!value) {
-        value = fs.mkdtempSync(path.join(os.tmpdir(), `${name}-`))
-        process.on('exit', dispose)
-      }
-      return value
-    },
-    dispose,
-  }
 }
 
 export const nodeSshClient = async ({ host, username, privateKey, log }: {
