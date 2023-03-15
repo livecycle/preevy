@@ -2,9 +2,9 @@ import fs from 'fs'
 import { asyncMap, asyncToArray } from 'iter-tools-es'
 import { mapValues } from 'lodash'
 import path from 'path'
-import { asyncMapValues } from './async'
-import { FileToCopy } from './ssh/client'
-import { TunnelOpts } from './ssh/url'
+import { asyncMapValues } from '../async'
+import { statOrUndefined } from '../files'
+import { FileToCopy } from '../ssh/client'
 
 export type ComposeSecretOrConfig = {
   name: string
@@ -115,7 +115,13 @@ export const fixModelForRemote = async (
           throw new Error(`Unsupported volume type: ${volume.type} in service ${serviceName}`)
         }
 
-        const stats = await fs.promises.stat(volume.source)
+        const stats = await statOrUndefined(volume.source) as fs.Stats | undefined
+
+        if (!stats) {
+          // ignore non-existing files like docker and compose do,
+          //  they will be created as directories in the container
+          return volume
+        }
 
         if (!stats.isDirectory() && !stats.isFile() && !stats.isSymbolicLink()) {
           return volume
@@ -139,55 +145,3 @@ export const fixModelForRemote = async (
     filesToCopy,
   }
 }
-
-export const addDockerProxyService = (
-  { tunnelOpts, buildDir, port, serviceName, sshPrivateKeyPath, knownServerPublicKeyPath }: {
-    tunnelOpts: TunnelOpts
-    buildDir: string
-    port: number
-    serviceName: string
-    sshPrivateKeyPath: string
-    knownServerPublicKeyPath: string
-  },
-  model: ComposeModel,
-): ComposeModel => ({
-  ...model,
-  services: {
-    ...model.services,
-    [serviceName]: {
-      build: {
-        context: buildDir,
-      },
-      restart: 'always',
-      networks: Object.keys(model.networks || {}),
-      volumes: [
-        {
-          type: 'bind',
-          source: '/var/run/docker.sock',
-          target: '/var/run/docker.sock',
-        },
-        {
-          type: 'bind',
-          source: sshPrivateKeyPath,
-          target: '/root/.ssh/id_rsa',
-          read_only: true,
-          bind: { create_host_path: true },
-        },
-        {
-          type: 'bind',
-          source: knownServerPublicKeyPath,
-          target: '/root/.ssh/known_server_keys/tunnel_server',
-          read_only: true,
-          bind: { create_host_path: true },
-        },
-      ],
-      ports: [
-        { mode: 'ingress', target: port, protocol: 'tcp' },
-      ],
-      environment: {
-        SSH_URL: tunnelOpts.url,
-        TLS_SERVERNAME: tunnelOpts.tlsServerName,
-      },
-    },
-  },
-})

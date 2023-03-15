@@ -1,11 +1,15 @@
-import { Args, Flags } from '@oclif/core'
+import { Flags } from '@oclif/core'
 import DriverCommand from '../../driver-command'
-import { down } from '../../lib/commands'
+import { localComposeClient } from '../../lib/compose/client'
+import { composeFlags } from '../../lib/compose/flags'
+import { envIdFlags, findAmbientEnvId, findAmbientProjectName } from '../../lib/env-id'
 
 export default class Down extends DriverCommand<typeof Down> {
   static description = 'Delete preview environments'
 
   static flags = {
+    ...envIdFlags,
+    ...composeFlags,
     force: Flags.boolean({
       description: 'Do not error if the environment is not found',
       char: 'f',
@@ -14,38 +18,35 @@ export default class Down extends DriverCommand<typeof Down> {
   }
 
   static args = {
-    id: Args.string({
-      description: 'Environment IDs to delete',
-      required: true,
-      multiple: true,
-    }),
   }
-
-  static strict = false
 
   static enableJsonFlag = true
 
   async run(): Promise<unknown> {
-    const { flags, raw } = await this.parse(Down)
-
-    const envIds = raw.filter(({ type }) => type === 'arg').map(({ input }) => input)
-
+    const log = this.logger
+    const { flags } = await this.parse(Down)
     const driver = await this.machineDriver()
 
-    const result = (
-      await down({
-        machineDriver: driver,
-        log: this.logger,
-        envIds,
-        throwOnNotFound: !flags.force,
-      })
-    ).map(({ envId }) => envId)
+    const projectName = flags.project || await findAmbientProjectName(localComposeClient(flags.file))
+    log.debug(`project: ${projectName}`)
+    const envId = flags.id || await findAmbientEnvId(projectName)
+    log.debug(`envId: ${envId}`)
 
-    if (flags.json) {
-      return result
+    const machine = await driver.getMachine({ envId })
+
+    if (!machine && !flags.force) {
+      throw new Error(`No machine found for envId ${envId}`)
     }
 
-    result.forEach(envId => this.log(envId))
+    if (machine) {
+      await driver.removeMachine(machine.providerId)
+    }
+
+    if (flags.json) {
+      return envId
+    }
+
+    this.log(envId)
     return undefined
   }
 }
