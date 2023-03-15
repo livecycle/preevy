@@ -1,39 +1,38 @@
-import Fastify, { RawRequestDefaultExpression } from 'fastify'
+import Fastify from 'fastify'
 import { fastifyRequestContext } from '@fastify/request-context'
-import { InternalServerError } from './errors'
 import { appLoggerFromEnv } from './logging'
-import { proxyRoutes } from './proxy'
-import { PreviewEnvStore } from './preview-env'
+import http from 'http'
+import internal from 'stream'
 
-const rewriteUrl = ({ url, headers: { host } }: RawRequestDefaultExpression): string => {
-  if (!url) {
-    throw new InternalServerError('no url in request')
-  }
-  if (!host) {
-    throw new InternalServerError('no host header in request')
-  }
-
-  const target = host.split('.', 1)[0]
-  if (!target.includes('-')) {
-    return url
-  }
-
-  return `/proxy/${target}${url}`
-}
-
-export const app = ({ envStore, sshPublicKey }: { 
-  envStore: PreviewEnvStore
+export const app = ({ sshPublicKey,isProxyRequest, proxyHandlers }: { 
   sshPublicKey: string
+  isProxyRequest: (req: http.IncomingMessage) => boolean
+  proxyHandlers: { wsHandler: (req: http.IncomingMessage, socket: internal.Duplex, head: Buffer) => void, handler: (req: http.IncomingMessage, res: http.ServerResponse) => void }
 }) =>
   Fastify({
+    serverFactory: (handler) => {
+      const {wsHandler:proxyWsHandler, handler: proxyHandler } = proxyHandlers
+      const server = http.createServer((req, res) => {
+        if (isProxyRequest(req)){
+          return proxyHandler(req, res)
+        }
+        return handler(req, res)
+      })
+      server.on('upgrade', (req, socket, head) => {
+        if (isProxyRequest(req)){
+          proxyWsHandler(req, socket, head)
+        } else {
+          socket.end()
+        }
+      })
+      return server;
+    },
     logger: appLoggerFromEnv(),
-    rewriteUrl,
   })
     
     .register(fastifyRequestContext)
     .get('/healthz', { logLevel: 'warn' }, async () => 'OK')
     .get('/ssh-public-key', async () => sshPublicKey)
-    .register(proxyRoutes, { prefix: '/proxy/', envStore })
 
   
     

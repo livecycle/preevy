@@ -6,6 +6,7 @@ import { sshServer as createSshServer } from './src/ssh-server'
 import { getSSHKeys } from './src/ssh-keys'
 import url from 'url'
 import path from 'path'
+import { isProxyRequest, proxyHandlers } from './src/proxy'
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
@@ -32,7 +33,8 @@ const envStore = inMemoryPreviewEnvStore({
   },
 })
 
-const app = createApp({ envStore, sshPublicKey })
+
+const app = createApp({ sshPublicKey, isProxyRequest: isProxyRequest(BASE_URL), proxyHandlers: proxyHandlers(envStore) })
 const sshLogger = app.log.child({ name: 'ssh_server' })
 
 const tunnelName = (clientId: string, remotePath: string) => {
