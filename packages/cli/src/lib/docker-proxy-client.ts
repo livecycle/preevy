@@ -1,6 +1,6 @@
 import path from 'path'
 import { ComposeClient } from './compose/client'
-import { ComposeModel } from './compose/model'
+import { ComposeModel, ComposeService } from './compose/model'
 import { SshClient } from './ssh/client'
 import { TunnelOpts } from './ssh/url'
 import { Tunnel } from './tunneling'
@@ -8,6 +8,22 @@ import { Tunnel } from './tunneling'
 const DOCKER_PROXY_SERVICE_NAME = 'preview_proxy'
 const DOCKER_PROXY_DIR = path.join(path.dirname(require.resolve('@livecycle/docker-proxy')), '..')
 const DOCKER_PROXY_PORT = 3000
+
+const baseDockerProxyService: ComposeService = {
+  build: {
+    context: DOCKER_PROXY_DIR,
+  },
+  ports: [
+    { mode: 'ingress', target: DOCKER_PROXY_PORT, protocol: 'tcp' },
+  ],
+}
+
+export const minimalModelWithDockerProxyService = (name: string): ComposeModel => ({
+  name,
+  services: {
+    [DOCKER_PROXY_SERVICE_NAME]: baseDockerProxyService,
+  },
+})
 
 export const addDockerProxyService = (
   { tunnelOpts, sshPrivateKeyPath, knownServerPublicKeyPath, urlSuffix }: {
@@ -22,9 +38,7 @@ export const addDockerProxyService = (
   services: {
     ...model.services,
     [DOCKER_PROXY_SERVICE_NAME]: {
-      build: {
-        context: DOCKER_PROXY_DIR,
-      },
+      ...baseDockerProxyService,
       restart: 'always',
       networks: Object.keys(model.networks || {}),
       volumes: [
@@ -47,9 +61,6 @@ export const addDockerProxyService = (
           read_only: true,
           bind: { create_host_path: true },
         },
-      ],
-      ports: [
-        { mode: 'ingress', target: DOCKER_PROXY_PORT, protocol: 'tcp' },
       ],
       environment: {
         SSH_URL: tunnelOpts.url,

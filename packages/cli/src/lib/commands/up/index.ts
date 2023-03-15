@@ -85,13 +85,14 @@ const up = async ({
   log.debug('Normalizing compose files')
 
   const userModel = await localComposeClient(userComposeFiles).getModel()
-  const remoteDir = path.join(REMOTE_DIR_BASE, 'projects', userModel.name)
+  const projectName = userSpecifiedProjectName ?? userModel.name
+  const remoteDir = path.join(REMOTE_DIR_BASE, 'projects', projectName)
   const { model: fixedModel, filesToCopy } = await fixModelForRemote({
     remoteDir,
     localDir: projectDir,
   }, userModel)
 
-  const projectLocalDataDir = path.join(dataDir, userModel.name)
+  const projectLocalDataDir = path.join(dataDir, projectName)
   await rimraf(projectLocalDataDir)
 
   const createCopiedFile = createCopiedFileInDataDir({ projectLocalDataDir, filesToCopy, remoteDir })
@@ -100,9 +101,7 @@ const up = async ({
     createCopiedFile('tunnel_server_public_key', hostKey),
   ])
 
-  const envId = userSpecifiedEnvId || await findAmbientEnvId(
-    userSpecifiedProjectName || userModel.name
-  )
+  const envId = userSpecifiedEnvId || await findAmbientEnvId(projectName)
 
   log.info(`Using envId: ${envId}`)
 
@@ -119,7 +118,7 @@ const up = async ({
 
   const { machine, sshClient } = await ensureCustomizedMachine({ machineDriver, sshKey, envId, log })
 
-  const withDockerSocket = wrapWithDockerSocket({ sshClient, log, dataDir: projectLocalDataDir })
+  const withDockerSocket = wrapWithDockerSocket({ sshClient, log })
 
   try {
     await sshClient.execCommand(`sudo mkdir -p "${remoteDir}" && sudo chown $USER:docker "${remoteDir}"`)

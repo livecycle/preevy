@@ -6,18 +6,14 @@ export type FuncWrapper = <Return>(
 ) => Promise<Return>
 
 export const wrapWithDockerSocket = (
-  { sshClient, log, dataDir }: {
+  { sshClient, log }: {
     sshClient: SshClient
     log: Logger
-    dataDir: string
   },
 ): FuncWrapper => async <Return>(
   f: () => Promise<Return>,
 ): Promise<Return> => {
-  const { localSocket, close } = await sshClient.forwardOutStreamLocal(
-    '/var/run/docker.sock',
-    { localDir: dataDir },
-  )
+  const { localSocket, close } = await sshClient.forwardOutStreamLocal('/var/run/docker.sock')
 
   log.debug(`Local socket: ${localSocket}`)
 

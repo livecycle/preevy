@@ -1,41 +1,58 @@
-import { spawn, SpawnOptionsWithoutStdio, StdioPipe, StdioPipeNamed } from 'child_process'
+import { ChildProcess, spawn, StdioOptions } from 'child_process'
 import shellEscape from 'shell-escape'
 import yaml from 'yaml'
+import { WriteStream } from 'fs'
 import { ComposeModel } from './model'
-import { execPromiseStdout, spawnPromise } from '../child-process'
+import { childProcessPromise, childProcessStdoutPromise } from '../child-process'
 import { SshClient } from '../ssh/client'
 
-const composeFileArgs = (composeFiles: string[]) => composeFiles.flatMap(file => ['-f', file])
+const composeFileArgs = (
+  composeFiles: string[] | Buffer
+) => (Buffer.isBuffer(composeFiles) ? ['-f', '-'] : composeFiles.flatMap(file => ['-f', file]))
+
+type Executer = (opts: { args: string[]; stdin?: Buffer }) => Promise<string>
 
 const composeClient = (
-  executer: (command: string) => Promise<string>,
-  ...composeFiles: string[]
+  executer: Executer,
+  composeFiles: string[] | Buffer
 ) => {
-  const composeCommand = `docker compose ${shellEscape(composeFileArgs(composeFiles))}`
-  const execComposeCommand = (args: string) => executer(`${composeCommand} ${args}`)
+  const execComposeCommand = (args: string[]) => executer({
+    args,
+    stdin: Buffer.isBuffer(composeFiles) ? composeFiles : undefined,
+  })
 
-  const getModel = async () => yaml.parse(await execComposeCommand('convert')) as ComposeModel
+  const getModel = async () => yaml.parse(await execComposeCommand(['convert'])) as ComposeModel
 
   return {
-    startService: (...services: string[]) => execComposeCommand(`start ${shellEscape(services)}`),
+    startService: (...services: string[]) => execComposeCommand(['start', ...services]),
     getModel,
     getModelName: async () => (await getModel()).name,
-    getServiceLogs: (service: string) => execComposeCommand(`logs --no-color --no-log-prefix ${service}`),
-    getServiceUrl: (service: string, port: number) => execComposeCommand(`port ${service} ${port}`),
+    getServiceLogs: (service: string) => execComposeCommand(['logs', '--no-color', '--no-log-prefix', service]),
+    getServiceUrl: (service: string, port: number) => execComposeCommand(['port', service, String(port)]),
   }
 }
 
 export type ComposeClient = ReturnType<typeof composeClient>
 
-export const localComposeClient = (composeFiles: string[]) => {
-  const spawnComposeArgs = (
-    args: string[],
-    opts: Partial<{
-      env: Record<string, string | undefined>
-      stdio: StdioPipeNamed | StdioPipe[] | 'inherit'
-      opts: SpawnOptionsWithoutStdio
-    }> = {}
-  ): Parameters<typeof spawn> => [
+// from: https://stackoverflow.com/a/67605309
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ParametersExceptFirst<F> = F extends (arg0: any, ...rest: infer R) => any ? R : never;
+
+export const localComposeClient = (composeFiles: string[] | Buffer) => {
+  const insertStdin = (stdio: StdioOptions | undefined) => {
+    if (!Buffer.isBuffer(composeFiles)) {
+      return stdio
+    }
+    if (Array.isArray(stdio)) {
+      return [null, ...stdio.slice(1)]
+    }
+    if (typeof stdio === 'string') {
+      return [null, stdio, stdio]
+    }
+    return [null, null, null]
+  }
+
+  const spawnComposeArgs = (...[args, opts]: ParametersExceptFirst<typeof spawn>): Parameters<typeof spawn> => [
     'docker',
     [
       'compose',
@@ -48,18 +65,30 @@ export const localComposeClient = (composeFiles: string[]) => {
         ...process.env,
         ...opts.env,
       },
+      stdio: insertStdin(opts.stdio),
     },
   ]
 
+  const addStdIn = (p: ChildProcess) => {
+    if (Buffer.isBuffer(composeFiles)) {
+      const stdin = p.stdin as WriteStream
+      stdin.write(composeFiles)
+      stdin.end()
+    }
+    return p
+  }
+
   const spawnCompose = (
     ...args: Parameters<typeof spawnComposeArgs>
-  ) => spawn(...spawnComposeArgs(...args))
+  ) => addStdIn(spawn(...spawnComposeArgs(...args)))
 
   const spawnComposePromise = (
     ...args: Parameters<typeof spawnComposeArgs>
-  ) => spawnPromise(...spawnComposeArgs(...args))
+  ) => childProcessPromise(spawnCompose(...args))
 
-  return Object.assign(composeClient(execPromiseStdout, ...composeFiles), {
+  const executer: Executer = ({ args }) => childProcessStdoutPromise(spawnCompose(args, {}))
+
+  return Object.assign(composeClient(executer, composeFiles), {
     getServiceLogsProcess: (
       service: string,
       opts: Parameters<typeof spawnComposeArgs>[1] = {}
@@ -71,8 +100,13 @@ export const localComposeClient = (composeFiles: string[]) => {
 
 export const sshComposeClient = (
   sshClient: SshClient,
-  ...composeFiles: string[]
+  composeFiles: string[]
 ) => composeClient(
-  async (command: string) => (await sshClient.execCommand(command)).stdout.trim(),
-  ...composeFiles
+  async ({ args, stdin }) => (
+    await sshClient.execCommand(
+      `docker compose ${shellEscape(args)}`,
+      { stdin },
+    )
+  ).stdout.trim(),
+  composeFiles,
 )
