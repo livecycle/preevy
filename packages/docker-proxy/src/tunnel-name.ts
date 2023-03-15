@@ -8,9 +8,12 @@ export type TunnelNameResolver = (x: Pick<RunningService, 'name' | 'project' | '
   tunnel: string
 }[]
 
-export const tunnelNameResolver: TunnelNameResolver = (
+export const tunnelNameResolver = (
+  { userDefinedSuffix }: { userDefinedSuffix?: string },
+): TunnelNameResolver => (
   { project, name, ports }: { project: string; name: string; ports: number[] }
-) => [
-  ...(ports.length === 1 ? [tunnel(ports[0], [name, project])] : []),
-  ...ports.map(port => tunnel(port, [name, port, project])),
-]
+) => (
+  ports.length === 1
+    ? [tunnel(ports[0], [name, userDefinedSuffix || project])]
+    : ports.map(port => tunnel(port, [name, port, userDefinedSuffix || project]))
+)

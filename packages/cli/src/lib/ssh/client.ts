@@ -1,11 +1,13 @@
+import os from 'os'
 import fs from 'fs'
 import net from 'net'
+import stream from 'stream'
 import { NodeSSH } from 'node-ssh'
 import shellEscape from 'shell-escape'
 import path from 'path'
 import { inspect } from 'util'
 import { randomBytes } from 'crypto'
-import rimraf from 'rimraf'
+import rimraf, { rimrafSync } from 'rimraf'
 import { partition } from 'lodash'
 import { asyncMap, asyncToArray } from 'iter-tools-es'
 import { Logger } from '../../log'
@@ -34,12 +36,10 @@ export type SshClient = {
   execCommand(command: string, opts?: {
     cwd?: string
     env?: Record<string, string | undefined>
+    stdin?: Buffer
     ignoreExitCode?: boolean
   }): Promise<CommandResult>
-  forwardOutStreamLocal(
-    remoteSocket: string,
-    opts?: { localDir?: string },
-  ): Promise<{ localSocket: string; close: () => void }>
+  forwardOutStreamLocal(remoteSocket: string): Promise<{ localSocket: string; close: () => void }>
 }
 
 export class CommandError extends Error {
@@ -55,6 +55,21 @@ const checkResult = (name: string, result: CommandResult) => {
   return result
 }
 
+const lazyTempDir = (name: string) => {
+  let value: string
+  const dispose = () => value && rimrafSync(value)
+  return {
+    get path() {
+      if (!value) {
+        value = fs.mkdtempSync(path.join(os.tmpdir(), `${name}-`))
+        process.on('exit', dispose)
+      }
+      return value
+    },
+    dispose,
+  }
+}
+
 export const nodeSshClient = async ({ host, username, privateKey, log }: {
   host: string
   username: string
@@ -67,6 +82,8 @@ export const nodeSshClient = async ({ host, username, privateKey, log }: {
   const stepFunc = (totalTransferred: number, chunk: number, total: number) => {
     log.debug(`transferred ${totalTransferred} of ${total} bytes`)
   }
+
+  const socketDir = lazyTempDir('preview-ssh')
 
   return {
     putDirectory: async (local, destination) => {
@@ -96,7 +113,7 @@ export const nodeSshClient = async ({ host, username, privateKey, log }: {
       ])
     },
 
-    execCommand: async (command, { cwd, env, ignoreExitCode } = {}) => {
+    execCommand: async (command, { cwd, env, ignoreExitCode, stdin } = {}) => {
       log.debug('executing command', { command, cwd, env })
 
       // specifying the env at the ssh level may not work, depending on the ssh server
@@ -111,14 +128,14 @@ export const nodeSshClient = async ({ host, username, privateKey, log }: {
 
       const result = await ssh.execCommand(commandWithEnv, {
         cwd,
+        stdin: stdin && stream.Readable.from(stdin),
         onStdout: (chunk: Buffer) => log.debug(`stdout: ${chunk.toString()}`),
         onStderr: (chunk: Buffer) => log.debug(`stderr: ${chunk.toString()}`),
       })
       return ignoreExitCode ? result : checkResult(command, result)
     },
 
-    forwardOutStreamLocal: (remoteSocket, opts = {}) => new Promise((resolve, reject) => {
-      const localDir = opts.localDir ?? '/tmp'
+    forwardOutStreamLocal: remoteSocket => new Promise((resolve, reject) => {
       const { connection } = ssh
       if (!connection) {
         reject(new Error('forwardOutStreamLocal: not connected'))
@@ -139,7 +156,7 @@ export const nodeSshClient = async ({ host, username, privateKey, log }: {
         })
       })
 
-      const socketPath = path.join(localDir, `s_${randomBytes(16).toString('hex')}`)
+      const socketPath = path.join(socketDir.path, `s_${randomBytes(16).toString('hex')}`)
 
       const onConnectionClose = () => {
         log.debug('client close, closing socketServer')
@@ -160,10 +177,11 @@ export const nodeSshClient = async ({ host, username, privateKey, log }: {
           await rimraf(socketPath)
         })
 
-      process.on('exit', () => rimraf(socketPath))
-
       connection.on('close', onConnectionClose)
     }),
-    dispose: () => ssh.dispose(),
+    dispose: () => {
+      socketDir.dispose()
+      ssh.dispose()
+    },
   }
 }

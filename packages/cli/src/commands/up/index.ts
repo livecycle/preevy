@@ -4,14 +4,9 @@ import DriverCommand from '../../driver-command'
 import { up } from '../../lib/commands'
 import { sshKeysStore } from '../../lib/state/ssh'
 import { profileStore } from '../../lib/profile'
-import { HostKeySignatureConfirmer, performTunnelConnectionCheck } from '../../lib/tunneling'
-
-type FlatTunnel = {
-  project: string
-  service: string
-  port: number
-  url: string
-}
+import { flattenTunnels, HostKeySignatureConfirmer, performTunnelConnectionCheck } from '../../lib/tunneling'
+import { envIdFlags } from '../../lib/env-id'
+import { composeFlags } from '../../lib/compose/flags'
 
 const confirmHostFingerprint = async (
   { hostKeyFingerprint: hostKeySignature, hostname, port }: Parameters<HostKeySignatureConfirmer>[0],
@@ -38,13 +33,8 @@ export default class Up extends DriverCommand<typeof Up> {
   static description = 'Bring up a preview environment'
 
   static flags = {
-    id: Flags.string({ description: 'Environment id', required: true }),
-    file: Flags.string({
-      description: 'Compose configuration file',
-      multiple: true,
-      required: false,
-      char: 'f',
-    }),
+    ...envIdFlags,
+    ...composeFlags,
     'tunnel-url': Flags.string({
       description: 'Tunnel url, specify ssh://hostname[:port] or ssh+tls://hostname[:port]',
       char: 't',
@@ -53,7 +43,7 @@ export default class Up extends DriverCommand<typeof Up> {
         : 'ssh+tls://local.livecycle.run:8044',
     }),
     'tls-hostname': Flags.string({
-      description: 'Override TLS servername when tunneling via HTTPS',
+      description: 'Override TLS server name when tunneling via HTTPS',
       required: false,
     }),
     'insecure-skip-verify': Flags.boolean({
@@ -68,8 +58,6 @@ export default class Up extends DriverCommand<typeof Up> {
 
   async run(): Promise<unknown> {
     const { flags } = await this.parse(Up)
-
-    const { id: envId } = flags
     const driver = await this.machineDriver()
     const keyAlias = await driver.getKeyPairAlias()
 
@@ -109,9 +97,10 @@ export default class Up extends DriverCommand<typeof Up> {
       keysState: pStore.knownServerPublicKeys,
     })
 
-    const { machine, tunnels } = await up({
+    const { machine, tunnels, envId } = await up({
       machineDriver: driver,
-      envId,
+      userSpecifiedProjectName: flags.project,
+      userSpecifiedEnvId: flags.id,
       tunnelOpts,
       composeFiles: flags.file,
       log: this.logger,
@@ -119,12 +108,10 @@ export default class Up extends DriverCommand<typeof Up> {
       projectDir: process.cwd(),
       sshKey: keyPair,
       sshTunnelPrivateKey: tunnelingKey,
-      AllowedSshHostKeys: hostKey,
+      allowedSshHostKeys: hostKey,
     })
 
-    const flatTunnels: FlatTunnel[] = tunnels
-      .map(t => Object.entries(t.ports).map(([port, urls]) => urls.map(url => ({ ...t, port: Number(port), url }))))
-      .flat(2)
+    const flatTunnels = flattenTunnels(tunnels)
 
     if (flags.json) {
       return flatTunnels

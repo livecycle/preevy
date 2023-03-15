@@ -97,7 +97,7 @@ const main = async () => {
 
   const sshClient = await createSshClient({
     connectionConfig,
-    tunnelNameResolver,
+    tunnelNameResolver: tunnelNameResolver({ userDefinedSuffix: process.env.TUNNEL_URL_SUFFIX }),
     log: log.child({ name: 'ssh' }),
     onError: err => {
       log.error(err)
