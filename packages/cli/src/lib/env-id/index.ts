@@ -3,8 +3,6 @@ import { detectCiProvider } from './ci-providers'
 import { gitBranchName } from '../git'
 import { ComposeClient } from '../compose/client'
 
-const envIdFromPullRequest = (pullRequestNumber: number) => `pr${pullRequestNumber}`
-
 const envIdFromBranch = (branch: string) => branch.replace(/[^a-zA-Z0-9]/g, '')
 
 export class AmbientEnvIdNotFoundError extends Error {
@@ -17,10 +15,6 @@ export class AmbientEnvIdNotFoundError extends Error {
 const findAmbientEnvIdSuffix = async (): Promise<string> => {
   const ciProvider = detectCiProvider()
   if (ciProvider) {
-    const prNumber = ciProvider.pullRequestNumber()
-    if (prNumber) {
-      return envIdFromPullRequest(prNumber)
-    }
     const branch = ciProvider.branchName()
     if (branch) {
       return envIdFromBranch(branch)
