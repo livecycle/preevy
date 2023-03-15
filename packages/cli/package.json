@@ -1,6 +1,6 @@
 {
   "name": "@livecycle/preview",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Quickly deploy preview environments to the cloud!",
   "author": "Livecycle",
   "bin": {
