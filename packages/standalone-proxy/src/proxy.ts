@@ -39,7 +39,7 @@ export function proxyHandlers(envStore: PreviewEnvStore, log=console){
     handler: asyncHandler(async (req: IncomingMessage, res: ServerResponse<IncomingMessage>) => {
       const env = await resolveTargetEnv(req)
       if (!env) {
-        res.statusCode = 520;
+        res.statusCode = 502;
         res.end();
         return;
       }
