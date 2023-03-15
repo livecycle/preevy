@@ -2,5 +2,5 @@
 
 set -eou pipefail
 
-sudo mkdir -p /var/run/preview
-sudo chown $USER:docker /var/run/preview
+sudo mkdir -p /var/lib/preview
+sudo chown $USER:docker /var/lib/preview

@@ -15,7 +15,7 @@ import { wrapWithDockerSocket } from './docker'
 import { dockerCompose } from './compose-runner'
 import { Tunnel } from '../../tunneling'
 
-const REMOTE_DIR_BASE = '/var/run/preview'
+const REMOTE_DIR_BASE = '/var/lib/preview'
 
 const queryTunnels = async (sshClient: SshClient, dockerProxyUrl: string) => {
   const { tunnels, clientId: tunnelId } = await retry(async () => JSON.parse((
