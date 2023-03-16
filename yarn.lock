@@ -2912,6 +2912,20 @@
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
 
+"@livecycle/docker-proxy@0.0.0":
+  version "0.0.0"
+  resolved "https://registry.yarnpkg.com/@livecycle/docker-proxy/-/docker-proxy-0.0.0.tgz#c439b015e99d737088f3e73df62c672dfc0f05a3"
+  integrity sha512-8fCE2Alc7ZstAqF1Nu5k/Sv30oHM8C79JdNux+TfkTTftRD3aYrlnXks48D989C6Bme58G/A/nPYQrlXzYB+DA==
+  dependencies:
+    "@types/lodash" "^4.14.191"
+    dockerode "^3.3.4"
+    http-proxy "^1.18.1"
+    lodash "^4.17.21"
+    pino "^8.11.0"
+    pino-pretty "^9.4.0"
+    shell-escape "^0.2.0"
+    ssh2 "^1.11.0"
+
 "@nicolo-ribaudo/eslint-scope-5-internals@5.1.1-v1":
   version "5.1.1-v1"
   resolved "https://registry.yarnpkg.com/@nicolo-ribaudo/eslint-scope-5-internals/-/eslint-scope-5-internals-5.1.1-v1.tgz#dbf733a965ca47b1973177dc0bb6c889edcfb129"
