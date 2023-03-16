@@ -1,8 +1,9 @@
-# Preview
+# Preview ![GitHub](https://img.shields.io/github/license/preview/lievecycle) ![GitHub last commit](https://img.shields.io/github/last-commit/livecycle/preview)
 
 [Badges]
 
-[Terminal GIF]
+![Terminal GIF](./terminal.gif)
+
 
 Preview is a CLI tool for provisioning preview environments.  
 Using preview, you can provision `any docker compose app on your favorite cloud (currently AWS is only supported)    
