@@ -1,7 +1,5 @@
 # Preview ![GitHub](https://img.shields.io/github/license/preview/lievecycle) ![GitHub last commit](https://img.shields.io/github/last-commit/livecycle/preview)
 
-[Badges]
-
 ![Terminal GIF](./terminal.gif)
 
 
