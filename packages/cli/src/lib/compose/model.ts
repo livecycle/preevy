@@ -67,13 +67,7 @@ export const fixModelForRemote = async (
 ): Promise<{ model: Required<ComposeModel>; filesToCopy: FileToCopy[] }> => {
   const filesToCopy: FileToCopy[] = []
 
-  const relativePath = (p: string) => {
-    const result = path.relative(localDir, p)
-    if (result.startsWith('..')) {
-      throw new Error(`Path ${p} is not in the project dir ${localDir}`)
-    }
-    return result
-  }
+  const relativePath = (p: string) => path.relative(localDir, p)
 
   const remoteSecretOrConfigPath = (
     type: 'secret' | 'config',
@@ -98,6 +92,8 @@ export const fixModelForRemote = async (
     { source }: Pick<ComposeBindVolume, 'source'>,
   ) => path.join(path.join('volumes'), relativePath(source))
 
+  const volumePrefixSkipList = ['/var/log']
+
   const overrideServices = await asyncMapValues(services, async (service, serviceName) => {
     if (skipServices.includes(serviceName)) {
       return service
@@ -113,6 +109,9 @@ export const fixModelForRemote = async (
 
         if (volume.type !== 'bind') {
           throw new Error(`Unsupported volume type: ${volume.type} in service ${serviceName}`)
+        }
+        if (volumePrefixSkipList.some(prefix => volume.source.startsWith(prefix))) {
+          return volume
         }
 
         const stats = await statOrUndefined(volume.source) as fs.Stats | undefined
