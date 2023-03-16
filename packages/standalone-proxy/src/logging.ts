@@ -1,6 +1,6 @@
-import { FastifyBaseLogger, FastifyLoggerOptions, PinoLoggerOptions } from 'fastify/types/logger'
+import { PinoLoggerOptions } from 'fastify/types/logger'
 
-const envToLogger: Record<string, (FastifyLoggerOptions & PinoLoggerOptions) | FastifyBaseLogger | false> = {
+const envToLogger: Record<string, PinoLoggerOptions> = {
   development: {
     level: process.env.DEBUG ? 'debug' : 'info',
     transport: {
@@ -13,8 +13,7 @@ const envToLogger: Record<string, (FastifyLoggerOptions & PinoLoggerOptions) | F
   },
   production: {
     level: process.env.DEBUG ? 'debug' : 'info',
-  },
-  test: false,
+  }
 }
 
 export const appLoggerFromEnv = () => envToLogger[process.env.NODE_ENV || 'development']

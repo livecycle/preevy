@@ -1,12 +1,13 @@
 import Fastify from 'fastify'
 import { fastifyRequestContext } from '@fastify/request-context'
-import { appLoggerFromEnv } from './logging'
 import http from 'http'
 import internal from 'stream'
+import {Logger} from 'pino'
 
-export const app = ({ sshPublicKey,isProxyRequest, proxyHandlers }: { 
+export const app = ({ sshPublicKey,isProxyRequest, proxyHandlers, logger }: { 
   sshPublicKey: string
   isProxyRequest: (req: http.IncomingMessage) => boolean
+  logger: Logger
   proxyHandlers: { wsHandler: (req: http.IncomingMessage, socket: internal.Duplex, head: Buffer) => void, handler: (req: http.IncomingMessage, res: http.ServerResponse) => void }
 }) =>
   Fastify({
@@ -22,12 +23,13 @@ export const app = ({ sshPublicKey,isProxyRequest, proxyHandlers }: {
         if (isProxyRequest(req)){
           proxyWsHandler(req, socket, head)
         } else {
+          logger.warn('unexpected upgrade request %j', {url: req.url, host: req.headers['host']})
           socket.end()
         }
       })
       return server;
     },
-    logger: appLoggerFromEnv(),
+    logger,
   })
     
     .register(fastifyRequestContext)

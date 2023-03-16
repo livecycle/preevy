@@ -2,13 +2,14 @@ import { PreviewEnvStore } from './preview-env'
 import httpProxy from 'http-proxy'
 import { IncomingMessage, ServerResponse } from 'http'
 import internal from 'stream'
+import type { Logger } from 'pino'
 
 export const isProxyRequest = (baseUrl: {hostname:string, port:string}) => (req: IncomingMessage)=> {
   const host = req.headers["host"]
   if (!host) return false
   const {hostname: reqHostname, port: reqPort} = new URL(`http://${host}`)
   if (reqPort !== baseUrl.port) return false
-  return reqHostname.endsWith(baseUrl.hostname) && reqHostname !== baseUrl.hostname
+  return reqHostname.endsWith(`.${baseUrl.hostname}`) && reqHostname !== baseUrl.hostname
 }
 
 function asyncHandler<TArgs extends unknown[]>(fn: (...args: TArgs) => Promise<void>, onError: (error: unknown, ...args: TArgs)=> void ) {
@@ -21,7 +22,13 @@ function asyncHandler<TArgs extends unknown[]>(fn: (...args: TArgs) => Promise<v
   }
 }
 
-export function proxyHandlers(envStore: PreviewEnvStore, log=console){
+export function proxyHandlers({
+  envStore, 
+  logger
+}: {
+  envStore: PreviewEnvStore
+  logger: Logger
+} ){
   const proxy = httpProxy.createProxy({})
   const resolveTargetEnv = async (req: IncomingMessage)=>{
     const {url} = req
@@ -29,8 +36,8 @@ export function proxyHandlers(envStore: PreviewEnvStore, log=console){
     const targetHost = host?.split('.', 1)[0]
     const env = await envStore.get(targetHost as string)
     if (!env) {
-      log.warn('no env for %j', { targetHost, url })
-      log.warn('no host header in request')
+      logger.warn('no env for %j', { targetHost, url })
+      logger.warn('no host header in request')
       return;
     }
     return env
@@ -44,7 +51,7 @@ export function proxyHandlers(envStore: PreviewEnvStore, log=console){
         return;
       }
 
-      log.info('proxying to %j', { target: env.target, url: req.url })
+      logger.info('proxying to %j', { target: env.target, url: req.url })
       
       return proxy.web(
         req,
@@ -57,10 +64,10 @@ export function proxyHandlers(envStore: PreviewEnvStore, log=console){
           },
         },
         (err) => {
-          log.warn('error in proxy %j', err, { targetHost: env.target,  url: req.url })
+          logger.warn('error in proxy %j', { error:err, targetHost: env.target,  url: req.url })
         }
       )
-    }, (err)=> log.error('error in proxy %j', err) ),
+    }, (err)=> logger.error('error forwarding traffic %j', {error:err}) ),
     wsHandler: asyncHandler(async (req: IncomingMessage, socket: internal.Duplex, head: Buffer) => {
       const env = await resolveTargetEnv(req)
       if (!env) {
@@ -79,10 +86,10 @@ export function proxyHandlers(envStore: PreviewEnvStore, log=console){
           },
         },
         (err) => {
-          log.warn('error in proxy %j', err, { targetHost: env.target, url: req.url })
+          logger.warn('error in ws proxy %j', { error:err, targetHost: env.target,  url: req.url })
         }
       )
 
-    }, (err)=> log.error('error forwarding ws traffic %j', err))
+    }, (err)=> logger.error('error forwarding ws traffic %j', {error: err}))
   }
 }

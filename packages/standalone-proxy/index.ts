@@ -7,6 +7,8 @@ import { getSSHKeys } from './src/ssh-keys'
 import url from 'url'
 import path from 'path'
 import { isProxyRequest, proxyHandlers } from './src/proxy'
+import { appLoggerFromEnv } from './src/logging'
+import pino from 'pino'
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
@@ -33,9 +35,9 @@ const envStore = inMemoryPreviewEnvStore({
   },
 })
 
-
-const app = createApp({ sshPublicKey, isProxyRequest: isProxyRequest(BASE_URL), proxyHandlers: proxyHandlers(envStore) })
-const sshLogger = app.log.child({ name: 'ssh_server' })
+const logger = pino(appLoggerFromEnv())
+const app = createApp({ sshPublicKey, isProxyRequest: isProxyRequest(BASE_URL), proxyHandlers: proxyHandlers({envStore, logger}), logger })
+const sshLogger = logger.child({ name: 'ssh_server' })
 
 const tunnelName = (clientId: string, remotePath: string) => {
   const serviceName = remotePath.replace(/^\//, '')
