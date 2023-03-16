@@ -67,7 +67,7 @@ export const fixModelForRemote = async (
 ): Promise<{ model: Required<ComposeModel>; filesToCopy: FileToCopy[] }> => {
   const filesToCopy: FileToCopy[] = []
 
-  const relativePath = (p: string) => path.relative(localDir, p)
+  const relativePath = (p: string) => path.resolve(remoteDir, p)
 
   const remoteSecretOrConfigPath = (
     type: 'secret' | 'config',
@@ -90,7 +90,7 @@ export const fixModelForRemote = async (
 
   const remoteVolumePath = (
     { source }: Pick<ComposeBindVolume, 'source'>,
-  ) => path.join(path.join('volumes'), relativePath(source))
+  ) => path.join('volumes', relativePath(source))
 
   const volumePrefixSkipList = ['/var/log']
 
