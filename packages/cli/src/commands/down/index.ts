@@ -26,12 +26,14 @@ export default class Down extends DriverCommand<typeof Down> {
     const log = this.logger
     const { flags } = await this.parse(Down)
     const driver = await this.machineDriver()
-
-    const projectName = flags.project || await findAmbientProjectName(localComposeClient(flags.file))
-    log.debug(`project: ${projectName}`)
-    const envId = flags.id || await findAmbientEnvId(projectName)
-    log.debug(`envId: ${envId}`)
-
+    let envId = flags.id
+    if (!envId){
+      const projectName = flags.project || await findAmbientProjectName(localComposeClient(flags.file))
+      log.debug(`project: ${projectName}`)
+      envId = flags.id || await findAmbientEnvId(projectName)
+      log.debug(`envId: ${envId}`)
+    }
+    
     const machine = await driver.getMachine({ envId })
 
     if (!machine && !flags.force) {
