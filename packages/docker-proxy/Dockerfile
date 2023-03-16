@@ -9,8 +9,10 @@ FROM base as test
 CMD ["yarn", "test"]
 
 FROM base as development
-RUN ["yarn", "build"]
 CMD [ "yarn", "dev" ]
+
+FROM base as bundle
+CMD [ "yarn", "-s", "start" ]
 
 FROM base as production
 CMD [ "yarn", "-s", "start" ]
