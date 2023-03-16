@@ -4,7 +4,7 @@
 
 
 Preview is a CLI tool for provisioning preview environments.  
-Using preview, you can provision `any docker compose app on your favorite cloud (currently AWS is only supported)    
+Using preview, you can provision any docker compose application on your favorite cloud (currently AWS is only supported)    
 This project is part of Liveycle's vision of making preview environments mainstream and integral part of any development flow.  
 
 ## Why?
