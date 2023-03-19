@@ -1,5 +1,22 @@
 {
-    "cSpell.words": [
-        "Snapshotter"
-    ]
+  "editor.tabSize": 2,
+  "cSpell.words": [
+      "Snapshotter"
+  ],
+  "eslint.format.enable": true,
+  "eslint.workingDirectories": [
+    "packages/cli",
+    "packages/standalone-proxy",
+    "packages/docker-proxy",
+  ],
+  "eslint.useESLintClass": true,
+  "eslint.packageManager": "yarn",
+  "eslint.lintTask.enable": true,
+  "files.trimTrailingWhitespace": true,
+  "[typescript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
 }
