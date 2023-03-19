@@ -11,8 +11,6 @@ CMD ["yarn", "test"]
 FROM base as development
 CMD [ "yarn", "dev" ]
 
-FROM base as bundle
-CMD [ "yarn", "-s", "start" ]
-
 FROM base as production
+RUN ["yarn", "build"]
 CMD [ "yarn", "-s", "start" ]
