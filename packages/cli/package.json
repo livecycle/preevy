@@ -90,7 +90,6 @@
   },
   "scripts": {
     "copy-statics-to-dist": "cp -R static dist",
-    "copy-dockerproxy": "rm -rf static/docker-proxy && cp -a ../docker-proxy/dist-for-cli static/docker-proxy",
     "build": "shx rm -rf dist && tsc -b && yarn copy-statics-to-dist",
     "lint": "eslint . --ext .ts",
     "postpack": "shx rm -f oclif.manifest.json",
