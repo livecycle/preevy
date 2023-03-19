@@ -19,4 +19,8 @@
   "[javascript]": {
     "editor.defaultFormatter": "dbaeumer.vscode-eslint"
   },
+  "typescript.format.semicolons": "remove",
+  "typescript.implementationsCodeLens.enabled": true,
+  "typescript.preferences.quoteStyle": "single",
+  "typescript.tsdk": "node_modules/typescript/lib",
 }
