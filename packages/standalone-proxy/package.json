@@ -17,11 +17,11 @@
     "@types/http-proxy": "^1.17.9",
     "@types/node": "18",
     "@types/ssh2": "^1.11.7",
-    "@typescript-eslint/eslint-plugin": "^5.51.0",
-    "@typescript-eslint/parser": "^5.51.0",
-    "eslint": "^8.33.0",
+    "@typescript-eslint/eslint-plugin": "^5.55.0",
+    "@typescript-eslint/parser": "^5.55.0",
+    "eslint": "^8.36.0",
     "nodemon": "^2.0.20",
-    "typescript": "^4.9.5"
+    "typescript": "^5.0.2"
   },
   "scripts": {
     "start": "ts-node ./index.ts",

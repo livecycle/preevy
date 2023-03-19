@@ -10,6 +10,7 @@ import { composeFlags } from '../lib/compose/flags'
 import { flattenTunnels, FlatTunnel } from '../lib/tunneling'
 import { wrapWithDockerSocket } from '../lib/commands/up/docker'
 
+// eslint-disable-next-line no-use-before-define
 export default class Urls extends DriverCommand<typeof Urls> {
   static description = 'Show urls for an existing environment'
 

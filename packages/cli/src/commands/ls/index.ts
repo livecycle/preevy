@@ -3,6 +3,7 @@ import { asyncToArray } from 'iter-tools-es'
 import DriverCommand from '../../driver-command'
 import { ls } from '../../lib/commands'
 
+// eslint-disable-next-line no-use-before-define
 export default class Ls extends DriverCommand<typeof Ls> {
   static description = 'List preview environments'
 

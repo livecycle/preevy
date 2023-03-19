@@ -3,6 +3,7 @@ import DriverCommand from '../../driver-command'
 import { ssh } from '../../lib/commands'
 import { sshKeysStore } from '../../lib/state/ssh'
 
+// eslint-disable-next-line no-use-before-define
 export default class Ssh extends DriverCommand<typeof Ssh> {
   static description = 'SSH into a preview environment machine'
 

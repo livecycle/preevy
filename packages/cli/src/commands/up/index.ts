@@ -29,6 +29,7 @@ const confirmHostFingerprint = async (
   return handleResponse(response)
 }
 
+// eslint-disable-next-line no-use-before-define
 export default class Up extends DriverCommand<typeof Up> {
   static description = 'Bring up a preview environment'
 

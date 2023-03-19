@@ -3,7 +3,9 @@
   "workspaces": [
     "packages/*"
   ],
-  "dependencies": {},
+  "dependencies": {
+    "syncpack": "^9.8.4"
+  },
   "devDependencies": {
     "husky": "^8.0.0",
     "lint-staged": "^13.1.2",
@@ -16,6 +18,8 @@
   },
   "scripts": {
     "lint": "yarn workspaces run lint",
+    "check-mismatches": "syncpack list-mismatches",
+    "fix-mismatches": "syncpack fix-mismatches",
     "prepare": "husky install"
   }
 }

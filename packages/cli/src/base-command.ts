@@ -23,11 +23,22 @@ export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>
 abstract class BaseCommand<T extends typeof Command=typeof Command> extends Command {
   static baseFlags = {
     'log-level': Flags.custom<LogLevel>({
-      summary: 'Specify level for logging.',
+      summary: 'Specify level for logging',
+      hidden: true,
       options: Object.keys(logLevels),
       helpGroup: 'GLOBAL',
-      default: 'info',
+      required: false,
     })(),
+    debug: Flags.boolean({
+      char: 'D',
+      summary: 'Enable debug logging',
+      env: 'DEBUG',
+      default: false,
+      helpGroup: 'GLOBAL',
+      relationships: [
+        { type: 'none', flags: ['log-level'] },
+      ],
+    }),
   }
 
   protected flags!: Flags<T>
@@ -51,7 +62,7 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
   protected stdErrLogger!: Logger
 
   public get logLevel(): LogLevel {
-    return this.flags['log-level'] as LogLevel
+    return this.flags['log-level'] ?? this.flags.debug ? 'debug' : 'info'
   }
 
   public log(message?: string, ...args: unknown[]): void {

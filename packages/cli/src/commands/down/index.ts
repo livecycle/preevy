@@ -11,6 +11,7 @@ const findEnvId = async (log: Logger, { project, file }: { project?: string; fil
   return findAmbientEnvId(projectName)
 }
 
+// eslint-disable-next-line no-use-before-define
 export default class Down extends DriverCommand<typeof Down> {
   static description = 'Delete preview environments'
 
