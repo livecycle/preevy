@@ -143,7 +143,7 @@ const client = ({
       name: string
     }) => {
       const commonArgs = {
-        bundleId: 'small_2_0',
+        bundleId: 'medium_2_0',
         availabilityZone:
           availabilityZone ?? (await getFirstAvailabilityZoneForRegion(ls)),
         instanceNames: [name],
