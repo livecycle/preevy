@@ -26,11 +26,12 @@ export const minimalModelWithDockerProxyService = (name: string): ComposeModel =
 })
 
 export const addDockerProxyService = (
-  { tunnelOpts, sshPrivateKeyPath, knownServerPublicKeyPath, urlSuffix }: {
+  { tunnelOpts, sshPrivateKeyPath, knownServerPublicKeyPath, urlSuffix, debug }: {
     tunnelOpts: TunnelOpts
     urlSuffix: string
     sshPrivateKeyPath: string
     knownServerPublicKeyPath: string
+    debug: boolean
   },
   model: ComposeModel,
 ): ComposeModel => ({
@@ -66,6 +67,7 @@ export const addDockerProxyService = (
         SSH_URL: tunnelOpts.url,
         TLS_SERVERNAME: tunnelOpts.tlsServerName,
         TUNNEL_URL_SUFFIX: urlSuffix,
+        ...debug ? { DEBUG: '1' } : {},
       },
     },
   },

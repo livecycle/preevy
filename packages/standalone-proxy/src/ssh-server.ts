@@ -98,7 +98,7 @@ export const sshServer = ({
             requestedSocketPath,
             (err, upstream) => {
               if (err) {
-                log.error('error forwarding: %j', err)
+                log.error('error forwarding: %j', inspect(err))
                 socket.end()
                 socketServer.close((err) => {
                   log.error('error closing socket server: %j', err)

@@ -23,7 +23,7 @@ function asyncHandler<TArgs extends unknown[]>(fn: (...args: TArgs) => Promise<v
 }
 
 export function proxyHandlers({
-  envStore, 
+  envStore,
   logger
 }: {
   envStore: PreviewEnvStore
@@ -52,7 +52,7 @@ export function proxyHandlers({
       }
 
       logger.info('proxying to %j', { target: env.target, url: req.url })
-      
+
       return proxy.web(
         req,
         res,
@@ -64,7 +64,9 @@ export function proxyHandlers({
           },
         },
         (err) => {
-          logger.warn('error in proxy %j', { error:err, targetHost: env.target,  url: req.url })
+          logger.warn('error in proxy %j', { error: err, targetHost: env.target, url: req.url })
+          res.statusCode = 502
+          res.end(`error proxying request: ${(err as unknown as { code: unknown }).code}`)
         }
       )
     }, (err)=> logger.error('error forwarding traffic %j', {error:err}) ),

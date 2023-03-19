@@ -49,9 +49,10 @@ export const sshClient = async ({
     const { host, port, sockets } = forward
     log.debug(`forwarding ${socketPath} to ${host}:${port}`)
 
+    const channel = accept()
+
     const localServiceSocket = net.connect({ host, port }, () => {
       sockets.add(localServiceSocket)
-      const channel = accept()
       channel.pipe(localServiceSocket).pipe(channel)
       channel.on('close', () => localServiceSocket.destroy())
       localServiceSocket.on('close', () => {
@@ -59,7 +60,10 @@ export const sshClient = async ({
         channel.close()
       })
     })
-    localServiceSocket.on('error', reject)
+    localServiceSocket.on('error', err => {
+      log.warn(`error forwarding ${socketPath} to ${host}:${port}: %j`, inspect(err))
+      channel.close()
+    })
   })
 
   const createForward = (

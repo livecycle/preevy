@@ -18,6 +18,18 @@ import { addDockerProxyService, findDockerProxyUrl, queryTunnels } from '../../d
 
 const REMOTE_DIR_BASE = '/var/lib/preview'
 
+const retryPipeError = <T>(log: Logger, f: () => T) => retry(f, {
+  minTimeout: 500,
+  maxTimeout: 2000,
+  retries: 3,
+  onFailedAttempt: (err: unknown) => {
+    log.debug('Error in pipe attempt', err)
+    if ((err as { code: unknown }).code !== 'EPIPE') {
+      throw err
+    }
+  },
+})
+
 const queryTunnelsWithRetry = async (
   sshClient: SshClient,
   dockerProxyUrl: string,
@@ -58,6 +70,7 @@ const createCopiedFileInDataDir = (
 }
 
 const up = async ({
+  debug,
   machineDriver,
   tunnelOpts,
   userSpecifiedProjectName,
@@ -69,6 +82,7 @@ const up = async ({
   allowedSshHostKeys: hostKey,
   sshTunnelPrivateKey,
 }: {
+  debug: boolean
   machineDriver: MachineDriver
   tunnelOpts: TunnelOpts
   userSpecifiedProjectName: string | undefined
@@ -101,6 +115,7 @@ const up = async ({
   log.info(`Using envId: ${envId}`)
 
   const remoteModel = addDockerProxyService({
+    debug,
     tunnelOpts,
     urlSuffix: envId,
     sshPrivateKeyPath: sshPrivateKeyFile.remote,
@@ -127,10 +142,13 @@ const up = async ({
 
     log.debug('Running compose up')
 
-    await withDockerSocket(() => compose.spawnPromise(
-      ['--verbose', 'up', '-d', '--remove-orphans', '--build', '--wait'],
-      { stdio: 'inherit' },
-    ))
+    await retryPipeError(
+      log,
+      () => withDockerSocket(() => compose.spawnPromise(
+        ['--verbose', 'up', '-d', '--remove-orphans', '--build', '--wait'],
+        { stdio: 'inherit' },
+      )),
+    )
 
     log.info('Getting tunnels')
 

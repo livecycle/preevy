@@ -97,6 +97,7 @@ export default class Up extends DriverCommand<typeof Up> {
     })
 
     const { machine, tunnels, envId } = await up({
+      debug: flags.debug,
       machineDriver: driver,
       userSpecifiedProjectName: flags.project,
       userSpecifiedEnvId: flags.id,
