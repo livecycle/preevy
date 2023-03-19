@@ -65,7 +65,6 @@ const up = async ({
   log,
   composeFiles: userComposeFiles,
   dataDir,
-  projectDir,
   sshKey,
   allowedSshHostKeys: hostKey,
   sshTunnelPrivateKey,
@@ -77,7 +76,6 @@ const up = async ({
   log: Logger
   composeFiles: string[]
   dataDir: string
-  projectDir: string
   sshKey: SSHKeyConfig
   sshTunnelPrivateKey: string
   allowedSshHostKeys: Buffer
@@ -87,10 +85,7 @@ const up = async ({
   const userModel = await localComposeClient(userComposeFiles).getModel()
   const projectName = userSpecifiedProjectName ?? userModel.name
   const remoteDir = path.join(REMOTE_DIR_BASE, 'projects', projectName)
-  const { model: fixedModel, filesToCopy } = await fixModelForRemote({
-    remoteDir,
-    localDir: projectDir,
-  }, userModel)
+  const { model: fixedModel, filesToCopy } = await fixModelForRemote({ remoteDir }, userModel)
 
   const projectLocalDataDir = path.join(dataDir, projectName)
   await rimraf(projectLocalDataDir)

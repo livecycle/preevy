@@ -59,9 +59,8 @@ export type ComposeModel = {
 }
 
 export const fixModelForRemote = async (
-  { remoteDir, localDir, skipServices = [] }: {
+  { remoteDir, skipServices = [] }: {
     remoteDir: string
-    localDir: string
     skipServices?: string[]
   },
   model: ComposeModel,

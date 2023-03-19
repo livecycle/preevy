@@ -3,6 +3,13 @@ import DriverCommand from '../../driver-command'
 import { localComposeClient } from '../../lib/compose/client'
 import { composeFlags } from '../../lib/compose/flags'
 import { envIdFlags, findAmbientEnvId, findAmbientProjectName } from '../../lib/env-id'
+import { Logger } from '../../log'
+
+const findEnvId = async (log: Logger, { project, file }: { project?: string; file: string[] }) => {
+  const projectName = project || await findAmbientProjectName(localComposeClient(file))
+  log.debug(`project: ${projectName}`)
+  return findAmbientEnvId(projectName)
+}
 
 export default class Down extends DriverCommand<typeof Down> {
   static description = 'Delete preview environments'
@@ -26,14 +33,10 @@ export default class Down extends DriverCommand<typeof Down> {
     const log = this.logger
     const { flags } = await this.parse(Down)
     const driver = await this.machineDriver()
-    let envId = flags.id
-    if (!envId){
-      const projectName = flags.project || await findAmbientProjectName(localComposeClient(flags.file))
-      log.debug(`project: ${projectName}`)
-      envId = flags.id || await findAmbientEnvId(projectName)
-      log.debug(`envId: ${envId}`)
-    }
-    
+    const envId = flags.id ?? await findEnvId(log, flags)
+
+    log.debug(`envId: ${envId}`)
+
     const machine = await driver.getMachine({ envId })
 
     if (!machine && !flags.force) {

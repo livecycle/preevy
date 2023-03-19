@@ -103,7 +103,6 @@ export default class Up extends DriverCommand<typeof Up> {
       composeFiles: flags.file,
       log: this.logger,
       dataDir: this.config.dataDir,
-      projectDir: process.cwd(),
       sshKey: keyPair,
       sshTunnelPrivateKey: tunnelingKey,
       allowedSshHostKeys: hostKey,
