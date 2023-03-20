@@ -17,23 +17,23 @@ export const simpleEmitter = <T extends Record<string, unknown>>() => {
   }
 }
 
-export const simpleRx = <T>() => {
-  const emitter = simpleEmitter<{ [simpleRx.event]: T }>()
+export const stateEmitter = <T>() => {
+  const emitter = simpleEmitter<{ [stateEmitter.event]: T }>()
 
   let current: T
   const initial = new Promise<void>(resolve => {
-    void emitter.addListener(simpleRx.event, state => {
+    void emitter.addListener(stateEmitter.event, state => {
       current = state
       resolve()
     })
   })
 
   const self = {
-    emit: (state: T) => emitter.emit(simpleRx.event, state),
-    subscribe: (listener: (state: T) => void) => emitter.addListener(simpleRx.event, listener),
-    subscribeOnce: (listener: (state: T) => void) => emitter.addOneTimeListener(simpleRx.event, listener),
+    emit: (state: T) => emitter.emit(stateEmitter.event, state),
+    addListener: (listener: (state: T) => void) => emitter.addListener(stateEmitter.event, listener),
+    addOneTimeListener: (listener: (state: T) => void) => emitter.addOneTimeListener(stateEmitter.event, listener),
     current: async () => initial.then(() => current),
-    next: () => emitter.toPromise(simpleRx.event),
+    next: () => emitter.toPromise(stateEmitter.event),
     filter: async (predicate: (state: T) => boolean) => {
       let state: T = await self.current()
       while (!predicate(state)) {
@@ -48,4 +48,4 @@ export const simpleRx = <T>() => {
   return self
 }
 
-simpleRx.event = 'state' as const
+stateEmitter.event = 'state' as const

@@ -11,16 +11,14 @@ import { SshState, sshClient as createSshClient, checkConnection, formatPublicKe
 import { requiredEnv } from './src/env'
 import { tunnelNameResolver } from './src/tunnel-name'
 import { ConnectionCheckResult } from './src/ssh/connection-checker'
-import EventEmitter from 'events'
-import { Tunnel } from './src/ssh/tunnel-client'
-import { simpleEmitter, simpleRx } from './src/emitter'
+import { stateEmitter } from './src/emitter'
 
 const homeDir = process.env.HOME || '/root'
 
 const readDir = async (dir: string) => {
   try {
     return ((await fs.promises.readdir(dir, { withFileTypes: true })) ?? [])
-      .filter(d => d.isFile()).map(f => f.name);
+      .filter(d => d.isFile()).map(f => f.name)
   } catch (e) {
     if ((e as { code: string }).code === 'ENOENT') {
       return []
@@ -116,13 +114,13 @@ const main = async () => {
 
   log.info('ssh client connected to %j', sshUrl)
 
-  const state = simpleRx<{ ssh: SshState; services: RunningService[]}>()
+  const state = stateEmitter<{ ssh: SshState; services: RunningService[]}>()
 
   void dockerClient.startListening({
     onChange: async services => state.emit({ ssh: await sshClient.updateTunnels(services), services }),
   })
 
-  state.subscribe(({ ssh }) => writeLineToStdout(JSON.stringify(ssh)))
+  state.addListener(({ ssh }) => writeLineToStdout(JSON.stringify(ssh)))
 
   const webServer = createWebServer({
     log: log.child({ name: 'web' }),

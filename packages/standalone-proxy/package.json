@@ -25,6 +25,7 @@
   },
   "scripts": {
     "start": "ts-node ./index.ts",
+    "build": "tsc --noEmit",
     "dev": "DEBUG=1 yarn nodemon ./index.ts",
     "lint": "eslint . --ext .ts,.tsx"
   }
