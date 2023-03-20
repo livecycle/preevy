@@ -20,37 +20,33 @@ const createWebServer = ({
 }: {
   log: Logger
   currentSshState: (waitForServices: string[]) => Promise<SshState>
-}) => {
-  const server = http.createServer(async (req, res) => {
-    log.debug('web request URL: %j', req.url)
+}) => http.createServer(async (req, res) => {
+  log.debug('web request URL: %j', req.url)
 
-    if (!req.url) {
-      respondNotFound(res)
-      return
-    }
-
-    const [path, query] = req.url.split('?')
-    const params = new URLSearchParams(query)
-
-    if (path === '/tunnels') {
-      const waitForServices = params.getAll('waitFor')
-        .flatMap(p => p.split(','))
-        .map(s => s.trim())
-        .filter(Boolean)
-
-      respondJson(res, await currentSshState(waitForServices))
-      return
-    }
-
-    if (path === '/healthz') {
-      respond(res, 'OK')
-      return
-    }
-
+  if (!req.url) {
     respondNotFound(res)
-  })
+    return
+  }
 
-  return server
-}
+  const [path, query] = req.url.split('?')
+  const params = new URLSearchParams(query)
+
+  if (path === '/tunnels') {
+    const waitForServices = params.getAll('waitFor')
+      .flatMap(p => p.split(','))
+      .map(s => s.trim())
+      .filter(Boolean)
+
+    respondJson(res, await currentSshState(waitForServices))
+    return
+  }
+
+  if (path === '/healthz') {
+    respond(res, 'OK')
+    return
+  }
+
+  respondNotFound(res)
+})
 
 export default createWebServer
