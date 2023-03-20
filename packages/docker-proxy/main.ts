@@ -124,9 +124,8 @@ const main = async () => {
 
   const webServer = createWebServer({
     log: log.child({ name: 'web' }),
-    currentSshState: async () => (await state.current()).ssh,
-    waitForServices: async (waitFor: string[]) => (
-      await state.filter(({ services }) => hasAllServices(waitFor, services))
+    currentSshState: async (waitForServices: string[]) => (
+      await state.filter(({ services }) => hasAllServices(waitForServices, services))
     ).ssh,
   })
     .listen(process.env.PORT ?? 3000, () => {

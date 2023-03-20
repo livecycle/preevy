@@ -16,11 +16,10 @@ const respondJson = (
 const respondNotFound = (res: http.ServerResponse) => respond(res, 'Not found', 'text/plain', 404)
 
 const createWebServer = ({
-  log, currentSshState, waitForServices,
+  log, currentSshState,
 }: {
   log: Logger
-  currentSshState: () => Promise<SshState>
-  waitForServices: (services: string[]) => Promise<SshState>
+  currentSshState: (waitForServices: string[]) => Promise<SshState>
 }) => {
   const server = http.createServer(async (req, res) => {
     log.debug('web request URL: %j', req.url)
@@ -34,13 +33,12 @@ const createWebServer = ({
     const params = new URLSearchParams(query)
 
     if (path === '/tunnels') {
-      const waitFor = params.getAll('waitFor')
+      const waitForServices = params.getAll('waitFor')
         .flatMap(p => p.split(','))
         .map(s => s.trim())
         .filter(Boolean)
 
-      const content = waitFor.length ? await waitForServices(waitFor) : await currentSshState()
-      respondJson(res, content)
+      respondJson(res, await currentSshState(waitForServices))
       return
     }
 
