@@ -25,12 +25,12 @@ Running `preevy`:
 1. Install the CLI using npm:`npm install -g preevy`  , or use it directly using: `npx preevy <command>`  
 2. Set up a profile by using: `preevy init`  
 3. Use `up` command to provision a new VM (Lightsail) with your application: `preevy up`  
-4. Access your application’s preview environment by using the `*.livecycle.run` outputted by the CLI.
+4. Access and share your new preview environment by using the `*.livecycle.run` outputted by the CLI.
 5. Destroy the environment by using: `preevy down`. 
 
 ## Under the hood
 
-`preevy` tool is composed of two main components:  
+`preevy` tool is has two main components:  
 
 #### CLI (packages/cli)
 
