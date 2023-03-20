@@ -1,4 +1,4 @@
-import { parseSshUrl, formatSshConnectionConfig, checkConnection, keyFingerprint } from '@livecycle/docker-proxy'
+import { parseSshUrl, formatSshConnectionConfig, checkConnection, keyFingerprint } from '@livecycle/compose-tunnel-agent'
 import { Logger } from '../../log'
 import { ProfileStore } from '../profile'
 import { generateSshKeyPair } from '../ssh/keypair'

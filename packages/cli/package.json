@@ -1,15 +1,15 @@
 {
-  "name": "@livecycle/preview",
+  "name": "@livecycle/preevy",
   "version": "0.0.2",
   "description": "Quickly deploy preview environments to the cloud!",
   "author": "Livecycle",
   "bin": {
-    "preview": "./bin/run"
+    "preevy": "./bin/run"
   },
-  "homepage": "https://github.com/preview/livecycle",
+  "homepage": "https://github.com/livecycle/preevy",
   "license": "MIT",
   "main": "dist/index.js",
-  "repository": "livecycle/preview",
+  "repository": "livecycle/preevy",
   "files": [
     "/bin",
     "/dist",
@@ -21,7 +21,7 @@
     "@aws-sdk/client-s3": "^3.271.0",
     "@aws-sdk/client-sts": "^3.289.0",
     "@aws-sdk/util-waiter": "^3.271.0",
-    "@livecycle/docker-proxy": "0.0.2",
+    "@livecycle/compose-tunnel-agent": "0.0.2",
     "@oclif/core": "^2",
     "@oclif/plugin-help": "^5",
     "@oclif/plugin-plugins": "^2.3.0",
@@ -74,8 +74,8 @@
     "wtfnode": "^0.9.1"
   },
   "oclif": {
-    "bin": "preview",
-    "dirname": "preview",
+    "bin": "preevy",
+    "dirname": "preevy",
     "commands": "./dist/commands",
     "plugins": [
       "@oclif/plugin-help",
@@ -102,7 +102,7 @@
   "engines": {
     "node": ">=12.0.0"
   },
-  "bugs": "https://github.com/livecycle/preview/issues",
+  "bugs": "https://github.com/livecycle/preevy/issues",
   "keywords": [
     "preview"
   ],

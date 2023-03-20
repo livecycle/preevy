@@ -13,5 +13,5 @@ CMD [ "yarn", "dev" ]
 
 FROM base as production
 LABEL org.opencontainers.image.source=https://github.com/livecycle/preview
-LABEL org.opencontainers.image.description="Preview Proxy"
+LABEL org.opencontainers.image.description="Preview Tunnel Server"
 CMD [ "yarn", "start" ]

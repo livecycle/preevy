@@ -1,5 +1,5 @@
 import path from 'path'
-import { parseKey } from '@livecycle/docker-proxy'
+import { parseKey } from '@livecycle/compose-tunnel-agent'
 import { Profile } from './types'
 import { Store } from '../store'
 
