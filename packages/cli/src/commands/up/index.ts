@@ -1,5 +1,5 @@
 import os from 'os'
-import { Flags, ux } from '@oclif/core'
+import { Args, Flags, ux } from '@oclif/core'
 import DriverCommand from '../../driver-command'
 import { up } from '../../lib/commands'
 import { sshKeysStore } from '../../lib/state/ssh'
@@ -52,11 +52,19 @@ export default class Up extends DriverCommand<typeof Up> {
     ...ux.table.flags(),
   }
 
+  static strict = false
+
   static args = {
+    service: Args.string({
+      description: 'Service name(s). If not specified, will deploy all services',
+      required: false,
+    }),
   }
 
   async run(): Promise<unknown> {
-    const { flags } = await this.parse(Up)
+    const { flags, raw } = await this.parse(Up)
+    const restArgs = raw.filter(arg => arg.type === 'arg').map(arg => arg.input)
+
     const driver = await this.machineDriver()
     const keyAlias = await driver.getKeyPairAlias()
 
@@ -97,6 +105,7 @@ export default class Up extends DriverCommand<typeof Up> {
     })
 
     const { machine, tunnels, envId } = await up({
+      userSpecifiedServices: restArgs,
       debug: flags.debug,
       machineDriver: driver,
       userSpecifiedProjectName: flags.project,

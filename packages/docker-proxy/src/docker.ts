@@ -39,7 +39,7 @@ const client = ({
   }))
 
   return {
-    listenToContainers: async ({ onChange }: { onChange: (services: RunningService[]) => void }) => {
+    startListening: async ({ onChange }: { onChange: (services: RunningService[]) => void }) => {
       const handler = debounce(
         async (data?: Buffer) => {
           log.debug('event handler: %j', data && tryParseJson(data.toString()))

@@ -69,7 +69,7 @@ export default class Urls extends DriverCommand<typeof Urls> {
 
       const dockerProxyServiceUrl = await withDockerSocket(() => findDockerProxyUrl(compose))
       log.debug(`dockerProxyServiceUrl: ${dockerProxyServiceUrl}`)
-      const { tunnels } = await queryTunnels(sshClient, dockerProxyServiceUrl)
+      const { tunnels } = await queryTunnels(sshClient, dockerProxyServiceUrl, [])
 
       const flatTunnels: FlatTunnel[] = flattenTunnels(tunnels)
         .filter(tunnel => !args.service || (

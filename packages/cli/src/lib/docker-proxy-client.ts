@@ -5,7 +5,7 @@ import { SshClient } from './ssh/client'
 import { TunnelOpts } from './ssh/url'
 import { Tunnel } from './tunneling'
 
-const DOCKER_PROXY_SERVICE_NAME = 'preview_proxy'
+export const DOCKER_PROXY_SERVICE_NAME = 'preview_proxy'
 const DOCKER_PROXY_DIR = path.join(path.dirname(require.resolve('@livecycle/docker-proxy')), '..')
 const DOCKER_PROXY_PORT = 3000
 
@@ -83,13 +83,22 @@ export const addDockerProxyService = (
   },
 })
 
-export const queryTunnels = async (sshClient: SshClient, dockerProxyUrl: string) => {
+export const queryTunnels = async (
+  sshClient: SshClient,
+  dockerProxyUrl: string,
+  waitForServices: string[],
+  filterServices?: string[],
+) => {
+  const command = `curl -sf http://${dockerProxyUrl}/tunnels?waitFor=${waitForServices.map(encodeURIComponent).join(',')}`;
+
   const { tunnels, clientId: tunnelId }: { tunnels: Tunnel[]; clientId: string } = JSON.parse((
-    await sshClient.execCommand(`curl -sf http://${dockerProxyUrl}/tunnels`)
+    await sshClient.execCommand(command)
   ).stdout)
 
   return {
-    tunnels: tunnels.filter((t: Tunnel) => t.service !== DOCKER_PROXY_SERVICE_NAME),
+    tunnels: tunnels
+      .filter(({ service }: Tunnel) => service !== DOCKER_PROXY_SERVICE_NAME)
+      .filter(({ service }: Tunnel) => !filterServices?.length || filterServices.includes(service)),
     tunnelId,
   }
 }

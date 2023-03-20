@@ -5,19 +5,22 @@ import { inspect } from 'node:util'
 import pino from 'pino'
 import pinoPretty from 'pino-pretty'
 import { EOL } from 'os'
-import createDockerClient from './src/docker'
+import createDockerClient, { RunningService } from './src/docker'
 import createWebServer from './src/web'
 import { SshState, sshClient as createSshClient, checkConnection, formatPublicKey, parseSshUrl, SshConnectionConfig } from './src/ssh'
 import { requiredEnv } from './src/env'
 import { tunnelNameResolver } from './src/tunnel-name'
 import { ConnectionCheckResult } from './src/ssh/connection-checker'
+import EventEmitter from 'events'
+import { Tunnel } from './src/ssh/tunnel-client'
+import { simpleEmitter, simpleRx } from './src/emitter'
 
 const homeDir = process.env.HOME || '/root'
 
 const readDir = async (dir: string) => {
   try {
-    return (await fs.promises.readdir(dir, { withFileTypes: true }) ?? [])
-      .filter(d => d.isFile()).map(f => f.name)
+    return ((await fs.promises.readdir(dir, { withFileTypes: true })) ?? [])
+      .filter(d => d.isFile()).map(f => f.name);
   } catch (e) {
     if ((e as { code: string }).code === 'ENOENT') {
       return []
@@ -69,6 +72,13 @@ const formatConnectionCheckResult = (
   return r
 }
 
+const writeLineToStdout = (s: string) => [s, EOL].forEach(d => process.stdout.write(d))
+
+const hasAllServices = (
+  waitFor: string[],
+  services: RunningService[],
+) => waitFor.every(name => services.some(s => s.name === name))
+
 const main = async () => {
   const log = pino({
     level: process.env.DEBUG || process.env.DOCKER_PROXY_DEBUG ? 'debug' : 'info',
@@ -87,8 +97,7 @@ const main = async () => {
       connectionConfig,
       log: log.child({ name: 'ssh' }, { level: 'warn' }),
     })
-    process.stdout.write(JSON.stringify(formatConnectionCheckResult(result)))
-    process.stdout.write(EOL)
+    writeLineToStdout(JSON.stringify(formatConnectionCheckResult(result)))
     process.exit(0)
   }
 
@@ -107,21 +116,20 @@ const main = async () => {
 
   log.info('ssh client connected to %j', sshUrl)
 
-  let state: SshState
+  const state = simpleRx<{ ssh: SshState; services: RunningService[]}>()
 
-  const initPromise = new Promise<void>(resolve => {
-    void dockerClient.listenToContainers({
-      onChange: async services => {
-        state = await sshClient.updateTunnels(services)
-        process.stdout.write(JSON.stringify(state))
-        process.stdout.write(EOL)
-        resolve()
-      },
-    })
+  void dockerClient.startListening({
+    onChange: async services => state.emit({ ssh: await sshClient.updateTunnels(services), services }),
   })
 
+  state.subscribe(({ ssh }) => writeLineToStdout(JSON.stringify(ssh)))
+
   const webServer = createWebServer({
-    getSshState: () => initPromise.then(() => state),
+    log: log.child({ name: 'web' }),
+    currentSshState: async () => (await state.current()).ssh,
+    waitForServices: async (waitFor: string[]) => (
+      await state.filter(({ services }) => hasAllServices(waitFor, services))
+    ).ssh,
   })
     .listen(process.env.PORT ?? 3000, () => {
       log.info(`listening on ${inspect(webServer.address())}`)

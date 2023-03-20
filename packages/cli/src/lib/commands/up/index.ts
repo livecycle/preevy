@@ -14,7 +14,7 @@ import { wrapWithDockerSocket } from './docker'
 import { localComposeClient } from '../../compose/client'
 import { Tunnel } from '../../tunneling'
 import { findAmbientEnvId } from '../../env-id'
-import { addDockerProxyService, findDockerProxyUrl, queryTunnels } from '../../docker-proxy-client'
+import { DOCKER_PROXY_SERVICE_NAME, addDockerProxyService, findDockerProxyUrl, queryTunnels } from '../../docker-proxy-client'
 
 const REMOTE_DIR_BASE = '/var/lib/preview'
 
@@ -33,8 +33,10 @@ const retryPipeError = <T>(log: Logger, f: () => T) => retry(f, {
 const queryTunnelsWithRetry = async (
   sshClient: SshClient,
   dockerProxyUrl: string,
+  waitForServices: string[],
+  filterServices?: string[]
 ) => retry(
-  () => queryTunnels(sshClient, dockerProxyUrl),
+  () => queryTunnels(sshClient, dockerProxyUrl, waitForServices, filterServices),
   { minTimeout: 1000, maxTimeout: 2000, retries: 10 },
 )
 
@@ -75,6 +77,7 @@ const up = async ({
   tunnelOpts,
   userSpecifiedProjectName,
   userSpecifiedEnvId,
+  userSpecifiedServices,
   log,
   composeFiles: userComposeFiles,
   dataDir,
@@ -87,6 +90,7 @@ const up = async ({
   tunnelOpts: TunnelOpts
   userSpecifiedProjectName: string | undefined
   userSpecifiedEnvId: string | undefined
+  userSpecifiedServices: string[]
   log: Logger
   composeFiles: string[]
   dataDir: string
@@ -142,19 +146,37 @@ const up = async ({
 
     log.debug('Running compose up')
 
+    const upServices = userSpecifiedServices.length
+      ? userSpecifiedServices.concat(DOCKER_PROXY_SERVICE_NAME)
+      : []
+
+    const composeArgs = [
+      ...debug ? ['--verbose'] : [],
+      'up', '-d', '--remove-orphans', '--build',
+      ...upServices,
+    ]
+
+    log.debug('compose args: ', composeArgs)
+
     await retryPipeError(
       log,
-      () => withDockerSocket(() => compose.spawnPromise(
-        ['--verbose', 'up', '-d', '--remove-orphans', '--build', '--wait'],
-        { stdio: 'inherit' },
-      )),
+      () => withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit' })),
     )
 
     log.info('Getting tunnels')
 
     const dockerProxyServiceUrl = await withDockerSocket(() => findDockerProxyUrl(compose))
 
-    const { tunnels } = await queryTunnelsWithRetry(sshClient, dockerProxyServiceUrl)
+    const waitForServices = userSpecifiedServices.length
+      ? userSpecifiedServices
+      : Object.keys(remoteModel.services as {})
+
+    const { tunnels } = await queryTunnelsWithRetry(
+      sshClient,
+      dockerProxyServiceUrl,
+      waitForServices,
+      userSpecifiedServices,
+    )
 
     return { envId, machine, tunnels }
   } finally {
