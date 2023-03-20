@@ -25,6 +25,16 @@ export const minimalModelWithDockerProxyService = (name: string): ComposeModel =
   },
 })
 
+export const addBaseDockerProxyService = (
+  model: ComposeModel,
+): ComposeModel => ({
+  ...model,
+  services: {
+    ...model.services,
+    [DOCKER_PROXY_SERVICE_NAME]: baseDockerProxyService,
+  },
+})
+
 export const addDockerProxyService = (
   { tunnelOpts, sshPrivateKeyPath, knownServerPublicKeyPath, urlSuffix, debug }: {
     tunnelOpts: TunnelOpts
