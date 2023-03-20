@@ -1,72 +1,60 @@
-# Preview ![GitHub](https://img.shields.io/github/license/preview/lievecycle) ![GitHub last commit](https://img.shields.io/github/last-commit/livecycle/preview)
+# Preevy ![GitHub](https://img.shields.io/github/license/preview/lievecycle) ![GitHub last commit](https://img.shields.io/github/last-commit/livecycle/preview)
 
 ![Terminal GIF](./terminal.gif)
+*Provision preview environments with minimal configuration*
 
-
-Preview is a CLI tool for provisioning preview environments.  
-Using preview, you can provision any docker compose application on your favorite cloud (currently AWS is only supported)    
-This project is part of Liveycle's vision of making preview environments mainstream and integral part of any development flow.  
+`preevy` is a powerful CLI tool designed to simplify the process of creating ephemeral preview environments.
+Using `preevy`, you can easily provision any Docker-Compose application on AWS using affordable [Lightsail](https://aws.amazon.com/free/compute/lightsail) VMS (support for GCP and more cloud is on the way).
 
 ## Why?
 
-Preview environments are non-production ephemeral environments that are created for each pull request.  
-Such environments, can be extremely useful for improving PR workflows and became quite common in the latest years and even been deeply integrated by some PaaS providers (most notability in FE delivery platforms).  
-
-Despite the value of preview environments, setting up preview environments can be a non-trivial task in terms of automation, configuration, operation, complexity and cost.  
-
-This tool designed to simplify this process and provide a framework for utilizing preview environments in order to optimize the PR flow.  
-
-You can read more about the story and philosophy behind this CLI here.  
+At Livecycle, we believe that preview environments are an integral part of any development flow, in any engineering team.  
+These non-production, ephemeral environments, created for every Pull Request, can significantly improve PR workflows.  
+In recent years, preview environments have become increasingly popular, with some PaaS providers even offering deeply integrated preview environments.  
+However, setting up preview environments can be a complex and costly task, which is why many teams have been hesitant to implement them.  
+`preevy` is designed to simplify this task and provide a framework for provisioning and utilizing preview environments to optimize the PR flow.  
+You can read more about the story and philosophy behind Preview here. 
 
 ## Getting started
 
-To start using the CLI you first need:  
-- a local AWS configuration (can be achieved by using the `aws login` or `aws configure`)  
-- docker-compose application (example can be in awesome compose)  
+To start using the Preview CLI you will need:  
+- A local AWS configuration (you can get it by using `aws login` or `aws configure`)  
+- A Docker-Compose application (examples can be found [here](https://github.com/docker/awesome-compose))  
 
-You can install the CLI using npm:  
-`npm install -g preview`  
-or use it directly using:  
-`npx preview <command>`  
-
-Start by setting up a profile by using:  `preview init`  
-
-Afterward, use `up` command to provision a new vm (lightsail) with your application.  
-`preview up`  
-
-Try accessing the application by using the `*.livecycle.run` urls generated for your app.  
-
-Destroy the environment by using: `preview down`  
+Running `preevy`:
+1. Install the CLI using npm:`npm install -g preevy`  , or use it directly using: `npx preevy <command>`  
+2. Set up a profile by using: `preevy init`  
+3. Use `up` command to provision a new VM (Lightsail) with your application: `preevy up`  
+4. Access your application’s preview environment by using the `*.livecycle.run` outputted by the CLI.
+5. Destroy the environment by using: `preevy down`. 
 
 ## Under the hood
 
-The preview tool is composed of two main components:  
+`preevy` tool is composed of two main components:  
 
 #### CLI (packages/cli)
 
 The CLI is a node.js program responsible for:  
 - Provisioning and tearing down VMs.
-- Exposing environments' state and urls to end user. 
+- Exposing environments' state and URLs to the end user.
 - Storing & accessing profile data. (settings, keys, etc...)
-- Setup vm with Docker tooling
-- Syncing compose source code and local volumes
-- Running the application and install daemon for connecting to the proxy service.  
+- Setting up a VM with Docker tooling.
+- Syncing Compose source code and local volumes.
+- Running the application and installing daemon for connecting to the tunneling service.
 
 #### Tunnel server (packages/tunnel-server)
 
-The tunnel server is a node.js base server responsible for exposing friendly HTTPS urls for the compose services.  
-A free public instance is hosted on `livecycle.run` and it can be self-hosted as well.
+The tunnel server is a node.js base server responsible for exposing friendly HTTPS URLs for the Compose services.  
+A free public instance is hosted on `livecycle.run`, and it can be self-hosted as well.
 
 A Docker/OCI image is available on ghcr.io:  ghcr.io/livecycle/preview/tunnel-server
 
 ## CI Integration
 
-The preview CLI is designed to work as part of your CI.  
-For accomplishing that, you need to have a shared profile stored in s3. (more storage provider are on the way)
+Preview is also designed to work seamlessly with your CI, allowing you to easily import a shared preview profile shared in S3 (support for more storage providers is coming soon).
 
-It can be created by using `preview init` and choosing s3 url for storing the profile. (bucket will be created automatically if doesn't exist).
-
-Afterward, the exact profile can be imported in the CI using `preview init --from <s3-url>`
+The profile can be created using `preevy init`, then choosing S3 URL for storing the profile. (Preevy will create a bucket if one doesn't exist)
+After the profile is created, it can be imported in the CI using `preevy init --from <s3-url>`
 
 [Examples]
 
@@ -76,11 +64,11 @@ In case you find a security issue or have something you would like to discuss re
 
 #### Notice on preview environments exposure
 VMs are not exposed directly and instead are exposed via a tunnel created by the tunneling server.  
-Every compose service is exposed with a generated url in the following format:  
+Every Compose service is exposed individually with a generated URL in the following format:  
 `https://{service}-{[port]}-{envId}-{clientId}.{tunnel-server domain}`  
-EnvId can be specified by the `up` command `id` flag, or by automatically generated by git context.  
-ClientId is a unique identifier based on the profile's public tunneling SSH key (generated in init).  
-When using the `*.livecycle.run`, all environments are publicly accessible, assuming you have knowledge of the urls.  
+- EnvId can be specified by the `up` command `id` flag, or automatically generated by git context.  
+- ClientId is a unique identifier based on the profile's public tunneling SSH key (generated in `init`).  
+When using the `*.livecycle.run`, all environments are publicly accessible to those who know of the URLs.  
 
 ## Contributing
 Found a bug? Have a missing feature? Please open an issue and let us know.
