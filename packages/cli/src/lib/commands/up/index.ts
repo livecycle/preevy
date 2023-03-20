@@ -169,7 +169,7 @@ const up = async ({
 
     const waitForServices = userSpecifiedServices.length
       ? userSpecifiedServices
-      : Object.keys(remoteModel.services as {})
+      : Object.keys(userModel.services ?? {})
 
     const { tunnels } = await queryTunnelsWithRetry(
       sshClient,
