@@ -1,5 +1,5 @@
 {
-  "name": "@livecycle/preevy",
+  "name": "preevy",
   "version": "0.0.2",
   "description": "Quickly deploy preview environments to the cloud!",
   "author": "Livecycle",

@@ -17,48 +17,49 @@ Using preview, you can provision any docker compose app on your favorite cloud (
 # Usage
 <!-- usage -->
 ```sh-session
-$ npm install -g @livecycle/preview
-$ preview COMMAND
+$ npm install -g preevy
+$ preevy COMMAND
 running command...
-$ preview (--version)
-@livecycle/preview/0.0.2 darwin-arm64 node-v18.12.1
-$ preview --help [COMMAND]
+$ preevy (--version)
+preevy/0.0.2 darwin-arm64 node-v19.6.0
+$ preevy --help [COMMAND]
 USAGE
-  $ preview COMMAND
+  $ preevy COMMAND
 ...
 ```
 <!-- usagestop -->
 # Commands
 <!-- commands -->
-* [`preview down`](#preview-down)
-* [`preview help [COMMANDS]`](#preview-help-commands)
-* [`preview init [PROFILE-ALIAS]`](#preview-init-profile-alias)
-* [`preview ls`](#preview-ls)
-* [`preview plugins`](#preview-plugins)
-* [`preview plugins:install PLUGIN...`](#preview-pluginsinstall-plugin)
-* [`preview plugins:inspect PLUGIN...`](#preview-pluginsinspect-plugin)
-* [`preview plugins:install PLUGIN...`](#preview-pluginsinstall-plugin-1)
-* [`preview plugins:link PLUGIN`](#preview-pluginslink-plugin)
-* [`preview plugins:uninstall PLUGIN...`](#preview-pluginsuninstall-plugin)
-* [`preview plugins:uninstall PLUGIN...`](#preview-pluginsuninstall-plugin-1)
-* [`preview plugins:uninstall PLUGIN...`](#preview-pluginsuninstall-plugin-2)
-* [`preview plugins update`](#preview-plugins-update)
-* [`preview profile create NAME URL`](#preview-profile-create-name-url)
-* [`preview profile current`](#preview-profile-current)
-* [`preview profile import LOCATION`](#preview-profile-import-location)
-* [`preview profile ls`](#preview-profile-ls)
-* [`preview profile rm NAME`](#preview-profile-rm-name)
-* [`preview profile use NAME`](#preview-profile-use-name)
-* [`preview up`](#preview-up)
-* [`preview urls [SERVICE] [PORT]`](#preview-urls-service-port)
+* [`preevy down`](#preevy-down)
+* [`preevy help [COMMANDS]`](#preevy-help-commands)
+* [`preevy init [PROFILE-ALIAS]`](#preevy-init-profile-alias)
+* [`preevy logs [SERVICES]`](#preevy-logs-services)
+* [`preevy ls`](#preevy-ls)
+* [`preevy plugins`](#preevy-plugins)
+* [`preevy plugins:install PLUGIN...`](#preevy-pluginsinstall-plugin)
+* [`preevy plugins:inspect PLUGIN...`](#preevy-pluginsinspect-plugin)
+* [`preevy plugins:install PLUGIN...`](#preevy-pluginsinstall-plugin-1)
+* [`preevy plugins:link PLUGIN`](#preevy-pluginslink-plugin)
+* [`preevy plugins:uninstall PLUGIN...`](#preevy-pluginsuninstall-plugin)
+* [`preevy plugins:uninstall PLUGIN...`](#preevy-pluginsuninstall-plugin-1)
+* [`preevy plugins:uninstall PLUGIN...`](#preevy-pluginsuninstall-plugin-2)
+* [`preevy plugins update`](#preevy-plugins-update)
+* [`preevy profile create NAME URL`](#preevy-profile-create-name-url)
+* [`preevy profile current`](#preevy-profile-current)
+* [`preevy profile import LOCATION`](#preevy-profile-import-location)
+* [`preevy profile ls`](#preevy-profile-ls)
+* [`preevy profile rm NAME`](#preevy-profile-rm-name)
+* [`preevy profile use NAME`](#preevy-profile-use-name)
+* [`preevy up [SERVICE]`](#preevy-up-service)
+* [`preevy urls [SERVICE] [PORT]`](#preevy-urls-service-port)
 
-## `preview down`
+## `preevy down`
 
 Delete preview environments
 
 ```
 USAGE
-  $ preview down [-D] [-d lightsail|fake] [--lightsail-region
+  $ preevy down [-D] [-d lightsail|fake] [--lightsail-region
     us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu
     -central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--lightsail-availability-zone <value>] [--id <value>] [-f
     <value>] [-p <value>] [-f] [--json]
@@ -85,15 +86,15 @@ DESCRIPTION
   Delete preview environments
 ```
 
-_See code: [dist/commands/down/index.ts](https://github.com/livecycle/preview/blob/v0.0.2/dist/commands/down/index.ts)_
+_See code: [dist/commands/down/index.ts](https://github.com/livecycle/preevy/blob/v0.0.2/dist/commands/down/index.ts)_
 
-## `preview help [COMMANDS]`
+## `preevy help [COMMANDS]`
 
-Display help for preview.
+Display help for preevy.
 
 ```
 USAGE
-  $ preview help [COMMANDS] [-n]
+  $ preevy help [COMMANDS] [-n]
 
 ARGUMENTS
   COMMANDS  Command to show help for.
@@ -102,18 +103,18 @@ FLAGS
   -n, --nested-commands  Include all nested commands in the output.
 
 DESCRIPTION
-  Display help for preview.
+  Display help for preevy.
 ```
 
 _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v5.2.6/src/commands/help.ts)_
 
-## `preview init [PROFILE-ALIAS]`
+## `preevy init [PROFILE-ALIAS]`
 
 Initialize or import a new profile
 
 ```
 USAGE
-  $ preview init [PROFILE-ALIAS] [-D] [-f <value>]
+  $ preevy init [PROFILE-ALIAS] [-D] [-f <value>]
 
 ARGUMENTS
   PROFILE-ALIAS  [default: default] Alias of the profile
@@ -128,15 +129,61 @@ DESCRIPTION
   Initialize or import a new profile
 ```
 
-_See code: [dist/commands/init/index.ts](https://github.com/livecycle/preview/blob/v0.0.2/dist/commands/init/index.ts)_
+_See code: [dist/commands/init/index.ts](https://github.com/livecycle/preevy/blob/v0.0.2/dist/commands/init/index.ts)_
 
-## `preview ls`
+## `preevy logs [SERVICES]`
+
+Show logs for an existing environment
+
+```
+USAGE
+  $ preevy logs [SERVICES] [-D] [-d lightsail|fake] [--lightsail-region
+    us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu
+    -central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--lightsail-availability-zone <value>] [--id <value>] [-f
+    <value>] [-p <value>] [--columns <value> | -x] [--sort <value>] [--filter <value>] [--output csv|json|yaml |  |
+    [--csv | --no-truncate]] [--no-header | ]
+
+ARGUMENTS
+  SERVICES  Service name(s). If not specified, will show all services
+
+FLAGS
+  -d, --driver=<option>                  [default: lightsail] Machine driver to use
+                                         <options: lightsail|fake>
+  -f, --file=<value>...                  [default: ] Compose configuration file
+  -p, --project=<value>                  Project name. Defaults to the Compose project name
+  -x, --extended                         show extra columns
+  --columns=<value>                      only show provided columns (comma-separated)
+  --csv                                  output is csv format [alias: --output=csv]
+  --filter=<value>                       filter property by partial string matching, ex: name=foo
+  --id=<value>                           Environment id - affects created URLs. If not specified, will try to detect
+                                         automatically
+  --lightsail-availability-zone=<value>  AWS availability zone to provision resources in region
+  --lightsail-region=<option>            AWS region to provision resources in
+                                         <options: us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-
+                                         1|ap-southeast-2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|e
+                                         u-west-3|eu-north-1>
+  --no-header                            hide table header from output
+  --no-truncate                          do not truncate output to fit screen
+  --output=<option>                      output in a more machine friendly format
+                                         <options: csv|json|yaml>
+  --sort=<value>                         property to sort by (prepend '-' for descending)
+
+GLOBAL FLAGS
+  -D, --debug  Enable debug logging
+
+DESCRIPTION
+  Show logs for an existing environment
+```
+
+_See code: [dist/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.2/dist/commands/logs.ts)_
+
+## `preevy ls`
 
 List preview environments
 
 ```
 USAGE
-  $ preview ls [-D] [-d lightsail|fake] [--lightsail-region
+  $ preevy ls [-D] [-d lightsail|fake] [--lightsail-region
     us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu
     -central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--lightsail-availability-zone <value>] [--columns <value> |
     -x] [--sort <value>] [--filter <value>] [--output csv|json|yaml |  | [--csv | --no-truncate]] [--no-header | ]
@@ -168,15 +215,15 @@ DESCRIPTION
   List preview environments
 ```
 
-_See code: [dist/commands/ls/index.ts](https://github.com/livecycle/preview/blob/v0.0.2/dist/commands/ls/index.ts)_
+_See code: [dist/commands/ls/index.ts](https://github.com/livecycle/preevy/blob/v0.0.2/dist/commands/ls/index.ts)_
 
-## `preview plugins`
+## `preevy plugins`
 
 List installed plugins.
 
 ```
 USAGE
-  $ preview plugins [--core]
+  $ preevy plugins [--core]
 
 FLAGS
   --core  Show core plugins.
@@ -185,18 +232,18 @@ DESCRIPTION
   List installed plugins.
 
 EXAMPLES
-  $ preview plugins
+  $ preevy plugins
 ```
 
 _See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v2.3.2/src/commands/plugins/index.ts)_
 
-## `preview plugins:install PLUGIN...`
+## `preevy plugins:install PLUGIN...`
 
 Installs a plugin into the CLI.
 
 ```
 USAGE
-  $ preview plugins:install PLUGIN...
+  $ preevy plugins:install PLUGIN...
 
 ARGUMENTS
   PLUGIN  Plugin to install.
@@ -218,23 +265,23 @@ DESCRIPTION
 
 
 ALIASES
-  $ preview plugins add
+  $ preevy plugins add
 
 EXAMPLES
-  $ preview plugins:install myplugin 
+  $ preevy plugins:install myplugin 
 
-  $ preview plugins:install https://github.com/someuser/someplugin
+  $ preevy plugins:install https://github.com/someuser/someplugin
 
-  $ preview plugins:install someuser/someplugin
+  $ preevy plugins:install someuser/someplugin
 ```
 
-## `preview plugins:inspect PLUGIN...`
+## `preevy plugins:inspect PLUGIN...`
 
 Displays installation properties of a plugin.
 
 ```
 USAGE
-  $ preview plugins:inspect PLUGIN...
+  $ preevy plugins:inspect PLUGIN...
 
 ARGUMENTS
   PLUGIN  [default: .] Plugin to inspect.
@@ -250,16 +297,16 @@ DESCRIPTION
   Displays installation properties of a plugin.
 
 EXAMPLES
-  $ preview plugins:inspect myplugin
+  $ preevy plugins:inspect myplugin
 ```
 
-## `preview plugins:install PLUGIN...`
+## `preevy plugins:install PLUGIN...`
 
 Installs a plugin into the CLI.
 
 ```
 USAGE
-  $ preview plugins:install PLUGIN...
+  $ preevy plugins:install PLUGIN...
 
 ARGUMENTS
   PLUGIN  Plugin to install.
@@ -281,23 +328,23 @@ DESCRIPTION
 
 
 ALIASES
-  $ preview plugins add
+  $ preevy plugins add
 
 EXAMPLES
-  $ preview plugins:install myplugin 
+  $ preevy plugins:install myplugin 
 
-  $ preview plugins:install https://github.com/someuser/someplugin
+  $ preevy plugins:install https://github.com/someuser/someplugin
 
-  $ preview plugins:install someuser/someplugin
+  $ preevy plugins:install someuser/someplugin
 ```
 
-## `preview plugins:link PLUGIN`
+## `preevy plugins:link PLUGIN`
 
 Links a plugin into the CLI for development.
 
 ```
 USAGE
-  $ preview plugins:link PLUGIN
+  $ preevy plugins:link PLUGIN
 
 ARGUMENTS
   PATH  [default: .] path to plugin
@@ -315,16 +362,16 @@ DESCRIPTION
 
 
 EXAMPLES
-  $ preview plugins:link myplugin
+  $ preevy plugins:link myplugin
 ```
 
-## `preview plugins:uninstall PLUGIN...`
+## `preevy plugins:uninstall PLUGIN...`
 
 Removes a plugin from the CLI.
 
 ```
 USAGE
-  $ preview plugins:uninstall PLUGIN...
+  $ preevy plugins:uninstall PLUGIN...
 
 ARGUMENTS
   PLUGIN  plugin to uninstall
@@ -337,17 +384,17 @@ DESCRIPTION
   Removes a plugin from the CLI.
 
 ALIASES
-  $ preview plugins unlink
-  $ preview plugins remove
+  $ preevy plugins unlink
+  $ preevy plugins remove
 ```
 
-## `preview plugins:uninstall PLUGIN...`
+## `preevy plugins:uninstall PLUGIN...`
 
 Removes a plugin from the CLI.
 
 ```
 USAGE
-  $ preview plugins:uninstall PLUGIN...
+  $ preevy plugins:uninstall PLUGIN...
 
 ARGUMENTS
   PLUGIN  plugin to uninstall
@@ -360,17 +407,17 @@ DESCRIPTION
   Removes a plugin from the CLI.
 
 ALIASES
-  $ preview plugins unlink
-  $ preview plugins remove
+  $ preevy plugins unlink
+  $ preevy plugins remove
 ```
 
-## `preview plugins:uninstall PLUGIN...`
+## `preevy plugins:uninstall PLUGIN...`
 
 Removes a plugin from the CLI.
 
 ```
 USAGE
-  $ preview plugins:uninstall PLUGIN...
+  $ preevy plugins:uninstall PLUGIN...
 
 ARGUMENTS
   PLUGIN  plugin to uninstall
@@ -383,17 +430,17 @@ DESCRIPTION
   Removes a plugin from the CLI.
 
 ALIASES
-  $ preview plugins unlink
-  $ preview plugins remove
+  $ preevy plugins unlink
+  $ preevy plugins remove
 ```
 
-## `preview plugins update`
+## `preevy plugins update`
 
 Update installed plugins.
 
 ```
 USAGE
-  $ preview plugins update [-h] [-v]
+  $ preevy plugins update [-h] [-v]
 
 FLAGS
   -h, --help     Show CLI help.
@@ -403,13 +450,13 @@ DESCRIPTION
   Update installed plugins.
 ```
 
-## `preview profile create NAME URL`
+## `preevy profile create NAME URL`
 
 Create a new profile
 
 ```
 USAGE
-  $ preview profile create NAME URL [-D] [-d lightsail|fake] [--lightsail-region
+  $ preevy profile create NAME URL [-D] [-d lightsail|fake] [--lightsail-region
     us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu
     -central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--lightsail-availability-zone <value>] [--json]
 
@@ -434,13 +481,13 @@ DESCRIPTION
   Create a new profile
 ```
 
-## `preview profile current`
+## `preevy profile current`
 
 Display current profile in use
 
 ```
 USAGE
-  $ preview profile current [-D] [--json]
+  $ preevy profile current [-D] [--json]
 
 GLOBAL FLAGS
   -D, --debug  Enable debug logging
@@ -450,13 +497,13 @@ DESCRIPTION
   Display current profile in use
 ```
 
-## `preview profile import LOCATION`
+## `preevy profile import LOCATION`
 
 Import an existing profile
 
 ```
 USAGE
-  $ preview profile import LOCATION [-D] [--name <value>] [--json]
+  $ preevy profile import LOCATION [-D] [--name <value>] [--json]
 
 ARGUMENTS
   LOCATION  location of the profile
@@ -472,13 +519,13 @@ DESCRIPTION
   Import an existing profile
 ```
 
-## `preview profile ls`
+## `preevy profile ls`
 
 Lists profiles
 
 ```
 USAGE
-  $ preview profile ls [-D] [-d lightsail|fake] [--lightsail-region
+  $ preevy profile ls [-D] [-d lightsail|fake] [--lightsail-region
     us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu
     -central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--lightsail-availability-zone <value>] [--json]
 
@@ -499,13 +546,13 @@ DESCRIPTION
   Lists profiles
 ```
 
-## `preview profile rm NAME`
+## `preevy profile rm NAME`
 
 Remove a profile
 
 ```
 USAGE
-  $ preview profile rm NAME [-D] [-d lightsail|fake] [--lightsail-region
+  $ preevy profile rm NAME [-D] [-d lightsail|fake] [--lightsail-region
     us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu
     -central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--lightsail-availability-zone <value>] [--json]
 
@@ -529,13 +576,13 @@ DESCRIPTION
   Remove a profile
 ```
 
-## `preview profile use NAME`
+## `preevy profile use NAME`
 
 Set current profile
 
 ```
 USAGE
-  $ preview profile use NAME [-D] [-d lightsail|fake] [--lightsail-region
+  $ preevy profile use NAME [-D] [-d lightsail|fake] [--lightsail-region
     us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu
     -central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--lightsail-availability-zone <value>] [--json]
 
@@ -559,17 +606,20 @@ DESCRIPTION
   Set current profile
 ```
 
-## `preview up`
+## `preevy up [SERVICE]`
 
 Bring up a preview environment
 
 ```
 USAGE
-  $ preview up [-D] [-d lightsail|fake] [--lightsail-region
+  $ preevy up [SERVICE] [-D] [-d lightsail|fake] [--lightsail-region
     us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu
     -central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--lightsail-availability-zone <value>] [--id <value>] [-f
     <value>] [-p <value>] [-t <value>] [--tls-hostname <value>] [--insecure-skip-verify] [--columns <value> | -x]
     [--sort <value>] [--filter <value>] [--output csv|json|yaml |  | [--csv | --no-truncate]] [--no-header | ]
+
+ARGUMENTS
+  SERVICE  Service name(s). If not specified, will deploy all services
 
 FLAGS
   -d, --driver=<option>                  [default: lightsail] Machine driver to use
@@ -604,15 +654,15 @@ DESCRIPTION
   Bring up a preview environment
 ```
 
-_See code: [dist/commands/up/index.ts](https://github.com/livecycle/preview/blob/v0.0.2/dist/commands/up/index.ts)_
+_See code: [dist/commands/up/index.ts](https://github.com/livecycle/preevy/blob/v0.0.2/dist/commands/up/index.ts)_
 
-## `preview urls [SERVICE] [PORT]`
+## `preevy urls [SERVICE] [PORT]`
 
 Show urls for an existing environment
 
 ```
 USAGE
-  $ preview urls [SERVICE] [PORT] [-D] [-d lightsail|fake] [--lightsail-region
+  $ preevy urls [SERVICE] [PORT] [-D] [-d lightsail|fake] [--lightsail-region
     us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu
     -central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--lightsail-availability-zone <value>] [--id <value>] [-f
     <value>] [-p <value>] [--columns <value> | -x] [--sort <value>] [--filter <value>] [--output csv|json|yaml |  |
@@ -652,5 +702,5 @@ DESCRIPTION
   Show urls for an existing environment
 ```
 
-_See code: [dist/commands/urls.ts](https://github.com/livecycle/preview/blob/v0.0.2/dist/commands/urls.ts)_
+_See code: [dist/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.2/dist/commands/urls.ts)_
 <!-- commandsstop -->
