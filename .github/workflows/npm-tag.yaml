@@ -20,7 +20,7 @@ jobs:
         set -eou pipefail
         set -x
 
-        for packageDir in docker-proxy cli; do
+        for packageDir in compose-tunnel-agent cli; do
           package=$(jq .name packages/${packageDir}/package.json -r)
           version=$(jq .version packages/${packageDir}/package.json -r)
 

@@ -1,7 +1,7 @@
 FROM node:18-alpine as base
 WORKDIR /app
 COPY package.json yarn.lock ./
-RUN yarn --mount=type=cache,id=livecycle/docker-proxy/npm-cache,target=/usr/local/share/.cache/yarn/v6
+RUN yarn --mount=type=cache,id=livecycle/compose-tunnel-agent/npm-cache,target=/usr/local/share/.cache/yarn/v6
 COPY . /app
 EXPOSE 3000
 
