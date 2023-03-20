@@ -3,10 +3,8 @@
   "workspaces": [
     "packages/*"
   ],
-  "dependencies": {
-    "syncpack": "^9.8.4"
-  },
   "devDependencies": {
+    "syncpack": "^9.8.4",
     "husky": "^8.0.0",
     "lint-staged": "^13.1.2",
     "lodash": "^4.17.21"
