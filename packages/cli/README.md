@@ -1,12 +1,11 @@
-Livecycle CLI
+Preevy CLI
 =================
 
-[![Version](https://img.shields.io/npm/v/oclif-hello-world.svg)](https://npmjs.org/package/oclif-hello-world)
-[![CircleCI](https://circleci.com/gh/oclif/hello-world/tree/main.svg?style=shield)](https://circleci.com/gh/oclif/hello-world/tree/main)
-[![Downloads/week](https://img.shields.io/npm/dw/oclif-hello-world.svg)](https://npmjs.org/package/oclif-hello-world)
-[![License](https://img.shields.io/npm/l/oclif-hello-world.svg)](https://github.com/oclif/hello-world/blob/main/package.json)
+[![Version](https://img.shields.io/npm/v/preevy.svg)](https://npmjs.org/package/preevy)
+[![Downloads/week](https://img.shields.io/npm/dw/preevy.svg)](https://npmjs.org/package/preevy)
+[![License](https://img.shields.io/npm/l/preevy.svg)](https://github.com/livecycle/preevy/blob/master/LICENSE)
 
-Preview is a CLI tool for provisioning preview environments.
+Preevy is a CLI tool for provisioning preview environments.
 Using preview, you can provision any docker compose app on your favorite cloud (currently AWS is only supported)
 
 
