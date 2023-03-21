@@ -12,6 +12,7 @@ const DOCKER_PROXY_PORT = 3000
 const baseDockerProxyService: ComposeService = {
   build: {
     context: DOCKER_PROXY_DIR,
+    dockerfile: 'bundle.Dockerfile',
   },
   ports: [
     { mode: 'ingress', target: DOCKER_PROXY_PORT, protocol: 'tcp' },

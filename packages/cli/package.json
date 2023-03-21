@@ -1,6 +1,6 @@
 {
   "name": "preevy",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Quickly deploy preview environments to the cloud!",
   "author": "Livecycle",
   "bin": {
@@ -22,7 +22,7 @@
     "@aws-sdk/client-s3": "^3.271.0",
     "@aws-sdk/client-sts": "^3.289.0",
     "@aws-sdk/util-waiter": "^3.271.0",
-    "@preevy/compose-tunnel-agent": "0.0.4",
+    "@preevy/compose-tunnel-agent": "0.0.6",
     "@oclif/core": "^2",
     "@oclif/plugin-help": "^5",
     "@oclif/plugin-plugins": "^2.3.0",

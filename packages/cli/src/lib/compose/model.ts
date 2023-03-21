@@ -30,6 +30,7 @@ export type ComposeVolume = { type: 'volume' | 'tmpfs' | 'npipe' } | ComposeBind
 type ComposeBuild = {
   context: string
   target?: string
+  dockerfile?: string
 }
 
 type ComposePort = {
