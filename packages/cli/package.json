@@ -1,6 +1,6 @@
 {
   "name": "preevy",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Quickly deploy preview environments to the cloud!",
   "author": "Livecycle",
   "bin": {
@@ -14,7 +14,8 @@
     "/bin",
     "/dist",
     "/yarn.lock",
-    "/oclif.manifest.json"
+    "/oclif.manifest.json",
+    "static"
   ],
   "dependencies": {
     "@aws-sdk/client-lightsail": "^3.271.0",
@@ -89,8 +90,7 @@
     "topicSeparator": " "
   },
   "scripts": {
-    "copy-statics-to-dist": "cp -R static dist",
-    "build": "shx rm -rf dist && tsc -b && yarn copy-statics-to-dist",
+    "build": "shx rm -rf dist && tsc -b",
     "lint": "eslint . --ext .ts",
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "yarn lint",
