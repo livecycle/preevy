@@ -6,7 +6,7 @@ import { TunnelOpts } from './ssh/url'
 import { Tunnel } from './tunneling'
 
 export const DOCKER_PROXY_SERVICE_NAME = 'preview_proxy'
-const DOCKER_PROXY_DIR = path.join(path.dirname(require.resolve('@livecycle/compose-tunnel-agent')), '..')
+const DOCKER_PROXY_DIR = path.join(path.dirname(require.resolve('@preevy/compose-tunnel-agent')), '..')
 const DOCKER_PROXY_PORT = 3000
 
 const baseDockerProxyService: ComposeService = {

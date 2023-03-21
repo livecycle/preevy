@@ -1,6 +1,6 @@
 {
   "name": "@preevy/compose-tunnel-agent",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "",
   "main": "dist/index.js",
   "files": [
@@ -9,7 +9,7 @@
     "yarn.lock",
     "tsconfig.json"
   ],
-  "license": "MIT",
+  "license": "Apache-2.0",
   "dependencies": {
     "@types/lodash": "^4.14.191",
     "dockerode": "^3.3.4",
