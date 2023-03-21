@@ -8,6 +8,8 @@
     "packages/cli",
     "packages/standalone-proxy",
     "packages/docker-proxy",
+    "packages/docs",
+    "/"
   ],
   "eslint.useESLintClass": true,
   "eslint.packageManager": "yarn",

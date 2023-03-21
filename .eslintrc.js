@@ -126,7 +126,10 @@ module.exports = {
           'ignoreTemplateLiterals': true,
           'ignoreRegExpLiterals': true
         }
-      ]
+      ],
+      'react/jsx-filename-extension': [2, { 'extensions': ['.js', '.jsx', '.ts', '.tsx'] }],
+      "react/prop-types": 0,
+      "react/jsx-props-no-spreading": 0
   },
   overrides: [
     {
