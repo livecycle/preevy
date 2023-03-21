@@ -1,6 +1,6 @@
 {
   "name": "@preevy/compose-tunnel-agent",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "",
   "main": "dist/index.js",
   "files": [
@@ -39,6 +39,7 @@
     "dev": "tsx watch ./main.ts",
     "lint": "eslint . --ext .ts,.tsx",
     "build": "tsc -b",
+    "prepack": "yarn build",
     "prepare": "cd ../.. && husky install"
   }
 }
