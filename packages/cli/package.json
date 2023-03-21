@@ -1,13 +1,13 @@
 {
   "name": "preevy",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Quickly deploy preview environments to the cloud!",
   "author": "Livecycle",
   "bin": {
     "preevy": "./bin/run"
   },
   "homepage": "https://github.com/livecycle/preevy",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "main": "dist/index.js",
   "repository": "livecycle/preevy",
   "files": [
