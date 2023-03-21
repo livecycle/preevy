@@ -1,0 +1,47 @@
+---
+sidebar_position: 1
+parent: /
+slug: /
+title: Introduction
+---
+
+# Preevy
+
+<span style={{ fontSize: "x-large" }}>
+  Provision <span style={{fontStyle: "italic"}}>preview environments</span> for docker-comopse applications with minimal
+  configuration
+</span>
+
+## Introduction
+
+`preevy` will help you provision your [docker-compose](https://docs.docker.com/compose/) application with minimal configuration, as simple as running `preevy up`
+
+`preevy` will generate a sharable URL for all of the services used in the `docker compose` configurations
+
+## Getting Started
+
+Preevy is designed to be easy to use with an API close to `docker compose`:
+
+Install the CLI globally
+
+```bash npm2yarn
+npm install -g preevy
+```
+
+Or use it directly
+
+```bash
+npx preevy <command>
+```
+
+Set up a profile
+
+```bash
+preevy init
+```
+
+From the same directory you run `docker comopse up` run:
+
+```bash
+preevy up
+```
