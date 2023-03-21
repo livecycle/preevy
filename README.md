@@ -1,4 +1,4 @@
-# Preevy ![GitHub](https://img.shields.io/github/license/livecycle/preevy) ![GitHub last commit](https://img.shields.io/github/last-commit/livecycle/preevy)[![Version](https://img.shields.io/npm/v/preevy.svg)](https://npmjs.org/package/preevy)[![License](https://img.shields.io/npm/l/preevy.svg)](https://github.com/livecycle/preevy/blob/master/LICENSE)
+# Preevy ![GitHub](https://img.shields.io/github/license/livecycle/preevy) ![GitHub last commit](https://img.shields.io/github/last-commit/livecycle/preevy) [![Version](https://img.shields.io/npm/v/preevy.svg)](https://npmjs.org/package/preevy)[![License](https://img.shields.io/npm/l/preevy.svg)](https://github.com/livecycle/preevy/blob/master/LICENSE)
 
 ![Terminal GIF](./terminal.gif)
 *Provision preview environments with minimal configuration*
