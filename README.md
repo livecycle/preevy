@@ -4,7 +4,7 @@
 *Provision preview environments with minimal configuration*
 
 `preevy` is a powerful CLI tool designed to simplify the process of creating ephemeral preview environments.
-Using `preevy`, you can easily provision any Docker-Compose application on AWS using affordable [Lightsail](https://aws.amazon.com/free/compute/lightsail) VMS (support for GCP and more cloud is on the way).
+Using `preevy`, you can easily provision any Docker-Compose application on AWS using affordable [Lightsail](https://aws.amazon.com/free/compute/lightsail) VMs (support for GCP and more cloud is on the way).
 
 ## Why?
 
@@ -17,7 +17,7 @@ You can read more about the story and philosophy behind Preview here.
 
 ## Getting started
 
-To start using the Preview CLI you will need:  
+To start using the `preevy` CLI you will need:  
 - A local AWS configuration (you can get it by using `aws login` or `aws configure`)  
 - A Docker-Compose application (examples can be found [here](https://github.com/docker/awesome-compose))  
 
@@ -51,7 +51,7 @@ A Docker/OCI image is available on ghcr.io:  ghcr.io/livecycle/preview/tunnel-se
 
 ## CI Integration
 
-Preview is also designed to work seamlessly with your CI, allowing you to easily import a shared preview profile shared in S3 (support for more storage providers is coming soon).
+`preevy` is also designed to work seamlessly with your CI, allowing you to easily import a shared preview profile shared in S3 (support for more storage providers is coming soon).
 
 The profile can be created using `preevy init`, then choosing S3 URL for storing the profile. (Preevy will create a bucket if one doesn't exist)
 After the profile is created, it can be imported in the CI using `preevy init --from <s3-url>`
@@ -63,6 +63,7 @@ After the profile is created, it can be imported in the CI using `preevy init --
 In case you find a security issue or have something you would like to discuss refer to our security.md policy.
 
 #### Notice on preview environments exposure
+
 VMs are not exposed directly and instead are exposed via a tunnel created by the tunneling server.  
 Every Compose service is exposed individually with a generated URL in the following format:  
 `https://{service}-{[port]}-{envId}-{clientId}.{tunnel-server domain}`  
@@ -71,4 +72,5 @@ Every Compose service is exposed individually with a generated URL in the follow
 When using the `*.livecycle.run`, all environments are publicly accessible to those who know of the URLs.  
 
 ## Contributing
+
 Found a bug? Have a missing feature? Please open an issue and let us know.
