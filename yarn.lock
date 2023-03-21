@@ -2893,6 +2893,20 @@
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
 
+"@livecycle/compose-tunnel-agent@0.0.2":
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/@livecycle/compose-tunnel-agent/-/compose-tunnel-agent-0.0.2.tgz#b52630fc97c55fd8ade3ccea57411d20ae9d81c5"
+  integrity sha512-kXOdkJWBHHGZajK/ukK1oVIcRtAdv/3jYBwn4yjyop1BwL8zwFreuR/NZuOnV1WekkZ2o7Li+9Gsh14kwvlxJQ==
+  dependencies:
+    "@types/lodash" "^4.14.191"
+    dockerode "^3.3.4"
+    http-proxy "^1.18.1"
+    lodash "^4.17.21"
+    pino "^8.11.0"
+    pino-pretty "^9.4.0"
+    shell-escape "^0.2.0"
+    ssh2 "^1.11.0"
+
 "@mobily/ts-belt@3.13.1":
   version "3.13.1"
   resolved "https://registry.yarnpkg.com/@mobily/ts-belt/-/ts-belt-3.13.1.tgz#8f8ce2a2eca41d88c2ca70c84d0f47d0f7f5cd5f"
