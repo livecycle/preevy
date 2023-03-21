@@ -1,9 +1,9 @@
 {
   "name": "@preevy/tunnel-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "index.ts",
   "type": "module",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "dependencies": {
     "@fastify/request-context": "^4.2.0",
     "@sinclair/typebox": "^0.25.21",
