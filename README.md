@@ -1,4 +1,4 @@
-# Preevy ![GitHub](https://img.shields.io/github/license/preview/lievecycle) ![GitHub last commit](https://img.shields.io/github/last-commit/livecycle/preview)
+# Preevy ![GitHub](https://img.shields.io/github/license/livecycle/preevy) ![GitHub last commit](https://img.shields.io/github/last-commit/livecycle/preevy)
 
 ![Terminal GIF](./terminal.gif)
 *Provision preview environments with minimal configuration*
