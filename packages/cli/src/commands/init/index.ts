@@ -1,4 +1,5 @@
 import { Flags, Args, ux } from '@oclif/core'
+import chalk from 'chalk'
 import inquirer from 'inquirer'
 import { pickBy } from 'lodash'
 import BaseCommand from '../../base-command'
@@ -79,7 +80,7 @@ export default class Init extends BaseCommand {
           {
             type: 'list',
             name: 'locationType',
-            message: 'Where to store your profile?',
+            message: 'Where do you want to store the profile?',
             default: 'local',
             choices: [{
               value: 's3',
@@ -96,7 +97,7 @@ export default class Init extends BaseCommand {
             }>([{
               type: 'input',
               name: 's3Url',
-              message: 'Where do you want to store your profile?',
+              message: `What is the S3 URL? ${chalk.reset.italic(`(format: s3://${chalk.yellowBright('[bucket]')}?region=${chalk.yellowBright('[region]')})`)}`,
               default: await suggestDefaultUrl(profileAlias), // might worth generating profile id?
             }])
 
