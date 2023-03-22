@@ -107,23 +107,19 @@ const main = async () => {
   })
 
   log.info('ssh client connected to %j', sshUrl)
-  const state = {
-    tunnels: dockerClient.getRunningServices().then(services => sshClient.updateTunnels(services)),
-  }
+  let currentTunnels = dockerClient.getRunningServices().then(services => sshClient.updateTunnels(services))
 
   void dockerClient.startListening({
     onChange: async services => {
-      state.tunnels = state.tunnels
-        .then(() => sshClient.updateTunnels(services), _ex => sshClient.updateTunnels(services))
-
-      void state.tunnels.then(ssh => writeLineToStdout(JSON.stringify(ssh)))
+      currentTunnels = sshClient.updateTunnels(services)
+      void currentTunnels.then(ssh => writeLineToStdout(JSON.stringify(ssh)))
     },
   })
 
   const webServer = createWebServer({
     log: log.child({ name: 'web' }),
     currentSshState: async () => (
-      state.tunnels
+      currentTunnels
     ),
   })
     .listen(process.env.PORT ?? 3000, () => {

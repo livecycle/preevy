@@ -1,5 +1,6 @@
 import net from 'net'
 import { inspect } from 'util'
+import plimit from 'p-limit'
 import { RunningService } from '../docker'
 import { TunnelNameResolver } from '../tunnel-name'
 import * as maps from '../maps'
@@ -132,9 +133,10 @@ export const sshClient = async ({
   })
 
   let state: SshState
+  const limit = plimit(1)
 
   return {
-    updateTunnels: async (services: RunningService[]): Promise<SshState> => {
+    updateTunnels: async (services: RunningService[]): Promise<SshState> => limit(async () => {
       const forwards = new Map(
         services.flatMap(service => tunnelNameResolver(service)
           .map(({ port, tunnel }) => ([tunnel, { host: service.name, port, service }])))
@@ -156,6 +158,6 @@ export const sshClient = async ({
       }
 
       return state
-    },
+    }),
   }
 }

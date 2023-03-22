@@ -14,6 +14,7 @@
     "dockerode": "^3.3.4",
     "http-proxy": "^1.18.1",
     "lodash": "^4.17.21",
+    "p-limit": "3.1.0",
     "pino": "^8.11.0",
     "pino-pretty": "^9.4.0",
     "shell-escape": "^0.2.0",
@@ -30,8 +31,8 @@
     "husky": "^8.0.0",
     "lint-staged": "^13.1.2",
     "nodemon": "^2.0.20",
-    "typescript": "^5.0.2",
-    "tsx": "^3.12.3"
+    "tsx": "^3.12.3",
+    "typescript": "^5.0.2"
   },
   "scripts": {
     "start": "node dist/main.js",
