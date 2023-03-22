@@ -1,4 +1,5 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
+import chalk from 'chalk'
 import BaseCommand from './base-command'
 import { allDriverFlags, DriverName, MachineDriver, machineDrivers } from './lib/machine'
 import { removeDriverPrefix } from './lib/machine/driver/flags'
@@ -75,7 +76,7 @@ abstract class DriverCommand<T extends typeof Command> extends BaseCommand<T> {
   #profile: Profile | undefined
   get profile(): Profile {
     if (!this.#profile) {
-      throw new Error('Profile not initialized')
+      throw new Error(`Profile not initialized, run ${chalk.italic.bold.greenBright('preevy init')} to get started.`)
     }
     return this.#profile
   }
