@@ -33,10 +33,9 @@ const retryPipeError = <T>(log: Logger, f: () => T) => retry(f, {
 const queryTunnelsWithRetry = async (
   sshClient: SshClient,
   dockerProxyUrl: string,
-  waitForServices: string[],
   filterServices?: string[]
 ) => retry(
-  () => queryTunnels(sshClient, dockerProxyUrl, waitForServices, filterServices),
+  () => queryTunnels(sshClient, dockerProxyUrl, filterServices),
   { minTimeout: 1000, maxTimeout: 2000, retries: 10 },
 )
 
@@ -167,14 +166,9 @@ const up = async ({
 
     const dockerProxyServiceUrl = await withDockerSocket(() => findDockerProxyUrl(compose))
 
-    const waitForServices = userSpecifiedServices.length
-      ? userSpecifiedServices
-      : Object.keys(userModel.services ?? {})
-
     const { tunnels } = await queryTunnelsWithRetry(
       sshClient,
       dockerProxyServiceUrl,
-      waitForServices,
       userSpecifiedServices,
     )
 

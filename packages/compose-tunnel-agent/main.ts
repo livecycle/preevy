@@ -5,13 +5,12 @@ import { inspect } from 'node:util'
 import pino from 'pino'
 import pinoPretty from 'pino-pretty'
 import { EOL } from 'os'
-import createDockerClient, { RunningService } from './src/docker'
+import createDockerClient from './src/docker'
 import createWebServer from './src/web'
-import { SshState, sshClient as createSshClient, checkConnection, formatPublicKey, parseSshUrl, SshConnectionConfig } from './src/ssh'
+import { sshClient as createSshClient, checkConnection, formatPublicKey, parseSshUrl, SshConnectionConfig } from './src/ssh'
 import { requiredEnv } from './src/env'
 import { tunnelNameResolver } from './src/tunnel-name'
 import { ConnectionCheckResult } from './src/ssh/connection-checker'
-import { stateEmitter } from './src/emitter'
 
 const homeDir = process.env.HOME || '/root'
 
@@ -72,11 +71,6 @@ const formatConnectionCheckResult = (
 
 const writeLineToStdout = (s: string) => [s, EOL].forEach(d => process.stdout.write(d))
 
-const hasAllServices = (
-  waitFor: string[],
-  services: RunningService[],
-) => waitFor.every(name => services.some(s => s.name === name))
-
 const main = async () => {
   const log = pino({
     level: process.env.DEBUG || process.env.DOCKER_PROXY_DEBUG ? 'debug' : 'info',
@@ -113,20 +107,20 @@ const main = async () => {
   })
 
   log.info('ssh client connected to %j', sshUrl)
-
-  const state = stateEmitter<{ ssh: SshState; services: RunningService[]}>()
+  let currentTunnels = dockerClient.getRunningServices().then(services => sshClient.updateTunnels(services))
 
   void dockerClient.startListening({
-    onChange: async services => state.emit({ ssh: await sshClient.updateTunnels(services), services }),
+    onChange: async services => {
+      currentTunnels = sshClient.updateTunnels(services)
+      void currentTunnels.then(ssh => writeLineToStdout(JSON.stringify(ssh)))
+    },
   })
-
-  state.addListener(({ ssh }) => writeLineToStdout(JSON.stringify(ssh)))
 
   const webServer = createWebServer({
     log: log.child({ name: 'web' }),
-    currentSshState: async (waitForServices: string[]) => (
-      await state.filter(({ services }) => hasAllServices(waitForServices, services))
-    ).ssh,
+    currentSshState: async () => (
+      currentTunnels
+    ),
   })
     .listen(process.env.PORT ?? 3000, () => {
       log.info(`listening on ${inspect(webServer.address())}`)

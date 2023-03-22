@@ -87,10 +87,9 @@ export const addDockerProxyService = (
 export const queryTunnels = async (
   sshClient: SshClient,
   dockerProxyUrl: string,
-  waitForServices: string[],
   filterServices?: string[],
 ) => {
-  const command = `curl -sf http://${dockerProxyUrl}/tunnels?waitFor=${waitForServices.map(encodeURIComponent).join(',')}`
+  const command = `curl -sf http://${dockerProxyUrl}/tunnels`
 
   const { tunnels, clientId: tunnelId }: { tunnels: Tunnel[]; clientId: string } = JSON.parse((
     await sshClient.execCommand(command)

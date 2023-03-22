@@ -27,7 +27,6 @@ const client = ({
     await docker.listContainers({
       filters: {
         ...composeFilter,
-        status: ['running'],
       },
     })
   ).map(x => ({
@@ -39,6 +38,7 @@ const client = ({
   }))
 
   return {
+    getRunningServices,
     startListening: async ({ onChange }: { onChange: (services: RunningService[]) => void }) => {
       const handler = debounce(
         async (data?: Buffer) => {
