@@ -6,12 +6,10 @@
     </picture>
   </a>
   <br />
-    <br />
   Preevy
 </h1>
 <p align="center"> <em>Provision preview environments with minimal configuration</em>
 </p>
-<br />
 <div align="center">
 
 ![GitHub](https://img.shields.io/github/license/livecycle/preevy) ![GitHub last commit](https://img.shields.io/github/last-commit/livecycle/preevy) [![Version](https://img.shields.io/npm/v/preevy.svg)](https://npmjs.org/package/preevy)
