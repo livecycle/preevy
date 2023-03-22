@@ -1,18 +1,26 @@
-<p align="center">
+<h1 align="center">
   <a href="https://preevy.dev" target="_blank" rel="noopener noreferrer">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="site/static/img/logo-dark.svg">
       <img width="80" src="site/static/img/logo-light.svg">
     </picture>
   </a>
+  <br />
+    <br />
+  Preevy
+</h1>
+<p align="center"> <em>Provision preview environments with minimal configuration</em>
 </p>
+<br />
+<div align="center">
 
-# Preevy
+![GitHub](https://img.shields.io/github/license/livecycle/preevy) ![GitHub last commit](https://img.shields.io/github/last-commit/livecycle/preevy) [![Version](https://img.shields.io/npm/v/preevy.svg)](https://npmjs.org/package/preevy)
 
-  ![GitHub](https://img.shields.io/github/license/livecycle/preevy) ![GitHub last commit](https://img.shields.io/github/last-commit/livecycle/preevy) [![Version](https://img.shields.io/npm/v/preevy.svg)](https://npmjs.org/package/preevy)
+</div>
+
+<br />
 
 ![Terminal GIF](./terminal.gif)
-_Provision preview environments with minimal configuration_
 
 `preevy` is a powerful CLI tool designed to simplify the process of creating ephemeral preview environments.
 Using `preevy`, you can easily provision any Docker-Compose application on AWS using affordable [Lightsail](https://aws.amazon.com/free/compute/lightsail) VMs (support for GCP and more cloud is on the way).
