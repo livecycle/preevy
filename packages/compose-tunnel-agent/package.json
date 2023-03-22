@@ -1,10 +1,9 @@
 {
   "name": "@preevy/compose-tunnel-agent",
-  "version": "0.0.6",
+  "version": "0.0.8",
   "description": "",
   "main": "dist/index.js",
   "files": [
-    "yarn.lock",
     "dist",
     "bundle.Dockerfile",
     "tsconfig.json"

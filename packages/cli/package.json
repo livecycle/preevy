@@ -1,6 +1,6 @@
 {
   "name": "preevy",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Quickly deploy preview environments to the cloud!",
   "author": "Livecycle",
   "bin": {
@@ -12,20 +12,20 @@
   "repository": "livecycle/preevy",
   "files": [
     "/bin",
+    "/static",
     "/dist",
     "/yarn.lock",
-    "/oclif.manifest.json",
-    "static"
+    "/oclif.manifest.json"
   ],
   "dependencies": {
     "@aws-sdk/client-lightsail": "^3.271.0",
     "@aws-sdk/client-s3": "^3.271.0",
     "@aws-sdk/client-sts": "^3.289.0",
     "@aws-sdk/util-waiter": "^3.271.0",
+    "@preevy/compose-tunnel-agent": "0.0.8",
     "@oclif/core": "^2",
     "@oclif/plugin-help": "^5",
     "@oclif/plugin-plugins": "^2.3.0",
-    "@preevy/compose-tunnel-agent": "0.0.6",
     "@types/ssh2": "^1.11.7",
     "chalk": "^4.1.2",
     "cli-color": "^2.0.3",
