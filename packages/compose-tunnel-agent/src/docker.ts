@@ -27,7 +27,6 @@ const client = ({
     await docker.listContainers({
       filters: {
         ...composeFilter,
-        status: ['created', 'restarting', 'running', 'paused', 'dead'],
       },
     })
   ).map(x => ({
