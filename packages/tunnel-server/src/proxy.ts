@@ -3,6 +3,7 @@ import httpProxy from 'http-proxy'
 import { IncomingMessage, ServerResponse } from 'http'
 import internal from 'stream'
 import type { Logger } from 'pino'
+import { requestsCounter } from './metrics'
 
 export const isProxyRequest = (baseUrl: {hostname:string, port:string}) => (req: IncomingMessage)=> {
   const host = req.headers["host"]
@@ -51,7 +52,8 @@ export function proxyHandlers({
         return;
       }
 
-      logger.info('proxying to %j', { target: env.target, url: req.url })
+      logger.debug('proxying to %j', { target: env.target, url: req.url })
+      requestsCounter.inc({clientId: env.clientId})
 
       return proxy.web(
         req,

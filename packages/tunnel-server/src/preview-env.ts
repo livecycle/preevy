@@ -1,4 +1,5 @@
 export type PreviewEnv = {
+  clientId: string
   target: string
 }
 

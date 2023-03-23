@@ -9,6 +9,8 @@ import path from 'path'
 import { isProxyRequest, proxyHandlers } from './src/proxy'
 import { appLoggerFromEnv } from './src/logging'
 import pino from 'pino'
+import { tunnelsGauge } from './src/metrics'
+import { runMetricsServer } from './src/metrics'
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
@@ -31,6 +33,7 @@ type BaseUrl = typeof BASE_URL
 
 const envStore = inMemoryPreviewEnvStore({
   test: {
+    clientId: "",
     target: 'http://3.73.126.120',
   },
 })
@@ -55,17 +58,19 @@ const sshServer = createSshServer({
   onPipeCreated: async (clientId, remotePath, localSocket) => {
     const key = tunnelName(clientId, remotePath);
     sshLogger.debug('creating tunnel %s for localSocket %s', key, localSocket)
-    await envStore.set(key, { target: localSocket })
+    await envStore.set(key, { target: localSocket, clientId })
+    tunnelsGauge.inc({clientId})
   },
   onPipeDestroyed: async (clientId, remotePath) => {
     const key = tunnelName(clientId, remotePath);
     sshLogger.debug('deleting tunnel %s', key)
     await envStore.delete(key)
+    tunnelsGauge.dec({clientId})
   },
-  onHello: (clientId, tunnels) => JSON.stringify({ 
+  onHello: (clientId, tunnels) => JSON.stringify({
     clientId,
     tunnels: Object.fromEntries(tunnels.map(tunnel => [
-      tunnel, 
+      tunnel,
       tunnelUrl(BASE_URL, clientId, tunnel),
     ])),
   }) + '\r\n',
@@ -80,6 +85,10 @@ const sshServer = createSshServer({
 app.listen({ host: LISTEN_HOST, port: PORT }).catch((err) => {
   app.log.error(err)
   process.exit(1)
+})
+
+runMetricsServer(8888).catch((err) => {
+  app.log.error(err)
 })
 
 ;['SIGTERM', 'SIGINT'].forEach((signal) => {
