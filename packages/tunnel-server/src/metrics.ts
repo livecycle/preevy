@@ -23,7 +23,7 @@ export function runMetricsServer(port: number){
 		reply.send(await register.metrics())
   });
   return app.listen({
-    host: "0.0.0.0"
+    host: "0.0.0.0",
     port,
   })
 }
