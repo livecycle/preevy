@@ -25,6 +25,7 @@ const client = ({
 }) => {
   const getRunningServices = async (): Promise<RunningService[]> => (
     await docker.listContainers({
+      all: true,
       filters: {
         ...composeFilter,
       },
