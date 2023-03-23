@@ -14,7 +14,7 @@
     "dockerode": "^3.3.4",
     "http-proxy": "^1.18.1",
     "lodash": "^4.17.21",
-    "p-limit": "3.1.0",
+    "p-limit": "^3.1.0",
     "pino": "^8.11.0",
     "pino-pretty": "^9.4.0",
     "shell-escape": "^0.2.0",

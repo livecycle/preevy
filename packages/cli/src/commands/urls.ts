@@ -81,8 +81,6 @@ export default class Urls extends DriverCommand<typeof Urls> {
         return flatTunnels
       }
 
-      this.log(`Preview environment ${envId} provisioned: ${machine.publicIPAddress}`)
-
       ux.table(
         flatTunnels,
         {

@@ -7,7 +7,7 @@ services:
       target: development
 
     restart: always
-    image: preview-proxy
+    #image: preview-proxy
     environment:
       BASE_URL: ${BASE_URL:-http://local.livecycle.run:8030}
 

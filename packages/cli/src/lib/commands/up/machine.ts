@@ -4,6 +4,7 @@ import { MachineDriver, scripts } from '../../machine'
 import { sshClient as clientSshClient } from '../../ssh/client'
 import { SSHKeyConfig } from '../../ssh/keypair'
 import { scriptExecuter } from './scripts'
+import { withSpinner } from '../../spinner'
 
 const ensureMachine = async ({
   machineDriver,
@@ -16,15 +17,19 @@ const ensureMachine = async ({
   envId: string
   log: Logger
 }) => {
-  log.debug('check for existing machine')
+  log.debug('checking for existing machine')
   const existingMachine = await machineDriver.getMachine({ envId })
   if (!existingMachine) {
-    log.debug('provisioning new machine')
-    const machine = await machineDriver.createMachine({ envId, keyConfig: sshKey })
-    return {
-      machine,
-      installed: machine.fromSnapshot,
-    }
+    return withSpinner(async () => {
+      const machine = await machineDriver.createMachine({ envId, keyConfig: sshKey })
+      return {
+        machine,
+        installed: machine.fromSnapshot,
+      }
+    }, {
+      text: `Creating ${machineDriver.friendlyName} machine`,
+      successText: `${machineDriver.friendlyName} machine created`,
+    })
   }
   return { machine: existingMachine, installed: true }
 }
@@ -55,24 +60,26 @@ export const ensureCustomizedMachine = async ({
   try {
     const execScript = scriptExecuter({ sshClient, log })
 
-    if (!installed) {
-      log.debug('Executing machine scripts')
-      for (const script of scripts.CUSTOMIZE_BARE_MACHINE) {
+    await withSpinner(async () => {
+      if (!installed) {
+        log.debug('Executing machine scripts')
+        for (const script of scripts.CUSTOMIZE_BARE_MACHINE) {
+          // eslint-disable-next-line no-await-in-loop
+          await execScript(script)
+        }
+        log.info('Creating snapshot in background')
+        await machineDriver.ensureMachineSnapshot({ driverMachineId: machine.providerId, envId }).catch(() => {
+          log.info('Failed to create machine snapshot')
+        })
+      }
+
+      log.debug('Executing instance-specific scripts')
+
+      for (const script of scripts.INSTANCE_SPECIFIC) {
         // eslint-disable-next-line no-await-in-loop
         await execScript(script)
       }
-      log.info('Creating snapshot in background')
-      await machineDriver.ensureMachineSnapshot({ driverMachineId: machine.providerId, envId }).catch(() => {
-        log.info('Failed to create machine snapshot')
-      })
-    }
-
-    log.debug('Executing instance-specific scripts')
-
-    for (const script of scripts.INSTANCE_SPECIFIC) {
-      // eslint-disable-next-line no-await-in-loop
-      await execScript(script)
-    }
+    }, { opPrefix: 'Configuring machine' })
   } catch (e) {
     sshClient.dispose()
     throw e

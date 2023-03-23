@@ -29,6 +29,7 @@
     "@types/ssh2": "^1.11.7",
     "chalk": "^4.1.2",
     "cli-color": "^2.0.3",
+    "commondir": "^1.0.1",
     "glob": "^9.2.1",
     "inquirer": "^8.0.0",
     "is-stream": "^2.0.1",
@@ -50,6 +51,7 @@
   "devDependencies": {
     "@oclif/test": "^2.3.4",
     "@types/chai": "^4",
+    "@types/commondir": "^1.0.0",
     "@types/inquirer": "^8.0.0",
     "@types/is-stream": "^2.0.0",
     "@types/lodash": "^4.14.191",

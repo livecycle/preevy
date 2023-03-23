@@ -39,6 +39,7 @@ const machineDriver = ({
   const client = createClient({ region, profileId })
   const keyAlias = `${region}`
   return {
+    friendlyName: 'AWS Lightsail',
     getMachine: async ({ envId }) => {
       const instance = await client.findInstance(envId)
       return instance && machineFromInstance(instance)

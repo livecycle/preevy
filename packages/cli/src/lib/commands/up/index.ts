@@ -2,12 +2,10 @@ import fs from 'fs'
 import retry from 'p-retry'
 import yaml from 'yaml'
 import path from 'path'
-import ora from 'ora'
 import { rimraf } from 'rimraf'
-import { debounce } from 'lodash'
 import { Logger } from '../../../log'
 import { Machine, MachineDriver } from '../../machine'
-import { ExpandedTransferProgress, FileToCopy, SshClient } from '../../ssh/client'
+import { FileToCopy, SshClient } from '../../ssh/client'
 import { SSHKeyConfig } from '../../ssh/keypair'
 import { fixModelForRemote } from '../../compose/model'
 import { TunnelOpts } from '../../ssh/url'
@@ -17,10 +15,10 @@ import { localComposeClient } from '../../compose/client'
 import { Tunnel } from '../../tunneling'
 import { findAmbientEnvId } from '../../env-id'
 import { DOCKER_PROXY_SERVICE_NAME, addDockerProxyService, findDockerProxyUrl, queryTunnels } from '../../docker-proxy-client'
-import { ExpandedProgressConsumer } from '../../ssh/client/progress-expanded'
+import { copyFilesWithoutRecreatingDirUsingSftp } from '../../sftp-copy'
 import { withSpinner } from '../../spinner'
 
-const REMOTE_DIR_BASE = '/var/lib/preview'
+const REMOTE_DIR_BASE = '/var/lib/preevy'
 
 const retryPipeError = <T>(log: Logger, f: () => T) => retry(f, {
   minTimeout: 500,
@@ -43,51 +41,6 @@ const queryTunnelsWithRetry = async (
   { minTimeout: 1000, maxTimeout: 2000, retries: 10 },
 )
 
-const displayWithUnit = (nbytes: number) => {
-  if (nbytes < 1024) {
-    return [nbytes, 'B']
-  }
-  if (nbytes < 1024 * 1024) {
-    return [(nbytes / 1024).toFixed(1), 'KB']
-  }
-  if (nbytes < 1024 * 1024 * 1024) {
-    return [(nbytes / 1024 / 1024).toFixed(1), 'MB']
-  }
-  return [(nbytes / 1024 / 1024 / 1024).toFixed(1), 'GB']
-}
-
-const SPINNER_PREFIX = 'Copying files:'
-
-const showCopyFilesProgress = (
-  spinner: ora.Ora,
-  progress: ExpandedProgressConsumer,
-) => {
-  const text = ({
-    bytes, totalBytes, files, totalFiles, currentFile, bytesPerSec,
-  }: ExpandedTransferProgress) => `${SPINNER_PREFIX}: ${((bytes / totalBytes) * 100).toFixed(2)}% (${files}/${totalFiles}) ${displayWithUnit(bytesPerSec).join('')}/s ${currentFile}`
-  progress.addListener(debounce((p: ExpandedTransferProgress) => { spinner.text = text(p) }, 100))
-}
-
-const copyFilesWithoutRecreatingDir = async (
-  sshClient: SshClient,
-  remoteDir: string,
-  filesToCopy: FileToCopy[],
-) => {
-  const remoteTempDir = (await sshClient.execCommand(`sudo mktemp -d -p "${REMOTE_DIR_BASE}"`)).stdout.trim()
-  await sshClient.execCommand(`sudo chown $USER:docker "${remoteTempDir}"`)
-  const filesToCopyToTempDir = filesToCopy.map(
-    ({ local, remote }) => ({ local, remote: path.join(remoteTempDir, remote) })
-  )
-  await withSpinner({ text: `${SPINNER_PREFIX}: Calculating...` }, async spinner => {
-    const sftp = await sshClient.sftp({ concurrency: 1 })
-    const progress = await sftp.putFilesWithExpandedProgress(filesToCopyToTempDir, { chunkSize: 128 * 1024 })
-    showCopyFilesProgress(spinner, progress)
-    await progress.done
-    spinner.text = 'Finishing up...'
-    await sshClient.execCommand(`rsync -ac --delete "${remoteTempDir}/" "${remoteDir}" && sudo rm -rf "${remoteTempDir}"`)
-  })
-}
-
 const createCopiedFileInDataDir = (
   { projectLocalDataDir, filesToCopy, remoteDir } : {
     projectLocalDataDir: string
@@ -103,6 +56,18 @@ const createCopiedFileInDataDir = (
   await fs.promises.writeFile(local, content, { flag: 'w' })
   filesToCopy.push({ local, remote: filename })
   return { local, remote: path.join(remoteDir, filename) }
+}
+
+const calcComposeArgs = (userSpecifiedServices: string[], debug: boolean) => {
+  const upServices = userSpecifiedServices.length
+    ? userSpecifiedServices.concat(DOCKER_PROXY_SERVICE_NAME)
+    : []
+
+  return [
+    ...debug ? ['--verbose'] : [],
+    'up', '-d', '--remove-orphans', '--build',
+    ...upServices,
+  ]
 }
 
 const up = async ({
@@ -173,38 +138,27 @@ const up = async ({
 
     log.debug('Files to copy', filesToCopy)
 
-    await copyFilesWithoutRecreatingDir(sshClient, remoteDir, filesToCopy)
+    await copyFilesWithoutRecreatingDirUsingSftp(sshClient, REMOTE_DIR_BASE, remoteDir, filesToCopy)
 
     const compose = localComposeClient([composeFilePath])
-
-    log.debug('Running compose up')
-
-    const upServices = userSpecifiedServices.length
-      ? userSpecifiedServices.concat(DOCKER_PROXY_SERVICE_NAME)
-      : []
-
-    const composeArgs = [
-      ...debug ? ['--verbose'] : [],
-      'up', '-d', '--remove-orphans', '--build',
-      ...upServices,
-    ]
-
-    log.debug('compose args: ', composeArgs)
-
+    const composeArgs = calcComposeArgs(userSpecifiedServices, debug)
+    log.debug('Running compose up with args: ', composeArgs)
     await retryPipeError(
       log,
       () => withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit' })),
     )
 
-    log.info('Getting tunnels')
+    const tunnels = await withSpinner(async () => {
+      const dockerProxyServiceUrl = await withDockerSocket(() => findDockerProxyUrl(compose))
 
-    const dockerProxyServiceUrl = await withDockerSocket(() => findDockerProxyUrl(compose))
+      const queryResult = await queryTunnelsWithRetry(
+        sshClient,
+        dockerProxyServiceUrl,
+        userSpecifiedServices,
+      )
 
-    const { tunnels } = await queryTunnelsWithRetry(
-      sshClient,
-      dockerProxyServiceUrl,
-      userSpecifiedServices,
-    )
+      return queryResult.tunnels
+    }, { opPrefix: 'Waiting for tunnels to be created' })
 
     return { envId, machine, tunnels }
   } finally {
