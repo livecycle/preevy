@@ -51,7 +51,7 @@ Running `preevy`:
 
 `preevy` tool is has two main components:
 
-#### CLI (packages/cli)
+#### [CLI](packages/cli)
 
 The CLI is a node.js program responsible for:
 
@@ -62,7 +62,7 @@ The CLI is a node.js program responsible for:
 - Syncing Compose source code and local volumes.
 - Running the application and installing daemon for connecting to the tunneling service.
 
-#### Tunnel server (packages/tunnel-server)
+#### [Tunnel server](packages/tunnel-server)
 
 The tunnel server is a node.js base server responsible for exposing friendly HTTPS URLs for the Compose services.
 A free public instance is hosted on `livecycle.run`, and it can be self-hosted as well.
