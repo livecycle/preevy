@@ -1,7 +1,7 @@
 import retry from 'p-retry'
 import { Logger } from '../../../log'
 import { MachineDriver, scripts } from '../../machine'
-import { nodeSshClient } from '../../ssh/client'
+import { sshClient as clientSshClient } from '../../ssh/client'
 import { SSHKeyConfig } from '../../ssh/keypair'
 import { scriptExecuter } from './scripts'
 
@@ -34,15 +34,18 @@ export const ensureCustomizedMachine = async ({
   envId,
   sshKey,
   log,
+  debug,
 }: {
   machineDriver: MachineDriver
   envId: string
   sshKey: SSHKeyConfig
   log: Logger
+  debug: boolean
 }) => {
   const { machine, installed } = await ensureMachine({ machineDriver, envId, sshKey, log })
 
-  const sshClient = await retry(() => nodeSshClient({
+  const sshClient = await retry(() => clientSshClient({
+    debug,
     host: machine.publicIPAddress,
     username: machine.sshUsername,
     privateKey: sshKey.privateKey.toString('utf-8'),

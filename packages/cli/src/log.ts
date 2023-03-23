@@ -10,7 +10,7 @@ export const logLevels = {
 
 export type LogLevel = keyof typeof logLevels
 
-type LogFunc = (message?: string, ...args: unknown[]) => void
+export type LogFunc = (message?: string, ...args: unknown[]) => void
 
 const nullLogFunc: LogFunc = () => undefined
 

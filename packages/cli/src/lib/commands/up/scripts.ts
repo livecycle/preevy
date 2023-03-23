@@ -2,12 +2,12 @@ import { randomBytes } from 'crypto'
 import path from 'path'
 import { Logger } from '../../../log'
 import { scripts } from '../../machine'
-import { CommandResult, SshClient } from '../../ssh/client'
+import { ExecResult, SshClient } from '../../ssh/client'
 
 export type ScriptExecuter = (
   script: string,
   opts?: { env?: Record<string, string | undefined> },
-) => Promise<CommandResult>
+) => Promise<ExecResult>
 
 const removeFileExtension = (f: string) => f.replace(/\.[^.]+$/, '')
 
@@ -17,7 +17,8 @@ export const scriptExecuter = ({ sshClient, log }: {
 }): ScriptExecuter => async (script, opts = {}) => {
   const destination = `/tmp/scripts/${removeFileExtension(script)}.${randomBytes(16).toString('hex')}`
   log.debug(`executing script ${script} at ${destination}`)
-  await sshClient.putFiles([
+  const sftp = await sshClient.sftp()
+  await sftp.putFiles([
     { local: path.join(scripts.DIR, script), remote: path.join(destination, script) },
   ])
   try {

@@ -24,7 +24,7 @@
     "@types/dockerode": "^3.3.14",
     "@types/node": "18",
     "@types/shell-escape": "^0.2.1",
-    "@types/ssh2": "^1.11.7",
+    "@types/ssh2": "^1.11.8",
     "@typescript-eslint/eslint-plugin": "^5.55.0",
     "@typescript-eslint/parser": "^5.55.0",
     "eslint": "^8.36.0",

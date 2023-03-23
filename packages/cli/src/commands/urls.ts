@@ -2,7 +2,7 @@ import yaml from 'yaml'
 import { Args, ux } from '@oclif/core'
 import DriverCommand from '../driver-command'
 import { sshKeysStore } from '../lib/state/ssh'
-import { nodeSshClient } from '../lib/ssh/client'
+import { sshClient as createSshClient } from '../lib/ssh/client'
 import { envIdFlags, findAmbientEnvId, findAmbientProjectName } from '../lib/env-id'
 import { findDockerProxyUrl, minimalModelWithDockerProxyService, queryTunnels } from '../lib/docker-proxy-client'
 import { localComposeClient } from '../lib/compose/client'
@@ -55,7 +55,8 @@ export default class Urls extends DriverCommand<typeof Urls> {
       throw new Error(`No machine found for envId ${envId}`)
     }
 
-    const sshClient = await nodeSshClient({
+    const sshClient = await createSshClient({
+      debug: flags.debug,
       host: machine.publicIPAddress,
       username: machine.sshUsername,
       privateKey: sshKey.privateKey.toString('utf-8'),

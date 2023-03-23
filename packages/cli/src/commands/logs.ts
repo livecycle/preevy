@@ -2,7 +2,7 @@ import yaml from 'yaml'
 import { Args, ux } from '@oclif/core'
 import DriverCommand from '../driver-command'
 import { sshKeysStore } from '../lib/state/ssh'
-import { nodeSshClient } from '../lib/ssh/client'
+import { sshClient as createSshClient } from '../lib/ssh/client'
 import { envIdFlags, findAmbientEnvId, findAmbientProjectName } from '../lib/env-id'
 import { addBaseDockerProxyService } from '../lib/docker-proxy-client'
 import { localComposeClient } from '../lib/compose/client'
@@ -54,7 +54,8 @@ export default class Logs extends DriverCommand<typeof Logs> {
 
     const model = await localComposeClient(flags.file).getModel()
 
-    const sshClient = await nodeSshClient({
+    const sshClient = await createSshClient({
+      debug: flags.debug,
       host: machine.publicIPAddress,
       username: machine.sshUsername,
       privateKey: sshKey.privateKey.toString('utf-8'),

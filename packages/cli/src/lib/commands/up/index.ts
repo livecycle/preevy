@@ -2,10 +2,12 @@ import fs from 'fs'
 import retry from 'p-retry'
 import yaml from 'yaml'
 import path from 'path'
+import ora from 'ora'
 import { rimraf } from 'rimraf'
+import { debounce } from 'lodash'
 import { Logger } from '../../../log'
 import { Machine, MachineDriver } from '../../machine'
-import { FileToCopy, SshClient } from '../../ssh/client'
+import { ExpandedTransferProgress, FileToCopy, SshClient } from '../../ssh/client'
 import { SSHKeyConfig } from '../../ssh/keypair'
 import { fixModelForRemote } from '../../compose/model'
 import { TunnelOpts } from '../../ssh/url'
@@ -15,6 +17,8 @@ import { localComposeClient } from '../../compose/client'
 import { Tunnel } from '../../tunneling'
 import { findAmbientEnvId } from '../../env-id'
 import { DOCKER_PROXY_SERVICE_NAME, addDockerProxyService, findDockerProxyUrl, queryTunnels } from '../../docker-proxy-client'
+import { ExpandedProgressConsumer } from '../../ssh/client/progress-expanded'
+import { withSpinner } from '../../spinner'
 
 const REMOTE_DIR_BASE = '/var/lib/preview'
 
@@ -39,18 +43,49 @@ const queryTunnelsWithRetry = async (
   { minTimeout: 1000, maxTimeout: 2000, retries: 10 },
 )
 
+const displayWithUnit = (nbytes: number) => {
+  if (nbytes < 1024) {
+    return [nbytes, 'B']
+  }
+  if (nbytes < 1024 * 1024) {
+    return [(nbytes / 1024).toFixed(1), 'KB']
+  }
+  if (nbytes < 1024 * 1024 * 1024) {
+    return [(nbytes / 1024 / 1024).toFixed(1), 'MB']
+  }
+  return [(nbytes / 1024 / 1024 / 1024).toFixed(1), 'GB']
+}
+
+const SPINNER_PREFIX = 'Copying files:'
+
+const showCopyFilesProgress = (
+  spinner: ora.Ora,
+  progress: ExpandedProgressConsumer,
+) => {
+  const text = ({
+    bytes, totalBytes, files, totalFiles, currentFile, bytesPerSec,
+  }: ExpandedTransferProgress) => `${SPINNER_PREFIX}: ${((bytes / totalBytes) * 100).toFixed(2)}% (${files}/${totalFiles}) ${displayWithUnit(bytesPerSec).join('')}/s ${currentFile}`
+  progress.addListener(debounce((p: ExpandedTransferProgress) => { spinner.text = text(p) }, 100))
+}
+
 const copyFilesWithoutRecreatingDir = async (
   sshClient: SshClient,
   remoteDir: string,
   filesToCopy: FileToCopy[],
 ) => {
-  const remoteTempDir = (await sshClient.execCommand(`sudo mktemp -d -p "${REMOTE_DIR_BASE}"`)).stdout
+  const remoteTempDir = (await sshClient.execCommand(`sudo mktemp -d -p "${REMOTE_DIR_BASE}"`)).stdout.trim()
   await sshClient.execCommand(`sudo chown $USER:docker "${remoteTempDir}"`)
   const filesToCopyToTempDir = filesToCopy.map(
     ({ local, remote }) => ({ local, remote: path.join(remoteTempDir, remote) })
   )
-  await sshClient.putFiles(filesToCopyToTempDir)
-  await sshClient.execCommand(`rsync -ac --delete "${remoteTempDir}/" "${remoteDir}" && sudo rm -rf "${remoteTempDir}"`)
+  await withSpinner({ text: `${SPINNER_PREFIX}: Calculating...` }, async spinner => {
+    const sftp = await sshClient.sftp({ concurrency: 1 })
+    const progress = await sftp.putFilesWithExpandedProgress(filesToCopyToTempDir, { chunkSize: 128 * 1024 })
+    showCopyFilesProgress(spinner, progress)
+    await progress.done
+    spinner.text = 'Finishing up...'
+    await sshClient.execCommand(`rsync -ac --delete "${remoteTempDir}/" "${remoteDir}" && sudo rm -rf "${remoteTempDir}"`)
+  })
 }
 
 const createCopiedFileInDataDir = (
@@ -129,7 +164,7 @@ const up = async ({
 
   const composeFilePath = (await createCopiedFile('docker-compose.yml', yaml.stringify(remoteModel))).local
 
-  const { machine, sshClient } = await ensureCustomizedMachine({ machineDriver, sshKey, envId, log })
+  const { machine, sshClient } = await ensureCustomizedMachine({ machineDriver, sshKey, envId, log, debug })
 
   const withDockerSocket = wrapWithDockerSocket({ sshClient, log })
 
@@ -138,7 +173,6 @@ const up = async ({
 
     log.debug('Files to copy', filesToCopy)
 
-    log.info('Copying files')
     await copyFilesWithoutRecreatingDir(sshClient, remoteDir, filesToCopy)
 
     const compose = localComposeClient([composeFilePath])

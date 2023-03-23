@@ -32,3 +32,5 @@ export const lazyTempDir = (name: string) => {
     dispose,
   }
 }
+
+export type LazyTempDir = ReturnType<typeof lazyTempDir>
