@@ -18,13 +18,14 @@ When provisioning a new environment using the `up` command, `preevy` does the fo
 
 ## Profile configuration
 
-Preevy profile provide a mechanism for storing and sharing configuration and keys between different machines (multiple developers and/or CI Jobs).
+`preevy` profile provide a mechanism for storing and sharing configuration and state between different machines. This allows sharing of environments between different CI jobs, or different developers.
+Using a shared profile ensure consistent configuration and stable URLs between different CI runs.
 
-The profile storage consists of multiple tar archives that can be stored locally or in a remote storage provider. (S3 is the only supported remote storage implementation at the moment)
+The profile data can be stored on AWS s3 for easy sharing. If for some reason s3 cannot be used, the profile can also be stored on the local filesystem and copied manually.
 
 :::note
 Profile store doesn't contains any cloud provider credentials.  
-When using `preevy` CLI, the user need to have a local cloud configuration (using `aws login` or `aws configure`, or environment variables) with the required permissions.
+The `preevy` CLI always uses the local AWS credential chain (e.g, from environment variables, AWS profile, EC2 role), which needs to have the appropriate permissions.
 :::
 
 Each profile has a location specifier that indicate where the profile data is stored, for example: `s3://preevy-config/profile1?region=us-east-1` (refers to a profile stored on S3, on `preevy-config` bucket in the region `us-east-1` under `profile1` path).
@@ -49,7 +50,7 @@ For usage examples, you can go over the [CLI reference](/cli-reference.md)
 
 #### [Tunnel server](packages/tunnel-server)
 
-The tunnel server is a node.js base server responsible for exposing friendly HTTPS URLs for the Compose services.
+The tunnel server is a node.js based server responsible for exposing friendly HTTPS URLs for the Compose services.
 A free public instance is hosted on `livecycle.run`, and it can be self-hosted as well.
 
 Read more about it: [Tunnel server](/tunnel-server/overview.md)
