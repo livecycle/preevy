@@ -13,7 +13,7 @@ To some essence, they are a non-production version of the application that can b
 
 During our work, we've seen teams that implemented preview environments for frontend applications by leveraging the power of [Vercel](https://vercel.com/), [Netlify](https://www.netlify.com/) or even our [own solution](https://livecycle.io).
 
-Yet, when it comes to deploying a complex application with multiple services, many teams struggle to find the right solution and juggle between the different tradeoffs (fidelity, security, cost, scale, etc...) and complexities, and usually end up with either postponing/giving-up or implementing a complex (and usually costly) solution that doesn't necessarily fit in their development flow.  
+Yet, when it comes to deploying preview environments for a complex application with multiple services, many teams struggle to find the right solution and juggle between the different tradeoffs (fidelity, security, cost, scale, etc...) and complexities, and usually end up with either postponing/giving-up or implementing a complex (and usually costly) solution that doesn't necessarily fit in their development flow.  
 To some degree, these challenges are risen from the inherit complexities and fragmentation presented in the configuration of production (or production-like) of enterprise applications. (e.g. Kubernetes configuration, IaC, scale, compliance/security, etc...)
 
 `preevy` designed to tackle this problem by providing a tool that lower the bar for implementing preview environments in a a way that any developer with a minimal knowledge of Docker and a cloud provider account.
