@@ -6,7 +6,7 @@ title: Under the hood
 
 When provisioning a new environment using the `preevy up` command the following steps are taken:
 - `preevy` profile store is read for default configuration and relevant keys.
-- If `--id` flag is not specified, the CLI will try to extract the environment ID from git context. (`branch`)
+- If the `--id` flag is not specified, the CLI will try to extract the environment ID from the git branch.
 - A new Lightsail VM is created based on the local AWS configuration.
 - If necessary, a SSH keypair for accessing the machine is created and stored in the profile.
 - `preevy` connects to the VM using SSH and installs Docker.
