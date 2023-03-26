@@ -5,7 +5,7 @@ title: AWS Lightsail
 
 `preevy` can provision virtual machines on AWS Lightsail using the `aws-lightsail` driver.  
 [AWS lightsail](https://aws.amazon.com/lightsail) is a managed service that provides a simple low-cost solution for running VMs in the cloud.  
-AWS lightsail provisioning time is usually around 2 minutes and their cost can be as low as $3.50 per month making them suitable for preview environments at scale.
+AWS lightsail provisioning time for a VM is usually around 2 minutes and their cost can be as low as $3.50 per month making them suitable for preview environments at scale.
 
 ### Credentials Configuration
 `preevy` uses AWS SDK which supports multiple ways of configuring credentials  according to the [credentials provider chain](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/setting-credentials-node.html).  
