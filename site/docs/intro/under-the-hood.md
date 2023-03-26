@@ -16,11 +16,11 @@ When provisioning a new environment using the `up` command, `preevy` does the fo
 - The `tunnel-agent` is inspecting the network configuration of all deployed services and create a tunnel for each service.
 - Fetch the urls from tunnel-agent and output them to the end user.
 
-## Preevy profile configuration
+## profile configuration
 
-Preevy profile provide a mechanism for storing and sharing configuration and keys between different machines (Multiple developers and/or CI Jobs).
+Preevy profile provide a mechanism for storing and sharing configuration and keys between different machines (multiple developers and/or CI Jobs).
 
-The profile storage consists of multiple tar archives that can be stored locally or in a remote storage provider. (S3 is the only supported implementation at the moment)
+The profile storage consists of multiple tar archives that can be stored locally or in a remote storage provider. (S3 is the only supported remote storage implementation at the moment)
 
 :::note
 Profile store doesn't contains any cloud provider credentials.  
