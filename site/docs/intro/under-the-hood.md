@@ -16,7 +16,7 @@ When provisioning a new environment using the `up` command, `preevy` does the fo
 - The `tunnel-agent` is inspecting the network configuration of all deployed services and create a tunnel for each service.
 - Fetch the urls from tunnel-agent and output them to the end user.
 
-## profile configuration
+## Profile configuration
 
 Preevy profile provide a mechanism for storing and sharing configuration and keys between different machines (multiple developers and/or CI Jobs).
 
