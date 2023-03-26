@@ -11,6 +11,8 @@ export type Machine = {
 }
 
 export type MachineDriver = {
+  friendlyName: string
+
   getMachine: (args: { envId: string }) => Promise<Machine | undefined>
 
   getKeyPairAlias: () => Promise<string>

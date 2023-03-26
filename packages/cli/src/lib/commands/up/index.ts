@@ -15,8 +15,10 @@ import { localComposeClient } from '../../compose/client'
 import { Tunnel } from '../../tunneling'
 import { findAmbientEnvId } from '../../env-id'
 import { DOCKER_PROXY_SERVICE_NAME, addDockerProxyService, findDockerProxyUrl, queryTunnels } from '../../docker-proxy-client'
+import { copyFilesWithoutRecreatingDirUsingSftp } from '../../sftp-copy'
+import { withSpinner } from '../../spinner'
 
-const REMOTE_DIR_BASE = '/var/lib/preview'
+const REMOTE_DIR_BASE = '/var/lib/preevy'
 
 const retryPipeError = <T>(log: Logger, f: () => T) => retry(f, {
   minTimeout: 500,
@@ -39,20 +41,6 @@ const queryTunnelsWithRetry = async (
   { minTimeout: 1000, maxTimeout: 2000, retries: 10 },
 )
 
-const copyFilesWithoutRecreatingDir = async (
-  sshClient: SshClient,
-  remoteDir: string,
-  filesToCopy: FileToCopy[],
-) => {
-  const remoteTempDir = (await sshClient.execCommand(`sudo mktemp -d -p "${REMOTE_DIR_BASE}"`)).stdout
-  await sshClient.execCommand(`sudo chown $USER:docker "${remoteTempDir}"`)
-  const filesToCopyToTempDir = filesToCopy.map(
-    ({ local, remote }) => ({ local, remote: path.join(remoteTempDir, remote) })
-  )
-  await sshClient.putFiles(filesToCopyToTempDir)
-  await sshClient.execCommand(`rsync -ac --delete "${remoteTempDir}/" "${remoteDir}" && sudo rm -rf "${remoteTempDir}"`)
-}
-
 const createCopiedFileInDataDir = (
   { projectLocalDataDir, filesToCopy, remoteDir } : {
     projectLocalDataDir: string
@@ -68,6 +56,18 @@ const createCopiedFileInDataDir = (
   await fs.promises.writeFile(local, content, { flag: 'w' })
   filesToCopy.push({ local, remote: filename })
   return { local, remote: path.join(remoteDir, filename) }
+}
+
+const calcComposeArgs = (userSpecifiedServices: string[], debug: boolean) => {
+  const upServices = userSpecifiedServices.length
+    ? userSpecifiedServices.concat(DOCKER_PROXY_SERVICE_NAME)
+    : []
+
+  return [
+    ...debug ? ['--verbose'] : [],
+    'up', '-d', '--remove-orphans', '--build',
+    ...upServices,
+  ]
 }
 
 const up = async ({
@@ -129,7 +129,7 @@ const up = async ({
 
   const composeFilePath = (await createCopiedFile('docker-compose.yml', yaml.stringify(remoteModel))).local
 
-  const { machine, sshClient } = await ensureCustomizedMachine({ machineDriver, sshKey, envId, log })
+  const { machine, sshClient } = await ensureCustomizedMachine({ machineDriver, sshKey, envId, log, debug })
 
   const withDockerSocket = wrapWithDockerSocket({ sshClient, log })
 
@@ -138,39 +138,27 @@ const up = async ({
 
     log.debug('Files to copy', filesToCopy)
 
-    log.info('Copying files')
-    await copyFilesWithoutRecreatingDir(sshClient, remoteDir, filesToCopy)
+    await copyFilesWithoutRecreatingDirUsingSftp(sshClient, REMOTE_DIR_BASE, remoteDir, filesToCopy)
 
     const compose = localComposeClient([composeFilePath])
-
-    log.debug('Running compose up')
-
-    const upServices = userSpecifiedServices.length
-      ? userSpecifiedServices.concat(DOCKER_PROXY_SERVICE_NAME)
-      : []
-
-    const composeArgs = [
-      ...debug ? ['--verbose'] : [],
-      'up', '-d', '--remove-orphans', '--build',
-      ...upServices,
-    ]
-
-    log.debug('compose args: ', composeArgs)
-
+    const composeArgs = calcComposeArgs(userSpecifiedServices, debug)
+    log.debug('Running compose up with args: ', composeArgs)
     await retryPipeError(
       log,
       () => withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit' })),
     )
 
-    log.info('Getting tunnels')
+    const tunnels = await withSpinner(async () => {
+      const dockerProxyServiceUrl = await withDockerSocket(() => findDockerProxyUrl(compose))
 
-    const dockerProxyServiceUrl = await withDockerSocket(() => findDockerProxyUrl(compose))
+      const queryResult = await queryTunnelsWithRetry(
+        sshClient,
+        dockerProxyServiceUrl,
+        userSpecifiedServices,
+      )
 
-    const { tunnels } = await queryTunnelsWithRetry(
-      sshClient,
-      dockerProxyServiceUrl,
-      userSpecifiedServices,
-    )
+      return queryResult.tunnels
+    }, { opPrefix: 'Waiting for tunnels to be created' })
 
     return { envId, machine, tunnels }
   } finally {
