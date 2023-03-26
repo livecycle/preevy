@@ -92,6 +92,7 @@
     ],
     "hooks": {
       "init": [
+        "./dist/hooks/init/async-trace",
         "./dist/hooks/init/sync-logging"
       ]
     },
