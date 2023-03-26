@@ -16,7 +16,7 @@ During our work, we've seen teams that implemented preview environments for fron
 Yet, when it comes to deploying preview environments for a complex application with multiple services, many teams struggle to find the right solution and juggle between the different tradeoffs (fidelity, security, cost, scale, etc...) and complexities, and usually end up with either postponing/giving-up or implementing a complex (and usually costly) solution that doesn't necessarily fit in their development flow.  
 To some degree, these challenges are risen from the inherit complexities and fragmentation presented in the configuration of production (or production-like) of enterprise applications. (e.g. Kubernetes configuration, IaC, scale, compliance/security, etc...)
 
-`preevy` designed to tackle this problem by providing a tool that lower the bar for implementing preview environments in a a way that any developer with a minimal knowledge of Docker and a cloud provider account.
+`preevy` designed to tackle this problem by providing a tool that lower the bar for implementing preview environments in a a way that any developer with a minimal knowledge of Docker and a cloud provider account could use.
 
 In the tradeoff between fidelity and simplicity, we've chosen simplicity, and we believe that preview environments should be cheap, hackable, and accessible to everyone to provide the most value in development flows.
 
