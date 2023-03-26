@@ -9,7 +9,7 @@ When provisioning a new environment using the `preevy up` command the following 
 - If `--id` flag is not specified, the CLI will try to extract the environment ID from git context. (`branch`)
 - A new Lightsail VM is created based on the local AWS configuration.
 - If necessary, a SSH keypair for accessing the machine is created and stored in the profile.
-- After the VM is created, `preevy` connect to the VM using SSH and runs setup script to configure Docker.
+- `preevy` connects to the VM using SSH and installs Docker.
 - `preevy`analyzes the Compose file, copy local volume mounts to the VM and update volume paths.
 - `preevy`configure a tunnel-agent that is responsible for connecting to the tunneling service and add it to the Compose deployment.
 - `preevy`runs the application using Docker Compose with `--build` while using the local build context.
