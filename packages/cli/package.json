@@ -1,6 +1,6 @@
 {
   "name": "preevy",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "description": "Quickly deploy preview environments to the cloud!",
   "author": "Livecycle",
   "bin": {
@@ -25,7 +25,7 @@
     "@oclif/core": "^2",
     "@oclif/plugin-help": "^5",
     "@oclif/plugin-plugins": "^2.3.0",
-    "@preevy/compose-tunnel-agent": "0.0.10",
+    "@preevy/compose-tunnel-agent": "0.0.15",
     "@types/ssh2": "^1.11.8",
     "chalk": "^4.1.2",
     "cli-color": "^2.0.3",
@@ -44,6 +44,7 @@
     "remove": "^0.1.5",
     "rimraf": "^4.4.0",
     "shell-escape": "^0.2.0",
+    "source-map-support": "^0.5.21",
     "ssh2": "^1.11.0",
     "tar": "^6.1.13",
     "yaml": "^2.2.1"
