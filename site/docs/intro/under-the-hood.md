@@ -4,18 +4,17 @@ title: Under the hood
 ---
 ## Provisioning preview environments
 
-When provisioning a new environment using the `preevy up` command the following steps are taken:
-- A profile store is read for default configuration and relevant keys.
-- If the `--id` flag is not specified, the CLI will try to extract the environment ID from the git branch.
-- A new Lightsail VM is created based on the local AWS configuration.
-- If necessary, a SSH keypair for accessing the machine is created and stored in the profile.
-- `preevy` connects to the VM using SSH and installs Docker.
-- `preevy`analyzes the Compose file, copy local volume mounts to the VM and update volume paths.
-- `preevy`configure a tunnel-agent that is responsible for connecting to the tunneling service and add it to the Compose deployment.
-- `preevy`runs the application using Docker Compose with `--build` while using the local build context.
-- The tunnel-agent is inspecting the network configuration of all deployed services and create a tunnel for each service using the configured [tunnel server](/tunnel-server/overview.md).
-- `preevy` fetch the urls from tunnel-agent and output them to the end user.
-[Add terminal gif]
+When provisioning a new environment using the `up` command, `preevy` does the following:
+- Reads for default configuration and relevant keys from the current profile store.
+- Calculates environment name based on git branch or uses the `--id` flag.
+- Uses the local aws configuration to provision a new Lightsail VM.
+- Reads SSH keypair from profile to access the VM, if necessary, generate a new one.
+- Connects to the VM using SSH and setup Docker.
+- Reads the compose file and copies local volume mounts to the VM.
+- Augments the compose deployment with a helper service, `tunnel-agent`, responsible for connecting to the [tunnel server](/tunnel-server/overview.md).
+- Runs the application using Docker Compose with `--build` while using the local build context.
+- The `tunnel-agent` is inspecting the network configuration of all deployed services and create a tunnel for each service.
+- Fetch the urls from tunnel-agent and output them to the end user.
 
 ## Preevy profile configuration
 
