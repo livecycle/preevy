@@ -23,6 +23,17 @@
 `preevy` is a powerful CLI tool designed to simplify the process of creating ephemeral preview environments.
 Using `preevy`, you can easily provision any Docker-Compose application on AWS using affordable [Lightsail](https://aws.amazon.com/free/compute/lightsail) VMs (support for GCP and more cloud is on the way).
 
+## What?
+
+`preevy` can take any Docker-Compose application definition and with a single `up` command perform the following:
+
+- Provision and configure a new virtual machine (VM) on your cloud.
+- Build and deploy your application on the VM.
+- Expose each service of your application to the web with a user-friendly public HTTPS URL without any DNS/Certificate configuration.
+
+These environments can be managed using the `preevy` command-line interface (CLI) and can be easily updated or destroyed when necessary.
+While `preevy` can be used for sharing local environments with your team, its primary goal is to implement preview environments for pull requests. Therefore, it's designed to be easily integrated into CI/CD flows.
+
 ## Why?
 
 At Livecycle, we believe that preview environments are an integral part of any development flow, in any engineering team.
@@ -30,7 +41,7 @@ These non-production, ephemeral environments, created for every Pull Request, ca
 In recent years, preview environments have become increasingly popular, with some PaaS providers even offering deeply integrated preview environments.
 However, setting up preview environments can be a complex and costly task, which is why many teams have been hesitant to implement them.
 `preevy` is designed to simplify this task and provide a framework for provisioning and utilizing preview environments to optimize the PR flow.
-You can read more about the story and philosophy behind Preview here.
+You can read more about the story and philosophy behind `preevy` here.
 
 ## Getting started
 
