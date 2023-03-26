@@ -24,7 +24,7 @@ Using a shared profile ensure consistent configuration and stable URLs between d
 The profile data can be stored on AWS s3 for easy sharing. If for some reason s3 cannot be used, the profile can also be stored on the local filesystem and copied manually.
 
 :::note
-Profile store doesn't contains any cloud provider credentials.  
+Profile store doesn't contain any cloud provider credentials.  
 The `preevy` CLI always uses the local AWS credential chain (e.g, from environment variables, AWS profile, EC2 role), which needs to have the appropriate permissions.
 :::
 
