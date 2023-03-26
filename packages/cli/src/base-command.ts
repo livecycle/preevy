@@ -1,4 +1,4 @@
-import { Command, Flags, Interfaces } from '@oclif/core'
+import { Command, Flags, Interfaces, settings as oclifSettings } from '@oclif/core'
 import { FlagInput } from '@oclif/core/lib/interfaces/parser'
 import path from 'path'
 import { ProfileConfig, profileConfig } from './lib/profile'
@@ -54,6 +54,9 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
     })
     this.args = args as Args<T>
     this.flags = flags as Flags<T>
+    if (this.flags.debug) {
+      oclifSettings.debug = true
+    }
     this.logger = commandLogger(this, 'stdout')
     this.stdErrLogger = commandLogger(this, 'stderr')
   }
