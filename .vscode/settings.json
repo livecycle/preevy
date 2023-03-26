@@ -6,8 +6,8 @@
   "eslint.format.enable": true,
   "eslint.workingDirectories": [
     "packages/cli",
-    "packages/standalone-proxy",
-    "packages/docker-proxy",
+    "packages/tunnel-server",
+    "packages/compose-tunnel-agent",
   ],
   "eslint.useESLintClass": true,
   "eslint.packageManager": "yarn",
