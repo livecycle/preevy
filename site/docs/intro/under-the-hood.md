@@ -23,7 +23,7 @@ Preevy profile provide a mechanism for storing and sharing configuration and key
 The profile storage consists of multiple tar archives that can be stored locally or in a remote storage provider. (S3 is the only supported remote storage implementation at the moment)
 
 :::note
-Profile store doesn't contains any cloud provider credentials.  
+Profile store doesn't contain any cloud provider credentials.
 When using `preevy` CLI, the user need to have a local cloud configuration (using `aws login` or `aws configure`, or environment variables) with the required permissions.
 :::
 
