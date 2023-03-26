@@ -49,13 +49,13 @@ export const ensureCustomizedMachine = async ({
 }) => {
   const { machine, installed } = await ensureMachine({ machineDriver, envId, sshKey, log })
 
-  const sshClient = await retry(() => clientSshClient({
+  const sshClient = await withSpinner(() => retry(() => clientSshClient({
     debug,
     host: machine.publicIPAddress,
     username: machine.sshUsername,
     privateKey: sshKey.privateKey.toString('utf-8'),
     log,
-  }), { minTimeout: 2000, maxTimeout: 5000, retries: 10 })
+  }), { minTimeout: 2000, maxTimeout: 5000, retries: 10 }), { text: `Connecting to ${machineDriver.friendlyName} machine at ${machine.publicIPAddress}` })
 
   try {
     const execScript = scriptExecuter({ sshClient, log })

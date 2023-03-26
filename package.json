@@ -4,10 +4,10 @@
     "packages/*"
   ],
   "devDependencies": {
-    "syncpack": "^9.8.4",
     "husky": "^8.0.0",
     "lint-staged": "^13.1.2",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "syncpack": "^9.8.4"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
@@ -19,5 +19,6 @@
     "check-mismatches": "syncpack list-mismatches",
     "fix-mismatches": "syncpack fix-mismatches",
     "prepare": "husky install"
-  }
+  },
+  "version": "0.0.1"
 }
