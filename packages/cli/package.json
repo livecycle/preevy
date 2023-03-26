@@ -1,6 +1,6 @@
 {
   "name": "preevy",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Quickly deploy preview environments to the cloud!",
   "author": "Livecycle",
   "bin": {
