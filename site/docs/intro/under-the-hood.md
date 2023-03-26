@@ -27,10 +27,10 @@ Profile store doesn't contains any cloud provider credentials.
 When using `preevy` CLI, the user need to have a local cloud configuration (using `aws login` or `aws configure`, or environment variables) with the required permissions.
 :::
 
-Each profile has a location, for example: `s3://preevy-config/profile1?region=us-east-1` (refers to a profile stored on S3, on `preevy-config` bucket in the region `us-east-1` under `profile1` path).
-This profile can be imported using `preevy init --from s3://preevy-config/profile1?region=us-east-1`
+Each profile has a location specifier that indicate where the profile data is stored, for example: `s3://preevy-config/profile1?region=us-east-1` (refers to a profile stored on S3, on `preevy-config` bucket in the region `us-east-1` under `profile1` path).
 
-All available profile can be listed using `preevy profile ls` command.
+This profile can be imported using `preevy init --from s3://preevy-config/profile1?region=us-east-1`
+All available profiles can be listed using `preevy profile ls` command.
 
 ## Components
 
