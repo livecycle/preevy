@@ -60,5 +60,5 @@ For using AWS s3 remote storage for profile store, s3 permissions are required a
 ```
 
 ### Supported flags
-- `--region` - The AWS region to use.
+- `--aws-region` - The AWS region to use.
 
