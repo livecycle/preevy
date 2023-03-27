@@ -28,7 +28,7 @@ Profile store doesn't contain any cloud provider credentials.
 The `preevy` CLI always uses the local AWS credential chain (e.g, from environment variables, AWS profile, EC2 role), which needs to have the [appropriate permissions](/drivers/aws-lightsail).
 :::
 
-Each profile has a location specifier that indicate where the profile data is stored, for example: `s3://preevy-config/profile1?region=us-east-1` (refers to a profile stored on S3, on `preevy-config` bucket in the region `us-east-1` under `profile1` path).
+Profile URLs specify where the profile data is stored, for example: `s3://preevy-config/profile1?region=us-east-1` (refers to a profile stored on a S3 bucket named `preevy-config` in the region `us-east-1` under `profile1` path).
 
 This profile can be imported using `preevy init --from s3://preevy-config/profile1?region=us-east-1`
 All available profiles can be listed using `preevy profile ls` command.
