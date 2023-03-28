@@ -32,12 +32,12 @@ The `preevy` CLI always uses the local AWS credential chain (e.g, from environme
 
 Profile URLs specify where the profile data is stored, for example: `s3://preevy-config/profile1?region=us-east-1` (refers to a profile stored on a S3 bucket named `preevy-config` in the region `us-east-1` under `profile1` path).
 
-This profile can be imported using `preevy init --from s3://preevy-config/profile1?region=us-east-1`.  
+This profile can be imported using `preevy init --from s3://preevy-config/profile1?region=us-east-1`.
 All available profiles can be listed using [`preevy profile ls`](/cli-reference#preevy-profile-ls) command.
 
 ## Components
 
-#### [CLI](https://github.com/livecycle/preevy/tree/master/packages/cli)
+#### [CLI](https://github.com/livecycle/preevy/tree/main/packages/cli)
 
 The CLI is a node.js program responsible for:
 
@@ -50,7 +50,7 @@ The CLI is a node.js program responsible for:
 
 For usage examples, you can go over the [CLI reference](/cli-reference.md)
 
-#### [Tunnel server](https://github.com/livecycle/preevy/tree/master/packages/tunnel-server)
+#### [Tunnel server](https://github.com/livecycle/preevy/tree/main/packages/tunnel-server)
 
 The tunnel server is a node.js based server responsible for exposing friendly HTTPS URLs for the Compose services.
 A free public instance is hosted on `livecycle.run`, and it can be self-hosted as well.
