@@ -17,7 +17,7 @@ As we grew Livecycle, we've seen teams implement preview environments for fronte
 
 Yet, when it comes to deploying preview environments for a complex application with multiple services, many teams struggle to find the right solution and juggle between the different complexities and tradeoffs (fidelity, security, cost, scale, etc...). If they don't postpone the effort altogether, they often compromise on a complex, costly solution that isn't tailored to their needs.
 
-Many of the challenges in setting up complex preview environmente are related to the inherent complexities and fragmentation of configuring of production (or production-like) enterprise applications. (e.g. Kubernetes configuration, [IaC](https://en.wikipedia.org/wiki/Infrastructure_as_code), scale, compliance/security, etc...).
+Many of the challenges in setting up complex preview environmente are related to the inherent complexities and configuration fragmentation of production (or production-like) environments of enterprise applications. (e.g. Kubernetes configuration, [IaC](https://en.wikipedia.org/wiki/Infrastructure_as_code), scale, compliance/security, etc...).
 
 `preevy` lowers the bar for deploying preview environments, aiming for any developer with a minimal knowledge of Docker and a cloud provider account.
 
