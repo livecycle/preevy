@@ -4,7 +4,7 @@ import DriverCommand from '../driver-command'
 import { sshKeysStore } from '../lib/state/ssh'
 import { connectSshClient as createSshClient } from '../lib/ssh/client'
 import { envIdFlags, findAmbientEnvId, findAmbientProjectName } from '../lib/env-id'
-import { addBaseDockerProxyService } from '../lib/docker-proxy-client'
+import { DOCKER_PROXY_SERVICE_NAME, addBaseDockerProxyService } from '../lib/docker-proxy-client'
 import { localComposeClient } from '../lib/compose/client'
 import { composeFlags } from '../lib/compose/flags'
 import { wrapWithDockerSocket } from '../lib/commands/up/docker'
@@ -47,12 +47,23 @@ export default class Logs extends DriverCommand<typeof Logs> {
     const envId = flags.id || await findAmbientEnvId(projectName)
     log.debug(`envId: ${envId}`)
 
+    const model = await localComposeClient(flags.file).getModel()
+
+    // exclude docker proxy service unless explicitly specified
+    const modelServices = Object.keys(model.services ?? {})
+
+    const services = restArgs.length ? restArgs : modelServices
+
+    for (const service of services) {
+      if (service !== DOCKER_PROXY_SERVICE_NAME && !modelServices.includes(service)) {
+        throw new Error(`Specified service ${service} not found. Available services: ${modelServices.join(', ')}`)
+      }
+    }
+
     const machine = await driver.getMachine({ envId })
     if (!machine) {
       throw new Error(`No machine found for envId ${envId}`)
     }
-
-    const model = await localComposeClient(flags.file).getModel()
 
     const sshClient = await createSshClient({
       debug: flags.debug,
@@ -65,9 +76,6 @@ export default class Logs extends DriverCommand<typeof Logs> {
     try {
       const compose = localComposeClient(Buffer.from(yaml.stringify(addBaseDockerProxyService(model))))
       const withDockerSocket = wrapWithDockerSocket({ sshClient, log })
-
-      // exclude docker proxy service unless explicitly specified
-      const services = restArgs.length ? restArgs : Object.keys(model.services ?? {})
 
       await withDockerSocket(() => compose.spawnPromise(['logs', ...services], { stdio: 'inherit' }))
     } finally {
