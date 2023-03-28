@@ -19,15 +19,17 @@ export const forwardOutStreamLocal = (
 ) => new Promise<ForwardOutStreamLocal>((resolve, reject) => {
   const socketPath = path.join(lazySocketDir(), `s_${randomBytes(16).toString('hex')}`)
 
-  const socketServer = net.createServer(socket => {
+  const socketServer = net.createServer(async socket => {
     socket.on('error', (e: unknown) => log.error(`socket error on socket ${socketPath}`, e))
 
     ssh.openssh_forwardOutStreamLocal(remoteSocket, (err, upstream) => {
       if (err) {
-        log.error('openssh_forwardOutStreamLocal error', err)
+        log.debug('openssh_forwardOutStreamLocal error', err)
+        socket.emit('error', Object.assign(
+          new Error(`openssh_forwardOutStreamLocal error: ${err}`, { cause: err }),
+          { code: 'ESSHFORWARDOUTERROR' },
+        ))
         socket.end()
-        socketServer.close()
-        reject(err)
         return
       }
 
@@ -48,6 +50,7 @@ export const forwardOutStreamLocal = (
     .on('error', (err: unknown) => {
       log.error('socketServer error', err)
       socketServer.close()
+      reject(err)
     })
     .on('close', async () => {
       log.debug('socketServer closed')
