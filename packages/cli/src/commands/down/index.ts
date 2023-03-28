@@ -20,7 +20,6 @@ export default class Down extends DriverCommand<typeof Down> {
     ...composeFlags,
     force: Flags.boolean({
       description: 'Do not error if the environment is not found',
-      char: 'f',
       default: false,
     }),
   }
@@ -40,13 +39,14 @@ export default class Down extends DriverCommand<typeof Down> {
 
     const machine = await driver.getMachine({ envId })
 
-    if (!machine && !flags.force) {
-      throw new Error(`No machine found for envId ${envId}`)
+    if (!machine) {
+      if (!flags.force) {
+        throw new Error(`No machine found for envId ${envId}`)
+      }
+      return undefined
     }
 
-    if (machine) {
-      await driver.removeMachine(machine.providerId)
-    }
+    await driver.removeMachine(machine.providerId)
 
     if (flags.json) {
       return envId
