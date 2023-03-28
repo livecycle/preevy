@@ -2,9 +2,11 @@
 sidebar_position: 4
 title: Under the hood
 ---
+
 ## Provisioning preview environments
 
 When provisioning a new environment using the `up` command, `preevy` does the following:
+
 - Reads for default configuration and relevant keys from the current profile store.
 - Calculates environment name based on git branch or uses the `--id` flag.
 - Uses the local aws configuration to provision a new Lightsail VM.
@@ -24,7 +26,7 @@ Using a shared profile ensure consistent configuration and stable URLs between d
 The profile data can be stored on AWS s3 for easy sharing. If for some reason s3 cannot be used, the profile can also be stored on the local filesystem and copied manually.
 
 :::note
-Profile store doesn't contain any cloud provider credentials.  
+Profile store doesn't contain any cloud provider credentials.
 The `preevy` CLI always uses the local AWS credential chain (e.g, from environment variables, AWS profile, EC2 role), which needs to have the [appropriate permissions](/drivers/aws-lightsail).
 :::
 
@@ -35,7 +37,7 @@ All available profiles can be listed using `preevy profile ls` command.
 
 ## Components
 
-#### [CLI](packages/cli)
+#### [CLI](https://github.com/livecycle/preevy/tree/master/packages/cli)
 
 The CLI is a node.js program responsible for:
 
@@ -48,7 +50,7 @@ The CLI is a node.js program responsible for:
 
 For usage examples, you can go over the [CLI reference](/cli-reference.md)
 
-#### [Tunnel server](packages/tunnel-server)
+#### [Tunnel server](https://github.com/livecycle/preevy/tree/master/packages/tunnel-server)
 
 The tunnel server is a node.js based server responsible for exposing friendly HTTPS URLs for the Compose services.
 A free public instance is hosted on `livecycle.run`, and it can be self-hosted as well.
