@@ -1,7 +1,9 @@
 ---
 sidebar_position: 1
-title: AWS Lightsail
+title: AWS Lightsail Driver
 ---
+
+# AWS Lightsail Driver
 
 `preevy` can provision virtual machines on AWS Lightsail using the `aws-lightsail` driver.  
 [AWS lightsail](https://aws.amazon.com/lightsail) is a managed service that provides a simple low-cost solution for running VMs in the cloud.  
@@ -20,48 +22,46 @@ In Github actions, you can also use the [aws-actions/configure-aws-credentials](
 ### Required permissions
 
 `preevy` requires the following policy to be able to provision and manage Lightsail VMs:
-```
+```json
 {
- "Version": "2012-10-17",
- "Statement": [
- {
- "Effect": "Allow",
- "Action": [
- "lightsail:*"
- ],
- "Resource": "*"
- }
- ]
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["lightsail:*"],
+      "Resource": "*"
+    }
+  ]
 }
+
 ```
 
 :::note
 When defining fine grained permissions for `preevy`, make sure to add s3 permissions as well when using s3  as profile store.  
 It's recommended to scope the permissions to a specific bucket and prefix if needed:
-```
+
+```json
 {
- "Version": "2012-10-17",
- "Statement": [
- {
-  "Effect": "Allow",
-  "Action": [
-    "s3:HeadBucker",
-    "s3:GetBucketLocation",
-    "s3:ListObjects",
-    "s3:ListObjectsV2",
-    "s3:PutObject",
-    "s3:GetObject",
-    "s3:PutObjectTagging",
-    "s3:DeleteObjectTagging",
-    "s3:DeleteObject",
-    "s3:CreateBucket", //only if bucket doesn't exist
-  ],
-  "Resource": [
-    "arn:aws:s3:::MY_BUCKET",
-    "arn:aws:s3:::MY_BUCKET/*"
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:HeadBucker",
+        "s3:GetBucketLocation",
+        "s3:ListObjects",
+        "s3:ListObjectsV2",
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:PutObjectTagging",
+        "s3:DeleteObjectTagging",
+        "s3:DeleteObject",
+        "s3:CreateBucket" //only if bucket doesn't exist
+      ],
+      "Resource": ["arn:aws:s3:::MY_BUCKET", "arn:aws:s3:::MY_BUCKET/*"]
+    }
   ]
- }
- ]
 }
+
 ```
 :::

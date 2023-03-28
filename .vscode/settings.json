@@ -14,7 +14,6 @@
   "eslint.useESLintClass": true,
   "eslint.packageManager": "yarn",
   "eslint.lintTask.enable": true,
-  "files.trimTrailingWhitespace": true,
   "[typescript]": {
     "editor.defaultFormatter": "dbaeumer.vscode-eslint"
   },

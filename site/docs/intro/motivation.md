@@ -3,22 +3,25 @@ sidebar_position: 2
 title: Motivation
 ---
 
-Preevy was designed to help development teams improve their PR workflows by providing a simple and cost-effective way to provision ephemeral environments for every Pull Request. (AKA _Preview Environments_)
+# Motivation
+
+Preevy was designed to help development teams improve their code-review workflows by providing a simple and cost-effective way to provision ephemeral environments for every branch. AKA:  _**Preview Environments**_.  
+Preview environments can be used to test, validate and review changes made in a branch, before merging them.
+They are a non-production version of the application, that can be accessed by anyone with a link that is usually attached to every pull/merge request.
 
 Our mission at [Livecycle](https://livecycle.io) is to make the development workflow more collaborative and free of back and forth communication.
-We believe that preview environments serve an integral part for accomplishing our mission, and one of our earliest challenges as a startup was to make preview environments more accessible and affordable for all teams.
+We believe that **preview environments** serve an integral part for accomplishing our mission, and one of our earliest challenges as a startup was to make preview environments more accessible and affordable for all teams.
 
-To give more context, preview environments are ephemeral environments created for every Pull/Merge Request, and can be used to test, validate and review changes before merging them to the main branch.
-To some essence, they are a non-production version of the application that can be accessed by anyone with a link that is automatically attached to every pull request.
 
-During our work, we've seen teams that implemented preview environments for frontend applications by leveraging the power of [Vercel](https://vercel.com/docs/concepts/deployments/preview-deployments), [Netlify](https://docs.netlify.com/site-deploys/deploy-previews/) or even our [own solution](https://docs.livecycle.io/getting-started/livecycle-pipelines/).
+As we grew Livecycle, we've seen teams implement preview environments for frontend applications by leveraging the power of [Vercel](https://vercel.com/docs/concepts/deployments/preview-deployments), [Netlify](https://docs.netlify.com/site-deploys/deploy-previews/) or even our [own solution](https://docs.livecycle.io/getting-started/livecycle-pipelines/).
 
-Yet, when it comes to deploying preview environments for a complex application with multiple services, many teams struggle to find the right solution and juggle between the different tradeoffs (fidelity, security, cost, scale, etc...) and complexities, and usually end up with either postponing/giving-up or implementing a complex (and usually costly) solution that doesn't necessarily fit in their development flow.
-To some degree, these challenges are risen from the inherit complexities and fragmentation presented in the configuration of production (or production-like) of enterprise applications. (e.g. Kubernetes configuration, [IaC](https://en.wikipedia.org/wiki/Infrastructure_as_code), scale, compliance/security, etc...)
+Yet, when it comes to deploying preview environments for a complex application with multiple services, many teams struggle to find the right solution and juggle between the different complexities and tradeoffs (fidelity, security, cost, scale, etc...). If they don't postpone the effort altogether, they often compromise on a complex, costly solution that isn't tailored to their needs.
+
+Many of the challenges in setting up complex preview environmente are related to the inherent complexities and fragmentation of configuring of production (or production-like) enterprise applications. (e.g. Kubernetes configuration, [IaC](https://en.wikipedia.org/wiki/Infrastructure_as_code), scale, compliance/security, etc...).
 
 `preevy` lowers the bar for deploying preview environments, aiming for any developer with a minimal knowledge of Docker and a cloud provider account.
 
-In the tradeoff between fidelity and simplicity, we've chosen simplicity, and we believe that preview environments should be cheap, hackable, and accessible to everyone to provide the most value in development flows.
+In the tradeoff between fidelity and simplicity, we chose simplicity. We believe that for preview environment to fulfill their potential impact on development flows, they should be cheap, hackable, and accessible to everyone.
 
-We've originally planned `preevy` as a side-project allowing our customers to provision preview environments on their infrastructure.
-We've decided to open-source it as we are excited on the potential value that it can bring to the community and the possibility of establishing a ecosystem of standards, practices and tools around preview environments.
+Originally, we planned `preevy` as a side-project to let our customers provision preview environments on their infrastructure.
+We decided to open-source it, since we are excited about the potential value it can bring to the community and the possibility of establishing an ecosystem of standards, practices and tools around preview environments.
