@@ -78,7 +78,7 @@ The CLI is a node.js program responsible for:
 The tunnel server is a node.js base server responsible for exposing friendly HTTPS URLs for the Compose services.
 A free public instance is hosted on `livecycle.run`, and it can be self-hosted as well.
 
-A Docker/OCI image is available on ghcr.io: ghcr.io/livecycle/preview/tunnel-server
+A Docker/OCI image is available on ghcr.io: ghcr.io/livecycle/preevy/tunnel-server
 
 ## CI Integration
 
