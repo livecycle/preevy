@@ -7,7 +7,7 @@
     "rootDir": "src",
     "strict": true,
     "target": "es2019",
-    "lib": ["es2019"],
+    "lib": ["es2022"],
     "esModuleInterop": true,
     "sourceMap": true,
   },

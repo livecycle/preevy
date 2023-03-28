@@ -71,7 +71,7 @@ const machineDriver = ({
       const instance = await client.createInstance({
         instanceSnapshotName: instanceSnapshot?.name,
         availabilityZone,
-        name: `preview-${envId}-${randomBytes(16).toString('hex')}`,
+        name: `preevy-${envId}-${randomBytes(16).toString('hex')}`,
         envId,
         versionTag: CURRENT_MACHINE_VERSION,
         keyPairName: keyPair.name,
@@ -80,17 +80,17 @@ const machineDriver = ({
       return { ...machineFromInstance(instance), fromSnapshot: instanceSnapshot !== undefined }
     },
 
-    ensureMachineSnapshot: async ({ driverMachineId: providerId, envId }) => {
+    ensureMachineSnapshot: async ({ driverMachineId: providerId, envId, wait }) => {
       const instanceSnapshot = await client.findInstanceSnapshot({ version: CURRENT_MACHINE_VERSION })
       if (instanceSnapshot) {
         return undefined
       }
-      // creating instance snapshot in background
       await client.createInstanceSnapshot({
-        instanceSnapshotName: `preview-${CURRENT_MACHINE_VERSION}-${randomBytes(16).toString('hex')}`,
+        instanceSnapshotName: `preevy-${CURRENT_MACHINE_VERSION}-${randomBytes(16).toString('hex')}`,
         envId,
         instanceName: providerId,
         version: CURRENT_MACHINE_VERSION,
+        wait,
       })
       return undefined
     },

@@ -93,7 +93,7 @@ const client = ({
     },
 
     createKeyPair: async ({ alias }: { alias: string }) => {
-      const internalName = `preview-${profileId}-${alias}-${randomBytes(16).toString('hex')}`
+      const internalName = `preevy-${profileId}-${alias}-${randomBytes(16).toString('hex')}`
       const { publicKeyBase64, privateKeyBase64, keyPair } = await ensureDefined(
         ls.createKeyPair({
           keyPairName: internalName,
@@ -225,22 +225,29 @@ const client = ({
       instanceName,
       instanceSnapshotName,
       version,
+      wait,
     }: {
       instanceName: string
       envId: string
       instanceSnapshotName: string
       version: string
-    }) =>
-      waitUntilAllOperationsSucceed(
-        { client: lsClient, maxWaitTime: 120 },
-        ls.createInstanceSnapshot({
-          instanceSnapshotName,
-          instanceName,
-          tags: [
-            { key: INSTANCE_TAGS.MACHINE_VERSION, value: version },
-          ],
-        })
-      ),
+      wait: boolean
+    }) => {
+      const op = await ls.createInstanceSnapshot({
+        instanceSnapshotName,
+        instanceName,
+        tags: [
+          { key: INSTANCE_TAGS.MACHINE_VERSION, value: version },
+        ],
+      })
+
+      if (wait) {
+        await waitUntilAllOperationsSucceed(
+          { client: lsClient, maxWaitTime: 120 },
+          op,
+        )
+      }
+    },
 
     deleteInstanceSnapshot: async ({
       instanceSnapshotName,

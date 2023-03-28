@@ -39,11 +39,15 @@ export const copyFilesWithoutRecreatingDirUsingSftp = async (
 
   await withSpinner(async spinner => {
     const sftp = await sshClient.sftp({ concurrency: 4 })
-    const progress = await sftp.putFilesWithExpandedProgress(filesToCopyToTempDir, { chunkSize: 128 * 1024 })
-    progress.addListener(debounce((p: ExpandedTransferProgress) => { spinner.text = progressText(p) }, 100))
-    await progress.done
-    numFiles = (await progress.current()).totalFiles
-    spinner.text = 'Finishing up...'
+    try {
+      const progress = await sftp.putFilesWithExpandedProgress(filesToCopyToTempDir, { chunkSize: 128 * 1024 })
+      progress.addListener(debounce((p: ExpandedTransferProgress) => { spinner.text = progressText(p) }, 100))
+      await progress.done
+      numFiles = (await progress.current()).totalFiles
+      spinner.text = 'Finishing up...'
+    } finally {
+      sftp.close()
+    }
     await sshClient.execCommand(`rsync -ac --delete "${remoteTempDir}/" "${remoteDir}" && sudo rm -rf "${remoteTempDir}"`)
   }, { opPrefix: 'Copying files', text: 'Calculating...', successText: () => `Copied ${numFiles} files` })
 }

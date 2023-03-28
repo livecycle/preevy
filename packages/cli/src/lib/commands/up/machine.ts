@@ -1,9 +1,8 @@
 import retry from 'p-retry'
 import { Logger } from '../../../log'
 import { MachineDriver, scripts } from '../../machine'
-import { sshClient as clientSshClient } from '../../ssh/client'
+import { connectSshClient } from '../../ssh/client'
 import { SSHKeyConfig } from '../../ssh/keypair'
-import { scriptExecuter } from './scripts'
 import { withSpinner } from '../../spinner'
 
 const ensureMachine = async ({
@@ -49,36 +48,55 @@ export const ensureCustomizedMachine = async ({
 }) => {
   const { machine, installed } = await ensureMachine({ machineDriver, envId, sshKey, log })
 
-  const sshClient = await withSpinner(() => retry(() => clientSshClient({
+  const connect = () => connectSshClient({
     debug,
     host: machine.publicIPAddress,
     username: machine.sshUsername,
     privateKey: sshKey.privateKey.toString('utf-8'),
     log,
-  }), { minTimeout: 2000, maxTimeout: 5000, retries: 10 }), { text: `Connecting to ${machineDriver.friendlyName} machine at ${machine.publicIPAddress}` })
+  })
+
+  let sshClient = await withSpinner(
+    () => retry(
+      () => connect(),
+      { minTimeout: 2000, maxTimeout: 5000, retries: 10 }
+    ),
+    { text: `Connecting to ${machineDriver.friendlyName} machine at ${machine.publicIPAddress}` },
+  )
+
+  if (installed) {
+    return { machine, sshClient }
+  }
 
   try {
-    const execScript = scriptExecuter({ sshClient, log })
-
     await withSpinner(async () => {
-      if (!installed) {
-        log.debug('Executing machine scripts')
-        for (const script of scripts.CUSTOMIZE_BARE_MACHINE) {
-          // eslint-disable-next-line no-await-in-loop
-          await execScript(script)
-        }
-        log.info('Creating snapshot in background')
-        await machineDriver.ensureMachineSnapshot({ driverMachineId: machine.providerId, envId }).catch(() => {
-          log.info('Failed to create machine snapshot')
-        })
-      }
-
-      log.debug('Executing instance-specific scripts')
-
-      for (const script of scripts.INSTANCE_SPECIFIC) {
+      log.debug('Executing machine scripts')
+      for (const script of scripts.CUSTOMIZE_BARE_MACHINE) {
         // eslint-disable-next-line no-await-in-loop
-        await execScript(script)
+        await sshClient.execScript(script)
       }
+
+      // ensure docker is accessible
+      await retry(
+        () => sshClient.execCommand('docker run hello-world', {}),
+        {
+          minTimeout: 2000,
+          maxTimeout: 5000,
+          retries: 5,
+          onFailedAttempt: async err => {
+            log.debug(`Failed to execute docker run hello-world: ${err}`)
+            sshClient.dispose()
+            sshClient = await connect()
+          },
+        }
+      )
+
+      log.info('Creating snapshot in background')
+      await machineDriver.ensureMachineSnapshot({
+        driverMachineId: machine.providerId,
+        envId,
+        wait: false,
+      })
     }, { opPrefix: 'Configuring machine' })
   } catch (e) {
     sshClient.dispose()

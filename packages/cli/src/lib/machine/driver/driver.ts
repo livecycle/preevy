@@ -24,7 +24,7 @@ export type MachineDriver = {
     keyConfig: SSHKeyConfig
   }) => Promise<Machine & { fromSnapshot: boolean }>
 
-  ensureMachineSnapshot: (args: { driverMachineId: string; envId: string }) => Promise<void>
+  ensureMachineSnapshot: (args: { driverMachineId: string; envId: string; wait: boolean }) => Promise<void>
 
   listMachines: () => AsyncIterableIterator<Machine & { envId: string }>
 

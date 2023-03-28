@@ -1,4 +1,4 @@
-import ssh2 from 'ssh2'
+import ssh2, { SFTPWrapper } from 'ssh2'
 import path from 'path'
 import { promisify } from 'util'
 import { pLimit } from '../../limit'
@@ -32,7 +32,7 @@ const retryAfterCreatingParentDir = (
 export const sftpClient = (
   ssh: ssh2.Client
 ) => async ({ concurrency = 1 }: { concurrency?: number } = {}) => {
-  const sftp = await promisify(ssh.sftp.bind(ssh))()
+  const sftp = await promisify(ssh.sftp.bind(ssh))() as SFTPWrapper & { end: () => void }
 
   const limit = pLimit(concurrency)
 
@@ -111,6 +111,8 @@ export const sftpClient = (
     putFiles: async (files: FileToCopy[], options: TransferOptions = {}): Promise<void> => Promise.all(
       files.map(f => self.putFile(f, options)),
     ).then(() => undefined),
+
+    close: () => sftp.end(),
   }
 
   return Object.assign(self, {

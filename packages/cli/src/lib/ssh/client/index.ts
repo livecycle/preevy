@@ -5,12 +5,13 @@ import { forwardOutStreamLocal } from './forward-out'
 import { lazyTempDir } from '../../files'
 import { execCommand } from './exec'
 import { mkdir } from './mkdir'
+import { scriptExecuter } from './exec-script'
 
 export { ExecResult } from './exec'
 export { FileToCopy } from './files'
 export { ExpandedTransferProgress } from './progress-expanded'
 
-export const sshClient = async (
+export const connectSshClient = async (
   { log, debug, ...connectConfig }: Omit<ssh2.ConnectConfig, 'debug'> & { log: Logger; debug: boolean },
 ) => {
   const ssh = new ssh2.Client()
@@ -31,11 +32,13 @@ export const sshClient = async (
   const socketDir = lazyTempDir('preview-ssh')
 
   const exec = execCommand(ssh)
+  const sftp = sftpClient(ssh)
 
   const self = {
     mkdir: mkdir(exec),
-    sftp: sftpClient(ssh),
+    sftp,
     execCommand: exec,
+    execScript: scriptExecuter({ execCommand: exec, sftp, log }),
     forwardOutStreamLocal: forwardOutStreamLocal(ssh, log, () => socketDir.path),
     dispose: () => {
       socketDir.dispose()
@@ -46,4 +49,4 @@ export const sshClient = async (
   return self
 }
 
-export type SshClient = Awaited<ReturnType<typeof sshClient>>
+export type SshClient = Awaited<ReturnType<typeof connectSshClient>>
