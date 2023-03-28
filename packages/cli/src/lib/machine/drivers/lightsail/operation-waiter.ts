@@ -44,32 +44,34 @@ export const waitUntilOperationSucceeds = async (
   checkState,
 ))
 
-export function waitUntilAllOperationsSucceed(
-  config: WaiterConfiguration<LightsailClient>, operations: Operation[]
-): Promise<void>
-export function waitUntilAllOperationsSucceed(
-  config: WaiterConfiguration<LightsailClient>, command: Promise<{ operations?: Operation[] }>
-): Promise<void>
-export function waitUntilAllOperationsSucceed(
-  config: WaiterConfiguration<LightsailClient>, command: Promise<{ operation?: Operation }>
-): Promise<void>
+type MaybePromise<T> = Promise<T> | T
+const isPromiseLike = <T>(v: unknown): v is PromiseLike<T> => Boolean(v) && typeof (v as { then: unknown }).then === 'function'
+const makePromiseLike = <T>(v: PromiseLike<T> | T): PromiseLike<T> => (isPromiseLike(v) ? v : Promise.resolve(v))
+
+type OperationsOrCommandResult = Operation[]
+    | Operation
+    | MaybePromise<{ operations?: Operation[] }>
+    | MaybePromise<{ operation?: Operation }>
+
+const normalizeOperations = async (operationsOrcommand: OperationsOrCommandResult): Promise<Operation[]> => {
+  const p = await makePromiseLike(operationsOrcommand)
+
+  if ('operations' in p) {
+    return p.operations ?? []
+  }
+  if ('operation' in p) {
+    return p.operation ? [p.operation] : []
+  }
+  if (Array.isArray(operationsOrcommand)) {
+    return p as Operation[]
+  }
+  return (p ? [p] : []) as Operation[]
+}
+
 export async function waitUntilAllOperationsSucceed(
   config: WaiterConfiguration<LightsailClient>,
-  operationsOrcommand: Operation[] | Promise<{ operations?: Operation[] } | { operation?: Operation }>
+  operationsOrcommand: OperationsOrCommandResult,
 ): Promise<void> {
-  const operations: Operation[] = await (async () => {
-    if (!(operationsOrcommand instanceof Promise)) {
-      return operationsOrcommand
-    }
-    const result = await operationsOrcommand
-    if ('operations' in result && result.operations) {
-      return result.operations
-    }
-    if ('operation' in result && result.operation) {
-      return [result.operation]
-    }
-    return []
-  })()
-
+  const operations = await normalizeOperations(operationsOrcommand)
   await Promise.all(operations.map(operation => waitUntilOperationSucceeds(config, extractDefined(operation, 'id'))))
 }
