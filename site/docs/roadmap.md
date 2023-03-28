@@ -15,8 +15,9 @@ We plan to provide customization to the build process of the environment. Instea
 
 ## Plugins
 
-A plugin system is planned for `preevy` providing 
+A plugin system is planned for `preevy` providing a way to expand the preview environment with more functionality.  
+For example, a plugin for providing a web-terminal for the inner containers; A plugin for REST API calls (like [Hopscotch](https://hoppscotch.io/) or [Postman](https://www.postman.com/)); etc.
 
 ## Security
 
-Password protection/SSO
+Add user/password protection for the exposed environments. Later, add [SSO](https://en.wikipedia.org/wiki/Single_sign-on) support.
