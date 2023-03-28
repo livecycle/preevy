@@ -12,12 +12,11 @@ They are a non-production version of the application, that can be accessed by an
 Our mission at [Livecycle](https://livecycle.io) is to make the development workflow more collaborative and free of back and forth communication.
 We believe that **preview environments** serve an integral part for accomplishing our mission, and one of our earliest challenges as a startup was to make preview environments more accessible and affordable for all teams.
 
-
 As we grew Livecycle, we've seen teams implement preview environments for frontend applications by leveraging the power of [Vercel](https://vercel.com/docs/concepts/deployments/preview-deployments), [Netlify](https://docs.netlify.com/site-deploys/deploy-previews/) or even our [own solution](https://docs.livecycle.io/getting-started/livecycle-pipelines/).
 
 Yet, when it comes to deploying preview environments for a complex application with multiple services, many teams struggle to find the right solution and juggle between the different complexities and tradeoffs (fidelity, security, cost, scale, etc...). If they don't postpone the effort altogether, they often compromise on a complex, costly solution that isn't tailored to their needs.
 
-Many of the challenges in setting up complex preview environmente are related to the inherent complexities and configuration fragmentation of production (or production-like) environments of enterprise applications. (e.g. Kubernetes configuration, [IaC](https://en.wikipedia.org/wiki/Infrastructure_as_code), scale, compliance/security, etc...).
+Many of the challenges in setting up complex preview environments are related to the inherent complexities and configuration fragmentation of production (or production-like) environments of enterprise applications. (e.g. Kubernetes configuration, [IaC](https://en.wikipedia.org/wiki/Infrastructure_as_code), scale, compliance/security, etc...).
 
 `preevy` lowers the bar for deploying preview environments, aiming for any developer with a minimal knowledge of Docker and a cloud provider account.
 

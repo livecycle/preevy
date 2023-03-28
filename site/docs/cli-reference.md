@@ -1,6 +1,6 @@
 ---
 title: CLI Reference
-sidebar_position: 2
+sidebar_position: 3
 ---
 
 # Command Line Reference

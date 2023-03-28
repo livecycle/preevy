@@ -1,0 +1,46 @@
+---
+sidebar_position: 1
+title: Continuous Integration - Overview
+---
+
+import StoreInS3Screenshot from "./screenshots/store-in-s3.png";
+
+# Continuous Integration - Overview
+
+`preevy` is designed to be easily run by CI/CD tools, such as [GH Actions](https://github.com/features/actions), [Circle CI](https://circleci.com/) and others.  
+By sharing [profiles](/intro/under-the-hood#profile-configuration), `preevy` is able to easily deploy to the same VM when new code is pushed to some branch.
+
+The most common use-case for a CI job that runs `preevy` is to have a live preview environment for every PR/MR opened for review. This allows for [more collaborative and inclusive review workflows](/intro/motivation)
+
+## How to run `preevy` from the CI
+
+To run `preevy` in your CI, start by creating a profile your CI can use to deploy its environment. Run:
+
+```bash
+preevy init [profile-name]
+```
+
+When asked where to store the profile, choose `s3`
+
+<img src={StoreInS3Screenshot} width="75%" />
+
+<br />
+<br />
+
+Then, choose a URL to store the profile (`preevy` will conveniently suggest one
+for you).  
+It should looke something like `s3://preview-8450209857-ci?region=us-east-1`
+
+Now, from inside your CI pipeline, import the profile:
+
+```bash
+preevy init --from "s3://preview-8450209857-ci?region=us-east-1"
+```
+
+Finally, run
+
+```bash
+preevy up
+```
+
+Next, we're going to set up an example pipeline, using GitHub Actions
