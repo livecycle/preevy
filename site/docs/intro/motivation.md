@@ -3,7 +3,9 @@ sidebar_position: 2
 title: Motivation
 ---
 
-Preevy was designed to help development teams improve their code-review workflows by providing a simple and cost-effective way to provision ephemeral environments for every branch. AKA: _**Preview Environments**_. <br>
+# Motivation
+
+Preevy was designed to help development teams improve their code-review workflows by providing a simple and cost-effective way to provision ephemeral environments for every branch. AKA:  _**Preview Environments**_.  
 Preview environments can be used to test, validate and review changes made in a branch, before merging them.
 They are a non-production version of the application, that can be accessed by anyone with a link that is usually attached to every pull/merge request.
 

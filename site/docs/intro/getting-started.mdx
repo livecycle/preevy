@@ -23,31 +23,37 @@ You can read more about the `preevy` [origin story and motivation](/intro/motiva
 
 `preevy` is designed to be easy to use, with an API smiliar to [docker-compose](https://docs.docker.com/compose/).
 
+1. Install the CLI globally
+
+  ```bash npm2yarn
+  npm install -g preevy
+  ```
+
+  Or use it directly
+
+  ```bash
+  npx preevy <command>
+  ```
+
+2. Make sure you're logged in to AWS. See [AWS lightsail credentials configurations](http://localhost:3001/drivers/aws-lightsail#credentials-configuration).
+
+3. Set up a profile
+
+  ```bash
+  preevy init
+  ```
+
+4. From the same directory you run `docker comopse up` run:
+
+  ```bash
+  preevy up
+  ```
+<br />
+
 :::info Cloud provider credentials
-Managing and provisioning preview environments in `preevy`, requires access and credentials to a cloud provider.<br />
+Managing and provisioning preview environments in `preevy`, requires access and credentials to a cloud provider. Currently only AWS is supported, but more providers are [coming soon](/roadmap#more-cloud-drivers).  
 Once you install and set up the [AWS CLI](https://aws.amazon.com/cli/), `preevy` will recognize and employ your configuration settings.
+
+
+For more info, see [AWS lightsail credentials configurations](http://localhost:3001/drivers/aws-lightsail#credentials-configuration)
 :::
-
-Install the CLI globally
-
-```bash npm2yarn
-npm install -g preevy
-```
-
-Or use it directly
-
-```bash
-npx preevy <command>
-```
-
-Set up a profile
-
-```bash
-preevy init
-```
-
-From the same directory you run `docker comopse up` run:
-
-```bash
-preevy up
-```
