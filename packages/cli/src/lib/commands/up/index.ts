@@ -20,18 +20,6 @@ import { withSpinner } from '../../spinner'
 
 const REMOTE_DIR_BASE = '/var/lib/preevy'
 
-const retryPipeError = <T>(log: Logger, f: () => T) => retry(f, {
-  minTimeout: 500,
-  maxTimeout: 2000,
-  retries: 3,
-  onFailedAttempt: (err: unknown) => {
-    log.debug('Error in pipe attempt', err)
-    if ((err as { code: unknown }).code !== 'EPIPE') {
-      throw err
-    }
-  },
-})
-
 const queryTunnelsWithRetry = async (
   sshClient: SshClient,
   dockerProxyUrl: string,
@@ -143,10 +131,7 @@ const up = async ({
     const compose = localComposeClient([composeFilePath])
     const composeArgs = calcComposeArgs(userSpecifiedServices, debug)
     log.debug('Running compose up with args: ', composeArgs)
-    await retryPipeError(
-      log,
-      () => withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit' })),
-    )
+    await withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit' }))
 
     const tunnels = await withSpinner(async () => {
       const dockerProxyServiceUrl = await withDockerSocket(() => findDockerProxyUrl(compose))
