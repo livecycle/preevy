@@ -55,4 +55,4 @@ For usage examples, you can go over the [CLI reference](/cli-reference.md)
 The tunnel server is a node.js based server responsible for exposing friendly HTTPS URLs for the Compose services.
 A free public instance is hosted on `livecycle.run`, and it can be self-hosted as well.
 
-Read more about it: [Tunnel server](/tunnel-server/overview.md)
+Read more about it: [Tunnel server](/tunnel-server)
