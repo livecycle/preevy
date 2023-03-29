@@ -29,28 +29,31 @@ USAGE
 <!-- usagestop -->
 # Commands
 <!-- commands -->
-* [`preevy down`](#preevy-down)
-* [`preevy help [COMMANDS]`](#preevy-help-commands)
-* [`preevy init [PROFILE-ALIAS]`](#preevy-init-profile-alias)
-* [`preevy logs [SERVICES]`](#preevy-logs-services)
-* [`preevy ls`](#preevy-ls)
-* [`preevy plugins`](#preevy-plugins)
-* [`preevy plugins:install PLUGIN...`](#preevy-pluginsinstall-plugin)
-* [`preevy plugins:inspect PLUGIN...`](#preevy-pluginsinspect-plugin)
-* [`preevy plugins:install PLUGIN...`](#preevy-pluginsinstall-plugin-1)
-* [`preevy plugins:link PLUGIN`](#preevy-pluginslink-plugin)
-* [`preevy plugins:uninstall PLUGIN...`](#preevy-pluginsuninstall-plugin)
-* [`preevy plugins:uninstall PLUGIN...`](#preevy-pluginsuninstall-plugin-1)
-* [`preevy plugins:uninstall PLUGIN...`](#preevy-pluginsuninstall-plugin-2)
-* [`preevy plugins update`](#preevy-plugins-update)
-* [`preevy profile create NAME URL`](#preevy-profile-create-name-url)
-* [`preevy profile current`](#preevy-profile-current)
-* [`preevy profile import LOCATION`](#preevy-profile-import-location)
-* [`preevy profile ls`](#preevy-profile-ls)
-* [`preevy profile rm NAME`](#preevy-profile-rm-name)
-* [`preevy profile use NAME`](#preevy-profile-use-name)
-* [`preevy up [SERVICE]`](#preevy-up-service)
-* [`preevy urls [SERVICE] [PORT]`](#preevy-urls-service-port)
+- [Preevy CLI](#preevy-cli)
+- [Usage](#usage)
+- [Commands](#commands)
+  - [`preevy down`](#preevy-down)
+  - [`preevy help [COMMANDS]`](#preevy-help-commands)
+  - [`preevy init [PROFILE-ALIAS]`](#preevy-init-profile-alias)
+  - [`preevy logs [SERVICES]`](#preevy-logs-services)
+  - [`preevy ls`](#preevy-ls)
+  - [`preevy plugins`](#preevy-plugins)
+  - [`preevy plugins:install PLUGIN...`](#preevy-pluginsinstall-plugin)
+  - [`preevy plugins:inspect PLUGIN...`](#preevy-pluginsinspect-plugin)
+  - [`preevy plugins:install PLUGIN...`](#preevy-pluginsinstall-plugin-1)
+  - [`preevy plugins:link PLUGIN`](#preevy-pluginslink-plugin)
+  - [`preevy plugins:uninstall PLUGIN...`](#preevy-pluginsuninstall-plugin)
+  - [`preevy plugins:uninstall PLUGIN...`](#preevy-pluginsuninstall-plugin-1)
+  - [`preevy plugins:uninstall PLUGIN...`](#preevy-pluginsuninstall-plugin-2)
+  - [`preevy plugins update`](#preevy-plugins-update)
+  - [`preevy profile create NAME URL`](#preevy-profile-create-name-url)
+  - [`preevy profile current`](#preevy-profile-current)
+  - [`preevy profile import LOCATION`](#preevy-profile-import-location)
+  - [`preevy profile ls`](#preevy-profile-ls)
+  - [`preevy profile rm NAME`](#preevy-profile-rm-name)
+  - [`preevy profile use NAME`](#preevy-profile-use-name)
+  - [`preevy up [SERVICE]`](#preevy-up-service)
+  - [`preevy urls [SERVICE] [PORT]`](#preevy-urls-service-port)
 
 ## `preevy down`
 
@@ -267,7 +270,7 @@ ALIASES
   $ preevy plugins add
 
 EXAMPLES
-  $ preevy plugins:install myplugin 
+  $ preevy plugins:install myplugin
 
   $ preevy plugins:install https://github.com/someuser/someplugin
 
@@ -330,7 +333,7 @@ ALIASES
   $ preevy plugins add
 
 EXAMPLES
-  $ preevy plugins:install myplugin 
+  $ preevy plugins:install myplugin
 
   $ preevy plugins:install https://github.com/someuser/someplugin
 
