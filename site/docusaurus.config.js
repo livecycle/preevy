@@ -58,17 +58,24 @@ const config = {
       },
       navbar: {
         title: 'Preevy',
+         logo: {
+          alt: '',
+          src: 'img/logo-light.svg',
+          srcDark: 'img/logo-dark.svg',
+          width: 32,
+          height: 32,
+        },
         items: [
           {
             href: 'https://github.com/livecycle/preevy',
-            label: 'GitHub',
             position: 'right',
+            className: 'header-github-link'
           },
         ],
       },
       footer: {
         style: 'dark',
-        copyright: `Copyright © ${new Date().getFullYear()} Preevy by Livecycle`,
+        copyright: `Copyright © ${new Date().getFullYear()} Preevy by <a href="https://livecycle.io/">Livecycle</a>`,
       },
       prism: {
         theme: lightCodeTheme,

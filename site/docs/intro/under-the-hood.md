@@ -5,7 +5,7 @@ title: Under the hood
 
 ## Provisioning preview environments
 
-When provisioning a new environment using the [`up`](/cli-reference#preevy-up-service) command, `preevy` does the following:
+When provisioning a new environment using the [`up`](/cli-reference#preevy-up-service) command, Preevy does the following:
 
 - Reads for [default configurations](#profile-configuration) and relevant keys from the current profile store.
 - Calculates environment name based on the current git branch (or uses the `--id` flag.)
@@ -20,22 +20,22 @@ When provisioning a new environment using the [`up`](/cli-reference#preevy-up-se
 
 ## Profile configuration
 
-You can use a `preevy` profile to store and share configuration and state between different machines. It's recommended to use profiles to share environments between different CI jobs, or different developers.
+You can use a Preevy profile to store and share configuration and state between different machines. It's recommended to use profiles to share environments between different CI jobs, or different developers.
 Using a shared profile ensures consistent configuration, and stable URLs between different CI runs.
 
-To make it easy to share, a `preevy` profile can be stored on (AWS S3)[https://aws.amazon.com/s3/]. If you can't use S3, you can store the profile on the local filesystem and copy it manually.
+To make it easy to share, a Preevy profile can be stored on (AWS S3)[https://aws.amazon.com/s3/]. If you can't use S3, you can store the profile on the local filesystem and copy it manually.
 
 :::note
 The profile store doesn't contain any cloud provider credentials.
-The `preevy` CLI always uses the local AWS credential chain (e.g, from environment variables, AWS profile, EC2 role). The credentials used need to have the [appropriate permissions](/drivers/aws-lightsail).
+The Preevy CLI always uses the local AWS credential chain (e.g, from environment variables, AWS profile, EC2 role). The credentials used need to have the [appropriate permissions](/drivers/aws-lightsail).
 :::
 
 Profile URLs specify where the profile data is stored. For example: `s3://preevy-config/profile1?region=us-east-1` refers to a profile stored on a S3 bucket named `preevy-config` in the region `us-east-1` under `profile1` path.
 This profile can be imported using `preevy init --from s3://preevy-config/profile1?region=us-east-1`.
 
-All `preevy` profile listing and management commands are listed in the [CLI reference page](/cli-reference#preevy-profile-create-name-url). 
+All Preevy profile listing and management commands are listed in the [CLI reference page](/cli-reference#preevy-profile-create-name-url). 
 
-## `preevy` components
+## Preevy components
 
 #### [CLI](https://github.com/livecycle/preevy/tree/main/packages/cli)
 

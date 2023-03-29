@@ -5,7 +5,7 @@ title: Motivation
 
 # Motivation
 
-Preevy was designed to help development teams improve their code-review workflows by providing a simple and cost-effective way to provision ephemeral environments for every branch. AKA:  _**Preview Environments**_.  
+Preevy was designed to help development teams improve their code-review workflows by providing a simple and cost-effective way to provision ephemeral environments for every branch. AKA:  _**Preview Environments**_.
 Preview environments can be used to test, validate and review changes made in a branch, before merging them.
 They are a non-production version of the application, that can be accessed by anyone with a link that is usually attached to every pull/merge request.
 
@@ -18,9 +18,9 @@ Yet, when it comes to deploying preview environments for a complex application w
 
 Many of the challenges in setting up complex preview environments are related to the inherent complexities and configuration fragmentation of production (or production-like) environments of enterprise applications. (e.g. Kubernetes configuration, [IaC](https://en.wikipedia.org/wiki/Infrastructure_as_code), scale, compliance/security, etc...).
 
-`preevy` lowers the bar for deploying preview environments, aiming for any developer with a minimal knowledge of Docker and a cloud provider account.
+Preevy lowers the bar for deploying preview environments, aiming for any developer with a minimal knowledge of Docker and a cloud provider account.
 
 In the tradeoff between fidelity and simplicity, we chose simplicity. We believe that for preview environment to fulfill their potential impact on development flows, they should be cheap, hackable, and accessible to everyone.
 
-Originally, we planned `preevy` as a side-project to let our customers provision preview environments on their infrastructure.
+Originally, we planned Preevy as a side-project to let our customers provision preview environments on their infrastructure.
 We decided to open-source it, since we are excited about the potential value it can bring to the community and the possibility of establishing an ecosystem of standards, practices and tools around preview environments.
