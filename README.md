@@ -65,7 +65,7 @@ Running Preevy:
 
 ## Under the hood
 
-Preevy tool is has two main components:
+Preevy has two main components:
 
 #### [CLI](packages/cli)
 
@@ -87,10 +87,11 @@ A Docker/OCI image is available on ghcr.io: ghcr.io/livecycle/preevy/tunnel-serv
 
 ## CI Integration
 
-Preevy is also designed to work seamlessly with your CI, allowing you to easily import a shared preview profile shared in S3 (support for more storage providers is coming soon).
+Preevy is also designed to work seamlessly with your CI, allowing you to easily import a shared preview profile shared in S3. Support for more storage providers is coming soon.
 
-The profile can be created using `preevy init`, then choosing S3 URL for storing the profile. (Preevy will create a bucket if one doesn't exist)
-After the profile is created, it can be imported in the CI using `preevy init --from <s3-url>`
+The profile can be created using `preevy init`, then choosing a S3 URL for storing the profile. Preevy will create a bucket if one doesn't exist.
+
+After the profile is created, it can be imported to the CI runtime using `preevy init --from <s3-url>`
 
 [Examples]
 
