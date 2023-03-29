@@ -5,7 +5,7 @@ title: Under the hood
 
 ## Provisioning preview environments
 
-When provisioning a new environment using the [`up`](/cli-reference#preevy-up-service) command, `preevy` does the following:
+When provisioning a new environment using the [`up`](/cli-reference#preevy-up-service) command, Preevy does the following:
 
 - Reads for [default configurations](#profile-configuration) and relevant keys from the current profile store.
 - Calculates environment name based on the current git branch (or uses the `--id` flag.)
@@ -20,14 +20,14 @@ When provisioning a new environment using the [`up`](/cli-reference#preevy-up-se
 
 ## Profile configuration
 
-`preevy` profile provide a mechanism for storing and sharing configuration and state between different machines. This allows sharing of environments between different CI jobs, or different developers.
+Preevy profile provide a mechanism for storing and sharing configuration and state between different machines. This allows sharing of environments between different CI jobs, or different developers.
 Using a shared profile ensure consistent configuration and stable URLs between different CI runs.
 
 The profile data can be stored on (AWS S3)[https://aws.amazon.com/s3/] for easy sharing. If for some reason S3 cannot be used, the profile can also be stored on the local filesystem and copied manually.
 
 :::note
 Profile store doesn't contain any cloud provider credentials.
-The `preevy` CLI always uses the local AWS credential chain (e.g, from environment variables, AWS profile, EC2 role), which needs to have the [appropriate permissions](/drivers/aws-lightsail).
+The Preevy CLI always uses the local AWS credential chain (e.g, from environment variables, AWS profile, EC2 role), which needs to have the [appropriate permissions](/drivers/aws-lightsail).
 :::
 
 Profile URLs specify where the profile data is stored, for example: `s3://preevy-config/profile1?region=us-east-1` (refers to a profile stored on a S3 bucket named `preevy-config` in the region `us-east-1` under `profile1` path).

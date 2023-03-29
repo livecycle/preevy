@@ -15,7 +15,7 @@ We plan to provide customization to the build process of the environment. Instea
 
 ## Plugins
 
-A plugin system is planned for `preevy` providing a way to expand the preview environment with more functionality.  
+A plugin system is planned for Preevy providing a way to expand the preview environment with more functionality.
 Examples:
 * A plugin for providing a web-terminal for the inner containers
 * A plugin for REST API calls (like [Hopscotch](https://hoppscotch.io/) or [Postman](https://www.postman.com/))
