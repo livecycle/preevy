@@ -75,7 +75,7 @@ const config = {
       },
       footer: {
         style: 'dark',
-        copyright: `Copyright © ${new Date().getFullYear()} Preevy by Livecycle`,
+        copyright: `Copyright © ${new Date().getFullYear()} Preevy by <a href="https://livecycle.io/">Livecycle</a>`,
       },
       prism: {
         theme: lightCodeTheme,
