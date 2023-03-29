@@ -5,8 +5,8 @@ title: AWS Lightsail Driver
 
 # AWS Lightsail Driver
 
-`preevy` can provision virtual machines on AWS Lightsail using the `aws-lightsail` driver.  
-[AWS lightsail](https://aws.amazon.com/lightsail) is a managed service that provides a simple low-cost solution for running VMs in the cloud.  
+Preevy can provision virtual machines on AWS Lightsail using the `aws-lightsail` driver.
+[AWS lightsail](https://aws.amazon.com/lightsail) is a managed service that provides a simple low-cost solution for running VMs in the cloud.
 AWS lightsail provisioning time for a VM is usually around 2 minutes and their cost can be as low as $3.50 per month making them suitable for preview environments at scale.
 
 
@@ -14,14 +14,14 @@ AWS lightsail provisioning time for a VM is usually around 2 minutes and their c
 - `--aws-region` - The AWS region to use.
 
 ### Credentials Configuration
-`preevy` uses AWS SDK which supports multiple ways of configuring credentials  according to the [credentials provider chain](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/setting-credentials-node.html).  
+Preevy uses AWS SDK which supports multiple ways of configuring credentials  according to the [credentials provider chain](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/setting-credentials-node.html).
 The simplest way is to use `aws configure` command or setting the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables.
 
 In Github actions, you can also use the [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials) action to setup credentials in a secure way.
 
 ### Required permissions
 
-`preevy` requires the following policy to be able to provision and manage Lightsail VMs:
+Preevy requires the following policy to be able to provision and manage Lightsail VMs:
 ```json
 {
   "Version": "2012-10-17",
@@ -37,7 +37,7 @@ In Github actions, you can also use the [aws-actions/configure-aws-credentials](
 ```
 
 :::note
-When defining fine grained permissions for `preevy`, make sure to add s3 permissions as well when using s3  as profile store.  
+When defining fine grained permissions for Preevy, make sure to add s3 permissions as well when using s3  as profile store.
 It's recommended to scope the permissions to a specific bucket and prefix if needed:
 
 ```json

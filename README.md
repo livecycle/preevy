@@ -21,8 +21,8 @@
 
 ![Terminal GIF](./terminal.gif)
 
-`preevy` is a powerful CLI tool designed to simplify the process of creating ephemeral preview environments.
-Using `preevy`, you can easily provision any Docker-Compose application on AWS using affordable [Lightsail](https://aws.amazon.com/free/compute/lightsail) VMs (support for GCP and more cloud is on the way).
+Preevy is a powerful CLI tool designed to simplify the process of creating ephemeral preview environments.
+Using Preevy, you can easily provision any Docker-Compose application on AWS using affordable [Lightsail](https://aws.amazon.com/free/compute/lightsail) VMs (support for GCP and more cloud is on the way).
 
 ## Documentation
 
@@ -30,14 +30,14 @@ Visit The full documentation here: https://preevy.dev/
 
 ## What?
 
-`preevy` can take any Docker-Compose application definition and with a single `up` command perform the following:
+Preevy can take any Docker-Compose application definition and with a single `up` command perform the following:
 
 - Provision and configure a new virtual machine (VM) on your cloud.
 - Build and deploy your application on the VM.
 - Expose each service of your application to the web with a user-friendly public HTTPS URL without any DNS/Certificate configuration.
 
-These environments can be managed using the `preevy` command-line interface (CLI) and can be easily updated or destroyed when necessary.
-While `preevy` can be used for sharing local environments with your team, its primary goal is to implement preview environments for pull requests. Therefore, it's designed to be easily integrated into CI/CD flows.
+These environments can be managed using the Preevy command-line interface (CLI) and can be easily updated or destroyed when necessary.
+While Preevy can be used for sharing local environments with your team, its primary goal is to implement preview environments for pull requests. Therefore, it's designed to be easily integrated into CI/CD flows.
 
 ## Why?
 
@@ -45,17 +45,17 @@ At Livecycle, we believe that preview environments are an integral part of any d
 These non-production, ephemeral environments, created for every Pull Request, can significantly improve PR workflows.
 In recent years, preview environments have become increasingly popular, with some PaaS providers even offering deeply integrated preview environments.
 However, setting up preview environments can be a complex and costly task, which is why many teams have been hesitant to implement them.
-`preevy` is designed to simplify this task and provide a framework for provisioning and utilizing preview environments to optimize the PR flow.
-You can read more about the story and philosophy behind `preevy` here.
+Preevy is designed to simplify this task and provide a framework for provisioning and utilizing preview environments to optimize the PR flow.
+You can read more about the story and philosophy behind Preevy here.
 
 ## Getting started
 
-To start using the `preevy` CLI you will need:
+To start using the Preevy CLI you will need:
 
 - A local AWS configuration (you can get it by using `aws login` or `aws configure`)
 - A Docker-Compose application (examples can be found [here](https://github.com/docker/awesome-compose))
 
-Running `preevy`:
+Running Preevy:
 
 1. Install the CLI using npm:`npm install -g preevy` , or use it directly using: `npx preevy <command>`
 2. Set up a profile by using: `preevy init`
@@ -65,7 +65,7 @@ Running `preevy`:
 
 ## Under the hood
 
-`preevy` tool is has two main components:
+Preevy tool is has two main components:
 
 #### [CLI](packages/cli)
 
@@ -87,7 +87,7 @@ A Docker/OCI image is available on ghcr.io: ghcr.io/livecycle/preevy/tunnel-serv
 
 ## CI Integration
 
-`preevy` is also designed to work seamlessly with your CI, allowing you to easily import a shared preview profile shared in S3 (support for more storage providers is coming soon).
+Preevy is also designed to work seamlessly with your CI, allowing you to easily import a shared preview profile shared in S3 (support for more storage providers is coming soon).
 
 The profile can be created using `preevy init`, then choosing S3 URL for storing the profile. (Preevy will create a bucket if one doesn't exist)
 After the profile is created, it can be imported in the CI using `preevy init --from <s3-url>`

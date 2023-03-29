@@ -5,11 +5,11 @@ sidebar_position: 4
 
 # Tunnel Server
 
-`preevy` uses a tunnel server to expose the preview environments services to the end user.
+Preevy uses a tunnel server to expose the preview environments services to the end user.
 By default, the CLI uses a public tunnel server hosted on `livecycle.run`, but this configuration can be overridden using the [`--tunnel-server`](cli-reference#preevy-up-service) flag.
 The tunnel server can be self hosted and a Docker/OCI image is publicly available on `ghcr.io/livecycle/preevy/tunnel-server`
 
-The tunnel server itself is a node.js server responsible for creating tunnels for http services using SSH.  
+The tunnel server itself is a node.js server responsible for creating tunnels for http services using SSH.
 The server accepts SSH connections on port 2222 and HTTP traffic on port 3000.
 Assuming the tunnel server is running on `tunnel-server-host`, creating a tunnel for an HTTP service running on port 5000 is as simple as running:
 
@@ -34,7 +34,7 @@ To connect to the tunnel server, you must use SSH private-key based authenticati
 Urls for tunnels are derived from the public key of the client (referred as `clientId`):
 `http://{tunnel_name}-{clientId}.{tunnel-server}`.
 
-`preevy` supports connecting to a tunnel server over TLS which wraps the SSH connection. For these cases, the tunnel server needs to use an external service for TLS termination (e.g. [NGINX](https://www.nginx.com/), [HAProxy](https://www.haproxy.org/), [Traefik](https://traefik.io/)).
+Preevy supports connecting to a tunnel server over TLS which wraps the SSH connection. For these cases, the tunnel server needs to use an external service for TLS termination (e.g. [NGINX](https://www.nginx.com/), [HAProxy](https://www.haproxy.org/), [Traefik](https://traefik.io/)).
 
 ## Observability
 
