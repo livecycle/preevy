@@ -5,32 +5,30 @@
   "main": "dist/index.js",
   "files": [
     "dist",
-    "bundle.Dockerfile",
-    "tsconfig.json"
+    "Dockerfile"
   ],
   "license": "Apache-2.0",
   "dependencies": {
-    "@types/lodash": "^4.14.191",
     "dockerode": "^3.3.4",
     "http-proxy": "^1.18.1",
     "lodash": "^4.17.21",
     "p-limit": "^3.1.0",
     "pino": "^8.11.0",
     "pino-pretty": "^9.4.0",
-    "shell-escape": "^0.2.0",
     "ssh2": "^1.11.0"
   },
   "devDependencies": {
     "@types/dockerode": "^3.3.14",
+    "@types/lodash": "^4.14.192",
     "@types/node": "18",
     "@types/shell-escape": "^0.2.1",
     "@types/ssh2": "^1.11.8",
     "@typescript-eslint/eslint-plugin": "^5.55.0",
     "@typescript-eslint/parser": "^5.55.0",
+    "esbuild": "^0.17.14",
     "eslint": "^8.36.0",
     "husky": "^8.0.0",
     "lint-staged": "^13.1.2",
-    "nodemon": "^2.0.20",
     "tsx": "^3.12.3",
     "typescript": "^5.0.2"
   },
@@ -38,7 +36,8 @@
     "start": "node dist/main.js",
     "dev": "tsx watch ./main.ts",
     "lint": "eslint . --ext .ts,.tsx",
-    "build": "tsc -b",
+    "clean": "rm -rf dist",
+    "build": "node build.mjs",
     "prepack": "yarn build",
     "prepare": "cd ../.. && husky install"
   }
