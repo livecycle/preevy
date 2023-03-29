@@ -15,8 +15,11 @@ We plan to provide customization to the build process of the environment. Instea
 
 ## Plugins
 
-A plugin system is planned for `preevy` providing a way to expand the preview environment with more functionality.  
-For example, a plugin for providing a web-terminal for the inner containers; A plugin for REST API calls (like [Hopscotch](https://hoppscotch.io/) or [Postman](https://www.postman.com/)); etc.
+A plugin system is planned for `preevy` providing a way to expand the preview environment with more functionality. 
+Here are a few examples: 
+- A plugin that automatically adds Livecycle's SDK to every preview environment created using `preevy`.
+- A plugin for providing a web-terminal for the inner containers; 
+- A plugin for REST API calls (like [Hopscotch](https://hoppscotch.io/) or [Postman](https://www.postman.com/)); 
 
 ## Security
 
