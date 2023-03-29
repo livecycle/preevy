@@ -8,7 +8,8 @@
   <br />
   Preevy
 </h1>
-<p align="center"> <em>Provision preview environments with minimal configuration</em>
+<p align="center"> <em>Provision preview environments with minimal configuration</em> <span>&#8226;</span>
+ <b>made by <a href="https://livecycle.io/">Livecycle</a></b>
 </p>
 <div align="center">
 
@@ -22,6 +23,10 @@
 
 `preevy` is a powerful CLI tool designed to simplify the process of creating ephemeral preview environments.
 Using `preevy`, you can easily provision any Docker-Compose application on AWS using affordable [Lightsail](https://aws.amazon.com/free/compute/lightsail) VMs (support for GCP and more cloud is on the way).
+
+## Documentation
+
+Visit The full documentation here: https://preevy.dev/
 
 ## What?
 
