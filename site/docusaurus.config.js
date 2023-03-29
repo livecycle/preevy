@@ -58,11 +58,18 @@ const config = {
       },
       navbar: {
         title: 'Preevy',
+         logo: {
+          alt: '',
+          src: 'img/logo-light.svg',
+          srcDark: 'img/logo-dark.svg',
+          width: 32,
+          height: 32,
+        },
         items: [
           {
             href: 'https://github.com/livecycle/preevy',
-            label: 'GitHub',
             position: 'right',
+            className: 'header-github-link'
           },
         ],
       },
