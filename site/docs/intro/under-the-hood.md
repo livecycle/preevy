@@ -20,7 +20,7 @@ When provisioning a new environment using the [`up`](/cli-reference#preevy-up-se
 
 ## Profile configuration
 
-You can use a Preevy profile to store and share configuration and state between different machines. It's recommended to use profiles to share environments between different CI jobs, or different developers.
+You can use a Preevy profile to store and share configuration and state between different machines. Use profiles to share environments between different CI jobs, or different developers.
 Using a shared profile ensures consistent configuration, and stable URLs between different CI runs.
 
 To make it easy to share, a Preevy profile can be stored on (AWS S3)[https://aws.amazon.com/s3/]. If you can't use S3, you can store the profile on the local filesystem and copy it manually.
