@@ -3,10 +3,8 @@ name: publish-image
 on:
   workflow_dispatch:
   push:
-    branches:
-      - '**'
     tags:
-      - 'v*'
+      - 'tunnel-server/v*'
 
 jobs:
   docker:
@@ -26,10 +24,7 @@ jobs:
         with:
           images: ghcr.io/livecycle/preevy/tunnel-server
           tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,enable={{is_default_branch}},prefix={{branch}}-
+            type=match,pattern=tunnel-server/v(.*),group=1
           labels: |
             org.opencontainers.image.title=preevy-tunnel-server
             org.opencontainers.image.description=Supporting proxy and tunneling service for preevy cli
