@@ -24,7 +24,7 @@ const fakeNamedSshKey: SSHKeyConfig = {
 const machineDriver = (_args: { someFlag: string; someFlag2?: string }): MachineDriver => ({
   friendlyName: 'Fake machine',
 
-  getMachine: async () => fakeMachine,
+  getMachine: async () => ({ ...fakeMachine, specDiff: [] }),
 
   listMachines: () => asyncMap(x => x, [fakeMachineWithEnvId()]),
 

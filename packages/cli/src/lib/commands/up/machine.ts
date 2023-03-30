@@ -1,9 +1,14 @@
+import { EOL } from 'os'
 import retry from 'p-retry'
 import { Logger } from '../../../log'
 import { MachineDriver, scripts } from '../../machine'
 import { connectSshClient } from '../../ssh/client'
 import { SSHKeyConfig } from '../../ssh/keypair'
 import { withSpinner } from '../../spinner'
+import { SpecDiffItem } from '../../machine/driver/driver'
+
+const machineDiffText = (diff: SpecDiffItem[]) => diff
+  .map(({ name, old, new: n }) => `* ${name}: ${old} -> ${n}`).join(EOL)
 
 const ensureMachine = async ({
   machineDriver,
@@ -18,19 +23,30 @@ const ensureMachine = async ({
 }) => {
   log.debug('checking for existing machine')
   const existingMachine = await machineDriver.getMachine({ envId })
-  if (!existingMachine) {
-    return withSpinner(async () => {
-      const machine = await machineDriver.createMachine({ envId, keyConfig: sshKey })
-      return {
-        machine,
-        installed: machine.fromSnapshot,
-      }
-    }, {
-      text: `Creating ${machineDriver.friendlyName} machine`,
-      successText: `${machineDriver.friendlyName} machine created`,
-    })
+  if (existingMachine && existingMachine.specDiff.length === 0) {
+    return { machine: existingMachine, installed: true }
   }
-  return { machine: existingMachine, installed: true }
+
+  const recreating = existingMachine && existingMachine.specDiff.length > 0
+  if (recreating) {
+    log.info(`Recreating machine due to changes:${EOL}${machineDiffText(existingMachine.specDiff)}`)
+  }
+
+  return withSpinner(async spinner => {
+    if (recreating) {
+      spinner.text = 'Deleting machine'
+      await machineDriver.removeMachine(existingMachine.providerId)
+      spinner.text = 'Creating machine'
+    }
+    const machine = await machineDriver.createMachine({ envId, keyConfig: sshKey })
+    return {
+      machine,
+      installed: machine.fromSnapshot,
+    }
+  }, {
+    opPrefix: `${recreating ? 'Recreating' : 'Creating'} ${machineDriver.friendlyName} machine`,
+    successText: `${machineDriver.friendlyName} machine ${recreating ? 'recreated' : 'created'}`,
+  })
 }
 
 export const ensureCustomizedMachine = async ({

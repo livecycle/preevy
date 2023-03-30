@@ -44,6 +44,8 @@ const client = ({
   const ls = new Lightsail({ region })
 
   return {
+    getInstance: async (instanceName: string) => (await ls.getInstance({ instanceName })).instance,
+
     findInstance: async (
       envId: string,
       versionTag?: string
@@ -134,6 +136,7 @@ const client = ({
       availabilityZone,
       keyPairName,
       instanceSnapshotName,
+      bundleId,
     }: {
       envId: string
       versionTag: string
@@ -141,9 +144,10 @@ const client = ({
       instanceSnapshotName?: string
       keyPairName: string
       name: string
+      bundleId: string
     }) => {
       const commonArgs = {
-        bundleId: 'medium_2_0',
+        bundleId,
         availabilityZone:
           availabilityZone ?? (await getFirstAvailabilityZoneForRegion(ls)),
         instanceNames: [name],
@@ -206,14 +210,16 @@ const client = ({
 
     findInstanceSnapshot: async ({
       version,
+      bundleId,
     }: {
       version: string
+      bundleId: string
     }) => {
       const tagsPredicate = allTagsPredicate(
         { key: INSTANCE_TAGS.MACHINE_VERSION, value: version },
       )
       return asyncFind(
-        ({ tags }: InstanceSnapshot) => tagsPredicate(tags ?? []),
+        ({ tags, fromBundleId }: InstanceSnapshot) => fromBundleId === bundleId && tagsPredicate(tags ?? []),
         paginationIterator(
           pageToken => ls.getInstanceSnapshots({ pageToken }),
           'instanceSnapshots'

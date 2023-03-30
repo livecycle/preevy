@@ -10,10 +10,16 @@ export type Machine = {
   sshUsername: string
 }
 
+export type SpecDiffItem = {
+  name: string
+  old: string
+  new: string
+}
+
 export type MachineDriver = {
   friendlyName: string
 
-  getMachine: (args: { envId: string }) => Promise<Machine | undefined>
+  getMachine: (args: { envId: string }) => Promise<(Machine & { specDiff: SpecDiffItem[] }) | undefined>
 
   getKeyPairAlias: () => Promise<string>
 
