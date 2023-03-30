@@ -24,8 +24,5 @@
     "composite": true,
     "outDir": "dist",
   },
-  "include": ["index.ts", "src/**/*" ],
-  "references": [
-    { "path": "../common" },
-  ]
+  "include": ["index.ts", "main.ts", "src/**/*"],
 }

@@ -1,6 +1,6 @@
 import http from 'node:http'
+import { Logger } from '@preevy/common'
 import { SshState } from './ssh/index'
-import { Logger } from './log'
 
 const respond = (res: http.ServerResponse, content: string, type = 'text/plain', status = 200) => {
   res.writeHead(status, { 'Content-Type': type })

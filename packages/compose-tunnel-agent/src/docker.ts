@@ -1,7 +1,6 @@
 import Docker from 'dockerode'
 import { debounce } from 'lodash'
-import { tryParseJson } from './json'
-import { Logger } from './log'
+import { tryParseJson, Logger } from '@preevy/common'
 
 const composeFilter = {
   label: ['com.docker.compose.project'],

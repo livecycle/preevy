@@ -1,4 +1,4 @@
-import { StateEmitter, StateEmitterConsumer, stateEmitter } from '@preevy/compose-tunnel-agent'
+import { StateEmitter, StateEmitterConsumer, stateEmitter } from '@preevy/common'
 import { asyncMap, asyncToArray } from 'iter-tools-es'
 import { sumArray } from '../../array'
 import { FileToCopy, expandFile } from './files'

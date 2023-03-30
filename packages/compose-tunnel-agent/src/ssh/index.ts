@@ -1,7 +1,2 @@
 export { sshClient } from './tunnel-client'
 export type { SshState } from './tunnel-client'
-export { checkConnection } from './connection-checker'
-export type { ConnectionCheckResult } from './connection-checker'
-export { parseKey, formatPublicKey, keyFingerprint } from './keys'
-export { parseSshUrl, formatSshConnectionConfig } from './base-client'
-export type { SshConnectionConfig } from './base-client'
