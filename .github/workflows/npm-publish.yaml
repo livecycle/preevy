@@ -24,6 +24,6 @@ jobs:
         set -eou pipefail
         set -x
 
-        for packageDir in compose-tunnel-agent cli; do
+        for packageDir in common compose-tunnel-agent cli; do
           npm-publish --token ${{ secrets.NPM_TOKEN }} --access public packages/${packageDir}/package.json
         done
