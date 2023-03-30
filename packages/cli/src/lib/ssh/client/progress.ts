@@ -1,5 +1,4 @@
-import type { SimpleEmitter } from '@preevy/compose-tunnel-agent'
-import { simpleEmitter } from '@preevy/compose-tunnel-agent'
+import { SimpleEmitter, simpleEmitter } from '@preevy/common'
 
 export type TransferProgressEvents = {
   bytes: { bytes: number; file: string }

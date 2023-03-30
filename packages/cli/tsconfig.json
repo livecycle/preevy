@@ -16,5 +16,6 @@
   ],
   "references": [
     { "path": "../compose-tunnel-agent" },
+    { "path": "../common" },
   ]
 }

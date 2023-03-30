@@ -1,4 +1,4 @@
-import { parseSshUrl, formatSshConnectionConfig, checkConnection, keyFingerprint } from '@preevy/compose-tunnel-agent'
+import { parseSshUrl, formatSshConnectionConfig, checkConnection, keyFingerprint } from '@preevy/common'
 import { Logger } from '../../log'
 import { ProfileStore } from '../profile'
 import { generateSshKeyPair } from '../ssh/keypair'

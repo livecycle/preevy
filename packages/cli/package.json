@@ -25,6 +25,7 @@
     "@oclif/core": "^2",
     "@oclif/plugin-help": "^5",
     "@oclif/plugin-plugins": "^2.3.0",
+    "@preevy/common": "0.0.16",
     "@preevy/compose-tunnel-agent": "0.0.16",
     "@types/ssh2": "^1.11.8",
     "chalk": "^4.1.2",

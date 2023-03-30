@@ -20,7 +20,7 @@ $ npm install -g preevy
 $ preevy COMMAND
 running command...
 $ preevy (--version)
-preevy/0.0.12 darwin-arm64 node-v18.12.1
+preevy/0.0.16 darwin-arm64 node-v18.12.1
 $ preevy --help [COMMAND]
 USAGE
   $ preevy COMMAND
@@ -29,31 +29,29 @@ USAGE
 <!-- usagestop -->
 # Commands
 <!-- commands -->
-- [Preevy CLI](#preevy-cli)
-- [Usage](#usage)
-- [Commands](#commands)
-  - [`preevy down`](#preevy-down)
-  - [`preevy help [COMMANDS]`](#preevy-help-commands)
-  - [`preevy init [PROFILE-ALIAS]`](#preevy-init-profile-alias)
-  - [`preevy logs [SERVICES]`](#preevy-logs-services)
-  - [`preevy ls`](#preevy-ls)
-  - [`preevy plugins`](#preevy-plugins)
-  - [`preevy plugins:install PLUGIN...`](#preevy-pluginsinstall-plugin)
-  - [`preevy plugins:inspect PLUGIN...`](#preevy-pluginsinspect-plugin)
-  - [`preevy plugins:install PLUGIN...`](#preevy-pluginsinstall-plugin-1)
-  - [`preevy plugins:link PLUGIN`](#preevy-pluginslink-plugin)
-  - [`preevy plugins:uninstall PLUGIN...`](#preevy-pluginsuninstall-plugin)
-  - [`preevy plugins:uninstall PLUGIN...`](#preevy-pluginsuninstall-plugin-1)
-  - [`preevy plugins:uninstall PLUGIN...`](#preevy-pluginsuninstall-plugin-2)
-  - [`preevy plugins update`](#preevy-plugins-update)
-  - [`preevy profile create NAME URL`](#preevy-profile-create-name-url)
-  - [`preevy profile current`](#preevy-profile-current)
-  - [`preevy profile import LOCATION`](#preevy-profile-import-location)
-  - [`preevy profile ls`](#preevy-profile-ls)
-  - [`preevy profile rm NAME`](#preevy-profile-rm-name)
-  - [`preevy profile use NAME`](#preevy-profile-use-name)
-  - [`preevy up [SERVICE]`](#preevy-up-service)
-  - [`preevy urls [SERVICE] [PORT]`](#preevy-urls-service-port)
+* [`preevy down`](#preevy-down)
+* [`preevy help [COMMANDS]`](#preevy-help-commands)
+* [`preevy init [PROFILE-ALIAS]`](#preevy-init-profile-alias)
+* [`preevy logs [SERVICES]`](#preevy-logs-services)
+* [`preevy ls`](#preevy-ls)
+* [`preevy plugins`](#preevy-plugins)
+* [`preevy plugins:install PLUGIN...`](#preevy-pluginsinstall-plugin)
+* [`preevy plugins:inspect PLUGIN...`](#preevy-pluginsinspect-plugin)
+* [`preevy plugins:install PLUGIN...`](#preevy-pluginsinstall-plugin-1)
+* [`preevy plugins:link PLUGIN`](#preevy-pluginslink-plugin)
+* [`preevy plugins:uninstall PLUGIN...`](#preevy-pluginsuninstall-plugin)
+* [`preevy plugins:uninstall PLUGIN...`](#preevy-pluginsuninstall-plugin-1)
+* [`preevy plugins:uninstall PLUGIN...`](#preevy-pluginsuninstall-plugin-2)
+* [`preevy plugins update`](#preevy-plugins-update)
+* [`preevy profile create NAME URL`](#preevy-profile-create-name-url)
+* [`preevy profile current`](#preevy-profile-current)
+* [`preevy profile import LOCATION`](#preevy-profile-import-location)
+* [`preevy profile ls`](#preevy-profile-ls)
+* [`preevy profile rm NAME`](#preevy-profile-rm-name)
+* [`preevy profile use NAME`](#preevy-profile-use-name)
+* [`preevy up [SERVICE]`](#preevy-up-service)
+* [`preevy urls [SERVICE] [PORT]`](#preevy-urls-service-port)
+* [`preevy version`](#preevy-version)
 
 ## `preevy down`
 
@@ -64,14 +62,14 @@ USAGE
   $ preevy down [-D] [-d lightsail|fake] [--lightsail-region
     us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu
     -central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--lightsail-availability-zone <value>] [--id <value>] [-f
-    <value>] [-p <value>] [-f] [--json]
+    <value>] [-p <value>] [--force] [--json]
 
 FLAGS
   -d, --driver=<option>                  [default: lightsail] Machine driver to use
                                          <options: lightsail|fake>
   -f, --file=<value>...                  [default: ] Compose configuration file
-  -f, --force                            Do not error if the environment is not found
   -p, --project=<value>                  Project name. Defaults to the Compose project name
+  --force                                Do not error if the environment is not found
   --id=<value>                           Environment id - affects created URLs. If not specified, will try to detect
                                          automatically
   --lightsail-availability-zone=<value>  AWS availability zone to provision resources in region
@@ -88,7 +86,7 @@ DESCRIPTION
   Delete preview environments
 ```
 
-_See code: [dist/commands/down/index.ts](https://github.com/livecycle/preevy/blob/v0.0.12/dist/commands/down/index.ts)_
+_See code: [dist/commands/down/index.ts](https://github.com/livecycle/preevy/blob/v0.0.16/dist/commands/down/index.ts)_
 
 ## `preevy help [COMMANDS]`
 
@@ -131,7 +129,7 @@ DESCRIPTION
   Initialize or import a new profile
 ```
 
-_See code: [dist/commands/init/index.ts](https://github.com/livecycle/preevy/blob/v0.0.12/dist/commands/init/index.ts)_
+_See code: [dist/commands/init/index.ts](https://github.com/livecycle/preevy/blob/v0.0.16/dist/commands/init/index.ts)_
 
 ## `preevy logs [SERVICES]`
 
@@ -177,7 +175,7 @@ DESCRIPTION
   Show logs for an existing environment
 ```
 
-_See code: [dist/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.12/dist/commands/logs.ts)_
+_See code: [dist/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.16/dist/commands/logs.ts)_
 
 ## `preevy ls`
 
@@ -217,7 +215,7 @@ DESCRIPTION
   List preview environments
 ```
 
-_See code: [dist/commands/ls/index.ts](https://github.com/livecycle/preevy/blob/v0.0.12/dist/commands/ls/index.ts)_
+_See code: [dist/commands/ls/index.ts](https://github.com/livecycle/preevy/blob/v0.0.16/dist/commands/ls/index.ts)_
 
 ## `preevy plugins`
 
@@ -270,7 +268,7 @@ ALIASES
   $ preevy plugins add
 
 EXAMPLES
-  $ preevy plugins:install myplugin
+  $ preevy plugins:install myplugin 
 
   $ preevy plugins:install https://github.com/someuser/someplugin
 
@@ -333,7 +331,7 @@ ALIASES
   $ preevy plugins add
 
 EXAMPLES
-  $ preevy plugins:install myplugin
+  $ preevy plugins:install myplugin 
 
   $ preevy plugins:install https://github.com/someuser/someplugin
 
@@ -656,7 +654,7 @@ DESCRIPTION
   Bring up a preview environment
 ```
 
-_See code: [dist/commands/up/index.ts](https://github.com/livecycle/preevy/blob/v0.0.12/dist/commands/up/index.ts)_
+_See code: [dist/commands/up/index.ts](https://github.com/livecycle/preevy/blob/v0.0.16/dist/commands/up/index.ts)_
 
 ## `preevy urls [SERVICE] [PORT]`
 
@@ -704,5 +702,23 @@ DESCRIPTION
   Show urls for an existing environment
 ```
 
-_See code: [dist/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.12/dist/commands/urls.ts)_
+_See code: [dist/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.16/dist/commands/urls.ts)_
+
+## `preevy version`
+
+Show Preevy version
+
+```
+USAGE
+  $ preevy version [-D] [--json]
+
+GLOBAL FLAGS
+  -D, --debug  Enable debug logging
+  --json       Format output as json.
+
+DESCRIPTION
+  Show Preevy version
+```
+
+_See code: [dist/commands/version.ts](https://github.com/livecycle/preevy/blob/v0.0.16/dist/commands/version.ts)_
 <!-- commandsstop -->

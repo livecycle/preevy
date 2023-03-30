@@ -8,6 +8,7 @@
   "eslint.format.enable": true,
   "eslint.workingDirectories": [
     "packages/cli",
+    "packages/common",
     "packages/tunnel-server",
     "packages/compose-tunnel-agent",
   ],

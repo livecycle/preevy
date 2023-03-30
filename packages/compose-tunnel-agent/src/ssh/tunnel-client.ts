@@ -1,10 +1,10 @@
 import net from 'net'
 import { inspect } from 'util'
 import plimit from 'p-limit'
+import { baseSshClient, HelloResponse, SshClientOpts } from '@preevy/common'
 import { RunningService } from '../docker'
 import { TunnelNameResolver } from '../tunnel-name'
 import * as maps from '../maps'
-import { baseSshClient, HelloResponse, SshClientOpts } from './base-client'
 
 export type Tunnel = {
   project: string
