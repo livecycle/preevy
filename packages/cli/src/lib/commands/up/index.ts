@@ -103,7 +103,7 @@ const up = async ({
 
   const envId = userSpecifiedEnvId || await findAmbientEnvId(projectName)
 
-  log.info(`Using envId: ${envId}`)
+  log.info(`Using environment ID: ${envId}`)
 
   const remoteModel = addDockerProxyService({
     debug,
