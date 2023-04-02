@@ -7,6 +7,7 @@ import { profileStore } from '../../lib/profile'
 import { flattenTunnels, HostKeySignatureConfirmer, performTunnelConnectionCheck } from '../../lib/tunneling'
 import { envIdFlags } from '../../lib/env-id'
 import { composeFlags } from '../../lib/compose/flags'
+import { carefulBooleanPrompt } from '../../lib/prompt'
 
 const confirmHostFingerprint = async (
   { hostKeyFingerprint: hostKeySignature, hostname, port }: Parameters<HostKeySignatureConfirmer>[0],
@@ -17,16 +18,7 @@ const confirmHostFingerprint = async (
     `Key fingerprint is $${hostKeySignature}`,
     'Are you sure you want to continue connecting (yes/no)?',
   ].join(os.EOL)
-  const handleResponse = async (response: string): Promise<boolean> => {
-    if (!['yes', 'no'].includes(response)) {
-      const newResponse = await ux.prompt('Please type yes or no', { required: true })
-      return handleResponse(newResponse)
-    }
-    return response === 'yes'
-  }
-
-  const response = await ux.prompt(message, { default: 'no', required: true })
-  return handleResponse(response)
+  return carefulBooleanPrompt(message)
 }
 
 // eslint-disable-next-line no-use-before-define

@@ -10,10 +10,16 @@ export type Machine = {
   sshUsername: string
 }
 
+export type SpecDiffItem = {
+  name: string
+  old: string
+  new: string
+}
+
 export type MachineDriver = {
   friendlyName: string
 
-  getMachine: (args: { envId: string }) => Promise<Machine | undefined>
+  getMachine: (args: { envId: string }) => Promise<(Machine & { specDiff: SpecDiffItem[] }) | undefined>
 
   getKeyPairAlias: () => Promise<string>
 
@@ -22,13 +28,16 @@ export type MachineDriver = {
   createMachine: (args: {
     envId: string
     keyConfig: SSHKeyConfig
-  }) => Promise<Machine & { fromSnapshot: boolean }>
+  }) => Promise<{ fromSnapshot: boolean; machine: Promise<Machine> }>
 
   ensureMachineSnapshot: (args: { driverMachineId: string; envId: string; wait: boolean }) => Promise<void>
 
   listMachines: () => AsyncIterableIterator<Machine & { envId: string }>
+  listSnapshots: () => AsyncIterableIterator<{ providerId: string }>
 
   removeMachine: (driverMachineId: string) => Promise<void>
+  removeSnapshot: (providerId: string) => Promise<void>
+  removeKeyPair: (alias: string) => Promise<void>
 }
 
 export type MachineDriverFactory<T> = (flags: T, profile: Profile) => MachineDriver
