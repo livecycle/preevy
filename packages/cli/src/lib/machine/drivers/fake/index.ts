@@ -27,14 +27,17 @@ const machineDriver = (_args: { someFlag: string; someFlag2?: string }): Machine
   getMachine: async () => ({ ...fakeMachine, specDiff: [] }),
 
   listMachines: () => asyncMap(x => x, [fakeMachineWithEnvId()]),
+  listSnapshots: () => asyncMap(x => x, []),
 
   createKeyPair: async () => fakeNamedSshKey,
 
-  createMachine: async () => ({ ...fakeMachine, fromSnapshot: true }),
+  createMachine: async () => ({ fromSnapshot: true, machine: Promise.resolve(fakeMachine) }),
 
   ensureMachineSnapshot: async () => undefined,
 
   removeMachine: async () => undefined,
+  removeSnapshot: async () => undefined,
+  removeKeyPair: async () => undefined,
 
   getKeyPairAlias: async () => fakeNamedSshKey.alias,
 })

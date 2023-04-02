@@ -28,13 +28,16 @@ export type MachineDriver = {
   createMachine: (args: {
     envId: string
     keyConfig: SSHKeyConfig
-  }) => Promise<Machine & { fromSnapshot: boolean }>
+  }) => Promise<{ fromSnapshot: boolean; machine: Promise<Machine> }>
 
   ensureMachineSnapshot: (args: { driverMachineId: string; envId: string; wait: boolean }) => Promise<void>
 
   listMachines: () => AsyncIterableIterator<Machine & { envId: string }>
+  listSnapshots: () => AsyncIterableIterator<{ providerId: string }>
 
   removeMachine: (driverMachineId: string) => Promise<void>
+  removeSnapshot: (providerId: string) => Promise<void>
+  removeKeyPair: (alias: string) => Promise<void>
 }
 
 export type MachineDriverFactory<T> = (flags: T, profile: Profile) => MachineDriver

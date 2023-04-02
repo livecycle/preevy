@@ -18,7 +18,12 @@ export const sshKeysStore = (store: Store) => {
     addKey: ({ alias, privateKey, publicKey }: SSHKeyConfig) =>
       store.transaction(sshKeysDir, async ({ write }) => {
         await Promise.all([write(privateKeyFile(alias), privateKey), write(publicKeyFile(alias), publicKey)])
-      })
-    ,
+      }),
+    deleteKey: async (alias: string) => store.transaction(sshKeysDir, async ({ delete: del }) => {
+      await Promise.all([
+        del(privateKeyFile(alias)),
+        del(publicKeyFile(alias)),
+      ])
+    }),
   }
 }

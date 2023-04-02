@@ -36,12 +36,17 @@ const ensureMachine = async ({
     if (recreating) {
       spinner.text = 'Deleting machine'
       await machineDriver.removeMachine(existingMachine.providerId)
-      spinner.text = 'Creating machine'
     }
-    const machine = await machineDriver.createMachine({ envId, keyConfig: sshKey })
+    spinner.text = 'Checking for existing snapshot'
+    const machineCreation = await machineDriver.createMachine({ envId, keyConfig: sshKey })
+
+    spinner.text = machineCreation.fromSnapshot
+      ? 'Creating from existing snapshot'
+      : 'Suitable snapshot does not exist yet, creating from scratch'
+
     return {
-      machine,
-      installed: machine.fromSnapshot,
+      machine: await machineCreation.machine,
+      installed: machineCreation.fromSnapshot,
     }
   }, {
     opPrefix: `${recreating ? 'Recreating' : 'Creating'} ${machineDriver.friendlyName} machine`,

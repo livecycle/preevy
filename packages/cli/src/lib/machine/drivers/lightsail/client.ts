@@ -11,11 +11,26 @@ import { asyncFilter, asyncFind } from 'iter-tools-es'
 
 import { ensureDefined, extractDefined } from '../../../aws-utils/nulls'
 import { paginationIterator } from '../../../aws-utils/pagination'
-import {
-  waitUntilAllOperationsSucceed,
-  waitUntilOperationSucceeds,
-} from './operation-waiter'
-import { allTagsPredicate, INSTANCE_TAGS, KEYPAIR_TAGS } from './tags'
+import { waitUntilAllOperationsSucceed } from './operation-waiter'
+import { BundleId, bundleIdEqualOrLarger, bundleIdFromString } from './bundle-id'
+import { instanceTags, instanceTagsPredicate, keypairTags, keypairTagsPredicate, snapshotTags, snapshotTagsPredicate } from './tags'
+
+export const REGIONS = [
+  'us-east-2',
+  'us-east-1',
+  'us-west-2',
+  'ap-south-1',
+  'ap-northeast-2',
+  'ap-southeast-1',
+  'ap-southeast-2',
+  'ap-northeast-1',
+  'ca-central-1',
+  'eu-central-1',
+  'eu-west-1',
+  'eu-west-2',
+  'eu-west-3',
+  'eu-north-1',
+] as const
 
 const getFirstAvailabilityZoneForRegion = async (ls: Lightsail) => {
   const regions = await extractDefined(
@@ -43,25 +58,22 @@ const client = ({
   const lsClient = new LightsailClient({ region })
   const ls = new Lightsail({ region })
 
+  const findKeyPairByAlias = async (alias:string) => {
+    const tagsPredicate = keypairTagsPredicate({ alias, profileId })
+    return asyncFind(
+      (x: KeyPair) => tagsPredicate(x.tags ?? []),
+      paginationIterator(pageToken => ls.getKeyPairs({ pageToken }), 'keyPairs'),
+    )
+  }
+
   return {
     getInstance: async (instanceName: string) => (await ls.getInstance({ instanceName })).instance,
 
     findInstance: async (
       envId: string,
-      versionTag?: string
+      version?: string
     ) => {
-      const tagsToFind = [
-        { key: INSTANCE_TAGS.ENV_ID, value: envId },
-        { key: INSTANCE_TAGS.PROFILE_ID, value: profileId },
-      ]
-      if (versionTag) {
-        tagsToFind.push({
-          key: INSTANCE_TAGS.MACHINE_VERSION,
-          value: versionTag,
-        })
-      }
-
-      const tagsPredicate = allTagsPredicate(...tagsToFind)
+      const tagsPredicate = instanceTagsPredicate({ envId, profileId, version })
       return asyncFind(
         ({ tags }: Instance) => tagsPredicate(tags ?? []),
         paginationIterator(
@@ -71,15 +83,27 @@ const client = ({
       )
     },
 
-    listInstances: () =>
-      asyncFilter(
-        ({ tags }: Instance) =>
-          (tags || []).some(tag => tag.key === INSTANCE_TAGS.PROFILE_ID && tag.value === profileId),
+    listInstances: () => {
+      const tagsPredicate = instanceTagsPredicate({ profileId })
+      return asyncFilter(
+        ({ tags }: Instance) => tagsPredicate(tags || []),
         paginationIterator(
           pageToken => ls.getInstances({ pageToken }),
           'instances'
         )
-      ),
+      )
+    },
+
+    listInstanceSnapshots: () => {
+      const tagsPredicate = snapshotTagsPredicate({ profileId })
+      return asyncFilter(
+        ({ tags }: InstanceSnapshot) => tagsPredicate(tags || []),
+        paginationIterator(
+          pageToken => ls.getInstanceSnapshots({ pageToken }),
+          'instanceSnapshots'
+        )
+      )
+    },
 
     ensureInstanceIsRunning: async (instance: Instance) => {
       if (instance.state?.name !== 'running') {
@@ -99,7 +123,7 @@ const client = ({
       const { publicKeyBase64, privateKeyBase64, keyPair } = await ensureDefined(
         ls.createKeyPair({
           keyPairName: internalName,
-          tags: [{ key: KEYPAIR_TAGS.PROFILE_ID, value: profileId }, { key: KEYPAIR_TAGS.ALIAS, value: alias }],
+          tags: keypairTags({ alias, profileId }),
         }),
         'publicKeyBase64',
         'privateKeyBase64',
@@ -113,16 +137,7 @@ const client = ({
       }
     },
 
-    findKeyPairByAlias: async (alias:string) => {
-      const tagsPredicate = allTagsPredicate(
-        { key: KEYPAIR_TAGS.PROFILE_ID, value: profileId },
-        { key: KEYPAIR_TAGS.ALIAS, value: alias },
-      )
-      return asyncFind(
-        (x: KeyPair) => tagsPredicate(x.tags ?? []),
-        paginationIterator(pageToken => ls.getKeyPairs({ pageToken }), 'keyPairs'),
-      )
-    },
+    findKeyPairByAlias,
 
     listKeyPairs: () => paginationIterator<KeyPair, 'keyPairs', GetKeyPairsCommandOutput>(
       pageToken => ls.getKeyPairs({ pageToken }),
@@ -132,7 +147,7 @@ const client = ({
     createInstance: async ({
       name,
       envId,
-      versionTag,
+      versionTag: version,
       availabilityZone,
       keyPairName,
       instanceSnapshotName,
@@ -148,15 +163,10 @@ const client = ({
     }) => {
       const commonArgs = {
         bundleId,
-        availabilityZone:
-          availabilityZone ?? (await getFirstAvailabilityZoneForRegion(ls)),
+        availabilityZone: availabilityZone ?? (await getFirstAvailabilityZoneForRegion(ls)),
         instanceNames: [name],
         keyPairName,
-        tags: [
-          { key: INSTANCE_TAGS.ENV_ID, value: envId },
-          { key: INSTANCE_TAGS.PROFILE_ID, value: profileId },
-          { key: INSTANCE_TAGS.MACHINE_VERSION, value: versionTag },
-        ],
+        tags: instanceTags({ profileId, envId, version }),
       }
 
       const res = instanceSnapshotName
@@ -187,39 +197,22 @@ const client = ({
       return extractDefined(ls.getInstance({ instanceName: name }), 'instance')
     },
 
-    closeAllPortsExceptSsh: async ({
-      instanceName,
-    }: {
-      instanceName: string
-    }) =>
-      waitUntilAllOperationsSucceed(
-        { client: lsClient, maxWaitTime: 120 },
-        ls.putInstancePublicPorts({
-          instanceName,
-          portInfos: [
-            {
-              fromPort: 22,
-              toPort: 22,
-              protocol: 'TCP',
-              cidrs: ['0.0.0.0/0'],
-              ipv6Cidrs: ['::/0'],
-            },
-          ],
-        })
-      ),
-
     findInstanceSnapshot: async ({
       version,
       bundleId,
     }: {
       version: string
-      bundleId: string
+      bundleId: BundleId
     }) => {
-      const tagsPredicate = allTagsPredicate(
-        { key: INSTANCE_TAGS.MACHINE_VERSION, value: version },
-      )
+      const tagsPredicate = snapshotTagsPredicate({ profileId, version })
+
       return asyncFind(
-        ({ tags, fromBundleId }: InstanceSnapshot) => fromBundleId === bundleId && tagsPredicate(tags ?? []),
+        ({ tags, fromBundleId: b }: InstanceSnapshot) => {
+          const fromBundleId = bundleIdFromString(b as string, { throwOnError: false })
+          return fromBundleId !== undefined
+            && bundleIdEqualOrLarger(bundleId, fromBundleId)
+            && tagsPredicate(tags ?? [])
+        },
         paginationIterator(
           pageToken => ls.getInstanceSnapshots({ pageToken }),
           'instanceSnapshots'
@@ -242,9 +235,7 @@ const client = ({
       const op = await ls.createInstanceSnapshot({
         instanceSnapshotName,
         instanceName,
-        tags: [
-          { key: INSTANCE_TAGS.MACHINE_VERSION, value: version },
-        ],
+        tags: snapshotTags({ profileId, version }),
       })
 
       if (wait) {
@@ -259,23 +250,26 @@ const client = ({
       instanceSnapshotName,
     }: {
       instanceSnapshotName: string
-    }) =>
-      waitUntilAllOperationsSucceed(
-        { client: lsClient, maxWaitTime: 120 },
-        ls.deleteInstanceSnapshot({ instanceSnapshotName })
-      ),
+    }) => waitUntilAllOperationsSucceed(
+      { client: lsClient, maxWaitTime: 120 },
+      ls.deleteInstanceSnapshot({ instanceSnapshotName })
+    ),
 
-    deleteInstance: async (name: string) =>
-      waitUntilAllOperationsSucceed(
-        { client: lsClient, maxWaitTime: 120 },
-        ls.deleteInstance({ instanceName: name, forceDeleteAddOns: true })
-      ),
+    deleteInstance: async (name: string) => waitUntilAllOperationsSucceed(
+      { client: lsClient, maxWaitTime: 120 },
+      ls.deleteInstance({ instanceName: name, forceDeleteAddOns: true })
+    ),
 
-    deleteKeyPair: async (name: string) =>
-      waitUntilOperationSucceeds(
+    deleteKeyPair: async (alias: string) => {
+      const keyPair = await findKeyPairByAlias(alias)
+      if (!keyPair) {
+        return
+      }
+      await waitUntilAllOperationsSucceed(
         { client: lsClient, maxWaitTime: 120 },
-        await ls.deleteKeyPair({ keyPairName: name })
-      ),
+        ls.deleteKeyPair({ keyPairName: keyPair.name })
+      )
+    },
   }
 }
 
