@@ -1,34 +1,64 @@
 import childProcess, { ChildProcess } from 'child_process'
+import { Readable } from 'stream'
 import { promisify } from 'util'
 
 type Spawn = typeof childProcess['spawn']
 
+export type ProcessOutputBuffers = { stream: 'stdout' | 'stderr'; data: Buffer }[]
+
+export const orderedOutput = (buffers: ProcessOutputBuffers) => {
+  const concatOutput = (
+    predicate: (s: 'stdout' | 'stderr') => boolean,
+  ) => Buffer.concat(buffers.filter(o => predicate(o.stream)).map(o => o.data))
+
+  return {
+    stdout: () => concatOutput(stream => stream === 'stdout'),
+    stderr: () => concatOutput(stream => stream === 'stderr'),
+    toProcess: (
+      process: { stdout: NodeJS.WriteStream; stderr: NodeJS.WriteStream },
+    ) => buffers.forEach(({ stream, data }) => process[stream].write(data)),
+  }
+}
+
+const outputFromProcess = (process: { stdout?: Readable | null; stderr?: Readable | null }) => {
+  const buffers: ProcessOutputBuffers = []
+
+  process.stdout?.on('data', (data: Buffer) => buffers.push({ stream: 'stdout', data }))
+  process.stderr?.on('data', (data: Buffer) => buffers.push({ stream: 'stderr', data }))
+
+  return buffers
+}
+
 export class ProcessError extends Error {
-  constructor(message: string, readonly process: childProcess.ChildProcess) {
+  constructor(message: string, readonly process: childProcess.ChildProcess, readonly output?: ProcessOutputBuffers) {
     super(message)
   }
 }
 
-export const childProcessPromise = (
-  p: ChildProcess
-): Promise<ChildProcess> => new Promise<ChildProcess>((resolve, reject) => {
-  p.on('exit', (code, signal) => {
-    if (code !== 0) {
-      const message = `process exited with code ${code}${signal ? `and signal ${signal}` : ''}`
-      reject(new ProcessError(message, p))
-      return
-    }
-    resolve(p)
+export function childProcessPromise(p: ChildProcess, opts?: { captureOutput?: false }): Promise<ChildProcess>
+export function childProcessPromise(
+  p: ChildProcess,
+  opts: { captureOutput: true },
+): Promise<ChildProcess & { output: ProcessOutputBuffers }>
+export function childProcessPromise(p: ChildProcess, opts?: { captureOutput?: boolean }): Promise<ChildProcess> {
+  return new Promise<ChildProcess>((resolve, reject) => {
+    const output = opts?.captureOutput ? outputFromProcess(p) : undefined
+    p.on('exit', (code, signal) => {
+      if (code !== 0) {
+        const message = `process exited with code ${code}${signal ? `and signal ${signal}` : ''}`
+        reject(new ProcessError(message, p, output))
+        return
+      }
+      resolve(Object.assign(p, { output }))
+    })
   })
-})
+}
 
 export const childProcessStdoutPromise = async (
-  p: ChildProcess
+  p: ChildProcess,
 ): Promise<string> => {
-  const out: Buffer[] = []
-  p.stdout?.on('data', (data: Buffer) => { out.push(data) })
-  await childProcessPromise(p)
-  return Buffer.concat(out).toString('utf-8').trim()
+  const { output } = await childProcessPromise(p, { captureOutput: true })
+  return orderedOutput(output).stdout().toString('utf-8').trim()
 }
 
 export const spawnPromise = (

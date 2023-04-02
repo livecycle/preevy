@@ -17,6 +17,7 @@ import { findAmbientEnvId } from '../../env-id'
 import { DOCKER_PROXY_SERVICE_NAME, addDockerProxyService, findDockerProxyUrl, queryTunnels } from '../../docker-proxy-client'
 import { copyFilesWithoutRecreatingDirUsingSftp } from '../../sftp-copy'
 import { withSpinner } from '../../spinner'
+import { ProcessError, orderedOutput } from '../../child-process'
 
 const REMOTE_DIR_BASE = '/var/lib/preevy'
 
@@ -87,7 +88,15 @@ const up = async ({
 }): Promise<{ machine: Machine; tunnels: Tunnel[]; envId: string }> => {
   log.debug('Normalizing compose files')
 
-  const userModel = await localComposeClient(userComposeFiles).getModel()
+  const userModel = await localComposeClient(userComposeFiles).getModel().catch(e => {
+    if (!(e instanceof ProcessError)) {
+      throw e
+    }
+    const details = e.output
+      ? orderedOutput(e.output).stderr().toString('utf-8').trim()
+      : e.toString()
+    throw new Error(`docker compose: ${details}`, { cause: e })
+  })
   const projectName = userSpecifiedProjectName ?? userModel.name
   const remoteDir = path.join(REMOTE_DIR_BASE, 'projects', projectName)
   const { model: fixedModel, filesToCopy } = await fixModelForRemote({ remoteDir }, userModel)
