@@ -42,7 +42,7 @@ const ensureMachine = async ({
 
     spinner.text = machineCreation.fromSnapshot
       ? 'Creating from existing snapshot'
-      : 'Suitable snapshot does not exist yet, creating from scratch'
+      : 'No suitable snapshot yet, creating from scratch'
 
     return {
       machine: await machineCreation.machine,
@@ -112,7 +112,6 @@ export const ensureCustomizedMachine = async ({
         }
       )
 
-      log.info('Creating snapshot in background')
       await machineDriver.ensureMachineSnapshot({
         driverMachineId: machine.providerId,
         envId,
