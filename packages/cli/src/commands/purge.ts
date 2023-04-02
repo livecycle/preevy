@@ -66,7 +66,7 @@ export default class Purge extends DriverCommand<typeof Purge> {
   async run(): Promise<unknown> {
     const { flags } = await this.parse(Purge)
 
-    const driver = await this.machineDriver()
+    const driver = await this.driver()
 
     const [removeMachines, removeSnapshots, removeKeyPair] = [
       flags.all || flags.machines,

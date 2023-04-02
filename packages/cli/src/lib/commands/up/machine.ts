@@ -5,24 +5,26 @@ import { MachineDriver, scripts } from '../../machine'
 import { connectSshClient } from '../../ssh/client'
 import { SSHKeyConfig } from '../../ssh/keypair'
 import { withSpinner } from '../../spinner'
-import { SpecDiffItem } from '../../machine/driver/driver'
+import { MachineCreationDriver, SpecDiffItem } from '../../machine/driver/driver'
 
 const machineDiffText = (diff: SpecDiffItem[]) => diff
   .map(({ name, old, new: n }) => `* ${name}: ${old} -> ${n}`).join(EOL)
 
 const ensureMachine = async ({
   machineDriver,
+  machineCreationDriver,
   envId,
   sshKey,
   log,
 }: {
   machineDriver: MachineDriver
+  machineCreationDriver: MachineCreationDriver
   sshKey: SSHKeyConfig
   envId: string
   log: Logger
 }) => {
   log.debug('checking for existing machine')
-  const existingMachine = await machineDriver.getMachine({ envId })
+  const existingMachine = await machineCreationDriver.getMachineAndSpecDiff({ envId })
   if (existingMachine && existingMachine.specDiff.length === 0) {
     return { machine: existingMachine, installed: true }
   }
@@ -38,7 +40,7 @@ const ensureMachine = async ({
       await machineDriver.removeMachine(existingMachine.providerId)
     }
     spinner.text = 'Checking for existing snapshot'
-    const machineCreation = await machineDriver.createMachine({ envId, keyConfig: sshKey })
+    const machineCreation = await machineCreationDriver.createMachine({ envId, keyConfig: sshKey })
 
     spinner.text = machineCreation.fromSnapshot
       ? 'Creating from existing snapshot'
@@ -56,18 +58,20 @@ const ensureMachine = async ({
 
 export const ensureCustomizedMachine = async ({
   machineDriver,
+  machineCreationDriver,
   envId,
   sshKey,
   log,
   debug,
 }: {
   machineDriver: MachineDriver
+  machineCreationDriver: MachineCreationDriver
   envId: string
   sshKey: SSHKeyConfig
   log: Logger
   debug: boolean
 }) => {
-  const { machine, installed } = await ensureMachine({ machineDriver, envId, sshKey, log })
+  const { machine, installed } = await ensureMachine({ machineDriver, machineCreationDriver, envId, sshKey, log })
 
   const connect = () => connectSshClient({
     debug,
@@ -112,7 +116,7 @@ export const ensureCustomizedMachine = async ({
         }
       )
 
-      await machineDriver.ensureMachineSnapshot({
+      await machineCreationDriver.ensureMachineSnapshot({
         driverMachineId: machine.providerId,
         envId,
         wait: false,

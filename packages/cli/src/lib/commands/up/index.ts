@@ -18,6 +18,7 @@ import { DOCKER_PROXY_SERVICE_NAME, addDockerProxyService, findDockerProxyUrl, q
 import { copyFilesWithoutRecreatingDirUsingSftp } from '../../sftp-copy'
 import { withSpinner } from '../../spinner'
 import { ProcessError, orderedOutput } from '../../child-process'
+import { MachineCreationDriver } from '../../machine/driver/driver'
 
 const REMOTE_DIR_BASE = '/var/lib/preevy'
 
@@ -62,6 +63,7 @@ const calcComposeArgs = (userSpecifiedServices: string[], debug: boolean) => {
 const up = async ({
   debug,
   machineDriver,
+  machineCreationDriver,
   tunnelOpts,
   userSpecifiedProjectName,
   userSpecifiedEnvId,
@@ -75,6 +77,7 @@ const up = async ({
 }: {
   debug: boolean
   machineDriver: MachineDriver
+  machineCreationDriver: MachineCreationDriver
   tunnelOpts: TunnelOpts
   userSpecifiedProjectName: string | undefined
   userSpecifiedEnvId: string | undefined
@@ -126,7 +129,9 @@ const up = async ({
 
   const composeFilePath = (await createCopiedFile('docker-compose.yml', yaml.stringify(remoteModel))).local
 
-  const { machine, sshClient } = await ensureCustomizedMachine({ machineDriver, sshKey, envId, log, debug })
+  const { machine, sshClient } = await ensureCustomizedMachine({
+    machineDriver, machineCreationDriver, sshKey, envId, log, debug,
+  })
 
   const withDockerSocket = wrapWithDockerSocket({ sshClient, log })
 

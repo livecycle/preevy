@@ -1,5 +1,4 @@
 import { Command, Flags, Interfaces, settings as oclifSettings } from '@oclif/core'
-import { FlagInput } from '@oclif/core/lib/interfaces/parser'
 import path from 'path'
 import { ProfileConfig, profileConfig } from './lib/profile'
 import { createStore } from './lib/store'
@@ -7,14 +6,6 @@ import { realFs } from './lib/store/fs'
 import { s3fs } from './lib/store/s3'
 import { tarSnapshotter } from './lib/store/tar'
 import { commandLogger, Logger, LogLevel, logLevels } from './log'
-
-export type InferredFlags<T> = T extends FlagInput<infer F> ? F & {
-  json: boolean | undefined
-} : never;
-
-// export type InferredFlags<T extends FlagOutput> = T & {
-//   json: boolean | undefined;
-// }
 
 // eslint-disable-next-line no-use-before-define
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof BaseCommand['baseFlags'] & T['flags']>

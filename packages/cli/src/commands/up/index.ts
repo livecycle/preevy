@@ -1,6 +1,6 @@
 import os from 'os'
 import { Args, Flags, ux } from '@oclif/core'
-import DriverCommand from '../../driver-command'
+import MachineCreationDriverCommand from '../../machine-creation-driver-command'
 import { up } from '../../lib/commands'
 import { sshKeysStore } from '../../lib/state/ssh'
 import { profileStore } from '../../lib/profile'
@@ -22,7 +22,7 @@ const confirmHostFingerprint = async (
 }
 
 // eslint-disable-next-line no-use-before-define
-export default class Up extends DriverCommand<typeof Up> {
+export default class Up extends MachineCreationDriverCommand<typeof Up> {
   static description = 'Bring up a preview environment'
 
   static flags = {
@@ -57,7 +57,8 @@ export default class Up extends DriverCommand<typeof Up> {
     const { flags, raw } = await this.parse(Up)
     const restArgs = raw.filter(arg => arg.type === 'arg').map(arg => arg.input)
 
-    const driver = await this.machineDriver()
+    const driver = await this.driver()
+    const machineCreationDriver = await this.machineCreationDriver()
     const keyAlias = await driver.getKeyPairAlias()
 
     const keyStore = sshKeysStore(this.store)
@@ -100,6 +101,7 @@ export default class Up extends DriverCommand<typeof Up> {
       userSpecifiedServices: restArgs,
       debug: flags.debug,
       machineDriver: driver,
+      machineCreationDriver,
       userSpecifiedProjectName: flags.project,
       userSpecifiedEnvId: flags.id,
       tunnelOpts,

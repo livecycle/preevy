@@ -3,7 +3,7 @@ import chalk from 'chalk'
 import inquirer from 'inquirer'
 import { pickBy } from 'lodash'
 import BaseCommand from '../../base-command'
-import { DriverName, machineDrivers } from '../../lib/machine'
+import { DriverFlagName, DriverName, machineDrivers } from '../../lib/machine'
 import { suggestDefaultUrl } from '../../lib/store/s3'
 
 export default class Init extends BaseCommand {
@@ -64,13 +64,19 @@ export default class Init extends BaseCommand {
           }])
 
       const driverStatic = machineDrivers[driver]
-      const requiredFlags = pickBy(machineDrivers[driver].flags, flag => flag.required)
+
+      type DFS = (typeof driverStatic)['flags']
+
+      const requiredFlags = pickBy(
+        machineDrivers[driver].flags,
+        flag => (flag as { required: boolean }).required,
+      ) as DFS
 
       const questions = Object.entries(requiredFlags).map(([key, flag]) => ({
         type: 'input',
         name: key,
         message: flag.description,
-        default: ('flagHint' in driverStatic) ? driverStatic.flagHint(key as keyof typeof driverStatic['flags']) : '',
+        default: ('flagHint' in driverStatic) ? driverStatic.flagHint(key as DriverFlagName<DriverName, 'flags'>) : '',
       }))
 
       const driverFlags = await inquirer.prompt<Record<string, string>>(questions)

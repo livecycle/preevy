@@ -1,7 +1,7 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
 import chalk from 'chalk'
 import BaseCommand from './base-command'
-import { allDriverFlags, DriverName, MachineDriver, machineDrivers } from './lib/machine'
+import { flagsForAllDrivers, DriverName, MachineDriver, machineDrivers, DriverFlags } from './lib/machine'
 import { removeDriverPrefix } from './lib/machine/driver/flags'
 import { Profile } from './lib/profile'
 import { profileStore } from './lib/profile/store'
@@ -20,7 +20,7 @@ abstract class DriverCommand<T extends typeof Command> extends BaseCommand<T> {
       default: 'lightsail' as const,
       options: Object.keys(machineDrivers),
     })(),
-    ...allDriverFlags,
+    ...flagsForAllDrivers,
   }
 
   protected flags!: Flags<T>
@@ -28,22 +28,22 @@ abstract class DriverCommand<T extends typeof Command> extends BaseCommand<T> {
 
   public async init(): Promise<void> {
     await super.init()
-    this.#driver = this.flags.driver as DriverName
+    this.#driverName = this.flags.driver as DriverName
     const pm = this.profileConfig
     const currentProfile = await pm.current().then(x => x && pm.get(x.alias))
     if (currentProfile) {
       this.#profile = currentProfile.info
       this.#store = currentProfile.store
-      this.#driver = currentProfile.info.driver as DriverName
+      this.#driverName = currentProfile.info.driver as DriverName
     }
   }
 
-  #driver: DriverName | undefined
-  get driver() : DriverName {
-    if (!this.#driver) {
+  #driverName: DriverName | undefined
+  get driverName() : DriverName {
+    if (!this.#driverName) {
       throw new Error("Driver wasn't specified")
     }
-    return this.#driver
+    return this.#driverName
   }
 
   #store: Store | undefined
@@ -54,23 +54,20 @@ abstract class DriverCommand<T extends typeof Command> extends BaseCommand<T> {
     return this.#store
   }
 
-  #machineDriver: MachineDriver | undefined
-  async machineDriver() {
-    if (this.#machineDriver) {
-      return this.#machineDriver
+  #driver: MachineDriver | undefined
+  async driver() {
+    if (this.#driver) {
+      return this.#driver
     }
     const { profile } = this
     const driverName = this.flags.driver as DriverName
-    let driverFlags = removeDriverPrefix<Interfaces.InferredFlags<typeof machineDrivers[typeof this.driver]['flags']>>(this.driver, this.flags)
+    let driverFlags = removeDriverPrefix<DriverFlags<DriverName, 'flags'>>(this.driverName, this.flags)
     if (this.#store) {
       const defaultFlags = await profileStore(this.#store).defaultFlags(driverName)
       driverFlags = { ...defaultFlags, ...driverFlags }
     }
-    const { factory } = machineDrivers[driverName]
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    this.#machineDriver = factory(driverFlags, profile)
-    return this.#machineDriver
+    this.#driver = machineDrivers[driverName].factory(driverFlags as never, profile)
+    return this.#driver
   }
 
   #profile: Profile | undefined

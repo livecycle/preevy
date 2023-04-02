@@ -32,7 +32,7 @@ export default class Down extends DriverCommand<typeof Down> {
   async run(): Promise<unknown> {
     const log = this.logger
     const { flags } = await this.parse(Down)
-    const driver = await this.machineDriver()
+    const driver = await this.driver()
     const envId = flags.id ?? await findEnvId(log, flags)
 
     log.debug(`envId: ${envId}`)

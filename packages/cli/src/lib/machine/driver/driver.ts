@@ -19,18 +19,11 @@ export type SpecDiffItem = {
 export type MachineDriver = {
   friendlyName: string
 
-  getMachine: (args: { envId: string }) => Promise<(Machine & { specDiff: SpecDiffItem[] }) | undefined>
+  getMachine: (args: { envId: string }) => Promise<Machine | undefined>
 
   getKeyPairAlias: () => Promise<string>
 
   createKeyPair: () => Promise<SSHKeyConfig>
-
-  createMachine: (args: {
-    envId: string
-    keyConfig: SSHKeyConfig
-  }) => Promise<{ fromSnapshot: boolean; machine: Promise<Machine> }>
-
-  ensureMachineSnapshot: (args: { driverMachineId: string; envId: string; wait: boolean }) => Promise<void>
 
   listMachines: () => AsyncIterableIterator<Machine & { envId: string }>
   listSnapshots: () => AsyncIterableIterator<{ providerId: string }>
@@ -40,4 +33,16 @@ export type MachineDriver = {
   removeKeyPair: (alias: string) => Promise<void>
 }
 
+export type MachineCreationDriver = {
+  createMachine: (args: {
+    envId: string
+    keyConfig: SSHKeyConfig
+  }) => Promise<{ fromSnapshot: boolean; machine: Promise<Machine> }>
+
+  ensureMachineSnapshot: (args: { driverMachineId: string; envId: string; wait: boolean }) => Promise<void>
+
+  getMachineAndSpecDiff: (args: { envId: string }) => Promise<(Machine & { specDiff: SpecDiffItem[] }) | undefined>
+}
+
 export type MachineDriverFactory<T> = (flags: T, profile: Profile) => MachineDriver
+export type MachineCreationDriverFactory<T> = (flags: T, profile: Profile) => MachineCreationDriver

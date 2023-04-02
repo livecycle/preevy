@@ -10,24 +10,46 @@ export const machineDrivers = {
 type MachineDrivers = typeof machineDrivers
 export type DriverName = keyof MachineDrivers
 
-type DriverFlagName<Name extends DriverName> = keyof MachineDrivers[Name]['flags'] extends string ? keyof MachineDrivers[Name]['flags'] : never
-type DriverFlag<Name extends DriverName, FlagName extends DriverFlagName<Name>> = MachineDrivers[Name]['flags'][FlagName]
+type FlagType = 'flags' | 'machineCreationFlags'
 
-type DriverFlags<Name extends DriverName> = {
-  [P in DriverFlagName<Name> as `${Name}-${P}`]: DriverFlag<Name, P>
+export type DriverFlagName<
+  Name extends DriverName,
+  Type extends FlagType,
+> = keyof MachineDrivers[Name][Type] extends string ? keyof MachineDrivers[Name][Type] : never
+
+export type DriverFlag<
+  Name extends DriverName,
+  Type extends FlagType,
+  FlagName extends DriverFlagName<Name, Type>,
+> = MachineDrivers[Name][Type][FlagName]
+
+export type DriverFlags<Name extends DriverName, Type extends FlagType> = {
+  [P in DriverFlagName<Name, Type> as `${Name}-${P}`]: DriverFlag<Name, Type, P>
 }
 
-export const driverFlags = <Name extends DriverName>(driverName: Name) => Object.assign({}, ...map(
-  machineDrivers[driverName].flags,
-  <FlagName extends DriverFlagName<Name>>(flag: DriverFlag<Name, FlagName>, flagName: FlagName) => ({
+const toOuterFlag = <Name extends DriverName, Type extends FlagType>(
+  driverName: Name,
+  flags: FlagType,
+) => Object.assign({}, ...map(
+  machineDrivers[driverName][flags],
+  <FlagName extends DriverFlagName<Name, Type>>(flag: DriverFlag<Name, Type, FlagName>, flagName: FlagName) => ({
     [`${driverName}-${flagName}`]: {
       ...flag,
       required: false,
     },
   })
-)) as DriverFlags<Name>
+)) as DriverFlags<Name, Type>
 
-export const allDriverFlags = {
+export const driverFlags = <Name extends DriverName>(driverName: Name) => toOuterFlag(driverName, 'flags')
+
+export const machineCreationDriverFlags = <Name extends DriverName>(driverName: Name) => toOuterFlag(driverName, 'machineCreationFlags')
+
+export const flagsForAllDrivers = {
   ...driverFlags('lightsail'),
   ...driverFlags('fake'),
+}
+
+export const machineCreationflagsForAllDrivers = {
+  ...machineCreationDriverFlags('lightsail'),
+  ...machineCreationDriverFlags('fake'),
 }

@@ -21,7 +21,7 @@ export default class Ssh extends DriverCommand<typeof Ssh> {
 
   async run(): Promise<unknown> {
     const { args, raw } = await this.parse(Ssh)
-    const driver = await this.machineDriver()
+    const driver = await this.driver()
     const sshKey = await sshKeysStore(this.store).getKey(await driver.getKeyPairAlias())
     if (!sshKey) {
       this.error('SSH key not found for connecting to machine')

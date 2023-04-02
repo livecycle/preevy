@@ -33,7 +33,7 @@ export default class Logs extends DriverCommand<typeof Logs> {
     const log = this.logger
     const { flags, raw } = await this.parse(Logs)
     const restArgs = raw.filter(arg => arg.type === 'arg').map(arg => arg.input)
-    const driver = await this.machineDriver()
+    const driver = await this.driver()
     const keyAlias = await driver.getKeyPairAlias()
 
     const keyStore = sshKeysStore(this.store)

@@ -36,7 +36,7 @@ export default class Urls extends DriverCommand<typeof Urls> {
   async run(): Promise<unknown> {
     const log = this.logger
     const { flags, args } = await this.parse(Urls)
-    const driver = await this.machineDriver()
+    const driver = await this.driver()
     const keyAlias = await driver.getKeyPairAlias()
 
     const keyStore = sshKeysStore(this.store)

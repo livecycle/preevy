@@ -18,7 +18,7 @@ export default class Ls extends DriverCommand<typeof Ls> {
 
   async run(): Promise<unknown> {
     const { flags } = await this.parse(Ls)
-    const driver = await this.machineDriver()
+    const driver = await this.driver()
     const machines = await asyncToArray(await ls({ machineDriver: driver, log: this.logger }))
 
     if (flags.json) {
