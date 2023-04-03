@@ -46,7 +46,7 @@ These non-production, ephemeral environments, created for every Pull Request, ca
 In recent years, preview environments have become increasingly popular, with some PaaS providers even offering deeply integrated preview environments.
 However, setting up preview environments can be a complex and costly task, which is why many teams have been hesitant to implement them.
 Preevy is designed to simplify this task and provide a framework for provisioning and utilizing preview environments to optimize the PR flow.
-You can read more about the story and philosophy behind Preevy here.
+You can read more about the story and philosophy behind Preevy [here](https://preevy.dev/intro/motivation).
 
 ## Getting started
 
