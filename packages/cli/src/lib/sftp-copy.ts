@@ -3,6 +3,7 @@ import { debounce } from 'lodash'
 import { ExpandedTransferProgress } from './ssh/client/progress-expanded'
 import { FileToCopy, SshClient } from './ssh/client'
 import { withSpinner } from './spinner'
+import { telemetryEmitter } from './telemetry'
 
 const displayWithUnit = (nbytes: number) => {
   if (nbytes < 1024) {
@@ -36,18 +37,24 @@ export const copyFilesWithoutRecreatingDirUsingSftp = async (
   )
 
   let numFiles: number
+  let numBytes: number
 
   await withSpinner(async spinner => {
+    const startTime = new Date().getTime()
     const sftp = await sshClient.sftp({ concurrency: 4 })
     try {
       const progress = await sftp.putFilesWithExpandedProgress(filesToCopyToTempDir, { chunkSize: 128 * 1024 })
       progress.addListener(debounce((p: ExpandedTransferProgress) => { spinner.text = progressText(p) }, 100))
+      progress.addOneTimeListener(state => telemetryEmitter().capture('sftp copy start', { total_bytes: state.totalBytes, files: state.totalFiles }))
       await progress.done
-      numFiles = (await progress.current()).totalFiles
+      const doneProgress = await progress.current()
+      numFiles = doneProgress.totalFiles
+      numBytes = doneProgress.totalBytes
       spinner.text = 'Finishing up...'
     } finally {
       sftp.close()
     }
     await sshClient.execCommand(`rsync -ac --delete "${remoteTempDir}/" "${remoteDir}" && sudo rm -rf "${remoteTempDir}"`)
+    telemetryEmitter().capture('sftp copy end', { total_files: numFiles, total_bytes: numBytes, elapsed_sec: (new Date().getTime() - startTime) / 1000 })
   }, { opPrefix: 'Copying files', text: 'Calculating...', successText: () => `Copied ${numFiles} files` })
 }

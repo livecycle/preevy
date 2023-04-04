@@ -1,5 +1,5 @@
 import { Flags } from '@oclif/core'
-import { detectCiProvider } from './ci-providers'
+import { detectCiProvider } from '../ci-providers'
 import { gitBranchName } from '../git'
 import { ComposeClient } from '../compose/client'
 

@@ -82,6 +82,7 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
         throw new Error(`Unsupported blob prefix: ${protocol}`)
       })
     }
+
     return this.#profileConfig
   }
 }

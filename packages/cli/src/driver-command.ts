@@ -1,17 +1,15 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
-import chalk from 'chalk'
 import BaseCommand from './base-command'
 import { flagsForAllDrivers, DriverName, MachineDriver, machineDrivers, DriverFlags } from './lib/machine'
 import { removeDriverPrefix } from './lib/machine/driver/flags'
-import { Profile } from './lib/profile'
 import { profileStore } from './lib/profile/store'
-import { Store } from './lib/store'
+import ProfileCommand from './profile-command'
 
 // eslint-disable-next-line no-use-before-define
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof DriverCommand['baseFlags'] & T['flags']>
 export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>
 
-abstract class DriverCommand<T extends typeof Command> extends BaseCommand<T> {
+abstract class DriverCommand<T extends typeof Command> extends ProfileCommand<T> {
   static baseFlags = {
     ...BaseCommand.baseFlags,
     driver: Flags.custom<DriverName>({
@@ -28,14 +26,7 @@ abstract class DriverCommand<T extends typeof Command> extends BaseCommand<T> {
 
   public async init(): Promise<void> {
     await super.init()
-    this.#driverName = this.flags.driver as DriverName
-    const pm = this.profileConfig
-    const currentProfile = await pm.current().then(x => x && pm.get(x.alias))
-    if (currentProfile) {
-      this.#profile = currentProfile.info
-      this.#store = currentProfile.store
-      this.#driverName = currentProfile.info.driver as DriverName
-    }
+    this.#driverName = this.flags.driver ?? this.profile.driver as DriverName
   }
 
   #driverName: DriverName | undefined
@@ -46,14 +37,6 @@ abstract class DriverCommand<T extends typeof Command> extends BaseCommand<T> {
     return this.#driverName
   }
 
-  #store: Store | undefined
-  get store(): Store {
-    if (!this.#store) {
-      throw new Error("Store wasn't initialized")
-    }
-    return this.#store
-  }
-
   #driver: MachineDriver | undefined
   async driver() {
     if (this.#driver) {
@@ -61,21 +44,12 @@ abstract class DriverCommand<T extends typeof Command> extends BaseCommand<T> {
     }
     const { profile } = this
     const driverName = this.flags.driver as DriverName
-    let driverFlags = removeDriverPrefix<DriverFlags<DriverName, 'flags'>>(this.driverName, this.flags)
-    if (this.#store) {
-      const defaultFlags = await profileStore(this.#store).defaultFlags(driverName)
-      driverFlags = { ...defaultFlags, ...driverFlags }
+    const driverFlags = {
+      ...await profileStore(this.store).defaultFlags(driverName),
+      ...removeDriverPrefix<DriverFlags<DriverName, 'flags'>>(driverName, this.flags),
     }
     this.#driver = machineDrivers[driverName].factory(driverFlags as never, profile)
     return this.#driver
-  }
-
-  #profile: Profile | undefined
-  get profile(): Profile {
-    if (!this.#profile) {
-      throw new Error(`Profile not initialized, run ${chalk.italic.bold.greenBright('preevy init')} to get started.`)
-    }
-    return this.#profile
   }
 }
 

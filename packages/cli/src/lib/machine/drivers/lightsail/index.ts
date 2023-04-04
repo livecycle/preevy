@@ -12,6 +12,7 @@ import createClient, { REGIONS } from './client'
 import { BUNDLE_IDS, BundleId, bundleIdFromString } from './bundle-id'
 import { CURRENT_MACHINE_VERSION, TAGS, requiredTag } from './tags'
 import { MachineCreationDriver, MachineCreationDriverFactory, MachineDriverFactory } from '../../driver/driver'
+import { telemetryEmitter } from '../../../telemetry'
 
 export { BundleId, BUNDLE_IDS, bundleIdFromString as bundleId }
 
@@ -134,6 +135,8 @@ const machineCreationDriver = (
     createMachine: async ({ envId, keyConfig }) => {
       const instanceSnapshot = await client.findInstanceSnapshot({ version: CURRENT_MACHINE_VERSION, bundleId })
       const haveSnapshot = instanceSnapshot?.state === 'available'
+      const startTime = new Date().getTime()
+      telemetryEmitter().capture('aws lightsail create machine start', { region, bundle_id: bundleId, have_snapshot: haveSnapshot })
       return {
         fromSnapshot: haveSnapshot,
         machine: (async () => {
@@ -151,6 +154,7 @@ const machineCreationDriver = (
             keyPairName: keyPair.name,
           })
 
+          telemetryEmitter().capture('aws lightsail create machine end', { region, bundle_id: bundleId, have_snapshot: haveSnapshot, elapsed_sec: (new Date().getTime() - startTime) / 1000 })
           return machineFromInstance(instance)
         })(),
       }

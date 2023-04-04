@@ -1,5 +1,6 @@
 import { Args, Flags, ux } from '@oclif/core'
 import BaseCommand from '../../base-command'
+import { onProfileChange } from '../../profile-command'
 
 // eslint-disable-next-line no-use-before-define
 export default class ImportProfile extends BaseCommand<typeof ImportProfile> {
@@ -28,6 +29,7 @@ export default class ImportProfile extends BaseCommand<typeof ImportProfile> {
     const alias = this.flags.name
 
     const { info } = await this.profileConfig.importExisting(alias, this.args.location)
+    onProfileChange(info)
     ux.info(`Profile ${info.id} imported successfully`)
   }
 }

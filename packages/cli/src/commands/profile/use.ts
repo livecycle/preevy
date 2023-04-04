@@ -1,8 +1,8 @@
 import { Args, ux } from '@oclif/core'
-import DriverCommand from '../../driver-command'
+import ProfileCommand from '../../profile-command'
 
 // eslint-disable-next-line no-use-before-define
-export default class UseProfile extends DriverCommand<typeof UseProfile> {
+export default class UseProfile extends ProfileCommand<typeof UseProfile> {
   static description = 'Set current profile'
 
   static args = {
