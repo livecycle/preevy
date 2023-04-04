@@ -109,6 +109,12 @@ Every Compose service is exposed individually with a generated URL in the follow
 - ClientId is a unique identifier based on the profile's public tunneling SSH key (generated in `init`).
   When using the `*.livecycle.run`, all environments are publicly accessible to those who know of the URLs.
 
+## Docs and support
+
+Read about Preevy's components and learn how to use them in our [documentation](https://preevy.dev/).
+
+Ask a question or join our [Slack community](https://preevyusers.slack.com) to get support.
+
 ## Contributing
 
-Found a bug? Have a missing feature? Please open an issue and let us know.
+Found a bug? Have a missing feature? Please open an issue to let us know.
