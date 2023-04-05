@@ -44,7 +44,7 @@ const sshLogger = logger.child({ name: 'ssh_server' })
 
 const tunnelName = (clientId: string, remotePath: string) => {
   const serviceName = remotePath.replace(/^\//, '')
-  return `${serviceName}-${clientId}`
+  return `${serviceName}-${clientId}`.toLowerCase()
 }
 
 const tunnelUrl = ({ hostname, protocol, port }: BaseUrl, clientId: string, tunnel: string) => new URL(
