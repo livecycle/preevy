@@ -1,8 +1,8 @@
 import { ux } from '@oclif/core'
-import DriverCommand from '../../driver-command'
+import ProfileCommand from '../../profile-command'
 
 // eslint-disable-next-line no-use-before-define
-export default class ListProfile extends DriverCommand<typeof ListProfile> {
+export default class ListProfile extends ProfileCommand<typeof ListProfile> {
   static description = 'Lists profiles'
 
   static strict = false

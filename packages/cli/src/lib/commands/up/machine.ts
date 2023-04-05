@@ -6,6 +6,7 @@ import { connectSshClient } from '../../ssh/client'
 import { SSHKeyConfig } from '../../ssh/keypair'
 import { withSpinner } from '../../spinner'
 import { MachineCreationDriver, SpecDiffItem } from '../../machine/driver/driver'
+import { telemetryEmitter } from '../../telemetry'
 
 const machineDiffText = (diff: SpecDiffItem[]) => diff
   .map(({ name, old, new: n }) => `* ${name}: ${old} -> ${n}`).join(EOL)
@@ -45,6 +46,8 @@ const ensureMachine = async ({
     spinner.text = machineCreation.fromSnapshot
       ? 'Creating from existing snapshot'
       : 'No suitable snapshot yet, creating from scratch'
+
+    telemetryEmitter().capture('create machine', { from_snapshot: machineCreation.fromSnapshot })
 
     return {
       machine: await machineCreation.machine,
