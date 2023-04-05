@@ -61,7 +61,8 @@ Running Preevy:
 2. Set up a profile by using: `preevy init`
 3. Use `up` command to provision a new VM (Lightsail) with your application: `preevy up`
 4. Access and share your new preview environment by using the `*.livecycle.run` outputted by the CLI.
-5. Destroy the environment by using: `preevy down`.
+5. Code changed? Re-run `up` to quickly sync the preview environment with your changes on the existing VM.
+6. Destroy the environment by using: `preevy down`.
 
 ## Under the hood
 
