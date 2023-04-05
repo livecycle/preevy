@@ -1,6 +1,6 @@
-import { PinoLoggerOptions } from 'fastify/types/logger'
-
-const envToLogger: Record<string, PinoLoggerOptions> = {
+import pino from 'pino'
+type PinoParams = Parameters<(typeof pino)>[0]
+const envToLogger: Record<string, PinoParams> = {
   development: {
     level: process.env.DEBUG ? 'debug' : 'info',
     transport: {

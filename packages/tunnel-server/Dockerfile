@@ -11,7 +11,10 @@ CMD ["yarn", "test"]
 FROM base as development
 CMD [ "yarn", "dev" ]
 
-FROM base as production
+FROM base as build
+CMD [ "yarn", "build" ]
+
+FROM build as production
 LABEL org.opencontainers.image.source=https://github.com/livecycle/preview
 LABEL org.opencontainers.image.description="Preview Tunnel Server"
 CMD [ "yarn", "start" ]
