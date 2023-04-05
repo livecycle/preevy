@@ -2,7 +2,7 @@ import { Hook } from '@oclif/core'
 import { newTelemetryEmitter, registerEmitter, wireProcessExit } from '../../lib/telemetry'
 
 const hook: Hook<'init'> = async ({ config }) => {
-  const disableTelemetry = ['1', 'true'].includes((config.scopedEnvVar('DISABLE_TELEMETRY') ?? '').toLowerCase())
+  const disableTelemetry = config.scopedEnvVarTrue('DISABLE_TELEMETRY')
 
   if (disableTelemetry) {
     return

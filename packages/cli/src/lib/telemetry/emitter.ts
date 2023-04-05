@@ -53,7 +53,9 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
     platform: os.platform(),
     arch: os.arch(),
     versions: {
-      ...process.versions,
+      node: process.versions.node,
+      v8: process.versions.v8,
+      openssl: process.versions.openssl,
       os: os.version(),
       os_release: os.release(),
     },

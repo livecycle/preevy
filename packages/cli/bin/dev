@@ -8,6 +8,8 @@ const project = path.join(__dirname, '..', 'tsconfig.json')
 // In dev mode -> use ts-node and dev plugins
 process.env.NODE_ENV = 'development'
 
+process.env.PREEVY_DISABLE_TELEMETRY = '1'
+
 require('ts-node').register({project})
 
 // In dev mode, always show stack traces
