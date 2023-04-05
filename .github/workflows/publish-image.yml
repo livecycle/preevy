@@ -3,6 +3,8 @@ name: publish-image
 on:
   workflow_dispatch:
   push:
+    paths:
+      - 'packages/**'
     branches:
       - '**'
     tags:
