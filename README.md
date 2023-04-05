@@ -113,7 +113,7 @@ Every Compose service is exposed individually with a generated URL in the follow
 
 Read about Preevy's components and learn how to use them in our [documentation](https://preevy.dev/).
 
-Ask a question or join our [Slack community]([https://preevyusers.slack.com](https://join.slack.com/t/preevyusers/shared_invite/zt-1shi7t2dy-~glGUC5pWCtGrH19bKNXrQ)) to get support.
+Ask a question or join our [Slack community](https://join.slack.com/t/preevyusers/shared_invite/zt-1shi7t2dy-~glGUC5pWCtGrH19bKNXrQ) to get support.
 
 ## Contributing
 
