@@ -20,7 +20,8 @@ export const forwardOutStreamLocal = (
   const socketPath = path.join(lazySocketDir(), `s_${randomBytes(16).toString('hex')}`)
 
   const socketServer = net.createServer(async socket => {
-    socket.on('error', (e: unknown) => log.error(`socket error on socket ${socketPath}`, e))
+    // this error is usually caught and retried by docker-compose, so not need to log it as an error
+    socket.on('error', (e: unknown) => log.debug(`socket error on socket ${socketPath}`, e))
 
     ssh.openssh_forwardOutStreamLocal(remoteSocket, (err, upstream) => {
       if (err) {
