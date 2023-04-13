@@ -70,32 +70,21 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
 
     version,
     shell: os.userInfo().shell,
-    machineId,
-    runId,
+    $device_id: machineId,
+    run_id: runId,
   }
 
   return ({
     identify: (id: string, person: TelemetryProperties) => {
-      if (id !== currentId) {
-        pushEvent({
-          event: '$create_alias',
-          timestamp: new Date(),
-          distinct_id: id,
-          properties: {
-            distinct_id: id,
-            alias: currentId,
-            ...commonProperties,
-          },
-        })
-      }
-      if (currentId === runId || Object.keys(person).length) {
+      const isCurrentIdAnonymous = currentId === runId
+      if (isCurrentIdAnonymous || Object.keys(person).length) {
         pushEvent({
           event: '$identify',
           timestamp: new Date(),
           distinct_id: id,
           $set: person,
-          ...currentId === runId ? { $anon_distinct_id: currentId } : {},
           properties: {
+            ...isCurrentIdAnonymous ? { $anon_distinct_id: currentId } : {},
             ...commonProperties,
           },
         })
