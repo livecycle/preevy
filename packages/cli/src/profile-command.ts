@@ -4,13 +4,19 @@ import BaseCommand from './base-command'
 import { Profile } from './lib/profile'
 import { Store } from './lib/store'
 import { telemetryEmitter } from './lib/telemetry'
+import { fsTypeFromUrl } from './lib/store/fs'
 
 // eslint-disable-next-line no-use-before-define
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof ProfileCommand['baseFlags'] & T['flags']>
 export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>
 
-export const onProfileChange = (profile: Profile) => {
-  telemetryEmitter().identify(profile.id, { profile_driver: profile.driver })
+export const onProfileChange = (profile: Profile, alias: string, location: string) => {
+  telemetryEmitter().identify(profile.id, {
+    profile_driver: profile.driver,
+    profile_id: profile.id,
+    name: profile.id,
+    profile_store_type: fsTypeFromUrl(location),
+  })
 }
 
 abstract class ProfileCommand<T extends typeof Command> extends BaseCommand<T> {
@@ -23,19 +29,20 @@ abstract class ProfileCommand<T extends typeof Command> extends BaseCommand<T> {
 
   public async init(): Promise<void> {
     await super.init()
-    const pm = this.profileConfig
-    const currentProfile = await pm.current().then(x => x && pm.get(x.alias))
-    if (currentProfile) {
-      this.#profile = currentProfile.info
-      this.#store = currentProfile.store
-      onProfileChange(currentProfile.info)
+    const { profileConfig } = this
+    const currentProfile = await profileConfig.current()
+    const currentProfileInfo = currentProfile && await profileConfig.get(currentProfile.alias)
+    if (currentProfileInfo) {
+      this.#profile = currentProfileInfo.info
+      this.#store = currentProfileInfo.store
+      onProfileChange(currentProfileInfo.info, currentProfile.alias, currentProfile.location)
     }
   }
 
   #store: Store | undefined
   get store(): Store {
     if (!this.#store) {
-      throw new Error("Store wasn't initialized")
+      throw new Error('Store was not initialized')
     }
     return this.#store
   }

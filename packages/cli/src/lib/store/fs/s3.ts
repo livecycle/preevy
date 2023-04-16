@@ -1,12 +1,12 @@
 import { CreateBucketCommand, DeleteObjectCommand, GetObjectCommand, GetObjectCommandOutput, HeadBucketCommand, PutObjectCommand, S3Client, S3ServiceException } from '@aws-sdk/client-s3'
 import { STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts'
 import path from 'path'
-import { VirtualFS } from './types'
+import { VirtualFS } from './base'
 
 export async function suggestDefaultUrl(profileAlias: string) {
   const sts = new STSClient({ region: 'us-east-1' })
   const { Account: AccountId } = await sts.send(new GetCallerIdentityCommand({}))
-  return `s3://preview-${AccountId}-${profileAlias}?region=us-east-1`
+  return `s3://preevy-${AccountId}-${profileAlias}?region=us-east-1`
 }
 
 async function ensureBucketExists(s3: S3Client, bucket: string) {
@@ -59,7 +59,7 @@ export function parseS3Url(s3Url: string) {
   }
 }
 
-export const s3fs = async (s3Url: string):Promise<VirtualFS> => {
+export const s3fs = async (s3Url: string): Promise<VirtualFS> => {
   const url = parseS3Url(s3Url)
   const { bucket, path: prefix } = url
   const s3 = new S3Client({

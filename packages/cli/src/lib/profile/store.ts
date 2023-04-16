@@ -1,6 +1,6 @@
 import path from 'path'
 import { parseKey } from '@preevy/common'
-import { Profile } from './types'
+import { Profile } from './profile'
 import { Store } from '../store'
 
 export const profileStore = (store: Store) => {

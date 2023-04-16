@@ -1,3 +1,3 @@
 export * from './store'
-export * from './types'
-export * from './profileConfig'
+export * from './profile'
+export * from './config'

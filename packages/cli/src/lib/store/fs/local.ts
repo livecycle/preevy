@@ -1,11 +1,11 @@
 import fs from 'fs/promises'
 import path, { dirname } from 'path'
 import { rimraf } from 'rimraf'
-import { VirtualFS } from './types'
+import { VirtualFS } from './base'
 
 const isNotFoundError = (e: unknown) => (e as { code?: unknown })?.code === 'ENOENT'
 
-export const realFs = (baseDir: string): VirtualFS => ({
+export const localFs = (baseDir: string): VirtualFS => ({
   read: async (filename: string) => {
     const filepath = path.join(baseDir, filename)
     const f = () => fs.readFile(filepath)
@@ -34,3 +34,8 @@ export const realFs = (baseDir: string): VirtualFS => ({
     await rimraf(filename)
   },
 })
+
+export const localFsFromUrl = (
+  baseDir: string,
+  url: string,
+): VirtualFS => localFs(path.join(baseDir, new URL(url).hostname))

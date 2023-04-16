@@ -1,10 +1,6 @@
 import { Command, Flags, Interfaces, settings as oclifSettings } from '@oclif/core'
 import path from 'path'
-import { ProfileConfig, profileConfig } from './lib/profile'
-import { createStore } from './lib/store'
-import { realFs } from './lib/store/fs'
-import { s3fs } from './lib/store/s3'
-import { tarSnapshotter } from './lib/store/tar'
+import { LocalProfilesConfig, localProfilesConfig } from './lib/profile'
 import { commandLogger, Logger, LogLevel, logLevels } from './log'
 
 // eslint-disable-next-line no-use-before-define
@@ -67,20 +63,12 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
     this.stdErrLogger.info(message, ...args)
   }
 
-  #profileConfig: ProfileConfig | undefined
-  get profileConfig(): ProfileConfig {
+  #profileConfig: LocalProfilesConfig | undefined
+  get profileConfig(): LocalProfilesConfig {
     if (!this.#profileConfig) {
       const root = path.join(this.config.dataDir, 'v2')
-      this.debug('init profile config at:', root)
-      this.#profileConfig = profileConfig(root, async location => {
-        const { protocol, hostname } = new URL(location)
-        if (protocol === 'local:') {
-          return createStore(realFs(path.join(root, 'profiles', hostname)), tarSnapshotter())
-        } if (protocol === 's3:') {
-          return createStore(await s3fs(location), tarSnapshotter())
-        }
-        throw new Error(`Unsupported blob prefix: ${protocol}`)
-      })
+      this.logger.debug('init profile config at:', root)
+      this.#profileConfig = localProfilesConfig(root)
     }
 
     return this.#profileConfig

@@ -4,7 +4,7 @@ import inquirer from 'inquirer'
 import { pickBy } from 'lodash'
 import BaseCommand from '../../base-command'
 import { DriverFlagName, DriverName, machineDrivers } from '../../lib/machine'
-import { suggestDefaultUrl } from '../../lib/store/s3'
+import { suggestDefaultUrl } from '../../lib/store/fs/s3'
 
 export default class Init extends BaseCommand {
   static description = 'Initialize or import a new profile'
