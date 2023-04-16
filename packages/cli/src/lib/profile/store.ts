@@ -3,13 +3,13 @@ import { parseKey } from '@preevy/common'
 import { Profile } from './profile'
 import { Store } from '../store'
 
-export const profileStore = (snapshotStore: Store) => {
+export const profileStore = (store: Store) => {
   const profileDir = 'profile'
-  const ref = snapshotStore.ref(profileDir)
+  const ref = store.ref(profileDir)
 
   return {
     async init(profile: Profile) {
-      await snapshotStore.transaction(profileDir, async ({ write, read }) => {
+      await store.transaction(profileDir, async ({ write, read }) => {
         if (await read('info.json')) {
           throw new Error('Existing profile found in store')
         }
@@ -25,12 +25,12 @@ export const profileStore = (snapshotStore: Store) => {
       return profile ?? {}
     },
     setDefaultFlags: async <T extends object>(driver:string, flags:T) => {
-      await snapshotStore.transaction(profileDir, async ({ write }) => {
+      await store.transaction(profileDir, async ({ write }) => {
         await write(`${driver}-defaults.json`, JSON.stringify(flags))
       })
     },
     setTunnelingKey: async (privateKey: Buffer) => {
-      await snapshotStore.transaction(profileDir, async ({ write }) => {
+      await store.transaction(profileDir, async ({ write }) => {
         await write('tunneling-private-key', privateKey)
       })
     },
@@ -59,7 +59,7 @@ export const profileStore = (snapshotStore: Store) => {
         ).map(s => Buffer.from(s, 'utf-8')),
 
         write: async (hostname: string, port: number | undefined, ...newKeys: Buffer[]) => {
-          await snapshotStore.transaction(profileDir, async ({ write, read }) => {
+          await store.transaction(profileDir, async ({ write, read }) => {
             const keys = new Set(readStrings(await read(filename(hostname, port))))
             newKeys.forEach(key => keys.add(publicKeyToString(key)))
 
