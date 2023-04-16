@@ -5,8 +5,8 @@ import { Readable } from 'stream'
 import { pipeline } from 'stream/promises'
 import { mkdtemp } from 'fs/promises'
 import tar from 'tar'
-import { SnapshotFromBuffer } from './snapshot'
 import { localFs } from './fs'
+import { FileBackedSnapshotter, Snapshot } from './snapshot'
 
 const readStream = (stream: Readable): Promise<Buffer> => new Promise<Buffer>((resolve, reject) => {
   const buffer: Buffer[] = []
@@ -15,8 +15,9 @@ const readStream = (stream: Readable): Promise<Buffer> => new Promise<Buffer>((r
   stream.on('error', reject)
 })
 
-export const tarSnapshot: SnapshotFromBuffer = async existingTar => {
+export const tarSnapshot: FileBackedSnapshotter = async (fs, filename): Promise<Snapshot> => {
   const transactionDir = await mkdtemp(path.join(tmpdir(), 'preevy-transactions-'))
+  const existingTar = await fs.read(filename)
 
   if (existingTar) {
     await pipeline(
@@ -27,18 +28,34 @@ export const tarSnapshot: SnapshotFromBuffer = async existingTar => {
     )
   }
 
-  return Object.assign(localFs(transactionDir), {
+  let dirty = false
+  const setDirty = <Args extends unknown[], Return>(
+    f: (...args: Args) => Return,
+  ) => (...args: Args) => { dirty = true; return f(...args) }
+
+  const save = async () => fs.write(filename, await readStream(
+    tar.c(
+      {
+        cwd: transactionDir,
+        prefix: '',
+      },
+      ['.']
+    )
+  ))
+
+  const local = localFs(transactionDir)
+
+  return {
+    read: local.read,
+    write: setDirty(local.write),
+    delete: setDirty(local.delete),
+    save: async () => {
+      if (dirty) {
+        await save()
+      }
+    },
     close: async () => {
       await rimraf(transactionDir)
     },
-    save: async () => readStream(
-      tar.c(
-        {
-          cwd: transactionDir,
-          prefix: '',
-        },
-        ['.']
-      )
-    ),
-  })
+  }
 }

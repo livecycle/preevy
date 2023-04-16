@@ -4,7 +4,7 @@ export const jsonReader = (reader: Pick<VirtualFS, 'read'>) => {
   const readOrThrow = async (file: string): Promise<Buffer> => {
     const data = await reader.read(file)
     if (!data) {
-      throw new Error('missing data')
+      throw new Error(`missing file: ${file}`)
     }
     return data
   }

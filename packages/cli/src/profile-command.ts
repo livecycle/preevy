@@ -2,7 +2,7 @@ import { Command, Flags, Interfaces } from '@oclif/core'
 import chalk from 'chalk'
 import BaseCommand from './base-command'
 import { Profile } from './lib/profile'
-import { SnapshotStore } from './lib/store'
+import { Store } from './lib/store'
 import { telemetryEmitter } from './lib/telemetry'
 import { fsTypeFromUrl } from './lib/store/fs'
 
@@ -39,8 +39,8 @@ abstract class ProfileCommand<T extends typeof Command> extends BaseCommand<T> {
     }
   }
 
-  #store: SnapshotStore | undefined
-  get store(): SnapshotStore {
+  #store: Store | undefined
+  get store(): Store {
     if (!this.#store) {
       throw new Error('Store was not initialized')
     }

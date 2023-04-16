@@ -4,35 +4,44 @@ type Closable = {
   close: () => Promise<void>
 }
 
-const ensureClose = async <T extends Closable, R>(o: T, f: (o: T) => PromiseLike<R> | R) => {
+const isClosable = (
+  o: unknown
+): o is Closable => typeof o === 'object' && o !== null && typeof (o as Closable).close === 'function'
+
+const ensureClose = async <T, R>(o: T, f: (o: T) => PromiseLike<R> | R) => {
   try {
     return await f(o)
   } finally {
-    await o.close()
+    if (isClosable(o)) {
+      await o.close()
+    }
   }
 }
 
-export type Snapshot = VirtualFS & Closable & {
-  save: () => Promise<Buffer>
+export type Snapshot = VirtualFS & Partial<Closable> & {
+  save: () => Promise<void>
 }
 
-export type SnapshotFromBuffer = (existingSnapshot?: Buffer) => Promise<Snapshot>
-
-type SnapshotTransactor = {
-  readFromSnapshot<T>(
-    op: (snapshot: Pick<VirtualFS, 'read'>) => Promise<T>
-  ): Promise<T>
-  writeToSnapshot(
-    op: (
-      snapshot: Pick<VirtualFS, 'delete' | 'read' | 'write'>
-    ) => Promise<void>
-  ): Promise<Buffer>
-}
-
-export const snapshotTransactor = (snapshot: Snapshot): SnapshotTransactor => ({
-  readFromSnapshot: async op => ensureClose(snapshot, op),
-  writeToSnapshot: async op => ensureClose(snapshot, async fs => {
-    await op(fs)
-    return fs.save()
+export const snapshotStore = (snapshotter: () => Promise<Snapshot>) => ({
+  ref: (): Pick<Snapshot, 'read'> => ({
+    read: async (file: string) => {
+      const snapshot = await snapshotter()
+      return ensureClose(snapshot, s => s.read(file))
+    },
   }),
+  transaction: async <T>(op: (s: Pick<Snapshot, 'write' | 'delete' | 'read'>) => Promise<T>) => {
+    const snapshot = await snapshotter()
+    return ensureClose(snapshot, async s => {
+      const result = await op(s)
+      await s.save()
+      return result
+    })
+  },
 })
+
+export type SnapshotStore = ReturnType<typeof snapshotStore>
+
+export type FileBackedSnapshotter = (
+  fs: Pick<VirtualFS, 'read' | 'write'>,
+  filename: string,
+) => Promise<Snapshot>

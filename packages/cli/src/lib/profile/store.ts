@@ -1,10 +1,9 @@
 import path from 'path'
 import { parseKey } from '@preevy/common'
 import { Profile } from './profile'
-import { SnapshotStore } from '../store'
-import { jsonReader } from '../store/fs'
+import { Store } from '../store'
 
-export const profileStore = (snapshotStore: SnapshotStore) => {
+export const profileStore = (snapshotStore: Store) => {
   const profileDir = 'profile'
   const ref = snapshotStore.ref(profileDir)
 
@@ -17,9 +16,9 @@ export const profileStore = (snapshotStore: SnapshotStore) => {
         await write('info.json', JSON.stringify(profile))
       })
     },
-    info: async () => jsonReader(ref).readJsonOrThrow<Profile>('info.json'),
+    info: async () => ref.readJsonOrThrow<Profile>('info.json'),
     defaultFlags: async<T>(driver: string) => {
-      const profile = await jsonReader(ref).readJSON<T>(`${driver}-defaults.json`)
+      const profile = await ref.readJSON<T>(`${driver}-defaults.json`)
       if (!profile) {
         return {}
       }

@@ -1,8 +1,8 @@
 import path from 'path'
 import { SSHKeyConfig } from '../ssh/keypair'
-import { SnapshotStore } from '../store'
+import { Store } from '../store'
 
-export const sshKeysStore = (store: SnapshotStore) => {
+export const sshKeysStore = (store: Store) => {
   const sshKeysDir = 'ssh-keys'
   const privateKeyFile = (name: string) => path.join(name, 'id_rsa')
   const publicKeyFile = (name: string) => path.join(name, 'id_rsa.pub')

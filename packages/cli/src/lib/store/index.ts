@@ -1,29 +1,27 @@
-import { VirtualFS } from './fs'
-import { Snapshot, SnapshotFromBuffer, snapshotTransactor } from './snapshot'
+import { jsonReader } from './fs'
+import { Snapshot, snapshotStore } from './snapshot'
 
-export * from './snapshot'
 export * from './tar'
 export { fsFromUrl, VirtualFS, jsonReader } from './fs'
 
-export const snapshotStore = (
-  vfs: VirtualFS,
-  snapshotFromBuffer: SnapshotFromBuffer
-) => ({
-  ref: (dir: string) => ({
-    read: async (file: string) => {
-      const dirData = await vfs.read(dir)
-      if (!dirData) {
-        return undefined
-      }
-      const transactor = snapshotTransactor(await snapshotFromBuffer(dirData))
-      return transactor.readFromSnapshot(s => s.read(file))
-    },
-  }),
-  transaction: async (dir: string, op: (s: Pick<Snapshot, 'write' | 'delete' | 'read'>) => Promise<void>) => {
-    const data = await vfs.read(dir)
-    const transactor = snapshotTransactor(await snapshotFromBuffer(data))
-    return vfs.write(dir, await transactor.writeToSnapshot(op))
-  },
-})
+export const store = (
+  snapshotter: (dir: string) => Promise<Snapshot>,
+) => {
+  const s = (dir: string) => snapshotStore(() => snapshotter(dir))
+  return ({
+    ref: (dir: string) => {
+      const read = async (file: string) => (s(dir)).ref().read(file)
 
-export type SnapshotStore = ReturnType<typeof snapshotStore>
+      return ({
+        read,
+        ...jsonReader({ read }),
+      })
+    },
+    transaction: async (
+      dir: string,
+      op: (s: Pick<Snapshot, 'write' | 'delete' | 'read'>) => Promise<void>,
+    ) => s(dir).transaction(op),
+  })
+}
+
+export type Store = ReturnType<typeof store>
