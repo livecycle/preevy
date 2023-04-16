@@ -17,9 +17,9 @@ export const store = (
         ...jsonReader({ read }),
       })
     },
-    transaction: async (
+    transaction: async <T>(
       dir: string,
-      op: (s: Pick<Snapshot, 'write' | 'delete' | 'read'>) => Promise<void>,
+      op: (s: Pick<Snapshot, 'write' | 'delete' | 'read'>) => Promise<T>,
     ) => s(dir).transaction(op),
   })
 }
