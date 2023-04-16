@@ -1,10 +1,11 @@
-import { realFs } from '../store/fs'
-import { Store } from '../store'
+import path from 'path'
+import { localFs } from '../store/fs/local'
+import { fsFromUrl, snapshotStore, tarSnapshot } from '../store'
 import { ProfileStore, profileStore } from './store'
-import { Profile } from './types'
+import { Profile } from './profile'
 
 type ProfileListing = {
-  alias:string
+  alias: string
   id: string
   location: string
 }
@@ -16,10 +17,13 @@ type ProfileList = {
 
 const profileListFileName = 'profileList.json'
 
-export const profileConfig = (localDir:string, profileStoreResolver: (location: string)=> Promise<Store>) => {
-  const localStore = realFs(localDir)
+export const localProfilesConfig = (localDir: string) => {
+  const localStore = localFs(localDir)
+  const tarSnapshotStoreFromUrl = async (
+    url: string,
+  ) => snapshotStore(await fsFromUrl(url, path.join(localDir, 'profiles')), tarSnapshot)
 
-  async function getProfileList(): Promise<ProfileList> {
+  async function readProfileList(): Promise<ProfileList> {
     const data = await localStore.read(profileListFileName)
     if (!data) {
       const initData = { current: undefined, profiles: {} }
@@ -31,7 +35,7 @@ export const profileConfig = (localDir:string, profileStoreResolver: (location: 
 
   return {
     async current() {
-      const profileData = await getProfileList()
+      const profileData = await readProfileList()
       if (!profileData.current || !profileData.profiles[profileData.current]) {
         return undefined
       }
@@ -42,7 +46,7 @@ export const profileConfig = (localDir:string, profileStoreResolver: (location: 
       }
     },
     async setCurrent(alias: string) {
-      const data = await getProfileList()
+      const data = await readProfileList()
       if (!data.profiles[alias]) {
         throw new Error(`Profile ${alias} doesn't exists`)
       }
@@ -50,28 +54,23 @@ export const profileConfig = (localDir:string, profileStoreResolver: (location: 
       await localStore.write(profileListFileName, JSON.stringify(data))
     },
     async list(): Promise<ProfileListing[]> {
-      return Object.entries((await getProfileList()).profiles).map(([alias, profile]) => ({ alias, ...profile }))
+      return Object.entries((await readProfileList()).profiles).map(([alias, profile]) => ({ alias, ...profile }))
     },
     async get(alias: string) {
-      const data = await getProfileList()
-      const location = data.profiles[alias]?.location
-      if (!location) {
+      const data = await readProfileList()
+      const locationUrl = data.profiles[alias]?.location
+      if (!locationUrl) {
         throw new Error(`Profile ${alias} not found`)
       }
-      let store: Store
-      try {
-        store = await profileStoreResolver(location)
-      } catch (error) {
-        throw new Error(`Failed to resolve store for profile ${alias}, error: ${error}}`)
-      }
-      const profileInfo = await profileStore(store).info()
+      const tarSnapshotStore = await tarSnapshotStoreFromUrl(locationUrl)
+      const profileInfo = await profileStore(tarSnapshotStore).info()
       return {
         info: profileInfo,
-        store,
+        store: tarSnapshotStore,
       }
     },
     async delete(alias: string) {
-      const data = await getProfileList()
+      const data = await readProfileList()
       if (!data.profiles[alias]) {
         throw new Error(`Profile ${alias} doesn't exists`)
       }
@@ -79,12 +78,12 @@ export const profileConfig = (localDir:string, profileStoreResolver: (location: 
       await localStore.write(profileListFileName, JSON.stringify(data))
     },
     async importExisting(alias: string, location: string) {
-      const data = await getProfileList()
+      const data = await readProfileList()
       if (data.profiles[alias]) {
         throw new Error(`Profile ${alias} already exists`)
       }
-      const remoteStore = await profileStoreResolver(location)
-      const info = await profileStore(remoteStore).info()
+      const tarSnapshotStore = await tarSnapshotStoreFromUrl(location)
+      const info = await profileStore(tarSnapshotStore).info()
       data.profiles[alias] = {
         id: info.id,
         location,
@@ -93,17 +92,17 @@ export const profileConfig = (localDir:string, profileStoreResolver: (location: 
       await localStore.write(profileListFileName, JSON.stringify(data))
       return {
         info,
-        store: remoteStore,
+        store: tarSnapshotStore,
       }
     },
     async create(alias: string, location: string, profile: Omit<Profile, 'id'>, init: (store: ProfileStore) => Promise<void>) {
-      const data = await getProfileList()
+      const data = await readProfileList()
       if (data.profiles[alias]) {
         throw new Error(`Profile ${alias} already exists`)
       }
       const id = `${alias}-${Math.random().toString(36).substring(2, 9)}`
-      const remoteStore = await profileStoreResolver(location)
-      const pStore = profileStore(remoteStore)
+      const tarSnapshotStore = await tarSnapshotStoreFromUrl(location)
+      const pStore = profileStore(tarSnapshotStore)
       await pStore.init({ id, ...profile })
       data.profiles[alias] = {
         id,
@@ -117,10 +116,10 @@ export const profileConfig = (localDir:string, profileStoreResolver: (location: 
           id,
           ...profile,
         },
-        store: remoteStore,
+        store: tarSnapshotStore,
       }
     },
   }
 }
 
-export type ProfileConfig = ReturnType<typeof profileConfig>
+export type LocalProfilesConfig = ReturnType<typeof localProfilesConfig>

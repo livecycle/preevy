@@ -1,36 +1,37 @@
 import path from 'path'
 import { parseKey } from '@preevy/common'
-import { Profile } from './types'
-import { Store } from '../store'
+import { Profile } from './profile'
+import { SnapshotStore } from '../store'
+import { jsonReader } from '../store/fs'
 
-export const profileStore = (store: Store) => {
+export const profileStore = (snapshotStore: SnapshotStore) => {
   const profileDir = 'profile'
-  const ref = store.ref(profileDir)
+  const ref = snapshotStore.ref(profileDir)
 
   return {
     async init(profile: Profile) {
-      await store.transaction(profileDir, async ({ write, read }) => {
+      await snapshotStore.transaction(profileDir, async ({ write, read }) => {
         if (await read('info.json')) {
           throw new Error('Existing profile found in store')
         }
         await write('info.json', JSON.stringify(profile))
       })
     },
-    info: async () => ref.readJsonOrThrow<Profile>('info.json'),
+    info: async () => jsonReader(ref).readJsonOrThrow<Profile>('info.json'),
     defaultFlags: async<T>(driver: string) => {
-      const profile = await ref.readJSON<T>(`${driver}-defaults.json`)
+      const profile = await jsonReader(ref).readJSON<T>(`${driver}-defaults.json`)
       if (!profile) {
         return {}
       }
       return profile ?? {}
     },
     setDefaultFlags: async <T extends object>(driver:string, flags:T) => {
-      await store.transaction(profileDir, async ({ write }) => {
+      await snapshotStore.transaction(profileDir, async ({ write }) => {
         await write(`${driver}-defaults.json`, JSON.stringify(flags))
       })
     },
     setTunnelingKey: async (privateKey: Buffer) => {
-      await store.transaction(profileDir, async ({ write }) => {
+      await snapshotStore.transaction(profileDir, async ({ write }) => {
         await write('tunneling-private-key', privateKey)
       })
     },
@@ -59,7 +60,7 @@ export const profileStore = (store: Store) => {
         ).map(s => Buffer.from(s, 'utf-8')),
 
         write: async (hostname: string, port: number | undefined, ...newKeys: Buffer[]) => {
-          await store.transaction(profileDir, async ({ write, read }) => {
+          await snapshotStore.transaction(profileDir, async ({ write, read }) => {
             const keys = new Set(readStrings(await read(filename(hostname, port))))
             newKeys.forEach(key => keys.add(publicKeyToString(key)))
 

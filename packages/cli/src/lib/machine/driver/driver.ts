@@ -1,4 +1,4 @@
-import { Profile } from '../../profile/types'
+import { Profile } from '../../profile/profile'
 import { SSHKeyConfig } from '../../ssh/keypair'
 
 export type Machine = {

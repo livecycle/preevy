@@ -29,7 +29,7 @@ export default class ImportProfile extends BaseCommand<typeof ImportProfile> {
     const alias = this.flags.name
 
     const { info } = await this.profileConfig.importExisting(alias, this.args.location)
-    onProfileChange(info)
+    onProfileChange(info, alias, this.args.location)
     ux.info(`Profile ${info.id} imported successfully`)
   }
 }
