@@ -21,14 +21,29 @@
 
 ![Terminal GIF](./terminal.gif)
 
+# Preevy
+
 Preevy is a powerful CLI tool designed to simplify the process of creating ephemeral preview environments.
 Using Preevy, you can easily provision any Docker-Compose application on AWS using affordable [Lightsail](https://aws.amazon.com/free/compute/lightsail) or [Google Cloud](https://cloud.google.com/compute/) VMs (support for more cloud providers is on the way).
 
-## Documentation
-
 Visit The full documentation here: https://preevy.dev/
 
-## What?
+<!-- omit from toc -->
+## Contents
+
+- [What](#what)
+- [Why](#why)
+- [Getting started](#getting-started)
+- [Under the hood](#under-the-hood)
+  - [CLI](#cli)
+  - [Tunnel server](#tunnel-server)
+- [CI Integration](#ci-integration)
+- [Security](#security)
+  - [Notice on preview environments exposure](#notice-on-preview-environments-exposure)
+- [Docs and support](#docs-and-support)
+- [Telemetry](#telemetry)
+
+## What
 
 Preevy can take any Docker-Compose application definition and with a single `up` command perform the following:
 
@@ -39,7 +54,7 @@ Preevy can take any Docker-Compose application definition and with a single `up`
 These environments can be managed using the Preevy command-line interface (CLI) and can be easily updated or destroyed when necessary.
 While Preevy can be used for sharing local environments with your team, its primary goal is to implement preview environments for pull requests. Therefore, it's designed to be easily integrated into CI/CD flows.
 
-## Why?
+## Why
 
 At Livecycle, we believe that preview environments are an integral part of any development flow, in any engineering team.
 These non-production, ephemeral environments, created for every Pull Request, can significantly improve PR workflows.
@@ -70,20 +85,20 @@ Running Preevy:
 
 Preevy has two main components:
 
-#### [CLI](packages/cli)
+### [CLI](packages/cli)
 
-The CLI is a node.js program responsible for:
+The CLI is a Node.js program responsible for:
 
 - Provisioning and tearing down VMs.
 - Exposing environments' state and URLs to the end user.
-- Storing & accessing profile data. (settings, keys, etc...)
+- Storing & accessing profile data (settings, keys, etc).
 - Setting up a VM with Docker tooling.
 - Syncing Compose source code and local volumes.
 - Running the application and installing daemon for connecting to the tunneling service.
 
-#### [Tunnel server](packages/tunnel-server)
+### [Tunnel server](packages/tunnel-server)
 
-The tunnel server is a node.js base server responsible for exposing friendly HTTPS URLs for the Compose services.
+The tunnel server is a Node.js base server responsible for exposing friendly HTTPS URLs for the Compose services.
 A free public instance is hosted on `livecycle.run`, and it can be self-hosted as well.
 
 A Docker/OCI image is available on ghcr.io: ghcr.io/livecycle/preevy/tunnel-server
@@ -96,13 +111,13 @@ The profile can be created using `preevy init`, then choosing a S3 URL for stori
 
 After the profile is created, it can be imported to the CI runtime using `preevy init --from <s3-url>`
 
-[Examples]
+[Examples](https://preevy.dev/ci/example-github-actions)
 
 ## Security
 
-In case you find a security issue or have something you would like to discuss refer to our security.md policy.
+In case you find a security issue or have something you would like to discuss refer to our [security policy](https://github.com/livecycle/preevy/blob/main/security.md).
 
-#### Notice on preview environments exposure
+### Notice on preview environments exposure
 
 VMs are not exposed directly and instead are exposed via a tunnel created by the tunneling server.
 Every Compose service is exposed individually with a generated URL in the following format:
@@ -127,8 +142,4 @@ Access to the data is limited to Livecycle's employees and not shared with 3rd p
 
 We appreciate the usage data sent to us as - it's the most basic and raw type of feedback we get from our users. However, if you are concerned about sending out data, you may choose to disable telemetry.
 
-Telemetry collection by can be disabled by setting the environment variable PREEVY_DISABLE_TELEMETRY to "1" or "true".
-
-## Contributing
-
-Found a bug? Have a missing feature? Please open an issue to let us know.
+Telemetry collection by can be disabled by setting the environment variable `PREEVY_DISABLE_TELEMETRY` to `1` or `true`.
