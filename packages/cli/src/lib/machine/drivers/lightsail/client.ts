@@ -127,7 +127,7 @@ const client = ({
         }),
         'publicKeyBase64',
         'privateKeyBase64',
-        'keyPair'
+        'keyPair',
       )
 
       return {

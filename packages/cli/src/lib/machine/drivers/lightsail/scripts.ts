@@ -1,5 +1,5 @@
 import path from 'path'
-import { SCRIPT_DIR as DIR } from '../../static'
+import { SCRIPT_DIR as DIR } from '../../../../static'
 
 export const CUSTOMIZE_BARE_MACHINE = [
   'install-docker.sh',

@@ -57,10 +57,10 @@ export default class Init extends BaseCommand {
             type: 'list',
             name: 'driver',
             message: 'Which cloud provider do you want to use?',
-            choices: [{
-              value: 'lightsail',
-              name: 'AWS Lightsail',
-            }],
+            choices: [
+              { value: 'lightsail', name: 'AWS Lightsail' },
+              { value: 'gce', name: 'Google Compute Engine' },
+            ],
           }])
 
       const driverStatic = machineDrivers[driver]
@@ -76,7 +76,9 @@ export default class Init extends BaseCommand {
         type: 'input',
         name: key,
         message: flag.description,
-        default: ('flagHint' in driverStatic) ? driverStatic.flagHint(key as DriverFlagName<DriverName, 'flags'>) : '',
+        default: ('flagHint' in driverStatic)
+          ? driverStatic.flagHint(key as DriverFlagName<DriverName, 'flags'>)
+          : undefined,
       }))
 
       const driverFlags = await inquirer.prompt<Record<string, string>>(questions)
@@ -88,13 +90,10 @@ export default class Init extends BaseCommand {
             name: 'locationType',
             message: 'Where do you want to store the profile?',
             default: 'local',
-            choices: [{
-              value: 's3',
-              name: 's3',
-            }, {
-              value: 'local',
-              name: 'local',
-            }],
+            choices: [
+              { value: 's3', name: 'AWS S3' },
+              { value: 'local', name: 'local' },
+            ],
           }])
       let location: string
       if (locationType === 's3') {

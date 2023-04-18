@@ -17,6 +17,7 @@ export type SpecDiffItem = {
 }
 
 export type MachineDriver = {
+  customizationScripts?: string[]
   friendlyName: string
 
   getMachine: (args: { envId: string }) => Promise<Machine | undefined>

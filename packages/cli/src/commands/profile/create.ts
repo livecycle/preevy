@@ -29,7 +29,11 @@ export default class CreateProfile extends DriverCommand<typeof CreateProfile> {
     const alias = this.args.name
     const driver = this.flags.driver as DriverName
 
-    const driverFlags = mapKeys(pickBy(this.flags, (v, k) => k.startsWith(`${driver}-`)), (v, k) => k.substring(`${driver}-`.length))
+    const driverPrefix = `${driver}-`
+    const driverFlags = mapKeys(
+      pickBy(this.flags, (v, k) => k.startsWith(driverPrefix)),
+      (_v, k) => k.substring(driverPrefix.length),
+    )
 
     await this.profileConfig.create(alias, this.args.url, { driver }, async pStore => {
       await pStore.setDefaultFlags(

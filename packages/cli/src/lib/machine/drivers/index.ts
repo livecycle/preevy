@@ -1,9 +1,11 @@
 import { map } from 'lodash'
 import lightsail from './lightsail'
+import gce from './gce'
 import fake from './fake'
 
 export const machineDrivers = {
   lightsail,
+  gce,
   fake,
 } as const
 
@@ -46,10 +48,12 @@ export const machineCreationDriverFlags = <Name extends DriverName>(driverName: 
 
 export const flagsForAllDrivers = {
   ...driverFlags('lightsail'),
+  ...driverFlags('gce'),
   ...driverFlags('fake'),
 }
 
 export const machineCreationflagsForAllDrivers = {
   ...machineCreationDriverFlags('lightsail'),
+  ...machineCreationDriverFlags('gce'),
   ...machineCreationDriverFlags('fake'),
 }

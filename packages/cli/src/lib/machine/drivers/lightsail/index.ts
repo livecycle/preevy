@@ -10,6 +10,7 @@ import { extractDefined } from '../../../aws-utils/nulls'
 import { Machine, MachineDriver } from '../../driver'
 import createClient, { REGIONS } from './client'
 import { BUNDLE_IDS, BundleId, bundleIdFromString } from './bundle-id'
+import { CUSTOMIZE_BARE_MACHINE } from './scripts'
 import { CURRENT_MACHINE_VERSION, TAGS, requiredTag } from './tags'
 import { MachineCreationDriver, MachineCreationDriverFactory, MachineDriverFactory } from '../../driver/driver'
 import { telemetryEmitter } from '../../../telemetry'
@@ -41,6 +42,7 @@ const machineDriver = ({
   const keyAlias = `${region}`
   return {
     friendlyName: 'AWS Lightsail',
+    customizationScripts: CUSTOMIZE_BARE_MACHINE,
 
     getMachine: async ({ envId }) => {
       const instance = await client.findInstance(envId)

@@ -1,7 +1,7 @@
 import { EOL } from 'os'
 import retry from 'p-retry'
 import { Logger } from '../../../log'
-import { MachineDriver, scripts } from '../../machine'
+import { MachineDriver } from '../../machine'
 import { connectSshClient } from '../../ssh/client'
 import { SSHKeyConfig } from '../../ssh/keypair'
 import { withSpinner } from '../../spinner'
@@ -99,7 +99,7 @@ export const ensureCustomizedMachine = async ({
   try {
     await withSpinner(async () => {
       log.debug('Executing machine scripts')
-      for (const script of scripts.CUSTOMIZE_BARE_MACHINE) {
+      for (const script of machineDriver.customizationScripts ?? []) {
         // eslint-disable-next-line no-await-in-loop
         await sshClient.execScript(script)
       }
