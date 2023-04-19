@@ -16,7 +16,7 @@ const hook: Hook<'init'> = async () => {
     init(id: number) {
       const trace = {}
       Error.captureStackTrace(trace)
-      traces.set(id, (trace as { stack: string }).stack) // .replace(/(^.+$\n){4}/m, '\n'))
+      traces.set(id, (trace as { stack: string }).stack.replace(/(^.+$\n){4}/m, '\n'))
     },
     destroy(id) {
       traces.delete(id)

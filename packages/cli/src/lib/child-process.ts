@@ -45,6 +45,7 @@ export function childProcessPromise(p: ChildProcess, opts?: { captureOutput?: bo
     const output = opts?.captureOutput ? outputFromProcess(p) : undefined
     p.on('exit', (code, signal) => {
       if (code !== 0) {
+        console.log(p)
         const message = `process exited with code ${code}${signal ? `and signal ${signal}` : ''}`
         reject(new ProcessError(message, p, output))
         return

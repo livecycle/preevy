@@ -131,7 +131,7 @@ const client = ({
 
     deleteInstance: async (name: string) => {
       const { latestResponse: operation } = await extractFirst(ic.delete({ zone, project, instance: name }))
-      await waitForOperation(operation as unknown as Operation)
+      await waitForOperation(operation)
     },
 
     normalizeMachineType,

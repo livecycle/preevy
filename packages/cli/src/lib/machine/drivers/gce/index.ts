@@ -37,11 +37,13 @@ const machineFromInstance = (
 const machineDriver = ({ zone, projectId, profileId }: DriverContext): MachineDriver => {
   const client = createClient({ zone, project: projectId, profileId })
   return ({
-    friendlyName: 'Google Compute Engine',
+    friendlyName: 'Google Cloud',
+
     getMachine: async ({ envId }) => {
       const instance = await client.findInstance(envId)
       return instance && machineFromInstance(instance)
     },
+
     listMachines: () => asyncMap(machineFromInstance, client.listInstances()),
     listSnapshots: () => asyncMap(x => x, []),
 
