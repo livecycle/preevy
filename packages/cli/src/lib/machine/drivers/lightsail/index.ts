@@ -71,7 +71,7 @@ const machineDriver = ({
       }
     },
 
-    removeMachine: providerId => client.deleteInstance(providerId),
+    removeMachine: (providerId, wait) => client.deleteInstance(providerId, wait),
     removeSnapshot: providerId => client.deleteInstanceSnapshot({ instanceSnapshotName: providerId }),
     removeKeyPair: async alias => { await client.deleteKeyPair(alias) },
   }

@@ -1,6 +1,7 @@
 import { InstancesClient, ImagesClient, ZoneOperationsClient } from '@google-cloud/compute'
 import { GoogleError, Status, operationsProtos, CallOptions } from 'google-gax'
 import { asyncFirst } from 'iter-tools-es'
+import { randomBytes } from 'crypto'
 import { LABELS } from './labels'
 
 async function extractFirst<T>(p: Promise<[T, ...unknown[]]>): Promise<T>
@@ -17,25 +18,8 @@ const undefinedForNotFound = <T>(p: Promise<T>): Promise<T | [undefined]> => p.c
   throw e
 })
 
-// const retryConnResetError = async <Return, Args extends unknown[]>(
-//   f: (...args: Args) => Promise<Return>,
-//   ...args: Args
-// ) => {
-//   const makeAttempt = async (attempt: number): Promise<Return> => {
-//     try {
-//       return await f(...args)
-//     } catch (e) {
-//       if ((e as { code: unknown }).code !== 'ECONNRESET' || attempt > 5) {
-//         throw e
-//       }
-//       await new Promise<void>(resolve => { setTimeout(resolve, 50) })
-//       return makeAttempt(attempt + 1)
-//     }
-//   }
-//   return makeAttempt(1)
-// }
-
 const callOpts: CallOptions = { retry: { retryCodes: ['ECONNRESET'] as unknown as number[] } }
+const MAX_INSTANCE_NAME_LENGTH = 62
 
 const client = ({
   zone,
@@ -66,7 +50,13 @@ const client = ({
     .map(s => `(${s})`)
     .join(' ')
 
-  const instanceName = (envId: string) => `preevy-${profileId}-${envId}`
+  const instanceName = (envId: string) => {
+    const prefix = 'preevy-'
+    const suffix = `-${randomBytes(8).toString('base64url').toLowerCase().replace(/[^a-z0-9]/g, '')}`
+    const middle = `${profileId}-${envId}`
+    const middleMaxLength = MAX_INSTANCE_NAME_LENGTH - (prefix.length + suffix.length)
+    return [prefix, middle.substring(0, middleMaxLength), suffix].join('')
+  }
 
   const normalizeMachineType = (machineType: string) => (
     machineType.includes('/')
@@ -81,8 +71,8 @@ const client = ({
 
     findInstance: async (
       envId: string,
-    ) => extractFirst(
-      undefinedForNotFound(ic.get({ zone, project, instance: instanceName(envId) }, callOpts)),
+    ) => asyncFirst(
+      ic.listAsync({ zone, project, filter: filter(envId), maxResults: 1 }, callOpts),
     ),
 
     listInstances: () => ic.listAsync({ zone, project, filter: filter() }, callOpts),
@@ -153,9 +143,11 @@ const client = ({
       return extractFirst(ic.get({ zone, project, instance: name }, callOpts))
     },
 
-    deleteInstance: async (name: string) => {
+    deleteInstance: async (name: string, wait: boolean) => {
       const { latestResponse: operation } = await extractFirst(ic.delete({ zone, project, instance: name }, callOpts))
-      await waitForOperation(operation)
+      if (wait) {
+        await waitForOperation(operation)
+      }
     },
 
     normalizeMachineType,

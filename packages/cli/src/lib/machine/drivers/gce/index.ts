@@ -52,7 +52,7 @@ const machineDriver = ({ zone, projectId, profileId }: DriverContext): MachineDr
       alias: SSH_KEYPAIR_ALIAS,
     }),
 
-    removeMachine: async driverMachineId => client.deleteInstance(driverMachineId),
+    removeMachine: async (driverMachineId, wait) => client.deleteInstance(driverMachineId, wait),
     removeSnapshot: async () => undefined,
     removeKeyPair: async () => undefined,
     getKeyPairAlias: async () => SSH_KEYPAIR_ALIAS,

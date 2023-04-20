@@ -38,7 +38,7 @@ const ensureMachine = async ({
   return withSpinner(async spinner => {
     if (recreating) {
       spinner.text = 'Deleting machine'
-      await machineDriver.removeMachine(existingMachine.providerId)
+      await machineDriver.removeMachine(existingMachine.providerId, false)
     }
     spinner.text = 'Checking for existing snapshot'
     const machineCreation = await machineCreationDriver.createMachine({ envId, keyConfig: sshKey })

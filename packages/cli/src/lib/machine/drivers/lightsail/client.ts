@@ -255,10 +255,16 @@ const client = ({
       ls.deleteInstanceSnapshot({ instanceSnapshotName })
     ),
 
-    deleteInstance: async (name: string) => waitUntilAllOperationsSucceed(
-      { client: lsClient, maxWaitTime: 120 },
-      ls.deleteInstance({ instanceName: name, forceDeleteAddOns: true })
-    ),
+    deleteInstance: async (name: string, wait: boolean) => {
+      const op = await ls.deleteInstance({ instanceName: name, forceDeleteAddOns: true })
+      if (!wait) {
+        return undefined
+      }
+      return waitUntilAllOperationsSucceed(
+        { client: lsClient, maxWaitTime: 120 },
+        op,
+      )
+    },
 
     deleteKeyPair: async (alias: string) => {
       const keyPair = await findKeyPairByAlias(alias)

@@ -23,6 +23,10 @@ export default class Down extends DriverCommand<typeof Down> {
       description: 'Do not error if the environment is not found',
       default: false,
     }),
+    wait: Flags.boolean({
+      description: 'Wait for resource deletion to complete. If false (the default), the deletion will be started but not waited for',
+      default: false,
+    }),
   }
 
   static args = {
@@ -48,8 +52,8 @@ export default class Down extends DriverCommand<typeof Down> {
     }
 
     await withSpinner(async () => {
-      await driver.removeMachine(machine.providerId)
-    }, { opPrefix: `Deleting ${driver.friendlyName} machine for environment ${envId}` })
+      await driver.removeMachine(machine.providerId, flags.wait)
+    }, { opPrefix: `Deleting ${driver.friendlyName} machine ${machine.providerId} for environment ${envId}` })
 
     if (flags.json) {
       return envId
