@@ -1,4 +1,4 @@
-import { InstancesClient, ImagesClient, ZoneOperationsClient } from '@google-cloud/compute'
+import { InstancesClient, ImagesClient, ZoneOperationsClient, RegionsClient } from '@google-cloud/compute'
 import { GoogleError, Status, operationsProtos, CallOptions } from 'google-gax'
 import { asyncFirst } from 'iter-tools-es'
 import { randomBytes } from 'crypto'
@@ -157,6 +157,14 @@ const client = ({
 export type Client = ReturnType<typeof client>
 export type Instance = NonNullable<Awaited<ReturnType<Client['findInstance']>>>
 
+export default client
+
 export const shortResourceName = (name: string) => name.split('/').pop() as string
 
-export default client
+export const defaultProjectId = () => (new InstancesClient()).getProjectId()
+
+export const availableRegions = async (project: string) => {
+  const rc = new RegionsClient()
+  const [z] = await rc.list({ project }, callOpts)
+  return z.map(({ name, zones }) => ({ name: name as string, zones: (zones as string[]).map(shortResourceName) }))
+}

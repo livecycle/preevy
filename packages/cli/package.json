@@ -23,6 +23,7 @@
     "@aws-sdk/client-sts": "^3.289.0",
     "@aws-sdk/util-waiter": "^3.271.0",
     "@google-cloud/compute": "^3.9.1",
+    "@google-cloud/storage": "^6.9.5",
     "@oclif/core": "^2",
     "@oclif/plugin-help": "^5",
     "@oclif/plugin-plugins": "^2.3.0",

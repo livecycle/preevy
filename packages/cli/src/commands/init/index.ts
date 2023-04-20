@@ -1,10 +1,12 @@
 import { Flags, Args, ux } from '@oclif/core'
-import chalk from 'chalk'
 import inquirer from 'inquirer'
-import { pickBy } from 'lodash'
 import BaseCommand from '../../base-command'
-import { DriverFlagName, DriverName, machineDrivers } from '../../lib/machine'
-import { suggestDefaultUrl } from '../../lib/store/fs/s3'
+import { DriverName, machineDrivers } from '../../lib/machine'
+import { defaultBucketName as s3DefaultBucketName } from '../../lib/store/fs/s3'
+import { defaultBucketName as gsDefaultBucketName } from '../../lib/store/fs/google-cloud-storage'
+import { defaultProjectId } from '../../lib/machine/drivers/gce/client'
+import { REGIONS } from '../../lib/machine/drivers/lightsail/client'
+import { ambientAccountId } from '../../lib/aws-utils/account-id'
 
 export default class Init extends BaseCommand {
   static description = 'Initialize or import a new profile'
@@ -65,48 +67,66 @@ export default class Init extends BaseCommand {
 
       const driverStatic = machineDrivers[driver]
 
-      type DFS = (typeof driverStatic)['flags']
+      const driverAnswers = await inquirer.prompt<Record<string, unknown>>(await driverStatic.questions())
+      const driverFlags = await driverStatic.flagsFromAnswers(driverAnswers) as Record<string, unknown>
 
-      const requiredFlags = pickBy(
-        machineDrivers[driver].flags,
-        flag => (flag as { required: boolean }).required,
-      ) as DFS
+      const { locationType } = await inquirer.prompt<{ locationType: string }>([
+        {
+          type: 'list',
+          name: 'locationType',
+          message: 'Where do you want to store the profile?',
+          default: 'local',
+          choices: [
+            { value: 'local', name: 'local file' },
+            { value: 's3', name: 'AWS S3' },
+            { value: 'gs', name: 'Google Cloud Storage' },
+          ],
+        },
+      ])
 
-      const questions = Object.entries(requiredFlags).map(([key, flag]) => ({
-        type: 'input',
-        name: key,
-        message: flag.description,
-        default: ('flagHint' in driverStatic)
-          ? driverStatic.flagHint(key as DriverFlagName<DriverName, 'flags'>)
-          : undefined,
-      }))
-
-      const driverFlags = await inquirer.prompt<Record<string, string>>(questions)
-      const { locationType } = await inquirer.prompt<{
-          locationType: string
-        }>([
-          {
-            type: 'list',
-            name: 'locationType',
-            message: 'Where do you want to store the profile?',
-            default: 'local',
-            choices: [
-              { value: 's3', name: 'AWS S3' },
-              { value: 'local', name: 'local' },
-            ],
-          }])
       let location: string
       if (locationType === 's3') {
-        const { s3Url } = await inquirer.prompt<{
-              s3Url: string
-            }>([{
-              type: 'input',
-              name: 's3Url',
-              message: `What is the S3 URL? ${chalk.reset.italic(`(format: s3://${chalk.yellowBright('[bucket]')}?region=${chalk.yellowBright('[region]')})`)}`,
-              default: await suggestDefaultUrl(profileAlias), // might worth generating profile id?
-            }])
+        const { region, bucket } = await inquirer.prompt<{ region: string; bucket: string }>([
+          {
+            type: 'list',
+            name: 'region',
+            message: 'S3 bucket region',
+            choices: REGIONS,
+            default: driver === 'lightsail' ? driverFlags.region as string : 'us-east-1',
+          },
+          {
+            type: 'input',
+            name: 'bucket',
+            message: 'Bucket name',
+            default: async (
+              answers: Record<string, unknown>
+            ) => {
+              const accountId = await ambientAccountId(answers.region as string)
+              return accountId ? s3DefaultBucketName({ profileAlias, accountId }) : undefined
+            },
+          },
+        ])
 
-        location = s3Url
+        location = `s3://${bucket}?region=${region}`
+      } else if (locationType === 'gs') {
+        const { project, bucket } = await inquirer.prompt<{ project: string; bucket: string }>([
+          {
+            type: 'input',
+            name: 'project',
+            message: 'Google Cloud project',
+            default: driver === 'gce' ? driverFlags['project-id'] : defaultProjectId(),
+          },
+          {
+            type: 'input',
+            name: 'bucket',
+            message: 'Bucket name',
+            default: (
+              answers: Record<string, unknown>,
+            ) => gsDefaultBucketName({ profileAlias, project: answers.project as string }),
+          },
+        ])
+
+        location = `gs://${bucket}?project=${project}`
       } else {
         location = `local://${profileAlias}`
       }

@@ -1,9 +1,10 @@
 import { Flags, Interfaces } from '@oclif/core'
 import { asyncMap } from 'iter-tools-es'
+import { InputQuestion, ListQuestion } from 'inquirer'
 import { generateSshKeyPair } from '../../../ssh/keypair'
 import { MachineDriver } from '../../driver'
 import { Machine, MachineCreationDriver, MachineCreationDriverFactory, MachineDriverFactory } from '../../driver/driver'
-import createClient, { Instance, shortResourceName } from './client'
+import createClient, { Instance, availableRegions, defaultProjectId, shortResourceName } from './client'
 import { LABELS } from './labels'
 import { telemetryEmitter } from '../../../telemetry'
 
@@ -59,7 +60,7 @@ const machineDriver = ({ zone, projectId, profileId }: DriverContext): MachineDr
   })
 }
 
-machineDriver.flags = {
+const flags = {
   'project-id': Flags.string({
     description: 'Google Cloud project ID',
     required: true,
@@ -70,10 +71,44 @@ machineDriver.flags = {
   }),
 } as const
 
-const contextFromFlags = (flags: Interfaces.InferredFlags<typeof machineDriver.flags>): Omit<DriverContext, 'profileId'> => ({
-  projectId: flags['project-id'],
-  zone: flags.zone,
+machineDriver.flags = flags
+
+type FlagTypes = Omit<Interfaces.InferredFlags<typeof machineDriver.flags>, 'json'>
+
+const contextFromFlags = ({ 'project-id': projectId, zone }: FlagTypes): Omit<DriverContext, 'profileId'> => ({
+  projectId,
+  zone,
 })
+
+const questions = async (): Promise<(InputQuestion | ListQuestion)[]> => [
+  {
+    type: 'input',
+    name: 'project',
+    default: defaultProjectId,
+    message: flags['project-id'].description,
+  },
+  {
+    type: 'list',
+    name: 'region',
+    choices: async ({ project }) => (await availableRegions(project)).map(r => r.name),
+  },
+  {
+    type: 'list',
+    name: 'zone',
+    choices: async (
+      { project, region },
+    ) => (await availableRegions(project)).find(r => r.name === region)?.zones ?? [],
+  },
+]
+
+machineDriver.questions = questions
+
+const flagsFromAnswers = async (answers: Record<string, unknown>): Promise<FlagTypes> => ({
+  'project-id': answers.project as string,
+  zone: answers.zone as string,
+})
+
+machineDriver.flagsFromAnswers = flagsFromAnswers
 
 const machineCreationDriver = (
   { zone, projectId, profileId, machineType: specifiedMachineType }: MachineCreationDriverContext,
@@ -130,10 +165,10 @@ machineDriver.machineCreationFlags = {
 } as const
 
 const machineCreationContextFromFlags = (
-  flags: Interfaces.InferredFlags<typeof machineDriver.machineCreationFlags>
+  fl: Interfaces.InferredFlags<typeof machineDriver.machineCreationFlags>
 ): Omit<MachineCreationDriverContext, 'profileId'> => ({
-  ...contextFromFlags(flags),
-  machineType: flags['machine-type'],
+  ...contextFromFlags(fl),
+  machineType: fl['machine-type'],
 })
 
 const factory: MachineDriverFactory<
