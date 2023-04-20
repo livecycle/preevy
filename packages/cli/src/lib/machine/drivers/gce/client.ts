@@ -1,5 +1,5 @@
 import { InstancesClient, ImagesClient, ZoneOperationsClient } from '@google-cloud/compute'
-import { GoogleError, Status, operationsProtos } from 'google-gax'
+import { GoogleError, Status, operationsProtos, CallOptions } from 'google-gax'
 import { asyncFirst } from 'iter-tools-es'
 import { LABELS } from './labels'
 
@@ -16,6 +16,26 @@ const undefinedForNotFound = <T>(p: Promise<T>): Promise<T | [undefined]> => p.c
   }
   throw e
 })
+
+// const retryConnResetError = async <Return, Args extends unknown[]>(
+//   f: (...args: Args) => Promise<Return>,
+//   ...args: Args
+// ) => {
+//   const makeAttempt = async (attempt: number): Promise<Return> => {
+//     try {
+//       return await f(...args)
+//     } catch (e) {
+//       if ((e as { code: unknown }).code !== 'ECONNRESET' || attempt > 5) {
+//         throw e
+//       }
+//       await new Promise<void>(resolve => { setTimeout(resolve, 50) })
+//       return makeAttempt(attempt + 1)
+//     }
+//   }
+//   return makeAttempt(1)
+// }
+
+const callOpts: CallOptions = { retry: { retryCodes: ['ECONNRESET'] as unknown as number[] } }
 
 const client = ({
   zone,
@@ -34,7 +54,7 @@ const client = ({
     let { done } = op
     while (!done) {
       // eslint-disable-next-line no-await-in-loop
-      const { status } = await extractFirst(zoc.wait({ zone, project, operation: op.name }))
+      const { status } = await extractFirst(zoc.wait({ zone, project, operation: op.name }, callOpts))
       done = status === 'DONE'
     }
   }
@@ -55,13 +75,17 @@ const client = ({
   )
 
   return {
-    getInstance: async (instance: string) => extractFirst(undefinedForNotFound(ic.get({ instance, zone, project }))),
+    getInstance: async (instance: string) => extractFirst(
+      undefinedForNotFound(ic.get({ instance, zone, project }, callOpts)),
+    ),
 
     findInstance: async (
       envId: string,
-    ) => extractFirst(undefinedForNotFound(ic.get({ zone, project, instance: instanceName(envId) }))),
+    ) => extractFirst(
+      undefinedForNotFound(ic.get({ zone, project, instance: instanceName(envId) }, callOpts)),
+    ),
 
-    listInstances: () => ic.listAsync({ zone, project, filter: filter() }),
+    listInstances: () => ic.listAsync({ zone, project, filter: filter() }, callOpts),
 
     createInstance: async ({
       envId,
@@ -78,7 +102,7 @@ const client = ({
         project: 'cos-cloud',
         maxResults: 1,
         filter: '(family = "cos-stable") (architecture = "X86_64") (NOT deprecated:*) (status = "READY")',
-      }))
+      }, callOpts))
 
       if (!image) {
         throw new Error('Could not find a suitable image in GCP')
@@ -122,15 +146,15 @@ const client = ({
             },
           ],
         },
-      }))
+      }, callOpts))
 
       await waitForOperation(operation)
 
-      return extractFirst(ic.get({ zone, project, instance: name }))
+      return extractFirst(ic.get({ zone, project, instance: name }, callOpts))
     },
 
     deleteInstance: async (name: string) => {
-      const { latestResponse: operation } = await extractFirst(ic.delete({ zone, project, instance: name }))
+      const { latestResponse: operation } = await extractFirst(ic.delete({ zone, project, instance: name }, callOpts))
       await waitForOperation(operation)
     },
 

@@ -5,7 +5,6 @@ import path from 'path'
 import { asyncMapValues } from '../async'
 import { statOrUndefined } from '../files'
 import { FileToCopy } from '../ssh/client'
-import { c } from 'tar'
 
 export type ComposeSecretOrConfig = {
   name: string

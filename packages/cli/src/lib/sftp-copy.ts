@@ -31,7 +31,7 @@ export const copyFilesWithoutRecreatingDirUsingSftp = async (
   filesToCopy: FileToCopy[],
 ) => {
   const remoteTempDir = (await sshClient.execCommand(`sudo mktemp -d -p "${remoteBaseDir}"`)).stdout.trim()
-  await sshClient.execCommand(`sudo chown $USER:docker "${remoteTempDir}"`)
+  await sshClient.execCommand(`sudo chown $USER "${remoteTempDir}"`)
   const filesToCopyToTempDir = filesToCopy.map(
     ({ local, remote }) => ({ local, remote: path.join(remoteTempDir, remote) })
   )
@@ -54,7 +54,7 @@ export const copyFilesWithoutRecreatingDirUsingSftp = async (
     } finally {
       sftp.close()
     }
-    await sshClient.execCommand(`sudo rsync -ac --no-p --no-g --chmod=ugo=rwX --delete "${remoteTempDir}/" "${remoteDir}" && sudo rm -rf "${remoteTempDir}"`)
+    await sshClient.execCommand(`rsync -ac --no-p --no-g --chmod=ugo=rwX "${remoteTempDir}/" "${remoteDir}" && sudo rm -rf "${remoteTempDir}"`)
     telemetryEmitter().capture('sftp copy end', { total_files: numFiles, total_bytes: numBytes, elapsed_sec: (new Date().getTime() - startTime) / 1000 })
   }, { opPrefix: 'Copying files', text: 'Calculating...', successText: () => `Copied ${numFiles} files` })
 }
