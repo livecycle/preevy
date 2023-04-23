@@ -25,5 +25,6 @@ jobs:
         set -x
 
         for packageDir in common compose-tunnel-agent cli; do
+          yarn prepack
           npm-publish --token ${{ secrets.NPM_TOKEN }} --access public packages/${packageDir}/package.json
         done
