@@ -4,19 +4,15 @@ import { asyncFirst } from 'iter-tools-es'
 import { randomBytes } from 'crypto'
 import { LABELS } from './labels'
 
-async function extractFirst<T>(p: Promise<[T, ...unknown[]]>): Promise<T>
-async function extractFirst<T>(p: Promise<T[]>): Promise<T>
-async function extractFirst<T>(p: Promise<T[]> | Promise<[T, ...unknown[]]>) { return (await p)[0] }
-
 type Operation = operationsProtos.google.longrunning.IOperation
 
 const isNotFoundError = (e: Error) => e instanceof GoogleError && e.code === Status.NOT_FOUND
-const undefinedForNotFound = <T>(p: Promise<T>): Promise<T | [undefined]> => p.catch(e => {
+const ignoreNotFound = (e: Error) => {
   if (isNotFoundError(e)) {
-    return [undefined]
+    return undefined
   }
   throw e
-})
+}
 
 const callOpts: CallOptions = { retry: { retryCodes: ['ECONNRESET'] as unknown as number[] } }
 const MAX_INSTANCE_NAME_LENGTH = 62
@@ -38,7 +34,7 @@ const client = ({
     let { done } = op
     while (!done) {
       // eslint-disable-next-line no-await-in-loop
-      const { status } = await extractFirst(zoc.wait({ zone, project, operation: op.name }, callOpts))
+      const [{ status }] = await zoc.wait({ zone, project, operation: op.name }, callOpts)
       done = status === 'DONE'
     }
   }
@@ -65,9 +61,8 @@ const client = ({
   )
 
   return {
-    getInstance: async (instance: string) => extractFirst(
-      undefinedForNotFound(ic.get({ instance, zone, project }, callOpts)),
-    ),
+    getInstance: async (instance: string) =>
+      (await ic.get({ instance, zone, project }, callOpts).catch(ignoreNotFound))?.[0],
 
     findInstance: async (
       envId: string,
@@ -101,7 +96,7 @@ const client = ({
       const machineType = normalizeMachineType(givenMachineType)
       const name = instanceName(envId)
 
-      const { latestResponse: operation } = await extractFirst(ic.insert({
+      const [{ latestResponse: operation }] = await ic.insert({
         project,
         zone,
         instanceResource: {
@@ -136,15 +131,15 @@ const client = ({
             },
           ],
         },
-      }, callOpts))
+      }, callOpts)
 
       await waitForOperation(operation)
 
-      return extractFirst(ic.get({ zone, project, instance: name }, callOpts))
+      return (await ic.get({ zone, project, instance: name }, callOpts))?.[0]
     },
 
     deleteInstance: async (name: string, wait: boolean) => {
-      const { latestResponse: operation } = await extractFirst(ic.delete({ zone, project, instance: name }, callOpts))
+      const [{ latestResponse: operation }] = await ic.delete({ zone, project, instance: name }, callOpts)
       if (wait) {
         await waitForOperation(operation)
       }
