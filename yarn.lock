@@ -10411,7 +10411,7 @@ sprintf-js@~1.0.2:
   resolved "https://registry.yarnpkg.com/sprintf-js/-/sprintf-js-1.0.3.tgz#04e6926f662895354f3dd015203633b857297e2c"
   integrity sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g==
 
-ssh2@^1.11.0, "ssh2@github:mscdex/ssh2#ext_info":
+ssh2@^1.11.0, "ssh2@github:mscdex/ssh2#64d45fd0b36642922bc3ec8f51de6bfc98c37022":
   version "1.11.0"
   resolved "https://codeload.github.com/mscdex/ssh2/tar.gz/64d45fd0b36642922bc3ec8f51de6bfc98c37022"
   dependencies:
