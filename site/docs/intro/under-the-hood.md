@@ -9,7 +9,7 @@ When provisioning a new environment using the [`up`](/cli-reference#preevy-up-se
 
 - Reads for [default configurations](#profile-configuration) and relevant keys from the current profile store.
 - Calculates environment name based on the current git branch (or uses the `--id` flag.)
-- Uses the local AWS configuration to provision a new Lightsail VM.
+- Uses the local Cloud provider configuration to provision a new VM.
 - Reads SSH keypair from profile to access the VM, if necessary, generate a new one.
 - Connects to the VM using SSH and sets up Docker.
 - Reads the compose file and copies local volume mounts to the VM.

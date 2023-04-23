@@ -7,7 +7,10 @@ sidebar_position: 7
 
 ## More cloud drivers
 
-Currently only [AWS lightsail](drivers/aws-lightsail.md) is supported, [GCP](https://cloud.google.com/), [Azure](https://azure.microsoft.com/) and [fly.io](https://fly.io/) are coming soon.
+- [x] [AWS lightsail](drivers/aws-lightsail.md)
+- [x] [GCP Compute Engine](https://cloud.google.com/)
+- [ ] [Azure](https://azure.microsoft.com/)
+- [ ] [fly.io](https://fly.io/)
 
 ## Build customization
 
