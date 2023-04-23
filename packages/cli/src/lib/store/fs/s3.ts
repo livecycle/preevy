@@ -1,13 +1,10 @@
 import { CreateBucketCommand, DeleteObjectCommand, GetObjectCommand, GetObjectCommandOutput, HeadBucketCommand, PutObjectCommand, S3Client, S3ServiceException } from '@aws-sdk/client-s3'
-import { STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts'
 import path from 'path'
 import { VirtualFS } from './base'
 
-export async function suggestDefaultUrl(profileAlias: string) {
-  const sts = new STSClient({ region: 'us-east-1' })
-  const { Account: AccountId } = await sts.send(new GetCallerIdentityCommand({}))
-  return `s3://preevy-${AccountId}-${profileAlias}?region=us-east-1`
-}
+export const defaultBucketName = (
+  { profileAlias, accountId }: { profileAlias: string; accountId: string },
+) => `preevy-${accountId}-${profileAlias}`
 
 async function ensureBucketExists(s3: S3Client, bucket: string) {
   try {
@@ -36,13 +33,7 @@ async function ensureBucketExists(s3: S3Client, bucket: string) {
   }
 }
 
-export type S3Url = {
-  region: string
-  bucket: string
-  path: string
-}
-
-export function parseS3Url(s3Url: string) {
+function parseS3Url(s3Url: string) {
   const url = new URL(s3Url)
   if (url.protocol !== 's3:') {
     throw new Error('s3 urls must start with s3://')

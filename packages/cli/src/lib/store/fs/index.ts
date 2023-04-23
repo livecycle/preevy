@@ -1,5 +1,6 @@
 import { localFsFromUrl } from './local'
 import { s3fs } from './s3'
+import { googleCloudStorageFs } from './google-cloud-storage'
 
 export { VirtualFS } from './base'
 export { localFs } from './local'
@@ -14,6 +15,9 @@ export const fsFromUrl = async (url: string, localBaseDir: string) => {
   }
   if (fsType === 's3') {
     return s3fs(url)
+  }
+  if (fsType === 'gs') {
+    return googleCloudStorageFs(url)
   }
   throw new Error(`Unsupported URL type: ${fsType}`)
 }

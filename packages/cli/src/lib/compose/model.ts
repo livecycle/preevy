@@ -115,20 +115,19 @@ export const fixModelForRemote = async (
           return volume
         }
 
+        const remote = remoteVolumePath(volume)
         const stats = await statOrUndefined(volume.source) as fs.Stats | undefined
 
-        if (!stats) {
+        if (stats) {
+          if (!stats.isDirectory() && !stats.isFile() && !stats.isSymbolicLink()) {
+            return volume
+          }
+
           // ignore non-existing files like docker and compose do,
           //  they will be created as directories in the container
-          return volume
+          filesToCopy.push({ local: { path: volume.source, stats }, remote })
         }
 
-        if (!stats.isDirectory() && !stats.isFile() && !stats.isSymbolicLink()) {
-          return volume
-        }
-
-        const remote = remoteVolumePath(volume)
-        filesToCopy.push({ local: { path: volume.source, stats }, remote })
         return { ...volume, source: path.join(remoteDir, remote) }
       }, service.volumes)),
     })

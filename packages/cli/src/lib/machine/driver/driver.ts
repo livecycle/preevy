@@ -17,6 +17,7 @@ export type SpecDiffItem = {
 }
 
 export type MachineDriver = {
+  customizationScripts?: string[]
   friendlyName: string
 
   getMachine: (args: { envId: string }) => Promise<Machine | undefined>
@@ -28,7 +29,7 @@ export type MachineDriver = {
   listMachines: () => AsyncIterableIterator<Machine & { envId: string }>
   listSnapshots: () => AsyncIterableIterator<{ providerId: string }>
 
-  removeMachine: (driverMachineId: string) => Promise<void>
+  removeMachine: (driverMachineId: string, wait: boolean) => Promise<void>
   removeSnapshot: (providerId: string) => Promise<void>
   removeKeyPair: (alias: string) => Promise<void>
 }

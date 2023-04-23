@@ -1,18 +1,18 @@
 {
   "name": "@preevy/tunnel-server",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "index.ts",
   "type": "module",
   "license": "Apache-2.0",
   "dependencies": {
     "@fastify/request-context": "^4.2.0",
-    "@preevy/common": "0.0.21",
+    "@preevy/common": "0.0.22",
     "@sinclair/typebox": "^0.25.21",
     "fastify": "^4.12.0",
     "http-proxy": "^1.18.1",
     "pino-pretty": "^9.4.0",
     "prom-client": "^14.2.0",
-    "ssh2": "^1.11.0",
+    "ssh2": "github:mscdex/ssh2#64d45fd0b36642922bc3ec8f51de6bfc98c37022",
     "ts-node": "^10.9.1"
   },
   "devDependencies": {

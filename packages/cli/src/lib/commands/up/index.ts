@@ -136,7 +136,7 @@ const up = async ({
   const withDockerSocket = wrapWithDockerSocket({ sshClient, log })
 
   try {
-    await sshClient.execCommand(`sudo mkdir -p "${remoteDir}" && sudo chown $USER:docker "${remoteDir}"`)
+    await sshClient.execCommand(`sudo mkdir -p "${remoteDir}" && sudo chown $USER "${remoteDir}"`)
 
     log.debug('Files to copy', filesToCopy)
 

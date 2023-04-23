@@ -6,10 +6,12 @@ import { asyncMap } from 'iter-tools-es'
 import { Flags } from '@oclif/core'
 import { randomBytes } from 'crypto'
 import { InferredFlags } from '@oclif/core/lib/interfaces'
+import { ListQuestion, Question } from 'inquirer'
 import { extractDefined } from '../../../aws-utils/nulls'
 import { Machine, MachineDriver } from '../../driver'
 import createClient, { REGIONS } from './client'
 import { BUNDLE_IDS, BundleId, bundleIdFromString } from './bundle-id'
+import { CUSTOMIZE_BARE_MACHINE } from './scripts'
 import { CURRENT_MACHINE_VERSION, TAGS, requiredTag } from './tags'
 import { MachineCreationDriver, MachineCreationDriverFactory, MachineDriverFactory } from '../../driver/driver'
 import { telemetryEmitter } from '../../../telemetry'
@@ -41,6 +43,7 @@ const machineDriver = ({
   const keyAlias = `${region}`
   return {
     friendlyName: 'AWS Lightsail',
+    customizationScripts: CUSTOMIZE_BARE_MACHINE,
 
     getMachine: async ({ envId }) => {
       const instance = await client.findInstance(envId)
@@ -69,13 +72,13 @@ const machineDriver = ({
       }
     },
 
-    removeMachine: providerId => client.deleteInstance(providerId),
+    removeMachine: (providerId, wait) => client.deleteInstance(providerId, wait),
     removeSnapshot: providerId => client.deleteInstanceSnapshot({ instanceSnapshotName: providerId }),
     removeKeyPair: async alias => { await client.deleteKeyPair(alias) },
   }
 }
 
-machineDriver.flags = {
+const flags = {
   region: Flags.string({
     description: 'AWS region in which resources will be provisioned',
     required: true,
@@ -84,18 +87,31 @@ machineDriver.flags = {
   }),
 } as const
 
-type FlagTypes = InferredFlags<typeof machineDriver.flags>
+machineDriver.flags = flags
 
-const contextFromFlags = (flags: FlagTypes): Omit<DriverContext, 'profileId'> => ({
-  region: flags.region as string,
+type FlagTypes = Omit<InferredFlags<typeof flags>, 'json'>
+
+const contextFromFlags = ({ region }: FlagTypes): Omit<DriverContext, 'profileId'> => ({
+  region: region as string,
 })
 
-machineDriver.flagHint = <TFlagKey extends keyof FlagTypes>(flag:TFlagKey): FlagTypes[TFlagKey] | undefined => {
-  if (flag === 'region') {
-    return 'us-east-1' as FlagTypes[TFlagKey]
-  }
-  return undefined
-}
+const questions = async (): Promise<(Question | ListQuestion)[]> => [
+  {
+    type: 'list',
+    name: 'region',
+    default: process.env.AWS_REGION ?? 'us-east-1',
+    message: flags.region.description,
+    choices: flags.region.options,
+  },
+]
+
+machineDriver.questions = questions
+
+const flagsFromAnswers = async (answers: Record<string, unknown>): Promise<FlagTypes> => ({
+  region: answers.region as string,
+})
+
+machineDriver.flagsFromAnswers = flagsFromAnswers
 
 const factory: MachineDriverFactory<FlagTypes> = (
   f,
@@ -193,10 +209,10 @@ machineDriver.machineCreationFlags = {
 
 type MachineCreationFlagTypes = InferredFlags<typeof machineDriver.machineCreationFlags>
 
-const machineCreationContextFromFlags = (flags: MachineCreationFlagTypes): Omit<MachineCreationContext, 'profileId'> => ({
-  ...contextFromFlags(flags),
-  availabilityZone: flags['availability-zone'] as string,
-  bundleId: flags['bundle-id'] as BundleId,
+const machineCreationContextFromFlags = (fl: MachineCreationFlagTypes): Omit<MachineCreationContext, 'profileId'> => ({
+  ...contextFromFlags(fl),
+  availabilityZone: fl['availability-zone'] as string,
+  bundleId: fl['bundle-id'] as BundleId,
 })
 
 const machineCreationFactory: MachineCreationDriverFactory<MachineCreationFlagTypes> = (

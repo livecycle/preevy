@@ -64,7 +64,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
     const keyStore = sshKeysStore(this.store)
     let keyPair = await keyStore.getKey(keyAlias)
     if (!keyPair) {
-      this.logger.info(`keypair ${keyAlias} not found, creating new one`)
+      this.logger.info(`key pair ${keyAlias} not found, creating a new key pair`)
       keyPair = await driver.createKeyPair()
       await keyStore.addKey(keyPair)
       this.logger.info(`keypair ${keyAlias} created`)

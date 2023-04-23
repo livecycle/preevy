@@ -1,6 +1,6 @@
 {
   "name": "@preevy/compose-tunnel-agent",
-  "version": "0.0.21",
+  "version": "0.0.22",
   "description": "",
   "main": "dist/index.js",
   "files": [
@@ -9,14 +9,14 @@
   ],
   "license": "Apache-2.0",
   "dependencies": {
-    "@preevy/common": "0.0.21",
+    "@preevy/common": "0.0.22",
     "dockerode": "^3.3.4",
     "http-proxy": "^1.18.1",
     "lodash": "^4.17.21",
     "p-limit": "^3.1.0",
     "pino": "^8.11.0",
     "pino-pretty": "^9.4.0",
-    "ssh2": "^1.11.0"
+    "ssh2": "github:mscdex/ssh2#64d45fd0b36642922bc3ec8f51de6bfc98c37022"
   },
   "devDependencies": {
     "@types/dockerode": "^3.3.14",

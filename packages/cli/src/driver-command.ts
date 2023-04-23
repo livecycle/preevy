@@ -15,8 +15,8 @@ abstract class DriverCommand<T extends typeof Command> extends ProfileCommand<T>
     driver: Flags.custom<DriverName>({
       description: 'Machine driver to use',
       char: 'd',
-      default: 'lightsail' as const,
       options: Object.keys(machineDrivers),
+      required: false,
     })(),
     ...flagsForAllDrivers,
   }
@@ -42,8 +42,7 @@ abstract class DriverCommand<T extends typeof Command> extends ProfileCommand<T>
     if (this.#driver) {
       return this.#driver
     }
-    const { profile } = this
-    const driverName = this.flags.driver as DriverName
+    const { profile, driverName } = this
     const driverFlags = {
       ...await profileStore(this.store).defaultFlags(driverName),
       ...removeDriverPrefix<DriverFlags<DriverName, 'flags'>>(driverName, this.flags),

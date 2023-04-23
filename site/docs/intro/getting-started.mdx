@@ -45,8 +45,12 @@ Preevy is designed to be easy to use, with an API smiliar to [docker-compose](ht
   npx preevy <command>
   ```
 
-2. Make sure you're logged in to AWS. See [AWS lightsail credentials configurations](http://localhost:3001/drivers/aws-lightsail#credentials-configuration).
+2. Choose the cloud provider you're going to use and configure credentials:
+   - For AWS: use `aws login` or `aws configure`. See [AWS lightsail credentials configurations](/drivers/aws-lightsail#credentials-configuration).
+   - For GCP: use `gcloud auth application-default login`. See [GCP credentials configuration](/drivers/gcp-gce#credentials-configuration)
 
+  - In AWS, it could be by using `aws login` or `aws configure`
+  - In GCP, it could be by using 
 3. Set up a profile
 
   ```bash
@@ -61,9 +65,9 @@ Preevy is designed to be easy to use, with an API smiliar to [docker-compose](ht
 <br />
 
 :::info Cloud provider credentials
-Managing and provisioning preview environments in Preevy, requires access and credentials to a cloud provider. Currently only AWS is supported, but more providers are [coming soon](/roadmap#more-cloud-drivers).
-Once you install and set up the [AWS CLI](https://aws.amazon.com/cli/), Preevy will recognize and employ your configuration settings.
+Managing and provisioning preview environments in Preevy, requires access and credentials to a cloud provider. Currently AWS and GCP are supported, but more providers are [coming soon](/roadmap#more-cloud-drivers).
+Once you install and initialize your cloud provider CLI, Preevy will recognize and employ your configuration settings.
 
 
-For more info, see [AWS lightsail credentials configurations](http://localhost:3001/drivers/aws-lightsail#credentials-configuration)
+For more info, see [AWS lightsail credentials configurations](/drivers/aws-lightsail#credentials-configuration), or [GCP credentials configuration](/drivers/gcp-gce#credentials-configuration)
 :::

@@ -60,6 +60,12 @@ machineDriver.flags = {
   }),
 } as const
 
+machineDriver.questions = async () => []
+machineDriver.flagsFromAnswers = async (answers: Record<string, unknown>) => ({
+  'some-flag': answers['some-flag'],
+  'some-flag2': answers['some-flag2'],
+})
+
 const contextFromFlags = (flags: Interfaces.InferredFlags<typeof machineDriver.flags>): DriverContext => ({
   someFlag: flags['some-flag'] as string,
   someFlag2: flags['some-flag2'] as string,

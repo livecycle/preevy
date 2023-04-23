@@ -57,6 +57,10 @@ export default class Purge extends DriverCommand<typeof Purge> {
       description: 'Do not ask for confirmation',
       default: false,
     }),
+    wait: Flags.boolean({
+      description: 'Wait for resource deletion to complete. If false (the default), the deletion will be started but not waited for',
+      default: false,
+    }),
   }
 
   static enableJsonFlag = true
@@ -92,7 +96,7 @@ export default class Purge extends DriverCommand<typeof Purge> {
     }
 
     await Promise.all([
-      ...machines.map(m => driver.removeMachine(m.providerId)),
+      ...machines.map(m => driver.removeMachine(m.providerId, flags.wait)),
       ...snapshots.map(s => driver.removeSnapshot(s.providerId)),
     ])
 

@@ -4,6 +4,7 @@ import { localComposeClient } from '../../lib/compose/client'
 import { composeFlags } from '../../lib/compose/flags'
 import { envIdFlags, findAmbientEnvId, findAmbientProjectName } from '../../lib/env-id'
 import { Logger } from '../../log'
+import { withSpinner } from '../../lib/spinner'
 
 const findEnvId = async (log: Logger, { project, file }: { project?: string; file: string[] }) => {
   const projectName = project || await findAmbientProjectName(localComposeClient(file))
@@ -20,6 +21,10 @@ export default class Down extends DriverCommand<typeof Down> {
     ...composeFlags,
     force: Flags.boolean({
       description: 'Do not error if the environment is not found',
+      default: false,
+    }),
+    wait: Flags.boolean({
+      description: 'Wait for resource deletion to complete. If false (the default), the deletion will be started but not waited for',
       default: false,
     }),
   }
@@ -41,12 +46,14 @@ export default class Down extends DriverCommand<typeof Down> {
 
     if (!machine) {
       if (!flags.force) {
-        throw new Error(`No machine found for envId ${envId}`)
+        throw new Error(`No machine found for environment ${envId}`)
       }
       return undefined
     }
 
-    await driver.removeMachine(machine.providerId)
+    await withSpinner(async () => {
+      await driver.removeMachine(machine.providerId, flags.wait)
+    }, { opPrefix: `Deleting ${driver.friendlyName} machine ${machine.providerId} for environment ${envId}` })
 
     if (flags.json) {
       return envId
