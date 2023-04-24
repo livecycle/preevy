@@ -22,7 +22,7 @@
 ![Terminal GIF](./terminal.gif)
 
 Preevy is a powerful CLI tool designed to simplify the process of creating ephemeral preview environments.
-Using Preevy, you can easily provision any Docker-Compose application on AWS using affordable [Lightsail](https://aws.amazon.com/free/compute/lightsail) VMs or simple Google cloud VMS (support more cloud providers is on the way).
+Using Preevy, you can easily provision any Docker-Compose application on AWS using affordable [Lightsail](https://aws.amazon.com/free/compute/lightsail) VMs or simple Google cloud VMS (support for more cloud providers is on the way).
 
 ## Documentation
 
