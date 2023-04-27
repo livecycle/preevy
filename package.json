@@ -1,7 +1,9 @@
 {
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/cli",
+    "packages/common",
+    "packages/tunnel-server"
   ],
   "devDependencies": {
     "husky": "^8.0.0",

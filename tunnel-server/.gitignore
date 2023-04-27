@@ -26,3 +26,5 @@ ssh/ssh_host_key*
 
 tls/cert.pem
 tls/key.pem
+
+dist
