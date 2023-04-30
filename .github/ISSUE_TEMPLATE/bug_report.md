@@ -22,5 +22,5 @@ A clear and concise description of what you expected to happen.
  - OS: [e.g. iOS]
 
 **Additional context**
- - Version: 0.0.23
+ - Version: 0.0.24
  - Driver: AWS/GCP
