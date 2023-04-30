@@ -52,7 +52,7 @@
     "rimraf": "^4.4.0",
     "shell-escape": "^0.2.0",
     "source-map-support": "^0.5.21",
-    "ssh2": "github:mscdex/ssh2#64d45fd0b36642922bc3ec8f51de6bfc98c37022",
+    "ssh2": "^1.12.0",
     "tar": "^6.1.13",
     "yaml": "^2.2.1"
   },

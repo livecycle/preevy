@@ -15,7 +15,7 @@
     "p-limit": "^3.1.0",
     "pino": "^8.11.0",
     "pino-pretty": "^9.4.0",
-    "ssh2": "github:mscdex/ssh2#64d45fd0b36642922bc3ec8f51de6bfc98c37022"
+    "ssh2": "^1.12.0"
   },
   "devDependencies": {
     "@types/dockerode": "^3.3.14",

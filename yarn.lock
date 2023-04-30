@@ -4729,6 +4729,11 @@ buildcheck@0.0.5:
   resolved "https://registry.yarnpkg.com/buildcheck/-/buildcheck-0.0.5.tgz#5b7c0830b25dc61422032eeb5c18bfcaa9eebb8d"
   integrity sha512-jYWpRy8eedl/JZqkOeq0X0bNcaK04hXKhIi4gYsDKZUJWRjJJWViYfsMXO0BJQ40zSLcdLoa+iqe48Kz2PtQag==
 
+buildcheck@~0.0.6:
+  version "0.0.6"
+  resolved "https://registry.yarnpkg.com/buildcheck/-/buildcheck-0.0.6.tgz#89aa6e417cfd1e2196e3f8fe915eb709d2fe4238"
+  integrity sha512-8f9ZJCUXyT1M35Jx7MkBgmBMo3oHTTBIPLiY9xyL0pl3T5RwcPEY8cUHr5LBNfu/fk6c2T4DJZuVM/8ZZT2D2A==
+
 builtin-modules@^3.3.0:
   version "3.3.0"
   resolved "https://registry.yarnpkg.com/builtin-modules/-/builtin-modules-3.3.0.tgz#cae62812b89801e9656336e46223e030386be7b6"
@@ -5267,6 +5272,14 @@ cpu-features@~0.0.5:
   integrity sha512-Rj33pk//oVNh25YjsBaKtOkXNW7IARYxejWJosJkXqVPpbK+FrdpThPk6f4m3d+CEh2qMlkGx/SFt2Y1XSWN6g==
   dependencies:
     buildcheck "0.0.5"
+    nan "^2.17.0"
+
+cpu-features@~0.0.6:
+  version "0.0.7"
+  resolved "https://registry.yarnpkg.com/cpu-features/-/cpu-features-0.0.7.tgz#81ba93e1d0a729fd25132a54c3ff689c37b542f7"
+  integrity sha512-fjzFmsUKKCrC9GrM1eQTvQx18e+kjXFzjRLvJPNEDjk31+bJ6ZiV6uchv/hzbzXVIgbWdrEyyX1IFKwse65+8w==
+  dependencies:
+    buildcheck "~0.0.6"
     nan "^2.17.0"
 
 create-require@^1.1.0:
@@ -10411,7 +10424,7 @@ sprintf-js@~1.0.2:
   resolved "https://registry.yarnpkg.com/sprintf-js/-/sprintf-js-1.0.3.tgz#04e6926f662895354f3dd015203633b857297e2c"
   integrity sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g==
 
-ssh2@^1.11.0, "ssh2@github:mscdex/ssh2#64d45fd0b36642922bc3ec8f51de6bfc98c37022":
+ssh2@^1.11.0:
   version "1.11.0"
   resolved "https://codeload.github.com/mscdex/ssh2/tar.gz/64d45fd0b36642922bc3ec8f51de6bfc98c37022"
   dependencies:
@@ -10419,6 +10432,17 @@ ssh2@^1.11.0, "ssh2@github:mscdex/ssh2#64d45fd0b36642922bc3ec8f51de6bfc98c37022"
     bcrypt-pbkdf "^1.0.2"
   optionalDependencies:
     cpu-features "~0.0.5"
+    nan "^2.17.0"
+
+ssh2@^1.12.0:
+  version "1.12.0"
+  resolved "https://registry.yarnpkg.com/ssh2/-/ssh2-1.12.0.tgz#a1ed758f69fbc816f31d04b443f4eb21ef487dc2"
+  integrity sha512-7mcLu8biO6/BjQQ1iCjCmuBiF0hXxo+JlHpJBPDTVsxU7evscWWiRUgYF5XIs4gLKmiPRHA0maund11QLWyDJg==
+  dependencies:
+    asn1 "^0.2.4"
+    bcrypt-pbkdf "^1.0.2"
+  optionalDependencies:
+    cpu-features "~0.0.6"
     nan "^2.17.0"
 
 ssri@^8.0.0, ssri@^8.0.1:
