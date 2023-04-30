@@ -51,7 +51,7 @@ export const sshServer = ({
 
         // calling "accept" when no signature specified does not result in authenticated state
         // see: https://github.com/mscdex/ssh2/issues/561#issuecomment-303263753
-        if (ctx.signature && !keyOrError.verify(ctx.blob as Buffer, ctx.signature)) {
+        if (ctx.signature && !keyOrError.verify(ctx.blob as Buffer, ctx.signature, ctx.key.algo)) {
           log.error('error verifying key: %j', keyOrError)
           ctx.reject(['publickey'])
           return
