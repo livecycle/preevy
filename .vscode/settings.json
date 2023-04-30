@@ -25,4 +25,6 @@
   "typescript.implementationsCodeLens.enabled": true,
   "typescript.preferences.quoteStyle": "single",
   "typescript.tsdk": "node_modules/typescript/lib",
+  "markdown.extension.preview.autoShowPreviewToSide": true,
+  "markdown.extension.toc.levels": "2..6",
 }

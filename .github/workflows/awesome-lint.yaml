@@ -1,0 +1,19 @@
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  check-awesome-list-linter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Check awesome-list linter
+        # https://github.com/sindresorhus/awesome/blob/main/pull_request_template.md
+        run: npx --yes awesome-lint ./README.md
