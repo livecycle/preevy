@@ -22,7 +22,7 @@
 ![Terminal GIF](./terminal.gif)
 
 Preevy is a powerful CLI tool designed to simplify the process of creating ephemeral preview environments.
-Using Preevy, you can easily provision any Docker-Compose application on AWS using affordable [Lightsail](https://aws.amazon.com/free/compute/lightsail) VMs or simple Google cloud VMS (support for more cloud providers is on the way).
+Using Preevy, you can easily provision any Docker-Compose application on AWS using affordable [Lightsail](https://aws.amazon.com/free/compute/lightsail) or [Google Cloud](https://cloud.google.com/compute/) VMs (support for more cloud providers is on the way).
 
 ## Documentation
 
@@ -61,10 +61,10 @@ Running Preevy:
 
 1. Install the CLI using npm:`npm install -g preevy` , or use it directly using: `npx preevy <command>`
 2. Set up a profile by using: `preevy init`
-3. Use `up` command to provision a new VM with your application: `preevy up`
-4. Access and share your new preview environment by using the `*.livecycle.run` outputted by the CLI.
+3. Use the `up` command to provision a new VM with your application: `preevy up`
+4. Access and share your new preview environment by using the `*.livecycle.run` link provided in the command output.
 5. Code changed? Re-run `up` to quickly sync the preview environment with your changes on the existing VM.
-6. Destroy the environment by using: `preevy down`.
+6. Remove the environment by using: `preevy down`.
 
 ## Under the hood
 

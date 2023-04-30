@@ -20,20 +20,46 @@ When provisioning a new environment using the [`up`](/cli-reference#preevy-up-se
 
 ## Profile configuration
 
-Preevy profile provide a mechanism for storing and sharing configuration and state between different machines. This allows sharing of environments between different CI jobs, or different developers.
-Using a shared profile ensure consistent configuration and stable URLs between different CI runs.
+The Preevy profile provides a mechanism for storing and sharing configuration and state between different machines. This allows sharing of environments between different CI jobs, or different developers.
+Using a shared profile ensures consistent configuration and stable URLs between different CI runs.
 
-The profile data can be stored on (AWS S3)[https://aws.amazon.com/s3/] for easy sharing. If for some reason S3 cannot be used, the profile can also be stored on the local filesystem and copied manually.
+Preevy includes built-in support for sharing profiles using [AWS S3](https://aws.amazon.com/s3/) and [Google Cloud Storage](https://cloud.google.com/storage/). You can also store the profile on the local filesystem and copy it manually.
 
 :::note
-Profile store doesn't contain any cloud provider credentials.
-The Preevy CLI always uses the local AWS credential chain (e.g, from environment variables, AWS profile, EC2 role), which needs to have the [appropriate permissions](/drivers/aws-lightsail).
-:::
+The profile does not contain any cloud provider credentials.
 
-Profile URLs specify where the profile data is stored, for example: `s3://preevy-config/profile1?region=us-east-1` (refers to a profile stored on a S3 bucket named `preevy-config` in the region `us-east-1` under `profile1` path).
+When using S3, the Preevy CLI uses the local AWS credential chain (e.g, from environment variables, AWS profile, or EC2 role)
 
-This profile can be imported using `preevy init --from s3://preevy-config/profile1?region=us-east-1`.
-All available profiles can be listed using [`preevy profile ls`](/cli-reference#preevy-profile-ls) command.
+Similarly, when using Google Cloud Storage, the Preevy CLI uses the locally stored Google Cloud credentials.
+
+For both providers, Preevy needs specific permissions to create the bucket (if it doesn't already exist) and read/write objects on the bucket.
+
+### Profile URLs
+
+Profile URLs specify the location of the shared profile on AWS S3 or Google Cloud Storage. A bucket name is always specified. The same bucket can be used to store multiple profiles by specifying a base path.
+
+Example AWS S3 URL:
+```
+s3://preevy-config/profile1?region=us-east-1
+```
+
+Refers to a profile stored on a S3 bucket named `preevy-config` in the region `us-east-1` under the base path `profile1`.
+
+Example Google Cloud Storage URL:
+
+```
+gs://preevy-config/profile1?project=my-project
+```
+
+Refers to a profile stored on a GCS bucket named `preevy-config` in the project `my-project` under the base path `profile1`.
+
+To import a shared profile, specify its URL to the `preevy init` command:
+
+```
+preevy init --from s3://preevy-config/profile1?region=us-east-1
+```
+
+List profiles which were already imported using the command [`preevy profile ls`](/packages/cli/README#preevy-profile-ls).
 
 ## Components
 

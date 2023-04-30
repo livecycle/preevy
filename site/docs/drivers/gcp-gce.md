@@ -20,4 +20,4 @@ The simplest way is to use `gcloud auth application-default login` command.
 
 ### Required GCE permissions
 
-TBD 
+TBD
