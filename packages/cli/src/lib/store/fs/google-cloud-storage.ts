@@ -1,6 +1,8 @@
-import { Storage } from '@google-cloud/storage'
+import { IdempotencyStrategy, Storage } from '@google-cloud/storage'
 import path from 'path'
 import stream from 'node:stream'
+import { GoogleAuth } from 'google-gax'
+import { DefaultTransporter } from 'google-auth-library'
 import { VirtualFS } from './base'
 
 export const defaultBucketName = (
@@ -31,11 +33,25 @@ export const parseUrl = (url: string) => {
 
 const hasErrorCode = (e: unknown, code: unknown) => e && (e as { code: unknown }).code === code
 
-export const googleCloudStorageFs = async (url: string): Promise<VirtualFS> => {
-  const u = parseUrl(url)
-  const { bucket: bucketName, path: prefix, project } = u
+const authClientWithRetry = () => {
+  const transporter = new DefaultTransporter()
+  transporter.configure({ retryConfig: { noResponseRetries: 3 } })
+  const authClient = new GoogleAuth()
+  authClient.transporter = transporter
+  return authClient
+}
 
-  const storage = new Storage({ projectId: project })
+export const googleCloudStorageFs = async (url: string): Promise<VirtualFS> => {
+  const { bucket: bucketName, path: prefix, project } = parseUrl(url)
+
+  const storage = new Storage({
+    projectId: project,
+    authClient: authClientWithRetry(),
+    retryOptions: {
+      autoRetry: true,
+      idempotencyStrategy: IdempotencyStrategy.RetryAlways,
+    },
+  })
   const bucket = await ensureBucketExists(storage, bucketName)
 
   return {
