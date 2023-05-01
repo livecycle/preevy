@@ -8,6 +8,7 @@ import { flattenTunnels, HostKeySignatureConfirmer, performTunnelConnectionCheck
 import { envIdFlags } from '../../lib/env-id'
 import { composeFlags } from '../../lib/compose/flags'
 import { carefulBooleanPrompt } from '../../lib/prompt'
+import { telemetryEmitter } from '../../lib/telemetry'
 
 const confirmHostFingerprint = async (
   { hostKeyFingerprint: hostKeySignature, hostname, port }: Parameters<HostKeySignatureConfirmer>[0],
@@ -15,7 +16,7 @@ const confirmHostFingerprint = async (
   const formattedHost = port ? `${hostname}:${port}` : hostname
   const message = [
     `The authenticity of host '${formattedHost}' can't be established.`,
-    `Key fingerprint is $${hostKeySignature}`,
+    `Key fingerprint is ${hostKeySignature}`,
     'Are you sure you want to continue connecting (yes/no)?',
   ].join(os.EOL)
   return carefulBooleanPrompt(message)
@@ -82,7 +83,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       insecureSkipVerify: flags['insecure-skip-verify'],
     }
 
-    const { hostKey } = await performTunnelConnectionCheck({
+    const { hostKey, clientId } = await performTunnelConnectionCheck({
       log: this.logger,
       tunnelOpts,
       clientPrivateKey: tunnelingKey,
@@ -96,6 +97,8 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       },
       keysState: pStore.knownServerPublicKeys,
     })
+
+    telemetryEmitter().identify({ proxy_client_id: clientId })
 
     const { machine, tunnels, envId } = await up({
       userSpecifiedServices: restArgs,

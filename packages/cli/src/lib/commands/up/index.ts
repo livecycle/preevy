@@ -3,6 +3,7 @@ import retry from 'p-retry'
 import yaml from 'yaml'
 import path from 'path'
 import { rimraf } from 'rimraf'
+import { formatPublicKey } from '@preevy/common'
 import { Logger } from '../../../log'
 import { Machine, MachineDriver } from '../../machine'
 import { FileToCopy, SshClient } from '../../ssh/client'
@@ -110,7 +111,7 @@ const up = async ({
   const createCopiedFile = createCopiedFileInDataDir({ projectLocalDataDir, filesToCopy, remoteDir })
   const [sshPrivateKeyFile, knownServerPublicKey] = await Promise.all([
     createCopiedFile('tunnel_client_private_key', sshTunnelPrivateKey),
-    createCopiedFile('tunnel_server_public_key', hostKey),
+    createCopiedFile('tunnel_server_public_key', formatPublicKey(hostKey)),
   ])
 
   const envId = userSpecifiedEnvId || await findAmbientEnvId(projectName)

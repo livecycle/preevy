@@ -1,10 +1,8 @@
 import { ChildProcess, spawn, StdioOptions } from 'child_process'
-import shellEscape from 'shell-escape'
 import yaml from 'yaml'
 import { WriteStream } from 'fs'
 import { ComposeModel } from './model'
 import { childProcessPromise, childProcessStdoutPromise } from '../child-process'
-import { SshClient } from '../ssh/client'
 
 const composeFileArgs = (
   composeFiles: string[] | Buffer
@@ -97,16 +95,3 @@ export const localComposeClient = (composeFiles: string[] | Buffer) => {
     spawnPromise: spawnComposePromise,
   })
 }
-
-export const sshComposeClient = (
-  sshClient: SshClient,
-  composeFiles: string[]
-) => composeClient(
-  async ({ args, stdin }) => (
-    await sshClient.execCommand(
-      `docker compose ${shellEscape(args)}`,
-      { stdin },
-    )
-  ).stdout.trim(),
-  composeFiles,
-)

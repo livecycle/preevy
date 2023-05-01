@@ -68,7 +68,7 @@ export const addDockerProxyService = (
         {
           type: 'bind',
           source: knownServerPublicKeyPath,
-          target: '/root/.ssh/known_server_keys/tunnel_server',
+          target: '/root/known_server_keys/tunnel_server',
           read_only: true,
           bind: { create_host_path: true },
         },
