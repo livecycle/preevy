@@ -1,4 +1,4 @@
-import { CreateBucketCommand, DeleteObjectCommand, GetObjectCommand, GetObjectCommandOutput, HeadBucketCommand, PutObjectCommand, S3Client, S3ServiceException } from '@aws-sdk/client-s3'
+import { GetObjectCommandOutput, S3, S3ServiceException } from '@aws-sdk/client-s3'
 import path from 'path'
 import { VirtualFS } from './base'
 
@@ -6,31 +6,18 @@ export const defaultBucketName = (
   { profileAlias, accountId }: { profileAlias: string; accountId: string },
 ) => `preevy-${accountId}-${profileAlias}`
 
-async function ensureBucketExists(s3: S3Client, bucket: string) {
+const isNotFoundError = (err: unknown) => err instanceof S3ServiceException && err.$metadata.httpStatusCode === 404
+
+async function ensureBucketExists(s3: S3, bucket: string) {
   try {
-    await s3.send(new HeadBucketCommand({
-      Bucket: bucket,
-    }))
+    await s3.headBucket({ Bucket: bucket })
     return
   } catch (err) {
-    if (err instanceof S3ServiceException) {
-      if (err.$metadata.httpStatusCode !== 404) {
-        throw err
-      }
+    if (!isNotFoundError(err)) {
+      throw err
     }
   }
-  try {
-    await s3.send(new CreateBucketCommand({
-      Bucket: bucket,
-    }))
-    return
-  } catch (err) {
-    if (err instanceof S3ServiceException) {
-      if (err.$metadata.httpStatusCode !== 409) {
-        throw err
-      }
-    }
-  }
+  await s3.createBucket({ Bucket: bucket })
 }
 
 function parseS3Url(s3Url: string) {
@@ -53,7 +40,7 @@ function parseS3Url(s3Url: string) {
 export const s3fs = async (s3Url: string): Promise<VirtualFS> => {
   const url = parseS3Url(s3Url)
   const { bucket, path: prefix } = url
-  const s3 = new S3Client({
+  const s3 = new S3({
     region: url.region,
   })
 
@@ -64,17 +51,15 @@ export const s3fs = async (s3Url: string): Promise<VirtualFS> => {
     async read(filename: string) {
       let result: GetObjectCommandOutput
       try {
-        result = await s3.send(new GetObjectCommand({
+        result = await s3.getObject({
           Bucket: bucket,
           Key: path.join(prefix, filename),
-        }))
-      } catch (error) {
-        if (error instanceof S3ServiceException) {
-          if (error.$metadata.httpStatusCode === 404) {
-            return undefined
-          }
+        })
+      } catch (err) {
+        if (isNotFoundError(err)) {
+          return undefined
         }
-        throw error
+        throw err
       }
 
       const byteArray = await result.Body?.transformToByteArray()
@@ -85,17 +70,25 @@ export const s3fs = async (s3Url: string): Promise<VirtualFS> => {
       return Buffer.from(byteArray)
     },
     async write(filename: string, content: Buffer | string) {
-      await s3.send(new PutObjectCommand({
+      await s3.putObject({
         Bucket: bucket,
         Key: path.join(prefix, filename),
         Body: content,
-      }))
+      })
     },
     async delete(filename: string) {
-      await s3.send(new DeleteObjectCommand({
-        Bucket: bucket,
-        Key: path.join(prefix, filename),
-      }))
+      try {
+        await s3.deleteObject({
+          Bucket: bucket,
+          Key: path.join(prefix, filename),
+        })
+      } catch (err) {
+        if (isNotFoundError(err)) {
+          return undefined
+        }
+        throw err
+      }
+      return undefined
     },
   }
 }
