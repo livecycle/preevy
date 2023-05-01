@@ -47,7 +47,7 @@ export default class Logs extends DriverCommand<typeof Logs> {
     const envId = flags.id || await findAmbientEnvId(projectName)
     log.debug(`envId: ${envId}`)
 
-    const model = await localComposeClient(flags.file).getModel()
+    const model = await localComposeClient(flags.file, projectName).getModel()
 
     // exclude docker proxy service unless explicitly specified
     const modelServices = Object.keys(model.services ?? {})
@@ -74,7 +74,7 @@ export default class Logs extends DriverCommand<typeof Logs> {
     })
 
     try {
-      const compose = localComposeClient(Buffer.from(yaml.stringify(addBaseDockerProxyService(model))))
+      const compose = localComposeClient(Buffer.from(yaml.stringify(addBaseDockerProxyService(model))), projectName)
       const withDockerSocket = wrapWithDockerSocket({ sshClient, log })
 
       await withDockerSocket(() => compose.spawnPromise(['logs', ...services], { stdio: 'inherit' }))

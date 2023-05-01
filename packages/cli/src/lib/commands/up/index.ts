@@ -92,7 +92,7 @@ const up = async ({
 }): Promise<{ machine: Machine; tunnels: Tunnel[]; envId: string }> => {
   log.debug('Normalizing compose files')
 
-  const userModel = await localComposeClient(userComposeFiles).getModel().catch(e => {
+  const userModel = await localComposeClient(userComposeFiles, userSpecifiedProjectName).getModel().catch(e => {
     if (!(e instanceof ProcessError)) {
       throw e
     }
@@ -143,7 +143,7 @@ const up = async ({
 
     await copyFilesWithoutRecreatingDirUsingSftp(sshClient, REMOTE_DIR_BASE, remoteDir, filesToCopy)
 
-    const compose = localComposeClient([composeFilePath])
+    const compose = localComposeClient([composeFilePath], projectName)
     const composeArgs = calcComposeArgs(userSpecifiedServices, debug)
     log.debug('Running compose up with args: ', composeArgs)
     await withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit' }))

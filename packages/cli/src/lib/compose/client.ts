@@ -5,14 +5,18 @@ import { ComposeModel } from './model'
 import { childProcessPromise, childProcessStdoutPromise } from '../child-process'
 
 const composeFileArgs = (
-  composeFiles: string[] | Buffer
-) => (Buffer.isBuffer(composeFiles) ? ['-f', '-'] : composeFiles.flatMap(file => ['-f', file]))
+  composeFiles: string[] | Buffer,
+  projectName?: string,
+) => [
+  ...(projectName ? ['-p', projectName] : []),
+  ...(Buffer.isBuffer(composeFiles) ? ['-f', '-'] : composeFiles.flatMap(file => ['-f', file])),
+]
 
 type Executer = (opts: { args: string[]; stdin?: Buffer }) => Promise<string>
 
 const composeClient = (
   executer: Executer,
-  composeFiles: string[] | Buffer
+  composeFiles: string[] | Buffer,
 ) => {
   const execComposeCommand = (args: string[]) => executer({
     args,
@@ -36,7 +40,7 @@ export type ComposeClient = ReturnType<typeof composeClient>
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ParametersExceptFirst<F> = F extends (arg0: any, ...rest: infer R) => any ? R : never;
 
-export const localComposeClient = (composeFiles: string[] | Buffer) => {
+export const localComposeClient = (composeFiles: string[] | Buffer, projectName?: string) => {
   const insertStdin = (stdio: StdioOptions | undefined) => {
     if (!Buffer.isBuffer(composeFiles)) {
       return stdio
@@ -54,7 +58,7 @@ export const localComposeClient = (composeFiles: string[] | Buffer) => {
     'docker',
     [
       'compose',
-      ...composeFileArgs(composeFiles),
+      ...composeFileArgs(composeFiles, projectName),
       ...args,
     ],
     {
