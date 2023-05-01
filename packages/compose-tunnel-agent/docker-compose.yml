@@ -1,13 +1,13 @@
 version: '3.7'
 
 services:
-  preview_proxy:
-    build: 
+  preevy_proxy:
+    build:
       context: ${DOCKER_PROXY_DIR:-.}
-      
+
     restart: always
 
-    environment: 
+    environment:
       - SSH_URL=${SSH_URL}
       - TLS_SERVERNAME=${TLS_SERVERNAME}
       - SSH_PRIVATE_KEY=${SSH_PRIVATE_KEY}

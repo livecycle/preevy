@@ -1,5 +1,5 @@
 composeFiles = ['./docker-compose.yml']
-if os.getenv('PREVIEW_PROXY_USE_TLS') == '1':
+if os.getenv('PREEVY_PROXY_USE_TLS') == '1':
     composeFiles.append('./docker-compose.tls.yml')
 
 docker_compose(composeFiles)

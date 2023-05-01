@@ -1,8 +1,8 @@
 version: '3.7'
 
 services:
-  preview_proxy:
-    build: 
+  preevy_proxy:
+    build:
       context: .
       target: development
     volumes:

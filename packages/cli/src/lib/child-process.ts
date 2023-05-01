@@ -39,7 +39,7 @@ export class ProcessError extends Error {
     readonly output?: ProcessOutputBuffers,
   ) {
     const message = [
-      `process ${[process.spawnfile, ...process.spawnargs].join(' ')} exited with code ${code}${signal ? `and signal ${signal}` : ''}`,
+      `process \`${process.spawnargs.join(' ')}\` exited with code ${code}${signal ? `and signal ${signal}` : ''}`,
       output ? orderedOutput(output).both().toString('utf-8') : undefined,
     ].filter(Boolean).join(': ')
     super(message)

@@ -1,8 +1,8 @@
 import ssh2 from 'ssh2'
+import { ListenOptions } from 'net'
 import { sftpClient } from './sftp'
 import { Logger } from '../../../log'
 import { forwardOutStreamLocal } from './forward-out'
-import { lazyTempDir } from '../../files'
 import { execCommand } from './exec'
 import { mkdir } from './mkdir'
 import { scriptExecuter } from './exec-script'
@@ -29,8 +29,6 @@ export const connectSshClient = async (
     })
   })
 
-  const socketDir = lazyTempDir('preview-ssh')
-
   const exec = execCommand(ssh)
   const sftp = sftpClient(ssh)
 
@@ -39,11 +37,11 @@ export const connectSshClient = async (
     sftp,
     execCommand: exec,
     execScript: scriptExecuter({ execCommand: exec, sftp, log }),
-    forwardOutStreamLocal: forwardOutStreamLocal(ssh, log, () => socketDir.path),
-    dispose: () => {
-      socketDir.dispose()
-      ssh.end()
-    },
+    forwardOutStreamLocal: (
+      listenAddress: string | number | ListenOptions,
+      remoteSocket: string,
+    ) => forwardOutStreamLocal({ ssh, log, listenAddress, remoteSocket }),
+    dispose: () => ssh.end(),
   }
 
   return self

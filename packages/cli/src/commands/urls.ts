@@ -1,14 +1,12 @@
-import yaml from 'yaml'
 import { Args, ux } from '@oclif/core'
 import DriverCommand from '../driver-command'
 import { sshKeysStore } from '../lib/state/ssh'
 import { connectSshClient as createSshClient } from '../lib/ssh/client'
 import { envIdFlags, findAmbientEnvId, findAmbientProjectName } from '../lib/env-id'
-import { findDockerProxyUrl, minimalModelWithDockerProxyService, queryTunnels } from '../lib/docker-proxy-client'
+import { queryTunnels } from '../lib/compose-tunnel-agent-client'
 import { localComposeClient } from '../lib/compose/client'
 import { composeFlags } from '../lib/compose/flags'
 import { flattenTunnels, FlatTunnel } from '../lib/tunneling'
-import { wrapWithDockerSocket } from '../lib/commands/up/docker'
 
 // eslint-disable-next-line no-use-before-define
 export default class Urls extends DriverCommand<typeof Urls> {
@@ -64,13 +62,7 @@ export default class Urls extends DriverCommand<typeof Urls> {
     })
 
     try {
-      const compose = localComposeClient(Buffer.from(yaml.stringify(minimalModelWithDockerProxyService(projectName))))
-
-      const withDockerSocket = wrapWithDockerSocket({ sshClient, log })
-
-      const dockerProxyServiceUrl = await withDockerSocket(() => findDockerProxyUrl(compose))
-      log.debug(`dockerProxyServiceUrl: ${dockerProxyServiceUrl}`)
-      const { tunnels } = await queryTunnels(sshClient, dockerProxyServiceUrl, [])
+      const { tunnels } = await queryTunnels({ sshClient, projectName })
 
       const flatTunnels: FlatTunnel[] = flattenTunnels(tunnels)
         .filter(tunnel => !args.service || (
