@@ -59,7 +59,7 @@ To import a shared profile, specify its URL to the `preevy init` command:
 preevy init --from s3://preevy-config/profile1?region=us-east-1
 ```
 
-List profiles which were already imported using the command [`preevy profile ls`](/packages/cli/README#preevy-profile-ls).
+List profiles which were already imported using the command [`preevy profile ls`](/cli-reference#preevy-profile-ls).
 
 ## Components
 
