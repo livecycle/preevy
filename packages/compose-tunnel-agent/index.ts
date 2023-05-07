@@ -6,11 +6,10 @@ import { rimraf } from 'rimraf'
 import pino from 'pino'
 import pinoPretty from 'pino-pretty'
 import { EOL } from 'os'
-import { ConnectionCheckResult, requiredEnv, checkConnection, formatPublicKey, parseSshUrl, SshConnectionConfig } from '@preevy/common'
+import { ConnectionCheckResult, requiredEnv, checkConnection, formatPublicKey, parseSshUrl, SshConnectionConfig, tunnelNameResolver } from '@preevy/common'
 import createDockerClient from './src/docker'
 import createWebServer from './src/web'
 import { sshClient as createSshClient } from './src/ssh'
-import { tunnelNameResolver } from './src/tunnel-name'
 
 const homeDir = process.env.HOME || '/root'
 

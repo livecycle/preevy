@@ -1,25 +1,25 @@
+import { BaseUrl, formatPublicKey } from '@preevy/common'
 import fs from 'fs'
-import yaml from 'yaml'
 import path from 'path'
 import { rimraf } from 'rimraf'
-import { formatPublicKey } from '@preevy/common'
+import yaml from 'yaml'
 import { Logger } from '../../../log'
-import { Machine, MachineDriver } from '../../machine'
-import { FileToCopy } from '../../ssh/client'
-import { SSHKeyConfig } from '../../ssh/keypair'
-import { fixModelForRemote } from '../../compose/model'
-import { TunnelOpts } from '../../ssh/url'
-import { ensureCustomizedMachine } from './machine'
-import { wrapWithDockerSocket } from './docker'
-import { localComposeClient } from '../../compose/client'
-import { Tunnel } from '../../tunneling'
-import { findAmbientEnvId } from '../../env-id'
-import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addComposeTunnelAgentService, composeTunnelAgentSocket, queryTunnels } from '../../compose-tunnel-agent-client'
-import { copyFilesWithoutRecreatingDirUsingSftp } from '../../sftp-copy'
-import { withSpinner } from '../../spinner'
 import { ProcessError, orderedOutput } from '../../child-process'
+import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addComposeTunnelAgentService, composeTunnelAgentSocket, queryTunnels } from '../../compose-tunnel-agent-client'
+import { getExposedTcpServices, localComposeClient } from '../../compose/client'
+import { fixModelForRemote } from '../../compose/model'
+import { findAmbientEnvId } from '../../env-id'
+import { Machine, MachineDriver } from '../../machine'
 import { MachineCreationDriver } from '../../machine/driver/driver'
 import { REMOTE_DIR_BASE, remoteProjectDir } from '../../remote-files'
+import { copyFilesWithoutRecreatingDirUsingSftp } from '../../sftp-copy'
+import { withSpinner } from '../../spinner'
+import { FileToCopy } from '../../ssh/client'
+import { SSHKeyConfig } from '../../ssh/keypair'
+import { TunnelOpts } from '../../ssh/url'
+import { Tunnel, tunnelUrl } from '../../tunneling'
+import { wrapWithDockerSocket } from './docker'
+import { ensureCustomizedMachine } from './machine'
 
 const createCopiedFileInDataDir = (
   { projectLocalDataDir, filesToCopy, remoteDir } : {
@@ -51,6 +51,8 @@ const calcComposeArgs = (userSpecifiedServices: string[], debug: boolean) => {
 }
 
 const up = async ({
+  clientId,
+  baseUrl,
   debug,
   machineDriver,
   machineCreationDriver,
@@ -65,6 +67,8 @@ const up = async ({
   allowedSshHostKeys: hostKey,
   sshTunnelPrivateKey,
 }: {
+  clientId: string
+  baseUrl: BaseUrl
   debug: boolean
   machineDriver: MachineDriver
   machineCreationDriver: MachineCreationDriver
@@ -92,6 +96,15 @@ const up = async ({
   })
   const projectName = userSpecifiedProjectName ?? userModel.name
   const remoteDir = remoteProjectDir(projectName)
+
+  const exposedServices = getExposedTcpServices(userModel)
+    .map(x => [x[0], { port: x[1].target }] as const)
+
+  const envMap = exposedServices.reduce((envMapAgg, service) => ({
+    ...envMapAgg,
+    [`PREEVY_BASE_URI_${service[0]}_${service[1].port}`.toUpperCase()]: tunnelUrl({ service, baseUrl, project: projectName, clientId }),
+  }), {})
+
   const { model: fixedModel, filesToCopy } = await fixModelForRemote({ remoteDir }, userModel)
 
   const projectLocalDataDir = path.join(dataDir, projectName)
@@ -141,7 +154,7 @@ const up = async ({
     const compose = localComposeClient([composeFilePath], projectName)
     const composeArgs = calcComposeArgs(userSpecifiedServices, debug)
     log.debug('Running compose up with args: ', composeArgs)
-    await withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit' }))
+    await withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit', env: envMap }))
 
     const tunnels = await withSpinner(async () => {
       const queryResult = await queryTunnels({

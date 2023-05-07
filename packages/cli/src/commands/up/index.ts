@@ -1,14 +1,14 @@
-import os from 'os'
 import { Args, Flags, ux } from '@oclif/core'
-import MachineCreationDriverCommand from '../../machine-creation-driver-command'
+import os from 'os'
 import { up } from '../../lib/commands'
-import { sshKeysStore } from '../../lib/state/ssh'
-import { profileStore } from '../../lib/profile'
-import { flattenTunnels, HostKeySignatureConfirmer, performTunnelConnectionCheck } from '../../lib/tunneling'
-import { envIdFlags } from '../../lib/env-id'
 import { composeFlags } from '../../lib/compose/flags'
+import { envIdFlags } from '../../lib/env-id'
+import { profileStore } from '../../lib/profile'
 import { carefulBooleanPrompt } from '../../lib/prompt'
+import { sshKeysStore } from '../../lib/state/ssh'
 import { telemetryEmitter } from '../../lib/telemetry'
+import { HostKeySignatureConfirmer, flattenTunnels, performTunnelConnectionCheck } from '../../lib/tunneling'
+import MachineCreationDriverCommand from '../../machine-creation-driver-command'
 
 const confirmHostFingerprint = async (
   { hostKeyFingerprint: hostKeySignature, hostname, port }: Parameters<HostKeySignatureConfirmer>[0],
@@ -83,7 +83,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       insecureSkipVerify: flags['insecure-skip-verify'],
     }
 
-    const { hostKey, clientId } = await performTunnelConnectionCheck({
+    const { hostKey, clientId, baseUrl } = await performTunnelConnectionCheck({
       log: this.logger,
       tunnelOpts,
       clientPrivateKey: tunnelingKey,
@@ -101,6 +101,8 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
     telemetryEmitter().identify({ proxy_client_id: clientId })
 
     const { machine, tunnels, envId } = await up({
+      clientId,
+      baseUrl,
       userSpecifiedServices: restArgs,
       debug: flags.debug,
       machineDriver: driver,

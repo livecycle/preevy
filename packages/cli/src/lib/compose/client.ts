@@ -4,6 +4,13 @@ import { WriteStream } from 'fs'
 import { ComposeModel } from './model'
 import { childProcessPromise, childProcessStdoutPromise } from '../child-process'
 
+export const getExposedTcpServices = (model: ComposeModel) => Object.entries(model.services ?? [])
+  .filter(x => x[1].ports)
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  .flatMap(x => x[1].ports!
+    .map(k => [x[0], k] as const))
+  .filter(x => x[1].protocol === 'tcp')
+
 const composeFileArgs = (
   composeFiles: string[] | Buffer,
   projectName?: string,
@@ -23,7 +30,7 @@ const composeClient = (
     stdin: Buffer.isBuffer(composeFiles) ? composeFiles : undefined,
   })
 
-  const getModel = async () => yaml.parse(await execComposeCommand(['convert'])) as ComposeModel
+  const getModel = async () => yaml.parse(await execComposeCommand(['convert', '--no-interpolate'])) as ComposeModel
 
   return {
     startService: (...services: string[]) => execComposeCommand(['start', ...services]),
