@@ -1,9 +1,16 @@
+import { AddressInfo } from 'net'
 import { Logger } from '../../../log'
 import { SshClient } from '../../ssh/client'
 
 export type FuncWrapper = <Return>(
   f: () => Promise<Return>,
 ) => Promise<Return>
+
+const dockerHost = (s: string | AddressInfo) => (
+  typeof s === 'string'
+    ? `unix://${s}`
+    : `tcp://${s.address}:${s.port}`
+)
 
 export const wrapWithDockerSocket = (
   { sshClient, log }: {
@@ -13,7 +20,7 @@ export const wrapWithDockerSocket = (
 ): FuncWrapper => async <Return>(
   f: () => Promise<Return>,
 ): Promise<Return> => {
-  const { localSocket, close } = await sshClient.forwardOutStreamLocal('/var/run/docker.sock')
+  const { localSocket, close } = await sshClient.forwardOutStreamLocal({ port: 0, host: '0.0.0.0' }, '/var/run/docker.sock')
 
   log.debug(`Local socket: ${localSocket}`)
 
@@ -22,7 +29,7 @@ export const wrapWithDockerSocket = (
     delete process.env[k]
   })
 
-  process.env.DOCKER_HOST = `unix://${localSocket}`
+  process.env.DOCKER_HOST = dockerHost(localSocket)
 
   return f().finally(close)
 }

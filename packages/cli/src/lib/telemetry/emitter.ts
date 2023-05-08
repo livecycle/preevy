@@ -12,6 +12,11 @@ const newRunId = () => `ses_${crypto.randomBytes(16).toString('base64url').repla
 const TELEMETRY_URL = 'https://preevy-telemetry.livecycle.run/v1/event'
 const FLUSH_INTERVAL = 5000
 
+type IdentifyFunction = {
+  (person: TelemetryProperties): void
+  (id: string, person?: TelemetryProperties): void
+}
+
 export const telemetryEmitter = async ({ dataDir, version, debug }: {
   dataDir: string
   version: string
@@ -28,11 +33,13 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
       return
     }
 
+    const body = stringify({ batch: pendingEvents.map(serializableEvent) })
+
     const response = await fetch(TELEMETRY_URL, {
       headers: { 'Content-Type': 'application/json' },
       method: 'POST',
       redirect: 'follow',
-      body: stringify({ batch: pendingEvents.map(serializableEvent) }),
+      body,
     })
 
     if (!response.ok && debug) {
@@ -74,25 +81,35 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
     run_id: runId,
   }
 
-  return ({
-    identify: (id: string, person: TelemetryProperties) => {
-      const isCurrentIdAnonymous = currentId === runId
-      if (isCurrentIdAnonymous || Object.keys(person).length) {
-        pushEvent({
-          event: '$identify',
-          timestamp: new Date(),
-          distinct_id: id,
-          $set: person,
-          properties: {
-            ...isCurrentIdAnonymous ? { $anon_distinct_id: currentId } : {},
-            ...commonProperties,
-          },
-        })
-      }
+  const identify: IdentifyFunction = (...args) => {
+    const [id, person] = (
+      typeof args[0] === 'string' ? args : [undefined, args[0]]
+    ) as [string, TelemetryProperties | undefined] | [undefined, TelemetryProperties]
+
+    const isCurrentIdAnonymous = currentId === runId
+
+    if (isCurrentIdAnonymous || Object.keys(person ?? {}).length) {
+      pushEvent({
+        event: '$identify',
+        timestamp: new Date(),
+        distinct_id: id ?? currentId,
+        $set: person,
+        properties: {
+          ...(isCurrentIdAnonymous && id) ? { $anon_distinct_id: currentId } : {},
+          ...commonProperties,
+        },
+      })
+    }
+
+    if (id) {
       currentId = id
-    },
+    }
+  }
+
+  return ({
+    identify,
     capture: (event: string, props: TelemetryProperties) => {
-      pendingEvents.push({
+      pushEvent({
         event,
         timestamp: new Date(),
         distinct_id: currentId,
@@ -101,6 +118,9 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
           ...props,
         },
       })
+    },
+    setProps: (props: TelemetryProperties) => {
+      Object.assign(commonProperties, props)
     },
     flush: () => {
       debouncedFlush.cancel()
@@ -114,5 +134,6 @@ export type TelemetryEmitter = Awaited<ReturnType<typeof telemetryEmitter>>
 export const nullTelemetryEmitter: TelemetryEmitter = {
   identify: async () => undefined,
   capture: async () => undefined,
+  setProps: () => undefined,
   flush: async () => undefined,
 }

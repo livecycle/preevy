@@ -1,5 +1,4 @@
 import { promisify } from 'util'
-import { requiredEnv, numberFromEnv } from '@preevy/common'
 import { app as createApp } from './src/app'
 import { inMemoryPreviewEnvStore } from './src/preview-env'
 import { sshServer as createSshServer } from './src/ssh-server'
@@ -11,6 +10,7 @@ import { appLoggerFromEnv } from './src/logging'
 import pino from 'pino'
 import { tunnelsGauge } from './src/metrics'
 import { runMetricsServer } from './src/metrics'
+import { numberFromEnv, requiredEnv } from './src/utils'
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 

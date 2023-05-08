@@ -5,8 +5,7 @@ Preevy CLI
 [![Downloads/week](https://img.shields.io/npm/dw/preevy.svg)](https://npmjs.org/package/preevy)
 [![License](https://img.shields.io/npm/l/preevy.svg)](https://github.com/livecycle/preevy/blob/main/LICENSE)
 
-Preevy is a CLI tool for provisioning preview environments.
-Using preview, you can provision any docker compose app on your favorite cloud (currently AWS is only supported)
+Preevy is a CLI tool for easily creating preview environments for your Docker Compose apps on your cloud provider - we currently support AWS and Google, with more on the way.
 
 
 <!-- toc -->
@@ -20,7 +19,7 @@ $ npm install -g preevy
 $ preevy COMMAND
 running command...
 $ preevy (--version)
-preevy/0.0.23 darwin-arm64 node-v16.20.0
+preevy/0.0.24 darwin-arm64 node-v18.12.1
 $ preevy --help [COMMAND]
 USAGE
   $ preevy COMMAND
@@ -29,30 +28,21 @@ USAGE
 <!-- usagestop -->
 # Commands
 <!-- commands -->
-* [`preevy down`](#preevy-down)
-* [`preevy help [COMMANDS]`](#preevy-help-commands)
-* [`preevy init [PROFILE-ALIAS]`](#preevy-init-profile-alias)
-* [`preevy logs [SERVICES]`](#preevy-logs-services)
-* [`preevy ls`](#preevy-ls)
-* [`preevy plugins`](#preevy-plugins)
-* [`preevy plugins:install PLUGIN...`](#preevy-pluginsinstall-plugin)
-* [`preevy plugins:inspect PLUGIN...`](#preevy-pluginsinspect-plugin)
-* [`preevy plugins:install PLUGIN...`](#preevy-pluginsinstall-plugin-1)
-* [`preevy plugins:link PLUGIN`](#preevy-pluginslink-plugin)
-* [`preevy plugins:uninstall PLUGIN...`](#preevy-pluginsuninstall-plugin)
-* [`preevy plugins:uninstall PLUGIN...`](#preevy-pluginsuninstall-plugin-1)
-* [`preevy plugins:uninstall PLUGIN...`](#preevy-pluginsuninstall-plugin-2)
-* [`preevy plugins update`](#preevy-plugins-update)
-* [`preevy profile create NAME URL`](#preevy-profile-create-name-url)
-* [`preevy profile current`](#preevy-profile-current)
-* [`preevy profile import LOCATION`](#preevy-profile-import-location)
-* [`preevy profile ls`](#preevy-profile-ls)
-* [`preevy profile rm NAME`](#preevy-profile-rm-name)
-* [`preevy profile use NAME`](#preevy-profile-use-name)
-* [`preevy purge`](#preevy-purge)
-* [`preevy up [SERVICE]`](#preevy-up-service)
-* [`preevy urls [SERVICE] [PORT]`](#preevy-urls-service-port)
-* [`preevy version`](#preevy-version)
+- [`preevy down`](#preevy-down)
+- [`preevy help [COMMANDS]`](#preevy-help-commands)
+- [`preevy init [PROFILE-ALIAS]`](#preevy-init-profile-alias)
+- [`preevy logs [SERVICES]`](#preevy-logs-services)
+- [`preevy ls`](#preevy-ls)
+- [`preevy profile create NAME URL`](#preevy-profile-create-name-url)
+- [`preevy profile current`](#preevy-profile-current)
+- [`preevy profile import LOCATION`](#preevy-profile-import-location)
+- [`preevy profile ls`](#preevy-profile-ls)
+- [`preevy profile rm NAME`](#preevy-profile-rm-name)
+- [`preevy profile use NAME`](#preevy-profile-use-name)
+- [`preevy purge`](#preevy-purge)
+- [`preevy up [SERVICE]`](#preevy-up-service)
+- [`preevy urls [SERVICE] [PORT]`](#preevy-urls-service-port)
+- [`preevy version`](#preevy-version)
 
 ## `preevy down`
 
@@ -217,239 +207,6 @@ DESCRIPTION
 ```
 
 _See code: [dist/commands/ls/index.ts](https://github.com/livecycle/preevy/blob/v0.0.23/dist/commands/ls/index.ts)_
-
-## `preevy plugins`
-
-List installed plugins.
-
-```
-USAGE
-  $ preevy plugins [--core]
-
-FLAGS
-  --core  Show core plugins.
-
-DESCRIPTION
-  List installed plugins.
-
-EXAMPLES
-  $ preevy plugins
-```
-
-_See code: [@oclif/plugin-plugins](https://github.com/oclif/plugin-plugins/blob/v2.3.2/src/commands/plugins/index.ts)_
-
-## `preevy plugins:install PLUGIN...`
-
-Installs a plugin into the CLI.
-
-```
-USAGE
-  $ preevy plugins:install PLUGIN...
-
-ARGUMENTS
-  PLUGIN  Plugin to install.
-
-FLAGS
-  -f, --force    Run yarn install with force flag.
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Installs a plugin into the CLI.
-  Can be installed from npm or a git url.
-
-  Installation of a user-installed plugin will override a core plugin.
-
-  e.g. If you have a core plugin that has a 'hello' command, installing a user-installed plugin with a 'hello' command
-  will override the core plugin implementation. This is useful if a user needs to update core plugin functionality in
-  the CLI without the need to patch and update the whole CLI.
-
-
-ALIASES
-  $ preevy plugins add
-
-EXAMPLES
-  $ preevy plugins:install myplugin 
-
-  $ preevy plugins:install https://github.com/someuser/someplugin
-
-  $ preevy plugins:install someuser/someplugin
-```
-
-## `preevy plugins:inspect PLUGIN...`
-
-Displays installation properties of a plugin.
-
-```
-USAGE
-  $ preevy plugins:inspect PLUGIN...
-
-ARGUMENTS
-  PLUGIN  [default: .] Plugin to inspect.
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Displays installation properties of a plugin.
-
-EXAMPLES
-  $ preevy plugins:inspect myplugin
-```
-
-## `preevy plugins:install PLUGIN...`
-
-Installs a plugin into the CLI.
-
-```
-USAGE
-  $ preevy plugins:install PLUGIN...
-
-ARGUMENTS
-  PLUGIN  Plugin to install.
-
-FLAGS
-  -f, --force    Run yarn install with force flag.
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Installs a plugin into the CLI.
-  Can be installed from npm or a git url.
-
-  Installation of a user-installed plugin will override a core plugin.
-
-  e.g. If you have a core plugin that has a 'hello' command, installing a user-installed plugin with a 'hello' command
-  will override the core plugin implementation. This is useful if a user needs to update core plugin functionality in
-  the CLI without the need to patch and update the whole CLI.
-
-
-ALIASES
-  $ preevy plugins add
-
-EXAMPLES
-  $ preevy plugins:install myplugin 
-
-  $ preevy plugins:install https://github.com/someuser/someplugin
-
-  $ preevy plugins:install someuser/someplugin
-```
-
-## `preevy plugins:link PLUGIN`
-
-Links a plugin into the CLI for development.
-
-```
-USAGE
-  $ preevy plugins:link PLUGIN
-
-ARGUMENTS
-  PATH  [default: .] path to plugin
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Links a plugin into the CLI for development.
-  Installation of a linked plugin will override a user-installed or core plugin.
-
-  e.g. If you have a user-installed or core plugin that has a 'hello' command, installing a linked plugin with a 'hello'
-  command will override the user-installed or core plugin implementation. This is useful for development work.
-
-
-EXAMPLES
-  $ preevy plugins:link myplugin
-```
-
-## `preevy plugins:uninstall PLUGIN...`
-
-Removes a plugin from the CLI.
-
-```
-USAGE
-  $ preevy plugins:uninstall PLUGIN...
-
-ARGUMENTS
-  PLUGIN  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ preevy plugins unlink
-  $ preevy plugins remove
-```
-
-## `preevy plugins:uninstall PLUGIN...`
-
-Removes a plugin from the CLI.
-
-```
-USAGE
-  $ preevy plugins:uninstall PLUGIN...
-
-ARGUMENTS
-  PLUGIN  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ preevy plugins unlink
-  $ preevy plugins remove
-```
-
-## `preevy plugins:uninstall PLUGIN...`
-
-Removes a plugin from the CLI.
-
-```
-USAGE
-  $ preevy plugins:uninstall PLUGIN...
-
-ARGUMENTS
-  PLUGIN  plugin to uninstall
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Removes a plugin from the CLI.
-
-ALIASES
-  $ preevy plugins unlink
-  $ preevy plugins remove
-```
-
-## `preevy plugins update`
-
-Update installed plugins.
-
-```
-USAGE
-  $ preevy plugins update [-h] [-v]
-
-FLAGS
-  -h, --help     Show CLI help.
-  -v, --verbose
-
-DESCRIPTION
-  Update installed plugins.
-```
 
 ## `preevy profile create NAME URL`
 

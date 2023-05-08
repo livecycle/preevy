@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import Docker from 'dockerode'
 import { inspect } from 'node:util'
+import { rimraf } from 'rimraf'
 import pino from 'pino'
 import pinoPretty from 'pino-pretty'
 import { EOL } from 'os'
@@ -115,13 +116,18 @@ const main = async () => {
     },
   })
 
+  const listenAddress = process.env.PORT ?? 3000
+  if (typeof listenAddress === 'string' && Number.isNaN(Number(listenAddress))) {
+    await rimraf(listenAddress)
+  }
+
   const webServer = createWebServer({
     log: log.child({ name: 'web' }),
     currentSshState: async () => (
       currentTunnels
     ),
   })
-    .listen(process.env.PORT ?? 3000, () => {
+    .listen(listenAddress, () => {
       log.info(`listening on ${inspect(webServer.address())}`)
     })
     .on('error', err => {

@@ -1,12 +1,12 @@
 {
   "name": "@preevy/tunnel-server",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "main": "index.ts",
   "type": "module",
   "license": "Apache-2.0",
   "dependencies": {
     "@fastify/request-context": "^4.2.0",
-    "@preevy/common": "0.0.23",
+    "@preevy/common": "0.0.24",
     "@sinclair/typebox": "^0.25.21",
     "fastify": "^4.12.0",
     "http-proxy": "^1.18.1",

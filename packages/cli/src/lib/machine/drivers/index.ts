@@ -37,6 +37,7 @@ const toOuterFlag = <Name extends DriverName, Type extends FlagType>(
   <FlagName extends DriverFlagName<Name, Type>>(flag: DriverFlag<Name, Type, FlagName>, flagName: FlagName) => ({
     [`${driverName}-${flagName}`]: {
       ...flag,
+      helpGroup: `${driverName} driver`,
       required: false,
     },
   })

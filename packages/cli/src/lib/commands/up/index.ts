@@ -1,11 +1,11 @@
 import fs from 'fs'
-import retry from 'p-retry'
 import yaml from 'yaml'
 import path from 'path'
 import { rimraf } from 'rimraf'
+import { formatPublicKey } from '@preevy/common'
 import { Logger } from '../../../log'
 import { Machine, MachineDriver } from '../../machine'
-import { FileToCopy, SshClient } from '../../ssh/client'
+import { FileToCopy } from '../../ssh/client'
 import { SSHKeyConfig } from '../../ssh/keypair'
 import { fixModelForRemote } from '../../compose/model'
 import { TunnelOpts } from '../../ssh/url'
@@ -14,22 +14,12 @@ import { wrapWithDockerSocket } from './docker'
 import { localComposeClient } from '../../compose/client'
 import { Tunnel } from '../../tunneling'
 import { findAmbientEnvId } from '../../env-id'
-import { DOCKER_PROXY_SERVICE_NAME, addDockerProxyService, findDockerProxyUrl, queryTunnels } from '../../docker-proxy-client'
+import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addComposeTunnelAgentService, composeTunnelAgentSocket, queryTunnels } from '../../compose-tunnel-agent-client'
 import { copyFilesWithoutRecreatingDirUsingSftp } from '../../sftp-copy'
 import { withSpinner } from '../../spinner'
 import { ProcessError, orderedOutput } from '../../child-process'
 import { MachineCreationDriver } from '../../machine/driver/driver'
-
-const REMOTE_DIR_BASE = '/var/lib/preevy'
-
-const queryTunnelsWithRetry = async (
-  sshClient: SshClient,
-  dockerProxyUrl: string,
-  filterServices?: string[]
-) => retry(
-  () => queryTunnels(sshClient, dockerProxyUrl, filterServices),
-  { minTimeout: 1000, maxTimeout: 2000, retries: 10 },
-)
+import { REMOTE_DIR_BASE, remoteProjectDir } from '../../remote-files'
 
 const createCopiedFileInDataDir = (
   { projectLocalDataDir, filesToCopy, remoteDir } : {
@@ -50,7 +40,7 @@ const createCopiedFileInDataDir = (
 
 const calcComposeArgs = (userSpecifiedServices: string[], debug: boolean) => {
   const upServices = userSpecifiedServices.length
-    ? userSpecifiedServices.concat(DOCKER_PROXY_SERVICE_NAME)
+    ? userSpecifiedServices.concat(COMPOSE_TUNNEL_AGENT_SERVICE_NAME)
     : []
 
   return [
@@ -91,7 +81,7 @@ const up = async ({
 }): Promise<{ machine: Machine; tunnels: Tunnel[]; envId: string }> => {
   log.debug('Normalizing compose files')
 
-  const userModel = await localComposeClient(userComposeFiles).getModel().catch(e => {
+  const userModel = await localComposeClient(userComposeFiles, userSpecifiedProjectName).getModel().catch(e => {
     if (!(e instanceof ProcessError)) {
       throw e
     }
@@ -101,7 +91,7 @@ const up = async ({
     throw new Error(`docker compose: ${details}`, { cause: e })
   })
   const projectName = userSpecifiedProjectName ?? userModel.name
-  const remoteDir = path.join(REMOTE_DIR_BASE, 'projects', projectName)
+  const remoteDir = remoteProjectDir(projectName)
   const { model: fixedModel, filesToCopy } = await fixModelForRemote({ remoteDir }, userModel)
 
   const projectLocalDataDir = path.join(dataDir, projectName)
@@ -110,28 +100,34 @@ const up = async ({
   const createCopiedFile = createCopiedFileInDataDir({ projectLocalDataDir, filesToCopy, remoteDir })
   const [sshPrivateKeyFile, knownServerPublicKey] = await Promise.all([
     createCopiedFile('tunnel_client_private_key', sshTunnelPrivateKey),
-    createCopiedFile('tunnel_server_public_key', hostKey),
+    createCopiedFile('tunnel_server_public_key', formatPublicKey(hostKey)),
   ])
 
   const envId = userSpecifiedEnvId || await findAmbientEnvId(projectName)
 
   log.info(`Using environment ID: ${envId}`)
 
-  const remoteModel = addDockerProxyService({
+  const { machine, sshClient } = await ensureCustomizedMachine({
+    machineDriver, machineCreationDriver, sshKey, envId, log, debug,
+  })
+
+  const composeTunnelAgentUser = (
+    await sshClient.execCommand('echo "$(id -u):$(stat -c %g /var/run/docker.sock)"')
+  ).stdout.trim()
+
+  const remoteModel = addComposeTunnelAgentService({
     debug,
     tunnelOpts,
     urlSuffix: envId,
     sshPrivateKeyPath: sshPrivateKeyFile.remote,
     knownServerPublicKeyPath: knownServerPublicKey.remote,
+    listenAddress: composeTunnelAgentSocket(projectName),
+    user: composeTunnelAgentUser,
   }, fixedModel)
 
   log.debug('model', yaml.stringify(remoteModel))
 
   const composeFilePath = (await createCopiedFile('docker-compose.yml', yaml.stringify(remoteModel))).local
-
-  const { machine, sshClient } = await ensureCustomizedMachine({
-    machineDriver, machineCreationDriver, sshKey, envId, log, debug,
-  })
 
   const withDockerSocket = wrapWithDockerSocket({ sshClient, log })
 
@@ -142,19 +138,15 @@ const up = async ({
 
     await copyFilesWithoutRecreatingDirUsingSftp(sshClient, REMOTE_DIR_BASE, remoteDir, filesToCopy)
 
-    const compose = localComposeClient([composeFilePath])
+    const compose = localComposeClient([composeFilePath], projectName)
     const composeArgs = calcComposeArgs(userSpecifiedServices, debug)
     log.debug('Running compose up with args: ', composeArgs)
     await withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit' }))
 
     const tunnels = await withSpinner(async () => {
-      const dockerProxyServiceUrl = await withDockerSocket(() => findDockerProxyUrl(compose))
-
-      const queryResult = await queryTunnelsWithRetry(
-        sshClient,
-        dockerProxyServiceUrl,
-        userSpecifiedServices,
-      )
+      const queryResult = await queryTunnels({
+        sshClient, projectName, retryOpts: { minTimeout: 1000, maxTimeout: 2000, retries: 10 },
+      })
 
       return queryResult.tunnels
     }, { opPrefix: 'Waiting for tunnels to be created' })

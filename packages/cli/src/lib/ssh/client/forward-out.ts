@@ -1,27 +1,23 @@
-import net from 'net'
-import path from 'path'
+import util from 'util'
+import net, { AddressInfo, ListenOptions } from 'net'
 import ssh2 from 'ssh2'
-import { randomBytes } from 'crypto'
-import rimraf from 'rimraf'
 import { Logger } from '../../../log'
 
 export type ForwardOutStreamLocal = {
-  localSocket: string
+  localSocket: string | AddressInfo
   close: () => void
 }
 
-export const forwardOutStreamLocal = (
-  ssh: ssh2.Client,
-  log: Logger,
-  lazySocketDir: () => string,
-) => async (
-  remoteSocket: string,
-) => new Promise<ForwardOutStreamLocal>((resolve, reject) => {
-  const socketPath = path.join(lazySocketDir(), `s_${randomBytes(16).toString('hex')}`)
-
+export const forwardOutStreamLocal = ({ ssh, log, listenAddress, remoteSocket, onClose }: {
+  ssh: ssh2.Client
+  log: Logger
+  listenAddress: string | number | ListenOptions
+  remoteSocket: string
+  onClose?: () => void
+}) => new Promise<ForwardOutStreamLocal>((resolve, reject) => {
   const socketServer = net.createServer(async socket => {
     // this error is usually caught and retried by docker-compose, so not need to log it as an error
-    socket.on('error', (e: unknown) => log.debug(`socket error on socket ${socketPath}`, e))
+    socket.on('error', (e: unknown) => log.debug(`socket error on socket ${util.inspect(listenAddress)}`, e))
 
     ssh.openssh_forwardOutStreamLocal(remoteSocket, (err, upstream) => {
       if (err) {
@@ -34,7 +30,7 @@ export const forwardOutStreamLocal = (
         return
       }
 
-      upstream.on('error', (e: unknown) => log.error(`upstream error on socket ${socketPath}`, e))
+      upstream.on('error', (e: unknown) => log.error(`upstream error on socket ${util.inspect(listenAddress)}`, e))
       upstream.pipe(socket).pipe(upstream)
     })
   })
@@ -45,8 +41,16 @@ export const forwardOutStreamLocal = (
   }
 
   socketServer
-    .listen(socketPath, () => {
-      resolve({ localSocket: socketPath, close: () => socketServer.close() })
+    .listen(listenAddress, () => {
+      const address = socketServer.address()
+      if (!address) {
+        const message = 'socket server listen error'
+        log.error(message)
+        socketServer.close()
+        reject(new Error(message))
+        return
+      }
+      resolve({ localSocket: address, close: () => socketServer.close() })
     })
     .on('error', (err: unknown) => {
       log.error('socketServer error', err)
@@ -56,7 +60,7 @@ export const forwardOutStreamLocal = (
     .on('close', async () => {
       log.debug('socketServer closed')
       ssh.removeListener('close', onConnectionClose)
-      await rimraf(socketPath)
+      onClose?.()
     })
 
   ssh.on('close', onConnectionClose)

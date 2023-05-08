@@ -49,6 +49,7 @@ export type ComposeService = {
   networks?: string[]
   ports?: ComposePort[]
   environment?: Record<string, string | undefined> | EnvString[]
+  user?: string
 }
 
 export type ComposeModel = {

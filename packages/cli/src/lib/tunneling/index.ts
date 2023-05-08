@@ -36,6 +36,7 @@ export class UnverifiedHostKeyError extends Error {
 export type HostKeySignatureConfirmer = (
     o: { hostKeyFingerprint: string; hostname: string; port: number | undefined }
   ) => Promise<void>
+
 export const performTunnelConnectionCheck = async ({
   log,
   tunnelOpts,
@@ -61,7 +62,7 @@ export const performTunnelConnectionCheck = async ({
     insecureSkipVerify: tunnelOpts.insecureSkipVerify,
   }
 
-  const check = async (): Promise<{ hostKey: Buffer }> => {
+  const check = async (): Promise<{ hostKey: Buffer; clientId: string }> => {
     const knownServerPublicKeys = await keysState.read(parsed.hostname, parsed.port)
     const connectionConfig = { ...connectionConfigBase, knownServerPublicKeys }
 
@@ -73,7 +74,7 @@ export const performTunnelConnectionCheck = async ({
       if (!knownServerPublicKeys.includes(result.hostKey)) { // TODO: check if this is correct
         await keysState.write(parsed.hostname, parsed.port, result.hostKey)
       }
-      return { hostKey: result.hostKey }
+      return { hostKey: result.hostKey, clientId: result.clientId }
     }
 
     if ('error' in result) {

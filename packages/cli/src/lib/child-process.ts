@@ -4,16 +4,18 @@ import { promisify } from 'util'
 
 type Spawn = typeof childProcess['spawn']
 
-export type ProcessOutputBuffers = { stream: 'stdout' | 'stderr'; data: Buffer }[]
+type StdoutStream = 'stdout' | 'stderr'
+export type ProcessOutputBuffers = { stream: StdoutStream; data: Buffer }[]
 
 export const orderedOutput = (buffers: ProcessOutputBuffers) => {
   const concatOutput = (
-    predicate: (s: 'stdout' | 'stderr') => boolean,
-  ) => Buffer.concat(buffers.filter(o => predicate(o.stream)).map(o => o.data))
+    predicate: (s: StdoutStream) => boolean,
+  ) => Buffer.concat(buffers.filter(({ stream }) => predicate(stream)).map(({ data }) => data))
 
   return {
     stdout: () => concatOutput(stream => stream === 'stdout'),
     stderr: () => concatOutput(stream => stream === 'stderr'),
+    both: () => concatOutput(() => true),
     toProcess: (
       process: { stdout: NodeJS.WriteStream; stderr: NodeJS.WriteStream },
     ) => buffers.forEach(({ stream, data }) => process[stream].write(data)),
@@ -30,7 +32,16 @@ const outputFromProcess = (process: { stdout?: Readable | null; stderr?: Readabl
 }
 
 export class ProcessError extends Error {
-  constructor(message: string, readonly process: childProcess.ChildProcess, readonly output?: ProcessOutputBuffers) {
+  constructor(
+    readonly process: childProcess.ChildProcess,
+    readonly code: number | null,
+    readonly signal: NodeJS.Signals | null,
+    readonly output?: ProcessOutputBuffers,
+  ) {
+    const message = [
+      `process \`${process.spawnargs.join(' ')}\` exited with code ${code}${signal ? `and signal ${signal}` : ''}`,
+      output ? orderedOutput(output).both().toString('utf-8') : undefined,
+    ].filter(Boolean).join(': ')
     super(message)
   }
 }
@@ -45,8 +56,7 @@ export function childProcessPromise(p: ChildProcess, opts?: { captureOutput?: bo
     const output = opts?.captureOutput ? outputFromProcess(p) : undefined
     p.on('exit', (code, signal) => {
       if (code !== 0) {
-        const message = `process exited with code ${code}${signal ? `and signal ${signal}` : ''}`
-        reject(new ProcessError(message, p, output))
+        reject(new ProcessError(p, code, signal, output))
         return
       }
       resolve(Object.assign(p, { output }))

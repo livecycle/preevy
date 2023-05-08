@@ -1,7 +1,7 @@
 import path from 'path'
 import { mkdir, mkdtemp, writeFile } from 'fs/promises'
 import { spawn } from 'child_process'
-import rimraf from 'rimraf'
+import { rimraf } from 'rimraf'
 import { Logger } from '../../../log'
 import { MachineDriver } from '../../machine'
 import { SshKeyPair } from '../../ssh/keypair'
