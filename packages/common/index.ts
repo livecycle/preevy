@@ -16,7 +16,7 @@ export {
   stateEmitter,
   SimpleEmitter, StateEmitter, EmitterConsumer, StateEmitterConsumer,
 } from './src/emitter'
-
+export { hasPropertyDefined, RequiredProperties } from './src/ts-utils'
 export { tryParseJson } from './src/json'
 export { Logger } from './src/log'
 export { requiredEnv, numberFromEnv } from './src/env'

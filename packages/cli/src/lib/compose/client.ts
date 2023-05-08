@@ -1,13 +1,15 @@
 import { ChildProcess, spawn, StdioOptions } from 'child_process'
 import yaml from 'yaml'
 import { WriteStream } from 'fs'
-import { ComposeModel } from './model'
+import { RequiredProperties, hasPropertyDefined } from '@preevy/common'
+import { ComposeModel, ComposeService } from './model'
 import { childProcessPromise, childProcessStdoutPromise } from '../child-process'
 
-export const getExposedTcpServices = (model: ComposeModel) => Object.entries(model.services ?? [])
-  .filter(x => x[1].ports)
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  .flatMap(x => x[1].ports!
+const isExposedService = (x: [string, ComposeService]): x is [string, RequiredProperties<ComposeService, 'ports'>] => hasPropertyDefined(x[1], 'ports')
+const getExposedServices = (model: ComposeModel) => Object.entries(model.services ?? []).filter(isExposedService)
+
+export const getExposedTcpServices = (model: ComposeModel) => getExposedServices(model)
+  .flatMap(x => x[1].ports
     .map(k => [x[0], k] as const))
   .filter(x => x[1].protocol === 'tcp')
   .map(x => [x[0], x[1].target] as const)
