@@ -10,6 +10,7 @@ export const getExposedTcpServices = (model: ComposeModel) => Object.entries(mod
   .flatMap(x => x[1].ports!
     .map(k => [x[0], k] as const))
   .filter(x => x[1].protocol === 'tcp')
+  .map(x => [x[0], x[1].target] as const)
 
 const composeFileArgs = (
   composeFiles: string[] | Buffer,
@@ -30,6 +31,9 @@ const composeClient = (
     stdin: Buffer.isBuffer(composeFiles) ? composeFiles : undefined,
   })
 
+  // if we don't use --no-interpolate, then the convert command will replace the env vars with empty strings
+  // we need to keep the environment variables in the yaml file, so we can support service discovery using preevy
+  // build time environment variables https://github.com/livecycle/preevy/issues/57
   const getModel = async () => yaml.parse(await execComposeCommand(['convert', '--no-interpolate'])) as ComposeModel
 
   return {

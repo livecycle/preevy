@@ -112,16 +112,14 @@ export const ensureTunnelKeyPair = async (
   return keyPair
 }
 
-interface Props {
-  service: readonly [name: string, values: {port: number}]
-  baseUrl: BaseUrl
-  project: string
-  clientId: string
-}
-
-export function tunnelUrl({ service: [serviceName, serviceValues], baseUrl: { hostname, protocol, port },
-  project, clientId }: Props) {
-  const { tunnel: tunnelName } = tunnelNameResolver({})({ name: serviceName, project, port: serviceValues.port })
+export function tunnelUrl({ service: { name: serviceName, port: servicePort }, baseUrl: { hostname, protocol, port },
+  project, clientId }: {
+    service: {name: string; port: number}
+    baseUrl: BaseUrl
+    project: string
+    clientId: string
+  }) {
+  const { tunnel: tunnelName } = tunnelNameResolver({})({ name: serviceName, project, port: servicePort })
   const subDomain = `${tunnelName}-${clientId}`.toLowerCase()
   return new URL(
     `${protocol}//${subDomain}.${hostname}:${port}`

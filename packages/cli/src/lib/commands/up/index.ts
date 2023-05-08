@@ -97,12 +97,9 @@ const up = async ({
   const projectName = userSpecifiedProjectName ?? userModel.name
   const remoteDir = remoteProjectDir(projectName)
 
-  const exposedServices = getExposedTcpServices(userModel)
-    .map(x => [x[0], { port: x[1].target }] as const)
-
-  const envMap = exposedServices.reduce((envMapAgg, service) => ({
+  const envMap = getExposedTcpServices(userModel).reduce((envMapAgg, [service, port]) => ({
     ...envMapAgg,
-    [`PREEVY_BASE_URI_${service[0]}_${service[1].port}`.toUpperCase()]: tunnelUrl({ service, baseUrl, project: projectName, clientId }),
+    [`PREEVY_BASE_URI_${service}_${port}`.toUpperCase()]: tunnelUrl({ service: { name: service, port }, baseUrl, project: projectName, clientId }),
   }), {})
 
   const { model: fixedModel, filesToCopy } = await fixModelForRemote({ remoteDir }, userModel)
