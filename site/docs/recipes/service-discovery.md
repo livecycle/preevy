@@ -6,11 +6,16 @@ date: "2023-05-07"
 
 ## Problem
 
-In development environments, it's common for frontend applications to communicate with backend services using exposed ports. While Preevy handles service-service communication well with compose service discovery, it can be challenging when frontend applications need to connect to backend services via exposed ports. The tunneling URL must be replaced, but it's not known in advance.
+In development environments, it's common for frontend applications to communicate with backend services using exposed ports.  
 
+Service to service communication within containers can be handled using Docker Compose's built-in feature, where services can access other containers using the service name as a hostname [Docker Networking](https://docs.docker.com/compose/networking/).   
+
+However, this method is not applicable to code executed in the browser, which creates difficulties for frontend applications when connecting to backend services through exposed ports. The tunneling URL needs to be substituted, but it cannot be determined at build time.
 ## Solution
 
-Preevy offers a simple solution for this problem by exposing the tunneling URL as an environment variable. The environment variable is named after the service name + port, with the prefix `PREEVY_BASE_URI`. For example, if the service name is `frontend` and is exposed on port 4000, the environment variable will be `PREEVY_BASE_URI_FRONTEND_4000`.
+Preevy offers a simple solution for this problem by exposing the tunneling URL as an environment variable at compose build time.   
+
+The environment variable is named after the service name + port, with the prefix `PREEVY_BASE_URI`. For example, if the service name is `frontend` and is exposed on port 4000, the environment variable will be `PREEVY_BASE_URI_FRONTEND_4000`.
 
 If the service is exposed on multiple ports, the environment variable will be created for each port.
 
