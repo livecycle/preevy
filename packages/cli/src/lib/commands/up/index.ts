@@ -1,4 +1,4 @@
-import { BaseUrl, formatPublicKey } from '@preevy/common'
+import { BaseUrl, formatPublicKey, parseKey, calcServiceSuffix } from '@preevy/common'
 import fs from 'fs'
 import path from 'path'
 import { rimraf } from 'rimraf'
@@ -66,6 +66,7 @@ const up = async ({
   sshKey,
   allowedSshHostKeys: hostKey,
   sshTunnelPrivateKey,
+  uniqueServiceSuffixes,
 }: {
   clientId: string
   baseUrl: BaseUrl
@@ -76,6 +77,7 @@ const up = async ({
   userSpecifiedProjectName: string | undefined
   userSpecifiedEnvId: string | undefined
   userSpecifiedServices: string[]
+  uniqueServiceSuffixes: boolean
   log: Logger
   composeFiles: string[]
   dataDir: string
@@ -97,7 +99,9 @@ const up = async ({
   const projectName = userSpecifiedProjectName ?? userModel.name
   const remoteDir = remoteProjectDir(projectName)
 
-  const envMap = getExposedTcpServices(userModel).reduce((envMapAgg, [service, port]) => ({
+  const services = getExposedTcpServices(userModel)
+
+  const composeEnv = services.reduce((envMapAgg, [service, port]) => ({
     ...envMapAgg,
     [`PREEVY_BASE_URI_${service}_${port}`.toUpperCase()]: tunnelUrl({ service: { name: service, port }, baseUrl, project: projectName, clientId }),
   }), {})
@@ -117,6 +121,13 @@ const up = async ({
 
   log.info(`Using environment ID: ${envId}`)
 
+  const serviceSuffix = calcServiceSuffix({ envId, privateKey: parseKey(sshTunnelPrivateKey) })
+  const serviceUrlSuffixes = uniqueServiceSuffixes
+    ? services.map(
+      ([service, port]) => ({ service, port, suffix: serviceSuffix({ project: projectName, service, port }) })
+    )
+    : []
+
   const { machine, sshClient } = await ensureCustomizedMachine({
     machineDriver, machineCreationDriver, sshKey, envId, log, debug,
   })
@@ -133,6 +144,8 @@ const up = async ({
     knownServerPublicKeyPath: knownServerPublicKey.remote,
     listenAddress: composeTunnelAgentSocket(projectName),
     user: composeTunnelAgentUser,
+    serviceUrlSuffixes,
+    projectName,
   }, fixedModel)
 
   log.debug('model', yaml.stringify(remoteModel))
@@ -151,7 +164,7 @@ const up = async ({
     const compose = localComposeClient([composeFilePath], projectName)
     const composeArgs = calcComposeArgs(userSpecifiedServices, debug)
     log.debug('Running compose up with args: ', composeArgs)
-    await withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit', env: envMap }))
+    await withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit', env: composeEnv }))
 
     const tunnels = await withSpinner(async () => {
       const queryResult = await queryTunnels({

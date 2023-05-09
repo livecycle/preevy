@@ -1,6 +1,6 @@
-import ssh2, { ParsedKey } from 'ssh2'
 import { inspect } from 'util'
 import { createHash } from 'crypto'
+import ssh2, { ParsedKey } from 'ssh2'
 
 export const parseKey = (...args: Parameters<typeof ssh2.utils.parseKey>): ParsedKey => {
   const parsedKey = ssh2.utils.parseKey(...args)

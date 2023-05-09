@@ -95,9 +95,15 @@ const main = async () => {
   const docker = new Docker({ socketPath: '/var/run/docker.sock' })
   const dockerClient = createDockerClient({ log: log.child({ name: 'docker' }), docker, debounceWait: 500 })
 
+  const tnr = tunnelNameResolver({})
+
   const sshClient = await createSshClient({
     connectionConfig,
-    tunnelNameResolver: tunnelNameResolver({ userDefinedSuffix: process.env.TUNNEL_URL_SUFFIX }),
+    tunnelNameResolver: ({ name, project, port }) => {
+      const result = tnr({ name, project, port })
+      const suffix = process.env[`TUNNEL_URL_SUFFIX_${project}_${name}_${port}`.toUpperCase()]
+      return { ...result, tunnel: [result.tunnel, suffix].filter(Boolean).join('-') }
+    },
     log: log.child({ name: 'ssh' }),
     onError: err => {
       log.error(err)

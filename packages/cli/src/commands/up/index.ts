@@ -42,6 +42,10 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       description: 'Skip TLS or SSH certificate verification',
       default: false,
     }),
+    'unique-service-urls': Flags.boolean({
+      description: 'Generate hard-to-guess unique service URLs',
+      default: false,
+    }),
     ...ux.table.flags(),
   }
 
@@ -116,6 +120,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       sshKey: keyPair,
       sshTunnelPrivateKey: tunnelingKey,
       allowedSshHostKeys: hostKey,
+      uniqueServiceSuffixes: flags['unique-service-urls'],
     })
 
     const flatTunnels = flattenTunnels(tunnels)
