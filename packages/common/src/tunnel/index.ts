@@ -22,6 +22,10 @@ export const calcServiceSuffix = ({ privateKey, envId }: { privateKey: ParsedKey
   .toLowerCase()
   .replace(/[^a-z0-9]/g, '')
 
+export const serviceTunnelUrlSuffixEnvKey = (
+  { project, name, port }: { project: string; name: string; port: number },
+) => `TUNNEL_URL_SUFFIX_${project}_${name}_${port}`.toUpperCase()
+
 export const tunnelNameResolver = (
   { userDefinedSuffix }: { userDefinedSuffix?: string },
 ): TunnelNameResolver => (

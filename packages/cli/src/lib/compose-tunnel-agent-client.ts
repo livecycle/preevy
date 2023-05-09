@@ -1,6 +1,7 @@
 import path from 'path'
 import fetch from 'node-fetch'
 import retry from 'p-retry'
+import { serviceTunnelUrlSuffixEnvKey } from '@preevy/common/src/tunnel'
 import { ComposeModel, ComposeService } from './compose/model'
 import { SshClient } from './ssh/client'
 import { TunnelOpts } from './ssh/url'
@@ -96,8 +97,10 @@ export const addComposeTunnelAgentService = (
         TLS_SERVERNAME: tunnelOpts.tlsServerName,
         TUNNEL_URL_SUFFIX: urlSuffix,
         ...Object.fromEntries(
-          serviceUrlSuffixes
-            .map(({ service, port, suffix }) => [`TUNNEL_URL_SUFFIX_${projectName}_${service}_${port}`.toUpperCase(), suffix])
+          serviceUrlSuffixes.map(({ service, port, suffix }) => [
+            serviceTunnelUrlSuffixEnvKey({ name: service, port, project: projectName }),
+            suffix,
+          ])
         ),
         PORT: path.join('/preevy/socket', path.basename(listenAddress)),
         ...debug ? { DEBUG: '1' } : {},

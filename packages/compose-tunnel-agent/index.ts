@@ -7,6 +7,7 @@ import pino from 'pino'
 import pinoPretty from 'pino-pretty'
 import { EOL } from 'os'
 import { ConnectionCheckResult, requiredEnv, checkConnection, formatPublicKey, parseSshUrl, SshConnectionConfig, tunnelNameResolver } from '@preevy/common'
+import { serviceTunnelUrlSuffixEnvKey } from '@preevy/common/src/tunnel'
 import createDockerClient from './src/docker'
 import createWebServer from './src/web'
 import { sshClient as createSshClient } from './src/ssh'
@@ -101,7 +102,7 @@ const main = async () => {
     connectionConfig,
     tunnelNameResolver: ({ name, project, port }) => {
       const result = tnr({ name, project, port })
-      const suffix = process.env[`TUNNEL_URL_SUFFIX_${project}_${name}_${port}`.toUpperCase()]
+      const suffix = process.env[serviceTunnelUrlSuffixEnvKey({ name, project, port })]
       return { ...result, tunnel: [result.tunnel, suffix].filter(Boolean).join('-') }
     },
     log: log.child({ name: 'ssh' }),
