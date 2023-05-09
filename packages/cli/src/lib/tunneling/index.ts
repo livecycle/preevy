@@ -1,4 +1,4 @@
-import { parseSshUrl, formatSshConnectionConfig, checkConnection, keyFingerprint } from '@preevy/common'
+import { BaseUrl, checkConnection, formatSshConnectionConfig, keyFingerprint, parseSshUrl, tunnelNameResolver } from '@preevy/common'
 import { Logger } from '../../log'
 import { ProfileStore } from '../profile'
 import { generateSshKeyPair } from '../ssh/keypair'
@@ -25,8 +25,8 @@ export const flattenTunnels = (
 
 export class UnverifiedHostKeyError extends Error {
   constructor(
-      readonly tunnelOpts: TunnelOpts,
-      readonly hostKeySignature: string,
+    readonly tunnelOpts: TunnelOpts,
+    readonly hostKeySignature: string,
   ) {
     super(`Host key verification failed for connection ${tunnelOpts.url}`)
     this.name = 'UnverifiedHostKeyError'
@@ -34,8 +34,8 @@ export class UnverifiedHostKeyError extends Error {
 }
 
 export type HostKeySignatureConfirmer = (
-    o: { hostKeyFingerprint: string; hostname: string; port: number | undefined }
-  ) => Promise<void>
+  o: { hostKeyFingerprint: string; hostname: string; port: number | undefined }
+) => Promise<void>
 
 export const performTunnelConnectionCheck = async ({
   log,
@@ -45,13 +45,13 @@ export const performTunnelConnectionCheck = async ({
   keysState,
   confirmHostFingerprint,
 }: {
-    log: Logger
-    tunnelOpts: TunnelOpts
-    clientPrivateKey: string | Buffer
-    username: string
-    keysState: ProfileStore['knownServerPublicKeys']
-    confirmHostFingerprint: HostKeySignatureConfirmer
-  }) => {
+  log: Logger
+  tunnelOpts: TunnelOpts
+  clientPrivateKey: string | Buffer
+  username: string
+  keysState: ProfileStore['knownServerPublicKeys']
+  confirmHostFingerprint: HostKeySignatureConfirmer
+}) => {
   const parsed = parseSshUrl(tunnelOpts.url)
 
   const connectionConfigBase = {
@@ -62,7 +62,7 @@ export const performTunnelConnectionCheck = async ({
     insecureSkipVerify: tunnelOpts.insecureSkipVerify,
   }
 
-  const check = async (): Promise<{ hostKey: Buffer; clientId: string }> => {
+  const check = async (): Promise<{ hostKey: Buffer; clientId: string; baseUrl: BaseUrl }> => {
     const knownServerPublicKeys = await keysState.read(parsed.hostname, parsed.port)
     const connectionConfig = { ...connectionConfigBase, knownServerPublicKeys }
 
@@ -74,7 +74,7 @@ export const performTunnelConnectionCheck = async ({
       if (!knownServerPublicKeys.includes(result.hostKey)) { // TODO: check if this is correct
         await keysState.write(parsed.hostname, parsed.port, result.hostKey)
       }
-      return { hostKey: result.hostKey, clientId: result.clientId }
+      return { hostKey: result.hostKey, clientId: result.clientId, baseUrl: result.baseUrl }
     }
 
     if ('error' in result) {
@@ -98,9 +98,9 @@ export const performTunnelConnectionCheck = async ({
 
 export const ensureTunnelKeyPair = async (
   { store, log }: {
-      store: ProfileStore
-      log: Logger
-    },
+    store: ProfileStore
+    log: Logger
+  },
 ) => {
   const existingKeyPair = await store.getTunnelingKey()
   if (existingKeyPair) {
@@ -110,4 +110,18 @@ export const ensureTunnelKeyPair = async (
   const keyPair = await generateSshKeyPair()
   await store.setTunnelingKey(Buffer.from(keyPair.privateKey))
   return keyPair
+}
+
+export function tunnelUrl({ service: { name: serviceName, port: servicePort }, baseUrl: { hostname, protocol, port },
+  project, clientId }: {
+    service: {name: string; port: number}
+    baseUrl: BaseUrl
+    project: string
+    clientId: string
+  }) {
+  const { tunnel: tunnelName } = tunnelNameResolver({})({ name: serviceName, project, port: servicePort })
+  const subDomain = `${tunnelName}-${clientId}`.toLowerCase()
+  return new URL(
+    `${protocol}//${subDomain}.${hostname}:${port}`
+  ).toString()
 }
