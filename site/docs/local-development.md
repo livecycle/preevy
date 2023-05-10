@@ -73,7 +73,7 @@ inside the ***tunnel-server*** folder, run:
 BASE_URL=http://localhost:8030 docker compose -f docker-compose.yml -f docker-compose.override.yml up --build
 ```
 
-### 3. Expose the service's TCP connection
+### 3. Expose the service's SSH endpoint
 
 Now we want to expose the tunnel service to the internet. In this example we'll be using [ngrok](https://ngrok.com/) to achieve that:
 
