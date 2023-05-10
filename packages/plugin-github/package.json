@@ -1,0 +1,31 @@
+{
+  "name": "@preevy/plugin-github",
+  "version": "0.0.24",
+  "description": "",
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "license": "Apache-2.0",
+  "dependencies": {
+    "octokit": "^2.0.14"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.55.0",
+    "@typescript-eslint/parser": "^5.55.0",
+    "esbuild": "^0.17.14",
+    "eslint": "^8.36.0",
+    "lint-staged": "^13.1.2",
+    "tsx": "^3.12.3",
+    "typescript": "^5.0.2"
+  },
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "tsx watch ./index.ts",
+    "lint": "eslint . --ext .ts,.tsx --cache",
+    "clean": "rm -rf dist",
+    "build": "node build.mjs",
+    "prepack": "yarn build",
+    "prepare": "cd ../.. && husky install"
+  }
+}

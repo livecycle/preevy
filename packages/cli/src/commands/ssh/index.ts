@@ -1,7 +1,7 @@
 import { Args } from '@oclif/core'
-import DriverCommand from '../../driver-command'
-import { ssh } from '../../lib/commands'
-import { sshKeysStore } from '../../lib/state/ssh'
+import DriverCommand from '@preevy/cli-core/src/driver-command'
+import { ssh } from '@preevy/cli-core/src/lib/commands'
+import { sshKeysStore } from '@preevy/cli-core/src/lib/state/ssh'
 
 // eslint-disable-next-line no-use-before-define
 export default class Ssh extends DriverCommand<typeof Ssh> {

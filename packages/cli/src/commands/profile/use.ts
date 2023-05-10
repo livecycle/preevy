@@ -1,5 +1,5 @@
 import { Args, ux } from '@oclif/core'
-import ProfileCommand from '../../profile-command'
+import ProfileCommand from '@preevy/cli-core/src/profile-command'
 
 // eslint-disable-next-line no-use-before-define
 export default class UseProfile extends ProfileCommand<typeof UseProfile> {

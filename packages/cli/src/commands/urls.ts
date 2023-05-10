@@ -1,12 +1,12 @@
 import { Args, ux } from '@oclif/core'
-import DriverCommand from '../driver-command'
-import { sshKeysStore } from '../lib/state/ssh'
-import { connectSshClient as createSshClient } from '../lib/ssh/client'
-import { envIdFlags, findAmbientEnvId, findAmbientProjectName } from '../lib/env-id'
-import { queryTunnels } from '../lib/compose-tunnel-agent-client'
-import { localComposeClient } from '../lib/compose/client'
-import { composeFlags } from '../lib/compose/flags'
-import { flattenTunnels, FlatTunnel } from '../lib/tunneling'
+import { sshKeysStore } from '@preevy/cli-core/src/lib/state/ssh'
+import { connectSshClient as createSshClient } from '@preevy/cli-core/src/lib/ssh/client'
+import { envIdFlags, findAmbientEnvId, findAmbientProjectName } from '@preevy/cli-core/src/lib/env-id'
+import { queryTunnels } from '@preevy/cli-core/src/lib/compose-tunnel-agent-client'
+import { localComposeClient } from '@preevy/cli-core/src/lib/compose/client'
+import { composeFlags } from '@preevy/cli-core/src/lib/compose/flags'
+import { flattenTunnels, FlatTunnel } from '@preevy/cli-core/src/lib/tunneling'
+import DriverCommand from '@preevy/cli-core/src/driver-command'
 
 // eslint-disable-next-line no-use-before-define
 export default class Urls extends DriverCommand<typeof Urls> {

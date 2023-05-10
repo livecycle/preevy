@@ -1,14 +1,14 @@
 import { Args, Flags, ux } from '@oclif/core'
 import os from 'os'
-import { up } from '../../lib/commands'
-import { composeFlags } from '../../lib/compose/flags'
-import { envIdFlags } from '../../lib/env-id'
-import { profileStore } from '../../lib/profile'
-import { carefulBooleanPrompt } from '../../lib/prompt'
-import { sshKeysStore } from '../../lib/state/ssh'
-import { telemetryEmitter } from '../../lib/telemetry'
-import { HostKeySignatureConfirmer, flattenTunnels, performTunnelConnectionCheck } from '../../lib/tunneling'
-import MachineCreationDriverCommand from '../../machine-creation-driver-command'
+import { up } from '@preevy/cli-core/src/lib/commands'
+import { sshKeysStore } from '@preevy/cli-core/src/lib/state/ssh'
+import { profileStore } from '@preevy/cli-core/src/lib/profile'
+import { flattenTunnels, HostKeySignatureConfirmer, performTunnelConnectionCheck } from '@preevy/cli-core/src/lib/tunneling'
+import { envIdFlags } from '@preevy/cli-core/src/lib/env-id'
+import { composeFlags } from '@preevy/cli-core/src/lib/compose/flags'
+import { carefulBooleanPrompt } from '@preevy/cli-core/src/lib/prompt'
+import { telemetryEmitter } from '@preevy/cli-core/src/lib/telemetry'
+import MachineCreationDriverCommand from '@preevy/cli-core/src/machine-creation-driver-command'
 
 const confirmHostFingerprint = async (
   { hostKeyFingerprint: hostKeySignature, hostname, port }: Parameters<HostKeySignatureConfirmer>[0],
@@ -56,6 +56,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
   async run(): Promise<unknown> {
     const { flags, raw } = await this.parse(Up)
+
     const restArgs = raw.filter(arg => arg.type === 'arg').map(arg => arg.input)
 
     const driver = await this.driver()

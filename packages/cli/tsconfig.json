@@ -15,6 +15,7 @@
     "src/**/*"
   ],
   "references": [
+    { "path": "../cli-core" },
     { "path": "../compose-tunnel-agent" },
     { "path": "../common" },
   ]

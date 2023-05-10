@@ -7,10 +7,12 @@
   ],
   "eslint.format.enable": true,
   "eslint.workingDirectories": [
+    "packages/cli-core",
     "packages/cli",
     "packages/common",
     "packages/tunnel-server",
     "packages/compose-tunnel-agent",
+    "packages/plugin-github",
   ],
   "eslint.useESLintClass": true,
   "eslint.packageManager": "yarn",

@@ -1,13 +1,13 @@
 import yaml from 'yaml'
 import { Args, ux } from '@oclif/core'
-import DriverCommand from '../driver-command'
-import { sshKeysStore } from '../lib/state/ssh'
-import { connectSshClient as createSshClient } from '../lib/ssh/client'
-import { envIdFlags, findAmbientEnvId, findAmbientProjectName } from '../lib/env-id'
-import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addBaseComposeTunnelAgentService } from '../lib/compose-tunnel-agent-client'
-import { localComposeClient } from '../lib/compose/client'
-import { composeFlags } from '../lib/compose/flags'
-import { wrapWithDockerSocket } from '../lib/commands/up/docker'
+import { sshKeysStore } from '@preevy/cli-core/src/lib/state/ssh'
+import { connectSshClient as createSshClient } from '@preevy/cli-core/src/lib/ssh/client'
+import { envIdFlags, findAmbientEnvId, findAmbientProjectName } from '@preevy/cli-core/src/lib/env-id'
+import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addBaseComposeTunnelAgentService } from '@preevy/cli-core/src/lib/compose-tunnel-agent-client'
+import { localComposeClient } from '@preevy/cli-core/src/lib/compose/client'
+import { composeFlags } from '@preevy/cli-core/src/lib/compose/flags'
+import { wrapWithDockerSocket } from '@preevy/cli-core/src/lib/commands/up/docker'
+import DriverCommand from '@preevy/cli-core/src/driver-command'
 
 // eslint-disable-next-line no-use-before-define
 export default class Logs extends DriverCommand<typeof Logs> {

@@ -1,10 +1,10 @@
 import { Flags } from '@oclif/core'
-import DriverCommand from '../../driver-command'
-import { localComposeClient } from '../../lib/compose/client'
-import { composeFlags } from '../../lib/compose/flags'
-import { envIdFlags, findAmbientEnvId, findAmbientProjectName } from '../../lib/env-id'
-import { Logger } from '../../log'
-import { withSpinner } from '../../lib/spinner'
+import DriverCommand from '@preevy/cli-core/src/driver-command'
+import { localComposeClient } from '@preevy/cli-core/src/lib/compose/client'
+import { composeFlags } from '@preevy/cli-core/src/lib/compose/flags'
+import { envIdFlags, findAmbientEnvId, findAmbientProjectName } from '@preevy/cli-core/src/lib/env-id'
+import { withSpinner } from '@preevy/cli-core/src/lib/spinner'
+import { Logger } from '@preevy/cli-core/src/log'
 
 const findEnvId = async (log: Logger, { project, file }: { project?: string; file: string[] }) => {
   const projectName = project || await findAmbientProjectName(localComposeClient(file))

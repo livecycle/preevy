@@ -1,12 +1,12 @@
 import { Flags, Args, ux } from '@oclif/core'
 import inquirer from 'inquirer'
-import BaseCommand from '../../base-command'
-import { DriverName, machineDrivers } from '../../lib/machine'
-import { defaultBucketName as s3DefaultBucketName } from '../../lib/store/fs/s3'
-import { defaultBucketName as gsDefaultBucketName } from '../../lib/store/fs/google-cloud-storage'
-import { defaultProjectId } from '../../lib/machine/drivers/gce/client'
-import { REGIONS } from '../../lib/machine/drivers/lightsail/client'
-import { ambientAccountId } from '../../lib/aws-utils/account-id'
+import BaseCommand from '@preevy/cli-core/src/base-command'
+import { DriverName, machineDrivers } from '@preevy/cli-core/src/lib/machine'
+import { defaultBucketName as s3DefaultBucketName } from '@preevy/cli-core/src/lib/store/fs/s3'
+import { defaultBucketName as gsDefaultBucketName } from '@preevy/cli-core/src/lib/store/fs/google-cloud-storage'
+import { defaultProjectId } from '@preevy/cli-core/src/lib/machine/drivers/gce/client'
+import { REGIONS } from '@preevy/cli-core/src/lib/machine/drivers/lightsail/client'
+import { ambientAccountId } from '@preevy/cli-core/src/lib/aws-utils/account-id'
 
 export default class Init extends BaseCommand {
   static description = 'Initialize or import a new profile'
@@ -22,7 +22,6 @@ export default class Init extends BaseCommand {
   static flags = {
     from: Flags.string({
       description: 'Import profile from existing path',
-      char: 'f',
     }),
   }
 

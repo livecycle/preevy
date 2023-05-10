@@ -1,7 +1,7 @@
 import { ux } from '@oclif/core'
 import { asyncToArray } from 'iter-tools-es'
-import DriverCommand from '../../driver-command'
-import { ls } from '../../lib/commands'
+import { ls } from '@preevy/cli-core/src/lib/commands'
+import DriverCommand from '@preevy/cli-core/src/driver-command'
 
 // eslint-disable-next-line no-use-before-define
 export default class Ls extends DriverCommand<typeof Ls> {

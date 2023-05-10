@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-yarn lint --fix --max-warnings=0 --cache
+yarn lint --max-warnings=0
 yarn check-mismatches

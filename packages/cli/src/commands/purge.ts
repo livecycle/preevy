@@ -1,9 +1,9 @@
 import os from 'os'
 import { Flags } from '@oclif/core'
 import { asyncToArray } from 'iter-tools-es'
-import DriverCommand from '../driver-command'
-import { carefulBooleanPrompt } from '../lib/prompt'
-import { sshKeysStore } from '../lib/state/ssh'
+import { carefulBooleanPrompt } from '@preevy/cli-core/src/lib/prompt'
+import { sshKeysStore } from '@preevy/cli-core/src/lib/state/ssh'
+import DriverCommand from '@preevy/cli-core/src/driver-command'
 
 const confirmPurge = async (
   { driverFriendlyName, envIds, numberSnapshots, removeKeyPair }: {
