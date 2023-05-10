@@ -22,7 +22,7 @@
     "@typescript-eslint/parser": "^5.55.0",
     "eslint": "^8.36.0",
     "nodemon": "^2.0.20",
-    "typescript": "^5.0.2"
+    "typescript": "^5.0.4"
   },
   "scripts": {
     "start": "ts-node ./index.ts",

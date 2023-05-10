@@ -32,7 +32,7 @@
     "husky": "^8.0.0",
     "lint-staged": "^13.1.2",
     "tsx": "^3.12.3",
-    "typescript": "^5.0.2"
+    "typescript": "^5.0.4"
   },
   "scripts": {
     "start": "node dist/index.js",
