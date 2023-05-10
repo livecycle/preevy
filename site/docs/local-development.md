@@ -8,10 +8,17 @@ sidebar_position: 9
 ## Prerequisite: build the `compose-tunnel-agent` package
 
 The remote VM that runs the preview environment uses a Docker container for tunneling the exposed services to the Tunnel Server.  
-For that to work, we need to build the `compose-tunnel-agent` package.  Run:
+For that to work, we need to build the `compose-tunnel-agent` package. Run:
 
 ```bash
 cd packages/compose-tunnel-agent/
+yarn && yarn build
+```
+
+Additionally build the `common` package:
+
+```bash
+cd packages/common/
 yarn && yarn build
 ```
 
