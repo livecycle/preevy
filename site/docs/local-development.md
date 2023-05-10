@@ -75,7 +75,7 @@ BASE_URL=http://localhost:8030 docker compose -f docker-compose.yml -f docker-co
 
 ### 3. Expose the service's SSH endpoint
 
-Now we want to expose the tunnel service to the internet. In this example we'll be using [ngrok](https://ngrok.com/) to achieve that:
+Now we want to expose the tunnel service to the internet, so the machines running in the cloud could access it. In this example we'll be using [ngrok](https://ngrok.com/) to achieve that:
 
 ```bash
 ngrok tcp 2223
