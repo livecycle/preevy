@@ -82,7 +82,11 @@ ngrok tcp 2223
 ```
 
 The generated URL should look something like `tcp://9.tcp.eu.ngrok.io:12856`  
-Where `9.tcp.eu.ngrok.io` is the `ngrok-host` and `12856` is the `ngrok-port`. We'll use those values in the next step. 
+Export the part without `tcp://` to a variable (we'll use it in the next step):
+
+```bash
+export NGROK_HOST=9.tcp.eu.ngrok.io:12856
+```
 
 ### 4. Run the CLI
 
@@ -93,14 +97,10 @@ Wherever you would normally run the `preevy` command, simply replace it with:
 /path/to/preevy/packages/cli/bin/dev {{ command }}
 ``` 
 
-In the case of the `preevy up`, add the ` -t ssh://ngrok-host:ngrok-port` flag:
+In the case of the `preevy up`, add the ` -t ssh://$NGROK_HOST` flag:
 
 ```bash
 # replace /path/to/ with your local path to preevy
 # replace ngrok-host:ngrok-port with the host and port you received for the `ngrok` command
-/path/to/preevy/packages/cli/bin/dev up -t ssh://ngrok-host:ngrok-port
+/path/to/preevy/packages/cli/bin/dev up -t ssh://$NGROK_HOST
 ```
-
-
-
-
