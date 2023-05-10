@@ -18,7 +18,9 @@
     "lint": "yarn workspaces run lint",
     "check-mismatches": "syncpack list-mismatches",
     "fix-mismatches": "syncpack fix-mismatches",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "bump": "yarn version --no-commit-hooks --no-git-tag-version",
+    "version": "yarn workspaces run bump-to $npm_package_version"
   },
-  "version": "0.0.1"
+  "version": "0.0.25"
 }
