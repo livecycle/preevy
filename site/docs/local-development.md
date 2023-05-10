@@ -98,7 +98,7 @@ In the case of the `preevy up`, add the ` -t ssh://ngrok-host:ngrok-port` flag:
 ```bash
 # replace /path/to/ with your local path to preevy
 # replace ngrok-host:ngrok-port with the host and port you received for the `ngrok` command
-~/path/to/preevy/packages/cli/bin/dev up -t ssh://ngrok-host:ngrok-port
+/path/to/preevy/packages/cli/bin/dev up -t ssh://ngrok-host:ngrok-port
 ```
 
 
