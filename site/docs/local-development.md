@@ -7,24 +7,24 @@ sidebar_position: 9
 
 ## Prerequisite: build the `compose-tunnel-agent` package
 
-The remote VM that runs the preview environment uses a Docker container for tunneling the exposed services to the Tunnel Server.  
-For that to work, we need to build the `compose-tunnel-agent` package. Run:
-
-```bash
-cd packages/compose-tunnel-agent/
-yarn && yarn build
-```
-
-Additionally build the `common` package:
+Build the `common` package:
 
 ```bash
 cd packages/common/
 yarn && yarn build
 ```
 
+Then, build the `compose-tunnel-agent` package:
+
+```bash
+cd packages/compose-tunnel-agent/
+yarn && yarn build
+```
+
+
 ## Choose whether to build a local Tunnel Server or use a publicly available one
 
-Preevy uses a [tunnel server](https://github.com/livecycle/preevy/tree/main/tunnel-server) to expose the deployed docker-compose services to the web. You can read more about how it works [here](https://livecycle.io/blogs/preevy-proxy-service-1/) and [here](https://livecycle.io/blogs/preevy-proxy-service-2/).
+Preevy uses a [tunnel server](https://github.com/livecycle/preevy/tree/main/tunnel-server) to expose the deployed docker-compose services to the internet. You can read more about how it works [here](https://livecycle.io/blogs/preevy-proxy-service-1/) and [here](https://livecycle.io/blogs/preevy-proxy-service-2/).
 
 There are 2 options to develop preevy locally:
 
@@ -32,10 +32,10 @@ There are 2 options to develop preevy locally:
 2. [Run the tunnel server locally](#option-2---run-the-tunnel-server-locally)
 
 
-## Option 1 - Using the public livecycle.run tunnel server
+## Option 1 - Using the public livecycle.run Tunnel Server
 
 
-This option is simpler and using the the deployed tunnel server under livecycle.run. Use this if you're only interested in testing and developing the CLI or the Compose Tunnel Agent
+This option is simpler and using the the deployed Tunnel Server under livecycle.run. Use this if you're only interested in testing and developing the CLI or the Compose Tunnel Agent
 
 Wherever you would normally run the `preevy` command, simply replace it with: 
 
@@ -52,11 +52,11 @@ In the case of the `preevy up`, add the `-t ssh+tls://livecycle.run` flag:
 ``` 
 
 
-## Option 2 - Run the tunnel server locally
+## Option 2 - Run the Tunnel Server locally
 
 Use this option if you'd like to test and develop the Preevy Local Tunnel. 
 
-### 1. Generate keys and certificates
+### 1. Generate SSH key pair
 
 inside the ***tunnel-server*** folder, run:
 
@@ -65,8 +65,9 @@ mkdir ssh # if does not exist
 ssh-keygen -t rsa -f ssh/ssh_host_key
 ```
 
-### 2. Build and run the tunnel server
+### 2. Build and run the Tunnel Server
 
+inside the ***tunnel-server*** folder, run:
 
 ```bash
 BASE_URL=http://localhost:8030 docker compose -f docker-compose.yml -f docker-compose.override.yml up --build
@@ -74,27 +75,30 @@ BASE_URL=http://localhost:8030 docker compose -f docker-compose.yml -f docker-co
 
 ### 3. Expose the service's TCP connection
 
-Now we want to expose the tunnel service to the web. In this example we'll be using [ngrok](https://ngrok.com/) to achieve that:
+Now we want to expose the tunnel service to the internet. In this example we'll be using [ngrok](https://ngrok.com/) to achieve that:
 
 ```bash
-ngrok tcp 8044
+ngrok tcp 2223
 ```
+
+The generated URL should look something like `tcp://9.tcp.eu.ngrok.io:12856`  
+Where `9.tcp.eu.ngrok.io` is the `ngrok-host` and `12856` is the `ngrok-port`. We'll use those values in the next step. 
 
 ### 4. Run the CLI
 
-replace `ngrok-host:ngrok-port` with the values received from the previous step and `{{ command }}` with any preevy command.  
-Now, Wherever you would normally run the `preevy` command, simply replace it with: 
+Wherever you would normally run the `preevy` command, simply replace it with: 
 
 ```bash
 # replace /path/to/ with your local path to preevy
+/path/to/preevy/packages/cli/bin/dev {{ command }}
+``` 
+
+In the case of the `preevy up`, add the ` -t ssh://ngrok-host:ngrok-port` flag:
+
+```bash
+# replace /path/to/ with your local path to preevy
+# replace ngrok-host:ngrok-port with the host and port you received for the `ngrok` command
 ~/path/to/preevy/packages/cli/bin/dev up -t ssh://ngrok-host:ngrok-port
-```
-
-For example, to run the [`up`](cli-reference#preevy-up-service) command:
-
-```bash
-# replace /path/to/ with your local path to preevy
-~/path/to/preevy/packages/cli/bin/dev up -f ./docker/docker-compose.yaml -t ssh://ngrok-host:ngrok-port
 ```
 
 
