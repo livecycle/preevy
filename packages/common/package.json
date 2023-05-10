@@ -1,6 +1,6 @@
 {
   "name": "@preevy/common",
-  "version": "0.0.24",
+  "version": "0.0.25",
   "description": "",
   "main": "dist/index.js",
   "files": [
@@ -37,6 +37,7 @@
     "dev": "tsx watch ./main.ts",
     "lint": "eslint . --ext .ts,.tsx",
     "build": "tsc -b",
-    "prepack": "yarn build"
+    "prepack": "yarn build",
+    "bump-to": "yarn version --no-commit-hooks --no-git-tag-version --new-version"
   }
 }
