@@ -12,7 +12,7 @@ For that to work, we need to build the `compose-tunnel-agent` package.  Run:
 
 ```bash
 cd packages/compose-tunnel-agent/
-yarn build
+yarn && yarn build
 ```
 
 ## Choose whether to build a local Tunnel Server or use a publicly available one
@@ -34,8 +34,15 @@ Wherever you would normally run the `preevy` command, simply replace it with:
 
 ```bash
 # replace /path/to/ with your local path to preevy
-NODE_ENV=production /path/to/preevy/packages/cli/bin/dev 
-```
+/path/to/preevy/packages/cli/bin/dev {{ command }}
+``` 
+
+In the case of the `preevy up`, add the `-t ssh+tls://livecycle.run` flag:
+
+```bash
+# replace /path/to/ with your local path to preevy
+/path/to/preevy/packages/cli/bin/dev up -t ssh+tls://livecycle.run
+``` 
 
 
 ## Option 2 - Run the tunnel server locally
@@ -44,44 +51,21 @@ Use this option if you'd like to test and develop the Preevy Local Tunnel.
 
 ### 1. Generate keys and certificates
 
-inside the ***tunnel-server*** folder run
+inside the ***tunnel-server*** folder, run:
 
 ```bash
 mkdir ssh # if does not exist
 ssh-keygen -t rsa -f ssh/ssh_host_key
 ```
 
-### 1a. \**Only for the TLS case*\* generate a self signed certificate
-
-Generate a self signed certificate and put it inside the ./tls folder
-
-```bash
-openssl req -x509 -newkey rsa:4096 -keyout ./tls/key.pem -out ./tls/cert.pem -sha256 -nodes -days 3650
-```
-
 ### 2. Build and run the tunnel server
 
-with TLS
 
 ```bash
-BASE_URL=https://mydomain.org:8044 docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.tls.yml up --build
+BASE_URL=http://localhost:8030 docker compose -f docker-compose.yml -f docker-compose.override.yml up --build
 ```
 
-without TLS
-
-```bash
-BASE_URL=https://mydomain.org:8030 docker compose -f docker-compose.yml -f docker-compose.override.yml up --build
-```
-
-### 3. Map `mydomain.org` to `localhost`
-
-Add the following to your `/etc/hosts/` file
-
-```
-127.0.0.1       mydomain.org
-```
-
-### 4. Expose the service's TCP connection
+### 3. Expose the service's TCP connection
 
 Now we want to expose the tunnel service to the web. In this example we'll be using [ngrok](https://ngrok.com/) to achieve that:
 
@@ -89,21 +73,21 @@ Now we want to expose the tunnel service to the web. In this example we'll be us
 ngrok tcp 8044
 ```
 
-### 5. Run the CLI
+### 4. Run the CLI
 
 replace `ngrok-host:ngrok-port` with the values received from the previous step and `{{ command }}` with any preevy command.  
 Now, Wherever you would normally run the `preevy` command, simply replace it with: 
 
 ```bash
 # replace /path/to/ with your local path to preevy
-~/path/to/preevy/packages/cli/bin/dev {{ command }} -t ssh+tls://ngrok-host:ngrok-port --tls-hostname mydomain.org --insecure-skip-verify
+~/path/to/preevy/packages/cli/bin/dev up -t ssh://ngrok-host:ngrok-port
 ```
 
 For example, to run the [`up`](cli-reference#preevy-up-service) command:
 
 ```bash
 # replace /path/to/ with your local path to preevy
-~/path/to/preevy/packages/cli/bin/dev up -f ./docker/docker-compose.yaml -t ssh+tls://ngrok-host:ngrok-port --tls-hostname mydomain.org --insecure-skip-verify
+~/path/to/preevy/packages/cli/bin/dev up -f ./docker/docker-compose.yaml -t ssh://ngrok-host:ngrok-port
 ```
 
 
