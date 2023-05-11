@@ -85,7 +85,12 @@ const up = async ({
 }): Promise<{ machine: Machine; tunnels: Tunnel[]; envId: string }> => {
   log.debug('Normalizing compose files')
 
-  const userModel = await localComposeClient(userComposeFiles, userSpecifiedProjectName).getModel().catch(e => {
+  // We start by getting the user model without injecting Preevy's environment
+  // variables (e.g. `PREEVY_BASE_URI_BACKEND_3000`) so we can have the list of services
+  // required to create said variables
+  const userModel = await localComposeClient(
+    { composeFiles: userComposeFiles, projectName: userSpecifiedProjectName }
+  ).getModel().catch(e => {
     if (!(e instanceof ProcessError)) {
       throw e
     }
@@ -102,7 +107,16 @@ const up = async ({
     [`PREEVY_BASE_URI_${service}_${port}`.toUpperCase()]: tunnelUrl({ service: { name: service, port }, baseUrl, project: projectName, clientId }),
   }), {})
 
-  const { model: fixedModel, filesToCopy } = await fixModelForRemote({ remoteDir }, userModel)
+  // Now that we have the generated variables, we can create a new client and inject
+  // them into it, to create the actual compose configurations
+  const composeClientWithInjectedArgs = localComposeClient(
+    { composeFiles: userComposeFiles, env: envMap, projectName: userSpecifiedProjectName }
+  )
+
+  const { model: fixedModel, filesToCopy } = await fixModelForRemote(
+    { remoteDir },
+    await composeClientWithInjectedArgs.getModel()
+  )
 
   const projectLocalDataDir = path.join(dataDir, projectName)
   await rimraf(projectLocalDataDir)
@@ -148,7 +162,7 @@ const up = async ({
 
     await copyFilesWithoutRecreatingDirUsingSftp(sshClient, REMOTE_DIR_BASE, remoteDir, filesToCopy)
 
-    const compose = localComposeClient([composeFilePath], projectName)
+    const compose = localComposeClient({ composeFiles: [composeFilePath], projectName })
     const composeArgs = calcComposeArgs(userSpecifiedServices, debug)
     log.debug('Running compose up with args: ', composeArgs)
     await withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit', env: envMap }))

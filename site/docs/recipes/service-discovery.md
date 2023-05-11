@@ -4,6 +4,21 @@ sidebar_position: 1
 date: "2023-05-07"
 ---
 
+## tl;dr
+
+For any exposed port in your compose configurations:
+
+```yaml
+services:
+     service_name:
+          ...
+          ports: exposed_port:internal_port
+```
+
+Preevy will generate the following environment variable:
+
+`PREEVY_BASE_URI_{{ comopse_service_name }}_{{ exposed_port }}`
+
 ## Problem
 
 In development environments, it's common for frontend applications to communicate with backend services using exposed ports.  
@@ -43,10 +58,14 @@ In this example, the frontend application is configured to communicate with the 
 ```yaml
 services:
      api:
-           ...
-           ports:
+          ...
+          ports:
            - 9005:3000
      frontend:
           environment:
-          - API_URL=${PREEVY_BASE_URI_BACKEND_9006-:http://localhost:9006}
+          - API_URL=${PREEVY_BASE_URI_BACKEND_9006:-http://localhost:9006}
+     backend:
+          ...
+          ports:
+           - 9006:3000
 ```

@@ -7,7 +7,7 @@ import { Logger } from '../../log'
 import { withSpinner } from '../../lib/spinner'
 
 const findEnvId = async (log: Logger, { project, file }: { project?: string; file: string[] }) => {
-  const projectName = project || await findAmbientProjectName(localComposeClient(file))
+  const projectName = project || await findAmbientProjectName(localComposeClient({ composeFiles: file }))
   log.debug(`project: ${projectName}`)
   return findAmbientEnvId(projectName)
 }

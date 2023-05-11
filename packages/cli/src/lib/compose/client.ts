@@ -33,11 +33,7 @@ const composeClient = (
     stdin: Buffer.isBuffer(composeFiles) ? composeFiles : undefined,
   })
 
-  // if we don't use --no-interpolate, then the convert command will replace the env vars with empty strings
-  // we need to keep the environment variables in the yaml file, so we can support service discovery using preevy
-  // build time environment variables https://github.com/livecycle/preevy/issues/57
-  // https://github.com/docker/compose/pull/9703
-  const getModel = async () => yaml.parse(await execComposeCommand(['convert', '--no-interpolate'])) as ComposeModel
+  const getModel = async () => yaml.parse(await execComposeCommand(['convert'])) as ComposeModel
 
   return {
     startService: (...services: string[]) => execComposeCommand(['start', ...services]),
@@ -54,7 +50,9 @@ export type ComposeClient = ReturnType<typeof composeClient>
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ParametersExceptFirst<F> = F extends (arg0: any, ...rest: infer R) => any ? R : never;
 
-export const localComposeClient = (composeFiles: string[] | Buffer, projectName?: string) => {
+type LocalComposeClientArgs = {composeFiles: string[] | Buffer; projectName?: string; env?: NodeJS.ProcessEnv}
+
+export const localComposeClient = ({ composeFiles, env, projectName }: LocalComposeClientArgs) => {
   const insertStdin = (stdio: StdioOptions | undefined) => {
     if (!Buffer.isBuffer(composeFiles)) {
       return stdio
@@ -79,6 +77,7 @@ export const localComposeClient = (composeFiles: string[] | Buffer, projectName?
       ...opts,
       env: {
         ...process.env,
+        ...env,
         ...opts.env,
       },
       stdio: insertStdin(opts.stdio),
