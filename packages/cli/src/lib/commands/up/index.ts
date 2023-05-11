@@ -165,7 +165,7 @@ const up = async ({
     const compose = localComposeClient({ composeFiles: [composeFilePath], projectName })
     const composeArgs = calcComposeArgs(userSpecifiedServices, debug)
     log.debug('Running compose up with args: ', composeArgs)
-    await withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit', env: envMap }))
+    await withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit' }))
 
     const tunnels = await withSpinner(async () => {
       const queryResult = await queryTunnels({
