@@ -42,12 +42,12 @@ export default class Logs extends DriverCommand<typeof Logs> {
       throw new Error(`No key pair found for alias ${keyAlias}`)
     }
 
-    const projectName = flags.project || await findAmbientProjectName(localComposeClient(flags.file))
+    const projectName = flags.project || await findAmbientProjectName(localComposeClient({ composeFiles: flags.file }))
     log.debug(`project: ${projectName}`)
     const envId = flags.id || await findAmbientEnvId(projectName)
     log.debug(`envId: ${envId}`)
 
-    const model = await localComposeClient(flags.file, projectName).getModel()
+    const model = await localComposeClient({ composeFiles: flags.file, projectName }).getModel()
 
     // exclude docker proxy service unless explicitly specified
     const modelServices = Object.keys(model.services ?? {})
@@ -77,8 +77,7 @@ export default class Logs extends DriverCommand<typeof Logs> {
       const withDockerSocket = wrapWithDockerSocket({ sshClient, log })
 
       const compose = localComposeClient(
-        Buffer.from(yaml.stringify(addBaseComposeTunnelAgentService(model))),
-        projectName,
+        { composeFiles: Buffer.from(yaml.stringify(addBaseComposeTunnelAgentService(model))), projectName }
       )
 
       await withDockerSocket(() => compose.spawnPromise(['logs', ...services], { stdio: 'inherit' }))

@@ -43,7 +43,7 @@ export default class Urls extends DriverCommand<typeof Urls> {
       throw new Error(`No key pair found for alias ${keyAlias}`)
     }
 
-    const projectName = flags.project || await findAmbientProjectName(localComposeClient(flags.file))
+    const projectName = flags.project || await findAmbientProjectName(localComposeClient({ composeFiles: flags.file }))
     log.debug(`project: ${projectName}`)
     const envId = flags.id || await findAmbientEnvId(projectName)
     log.debug(`envId: ${envId}`)
