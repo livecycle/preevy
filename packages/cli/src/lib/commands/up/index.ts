@@ -101,10 +101,10 @@ const up = async ({
   })
   const projectName = userSpecifiedProjectName ?? userModel.name
   const remoteDir = remoteProjectDir(projectName)
-
+  const envId = userSpecifiedEnvId || await findAmbientEnvId(projectName)
   const envMap = getExposedTcpServices(userModel).reduce((envMapAgg, [service, port]) => ({
     ...envMapAgg,
-    [`PREEVY_BASE_URI_${service}_${port}`.toUpperCase()]: tunnelUrl({ service: { name: service, port }, baseUrl, project: projectName, clientId }),
+    [`PREEVY_BASE_URI_${service}_${port}`.toUpperCase()]: tunnelUrl({ service: { name: service, port }, envId, baseUrl, clientId }),
   }), {})
 
   // Now that we have the generated variables, we can create a new client and inject
@@ -126,8 +126,6 @@ const up = async ({
     createCopiedFile('tunnel_client_private_key', sshTunnelPrivateKey),
     createCopiedFile('tunnel_server_public_key', formatPublicKey(hostKey)),
   ])
-
-  const envId = userSpecifiedEnvId || await findAmbientEnvId(projectName)
 
   log.info(`Using environment ID: ${envId}`)
 

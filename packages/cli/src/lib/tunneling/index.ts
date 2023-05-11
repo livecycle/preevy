@@ -112,14 +112,18 @@ export const ensureTunnelKeyPair = async (
   return keyPair
 }
 
-export function tunnelUrl({ service: { name: serviceName, port: servicePort }, baseUrl: { hostname, protocol, port },
-  project, clientId }: {
-    service: {name: string; port: number}
-    baseUrl: BaseUrl
-    project: string
-    clientId: string
-  }) {
-  const { tunnel: tunnelName } = tunnelNameResolver({})({ name: serviceName, project, port: servicePort })
+export function tunnelUrl({
+  service: { name: serviceName, port: servicePort },
+  envId,
+  baseUrl: { hostname, protocol, port },
+  clientId,
+}: {
+  service: {name: string; port: number}
+  envId: string
+  baseUrl: BaseUrl
+  clientId: string
+}) {
+  const { tunnel: tunnelName } = tunnelNameResolver({})({ name: serviceName, project: envId, port: servicePort })
   const subDomain = `${tunnelName}-${clientId}`.toLowerCase()
   return new URL(
     `${protocol}//${subDomain}.${hostname}:${port}`
