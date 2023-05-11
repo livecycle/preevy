@@ -22,5 +22,5 @@
     "bump": "yarn version --no-commit-hooks --no-git-tag-version",
     "version": "yarn workspaces run bump-to $npm_package_version"
   },
-  "version": "0.0.25"
+  "version": "0.0.26"
 }
