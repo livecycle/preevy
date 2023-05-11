@@ -12,12 +12,12 @@ For any exposed port in your compose configurations:
 services:
      service_name:
           ...
-          ports: exposed_port:internal_port
+          ports: 3000:80
 ```
 
-Preevy will generate the following environment variable:
+Preevy will generate the following environment variable which will contain the generated preview environment URL:
 
-`PREEVY_BASE_URI_{{ comopse_service_name }}_{{ exposed_port }}`
+`PREEVY_BASE_URI_SERVICE_NAME_3000`
 
 ## Problem
 
