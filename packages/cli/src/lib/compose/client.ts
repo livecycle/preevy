@@ -50,9 +50,8 @@ export type ComposeClient = ReturnType<typeof composeClient>
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type ParametersExceptFirst<F> = F extends (arg0: any, ...rest: infer R) => any ? R : never;
 
-type LocalComposeClientArgs = {composeFiles: string[] | Buffer; projectName?: string; env?: NodeJS.ProcessEnv}
-
-export const localComposeClient = ({ composeFiles, env, projectName }: LocalComposeClientArgs) => {
+export const localComposeClient = ({ composeFiles, env, projectName }:
+  {composeFiles: string[] | Buffer; projectName?: string; env?: NodeJS.ProcessEnv}) => {
   const insertStdin = (stdio: StdioOptions | undefined) => {
     if (!Buffer.isBuffer(composeFiles)) {
       return stdio
