@@ -62,7 +62,7 @@ export default class Urls extends DriverCommand<typeof Urls> {
     })
 
     try {
-      const { tunnels } = await queryTunnels({ sshClient, projectName })
+      const { tunnels } = await queryTunnels({ sshClient, projectName, retryOpts: { retries: 2 } })
 
       const flatTunnels: FlatTunnel[] = flattenTunnels(tunnels)
         .filter(tunnel => !args.service || (

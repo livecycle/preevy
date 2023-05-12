@@ -108,7 +108,7 @@ export const queryTunnels = async ({ sshClient, projectName, retryOpts = { retri
 
   try {
     const { tunnels, clientId: tunnelId } = await retry(async () => {
-      const r = await fetch(url, { timeout: 1000 })
+      const r = await fetch(url, { timeout: 2500 })
       if (!r.ok) {
         throw new Error(`Failed to connect to docker proxy at ${url}: ${r.status}: ${r.statusText}`)
       }
