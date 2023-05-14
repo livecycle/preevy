@@ -3,10 +3,11 @@ import { Args, ux } from '@oclif/core'
 import {
   sshKeysStore, connectSshClient as createSshClient,
   COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addBaseComposeTunnelAgentService,
-  envIdFlags, composeFlags, findAmbientEnvId, findAmbientProjectName,
+  findAmbientEnvId, findAmbientProjectName,
   localComposeClient, wrapWithDockerSocket,
 } from '@preevy/core'
 import DriverCommand from '../driver-command'
+import { envIdFlags, composeFlags } from '../common-flags'
 
 // eslint-disable-next-line no-use-before-define
 export default class Logs extends DriverCommand<typeof Logs> {

@@ -14,3 +14,10 @@ export const composeFlags = {
     required: false,
   }),
 } as const
+
+export const envIdFlags = {
+  id: Flags.string({
+    description: 'Environment id - affects created URLs. If not specified, will try to detect automatically',
+    required: false,
+  }),
+} as const

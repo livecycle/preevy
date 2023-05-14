@@ -2,10 +2,11 @@ import { Args, ux } from '@oclif/core'
 import {
   sshKeysStore,
   connectSshClient as createSshClient,
-  FlatTunnel, composeFlags, envIdFlags, findAmbientEnvId,
+  FlatTunnel, findAmbientEnvId,
   findAmbientProjectName, flattenTunnels, localComposeClient, queryTunnels,
 } from '@preevy/core'
 import DriverCommand from '../driver-command'
+import { envIdFlags, composeFlags } from '../common-flags'
 
 // eslint-disable-next-line no-use-before-define
 export default class Urls extends DriverCommand<typeof Urls> {

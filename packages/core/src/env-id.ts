@@ -1,4 +1,3 @@
-import { Flags } from '@oclif/core'
 import { detectCiProvider } from './ci-providers'
 import { gitBranchName } from './git'
 import { ComposeClient } from './compose/client'
@@ -35,10 +34,3 @@ export const findAmbientEnvId = async (projectName: string) => envId({
   projectName,
   suffix: await findAmbientEnvIdSuffix(),
 })
-
-export const envIdFlags = {
-  id: Flags.string({
-    description: 'Environment id - affects created URLs. If not specified, will try to detect automatically',
-    required: false,
-  }),
-} as const

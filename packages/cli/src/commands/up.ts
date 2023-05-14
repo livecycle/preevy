@@ -1,8 +1,13 @@
 import { Args, Flags, ux } from '@oclif/core'
 import os from 'os'
-import { HostKeySignatureConfirmer, carefulBooleanPrompt, commands, composeFlags, envIdFlags, flattenTunnels, profileStore, sshKeysStore, telemetryEmitter } from '@preevy/core'
-import { performTunnelConnectionCheck } from '@preevy/core/src/tunneling'
+import {
+  performTunnelConnectionCheck, HostKeySignatureConfirmer,
+  commands, flattenTunnels, profileStore, sshKeysStore,
+  telemetryEmitter,
+} from '@preevy/core'
 import MachineCreationDriverCommand from '../machine-creation-driver-command'
+import { carefulBooleanPrompt } from '../prompt'
+import { envIdFlags, composeFlags } from '../common-flags'
 
 const confirmHostFingerprint = async (
   { hostKeyFingerprint: hostKeySignature, hostname, port }: Parameters<HostKeySignatureConfirmer>[0],

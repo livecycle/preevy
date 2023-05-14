@@ -1,6 +1,7 @@
 import { Flags } from '@oclif/core'
-import { Logger, composeFlags, envIdFlags, findAmbientEnvId, findAmbientProjectName, localComposeClient, withSpinner } from '@preevy/core'
+import { Logger, findAmbientEnvId, findAmbientProjectName, localComposeClient, withSpinner } from '@preevy/core'
 import DriverCommand from '../driver-command'
+import { envIdFlags, composeFlags } from '../common-flags'
 
 const findEnvId = async (log: Logger, { project, file }: { project?: string; file: string[] }) => {
   const projectName = project || await findAmbientProjectName(localComposeClient({ composeFiles: file }))
