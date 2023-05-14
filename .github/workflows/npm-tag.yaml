@@ -11,7 +11,7 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: setup NPM auth
-      run: | 
+      run: |
         echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
         echo "registry=https://registry.npmjs.org/" >> .npmrc
 
@@ -20,7 +20,7 @@ jobs:
         set -eou pipefail
         set -x
 
-        for packageDir in common compose-tunnel-agent cli; do
+        for packageDir in $(ls packages); do
           package=$(jq .name packages/${packageDir}/package.json -r)
           version=$(jq .version packages/${packageDir}/package.json -r)
 
