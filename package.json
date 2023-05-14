@@ -22,5 +22,6 @@
     "fix-mismatches": "syncpack fix-mismatches",
     "prepare": "husky install"
   },
-  "version": "0.0.27"
+  "version": "0.0.27",
+  "dependencies": {}
 }

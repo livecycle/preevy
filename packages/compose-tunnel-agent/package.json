@@ -37,7 +37,7 @@
   "scripts": {
     "start": "node dist/index.js",
     "dev": "tsx watch ./index.ts",
-    "lint": "eslint . --ext .ts,.tsx",
+    "lint": "eslint . --ext .ts,.tsx --cache",
     "clean": "rm -rf dist",
     "build": "node build.mjs",
     "prepack": "yarn build",
