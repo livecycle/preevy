@@ -2,7 +2,7 @@ import { jsonReader } from './fs'
 import { Snapshot, snapshotStore } from './snapshot'
 
 export * from './tar'
-export { fsFromUrl, VirtualFS, jsonReader, fsTypeFromUrl, gsDefaultBucketName, s3DefaultBucketName } from './fs'
+export { VirtualFS, jsonReader, fsTypeFromUrl, localFsFromUrl, localFs } from './fs'
 
 export const store = (
   snapshotter: (dir: string) => Promise<Snapshot>,

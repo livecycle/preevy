@@ -24,8 +24,9 @@
     "baseUrl": ".",
     "rootDir": "src",
   },
-  "include": ["**/*", "../driver-gce/src/fs/google-cloud-storage.ts"],
+  "include": ["**/*"],
   "references": [
     { "path": "../common" },
+    { "path": "../core" },
   ]
 }

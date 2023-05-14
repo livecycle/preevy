@@ -7,13 +7,15 @@ import { Flags } from '@oclif/core'
 import { randomBytes } from 'crypto'
 import { InferredFlags } from '@oclif/core/lib/interfaces'
 import { ListQuestion, Question } from 'inquirer'
-import { extractDefined } from '../../aws-utils/nulls'
-import { Machine, MachineDriver, MachineCreationDriver, MachineCreationDriverFactory, MachineDriverFactory } from '../../driver'
+import {
+  telemetryEmitter,
+  Machine, MachineDriver, MachineCreationDriver, MachineCreationDriverFactory, MachineDriverFactory,
+} from '@preevy/core'
+import { extractDefined } from '../aws-utils/nulls'
 import createClient, { REGIONS } from './client'
 import { BUNDLE_IDS, BundleId, bundleIdFromString } from './bundle-id'
 import { CUSTOMIZE_BARE_MACHINE } from './scripts'
 import { CURRENT_MACHINE_VERSION, TAGS, requiredTag } from './tags'
-import { telemetryEmitter } from '../../telemetry'
 
 export { BundleId, BUNDLE_IDS, bundleIdFromString as bundleId }
 

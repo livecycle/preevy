@@ -19,5 +19,7 @@
     { "path": "../core" },
     { "path": "../compose-tunnel-agent" },
     { "path": "../common" },
+    { "path": "../driver-lightsail" },
+    { "path": "../driver-gce" },
   ]
 }

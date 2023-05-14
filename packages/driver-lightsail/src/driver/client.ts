@@ -9,8 +9,8 @@ import {
 import { randomBytes } from 'crypto'
 import { asyncFilter, asyncFind } from 'iter-tools-es'
 
-import { ensureDefined, extractDefined } from '../../aws-utils/nulls'
-import { paginationIterator } from '../../aws-utils/pagination'
+import { ensureDefined, extractDefined } from '../aws-utils/nulls'
+import { paginationIterator } from '../aws-utils/pagination'
 import { waitUntilAllOperationsSucceed } from './operation-waiter'
 import { BundleId, bundleIdEqualOrLarger, bundleIdFromString } from './bundle-id'
 import { instanceTags, instanceTagsPredicate, keypairTags, keypairTagsPredicate, snapshotTags, snapshotTagsPredicate } from './tags'

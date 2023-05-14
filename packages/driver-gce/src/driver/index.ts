@@ -1,11 +1,14 @@
 import { Flags, Interfaces } from '@oclif/core'
 import { asyncMap } from 'iter-tools-es'
 import { InputQuestion, ListQuestion } from 'inquirer'
-import { generateSshKeyPair } from '../../ssh/keypair'
-import { MachineDriver, Machine, MachineCreationDriver, MachineCreationDriverFactory, MachineDriverFactory } from '../../driver'
+import {
+  MachineDriver,
+  Machine, MachineCreationDriver, MachineCreationDriverFactory, MachineDriverFactory,
+  telemetryEmitter,
+  generateSshKeyPair,
+} from '@preevy/core'
 import createClient, { Instance, availableRegions, defaultProjectId, shortResourceName } from './client'
 import { LABELS } from './labels'
-import { telemetryEmitter } from '../../telemetry'
 
 type DriverContext = {
   profileId: string
@@ -182,3 +185,5 @@ const machineCreationFactory: MachineCreationDriverFactory<
 machineDriver.machineCreationFactory = machineCreationFactory
 
 export default machineDriver
+
+export { defaultProjectId } from './client'

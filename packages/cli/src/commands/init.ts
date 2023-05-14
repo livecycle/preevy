@@ -1,8 +1,11 @@
 import { Flags, Args, ux } from '@oclif/core'
 import inquirer from 'inquirer'
-import { gsDefaultBucketName, s3DefaultBucketName, AWS_REGIONS, ambientAwsAccountId, defaultGceProjectId } from '@preevy/core'
+import { defaultBucketName as gsDefaultBucketName, defaultProjectId as defaultGceProjectId } from '@preevy/driver-gce'
+import { defaultBucketName as s3DefaultBucketName, AWS_REGIONS, awsUtils } from '@preevy/driver-lightsail'
 import BaseCommand from '../base-command'
 import { DriverName, machineDrivers } from '../drivers'
+
+import ambientAwsAccountId = awsUtils.ambientAccountId
 
 export default class Init extends BaseCommand {
   static description = 'Initialize or import a new profile'

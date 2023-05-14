@@ -1,9 +1,9 @@
-import { IdempotencyStrategy, Storage } from '@google-cloud/storage'
 import path from 'path'
+import { IdempotencyStrategy, Storage } from '@google-cloud/storage'
+import { VirtualFS } from '@preevy/core'
 import stream from 'node:stream'
 import { GoogleAuth } from 'google-gax'
 import { DefaultTransporter } from 'google-auth-library'
-import { VirtualFS } from './base'
 
 export const defaultBucketName = (
   { profileAlias, project }: { profileAlias: string; project: string },

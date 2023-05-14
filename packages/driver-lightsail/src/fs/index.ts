@@ -1,6 +1,6 @@
-import { GetObjectCommandOutput, S3, S3ServiceException } from '@aws-sdk/client-s3'
 import path from 'path'
-import { VirtualFS } from './base'
+import { GetObjectCommandOutput, S3, S3ServiceException } from '@aws-sdk/client-s3'
+import { VirtualFS } from '@preevy/core'
 
 export const defaultBucketName = (
   { profileAlias, accountId }: { profileAlias: string; accountId: string },

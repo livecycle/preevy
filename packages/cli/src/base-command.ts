@@ -2,6 +2,7 @@ import { Command, Flags, Interfaces, settings as oclifSettings } from '@oclif/co
 import path from 'path'
 import { LogLevel, Logger, logLevels, LocalProfilesConfig, localProfilesConfig } from '@preevy/core'
 import { commandLogger } from './log'
+import { fsFromUrl } from './fs'
 
 // eslint-disable-next-line no-use-before-define
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof BaseCommand['baseFlags'] & T['flags']>
@@ -68,7 +69,7 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
     if (!this.#profileConfig) {
       const root = path.join(this.config.dataDir, 'v2')
       this.logger.debug('init profile config at:', root)
-      this.#profileConfig = localProfilesConfig(root)
+      this.#profileConfig = localProfilesConfig(root, fsFromUrl)
     }
 
     return this.#profileConfig

@@ -12,6 +12,8 @@
     "packages/common",
     "packages/tunnel-server",
     "packages/compose-tunnel-agent",
+    "packages/driver-lightsail",
+    "packages/driver-gce",
   ],
   "eslint.useESLintClass": true,
   "eslint.packageManager": "yarn",

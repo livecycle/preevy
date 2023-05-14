@@ -1,6 +1,6 @@
 import path from 'path'
 import { localFs } from '../store/fs/local'
-import { fsFromUrl, store, tarSnapshot } from '../store'
+import { VirtualFS, store, tarSnapshot } from '../store'
 import { ProfileStore, profileStore } from './store'
 import { Profile } from './profile'
 
@@ -17,7 +17,10 @@ type ProfileList = {
 
 const profileListFileName = 'profileList.json'
 
-export const localProfilesConfig = (localDir: string) => {
+export const localProfilesConfig = (
+  localDir: string,
+  fsFromUrl: (url: string, baseDir: string) => Promise<VirtualFS>,
+) => {
   const localStore = localFs(localDir)
   const tarSnapshotFromUrl = async (
     url: string,
