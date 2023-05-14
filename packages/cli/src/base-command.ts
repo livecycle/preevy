@@ -1,7 +1,7 @@
 import { Command, Flags, Interfaces, settings as oclifSettings } from '@oclif/core'
 import path from 'path'
-import { LocalProfilesConfig, localProfilesConfig } from './lib/profile'
-import { commandLogger, Logger, LogLevel, logLevels } from './log'
+import { LogLevel, Logger, logLevels, LocalProfilesConfig, localProfilesConfig } from '@preevy/core'
+import { commandLogger } from './log'
 
 // eslint-disable-next-line no-use-before-define
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof BaseCommand['baseFlags'] & T['flags']>

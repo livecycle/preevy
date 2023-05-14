@@ -1,8 +1,8 @@
 import { Args, Flags, ux } from '@oclif/core'
 import { find, range, map } from 'iter-tools-es'
+import { LocalProfilesConfig } from '@preevy/core'
 import BaseCommand from '../../base-command'
 import { onProfileChange } from '../../profile-command'
-import { LocalProfilesConfig } from '../../lib/profile'
 
 const DEFAULT_ALIAS_PREFIX = 'default'
 

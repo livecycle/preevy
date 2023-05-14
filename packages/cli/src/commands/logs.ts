@@ -1,13 +1,12 @@
 import yaml from 'yaml'
 import { Args, ux } from '@oclif/core'
+import {
+  sshKeysStore, connectSshClient as createSshClient,
+  COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addBaseComposeTunnelAgentService,
+  envIdFlags, composeFlags, findAmbientEnvId, findAmbientProjectName,
+  localComposeClient, wrapWithDockerSocket,
+} from '@preevy/core'
 import DriverCommand from '../driver-command'
-import { sshKeysStore } from '../lib/state/ssh'
-import { connectSshClient as createSshClient } from '../lib/ssh/client'
-import { envIdFlags, findAmbientEnvId, findAmbientProjectName } from '../lib/env-id'
-import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addBaseComposeTunnelAgentService } from '../lib/compose-tunnel-agent-client'
-import { localComposeClient } from '../lib/compose/client'
-import { composeFlags } from '../lib/compose/flags'
-import { wrapWithDockerSocket } from '../lib/commands/up/docker'
 
 // eslint-disable-next-line no-use-before-define
 export default class Logs extends DriverCommand<typeof Logs> {

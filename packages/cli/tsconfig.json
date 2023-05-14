@@ -10,11 +10,13 @@
     "lib": ["es2022"],
     "esModuleInterop": true,
     "sourceMap": true,
+    "baseUrl": ".",
   },
   "include": [
     "src/**/*"
   ],
   "references": [
+    { "path": "../core" },
     { "path": "../compose-tunnel-agent" },
     { "path": "../common" },
   ]

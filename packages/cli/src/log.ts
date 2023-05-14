@@ -1,22 +1,6 @@
 import { Command } from '@oclif/core'
+import { Logger, LogLevel, logLevels, nullLogFunc } from '@preevy/core'
 import { mapValues } from 'lodash'
-
-export const logLevels = {
-  debug: 10,
-  info: 20,
-  warn: 30,
-  error: 40,
-} as const
-
-export type LogLevel = keyof typeof logLevels
-
-export type LogFunc = (message?: string, ...args: unknown[]) => void
-
-const nullLogFunc: LogFunc = () => undefined
-
-export type Logger = {
-  [level in LogLevel]: LogFunc
-}
 
 export const commandLogger = (
   command: { logLevel: LogLevel },

@@ -1,10 +1,7 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
 import chalk from 'chalk'
+import { Profile, Store, fsTypeFromUrl, telemetryEmitter } from '@preevy/core'
 import BaseCommand from './base-command'
-import { Profile } from './lib/profile'
-import { Store } from './lib/store'
-import { telemetryEmitter } from './lib/telemetry'
-import { fsTypeFromUrl } from './lib/store/fs'
 
 // eslint-disable-next-line no-use-before-define
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof ProfileCommand['baseFlags'] & T['flags']>
