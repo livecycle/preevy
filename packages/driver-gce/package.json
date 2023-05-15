@@ -1,0 +1,46 @@
+{
+  "name": "@preevy/driver-gce",
+  "version": "0.0.27",
+  "description": "Google Compute Engine driver for Preevy",
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@google-cloud/compute": "^3.9.1",
+    "@google-cloud/storage": "^6.9.5",
+    "@oclif/core": "^2",
+    "@preevy/core": "0.0.27",
+    "inquirer": "^8.0.0",
+    "iter-tools-es": "^7.5.1",
+    "google-auth-library": "^8.7.0",
+    "google-gax": "^3.6.0",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.192",
+    "@types/node": "18",
+    "@typescript-eslint/eslint-plugin": "^5.55.0",
+    "@typescript-eslint/parser": "^5.55.0",
+    "eslint": "^8.36.0",
+    "eslint-config-airbnb": "^19.0.4",
+    "eslint-config-oclif": "^4",
+    "eslint-config-oclif-typescript": "^1.0.3",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-jest": "^27.2.1",
+    "eslint-plugin-jsx-a11y": "^6.7.1",
+    "eslint-plugin-react": "^7.32.2",
+    "jest": "^29.4.3",
+    "ts-node": "^10.9.1",
+    "tslib": "^2.5.0",
+    "typescript": "^5.0.4"
+  },
+  "scripts": {
+    "lint": "eslint . --ext .ts,.tsx --cache",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "build": "tsc -b",
+    "prepack": "yarn clean && yarn build",
+    "prepare": "cd ../.. && husky install"
+  }
+}

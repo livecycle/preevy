@@ -1,8 +1,8 @@
 import { Args } from '@oclif/core'
 import { mapKeys, pickBy } from 'lodash'
+import { ensureTunnelKeyPair } from '@preevy/core'
+import { DriverName } from '../../drivers'
 import DriverCommand from '../../driver-command'
-import { DriverName } from '../../lib/machine'
-import { ensureTunnelKeyPair } from '../../lib/tunneling'
 
 // eslint-disable-next-line no-use-before-define
 export default class CreateProfile extends DriverCommand<typeof CreateProfile> {

@@ -1,9 +1,8 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
+import { MachineDriver, profileStore } from '@preevy/core'
 import BaseCommand from './base-command'
-import { flagsForAllDrivers, DriverName, MachineDriver, machineDrivers, DriverFlags } from './lib/machine'
-import { removeDriverPrefix } from './lib/machine/driver/flags'
-import { profileStore } from './lib/profile/store'
 import ProfileCommand from './profile-command'
+import { DriverFlags, DriverName, flagsForAllDrivers, machineDrivers, removeDriverPrefix } from './drivers'
 
 // eslint-disable-next-line no-use-before-define
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof DriverCommand['baseFlags'] & T['flags']>
@@ -38,7 +37,7 @@ abstract class DriverCommand<T extends typeof Command> extends ProfileCommand<T>
   }
 
   #driver: MachineDriver | undefined
-  async driver() {
+  async driver(): Promise<MachineDriver> {
     if (this.#driver) {
       return this.#driver
     }
