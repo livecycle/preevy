@@ -22,7 +22,7 @@ export const wrapWithDockerSocket = (
 ): Promise<Return> => {
   const { localSocket, close } = await sshClient.forwardOutStreamLocal({ port: 0, host: '0.0.0.0' }, '/var/run/docker.sock')
 
-  log.debug(`Local socket: ${localSocket}`)
+  log.debug(`Local socket: ${JSON.stringify(localSocket)}`)
 
   Object.keys(process.env).filter(k => k !== 'DOCKER_HOST' && k.startsWith('DOCKER_')).forEach(k => {
     log.warn(`deleting conflicting env var ${k}`)

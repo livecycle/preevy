@@ -52,7 +52,7 @@ export default class Down extends DriverCommand<typeof Down> {
     }
 
     await withSpinner(async () => {
-      await driver.removeMachine(machine.providerId, flags.wait)
+      await driver.removeMachine(machine.providerId, flags.wait, envId)
     }, { opPrefix: `Deleting ${driver.friendlyName} machine ${machine.providerId} for environment ${envId}` })
 
     if (flags.json) {

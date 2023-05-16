@@ -38,7 +38,7 @@ const ensureMachine = async ({
   return withSpinner(async spinner => {
     if (recreating) {
       spinner.text = 'Deleting machine'
-      await machineDriver.removeMachine(existingMachine.providerId, false)
+      await machineDriver.removeMachine(existingMachine.providerId, false, envId)
     }
     spinner.text = 'Checking for existing snapshot'
     const machineCreation = await machineCreationDriver.createMachine({ envId, keyConfig: sshKey })
@@ -101,12 +101,12 @@ export const ensureCustomizedMachine = async ({
       log.debug('Executing machine scripts')
       for (const script of machineDriver.customizationScripts ?? []) {
         // eslint-disable-next-line no-await-in-loop
-        await sshClient.execScript(script)
+        await sshClient.execScript(script, {})
       }
 
-      // ensure docker is accessible
+      log.info('Ensure docker is accessible')
       await retry(
-        () => sshClient.execCommand('docker run hello-world', {}),
+        () => sshClient.execCommand('docker run hello-world', { }),
         {
           minTimeout: 2000,
           maxTimeout: 5000,

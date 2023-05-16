@@ -42,7 +42,6 @@ export default class Urls extends DriverCommand<typeof Urls> {
     if (!sshKey) {
       throw new Error(`No key pair found for alias ${keyAlias}`)
     }
-
     const projectName = flags.project || await findAmbientProjectName(localComposeClient(flags.file))
     log.debug(`project: ${projectName}`)
     const envId = flags.id || await findAmbientEnvId(projectName)

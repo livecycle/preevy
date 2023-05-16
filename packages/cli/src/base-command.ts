@@ -67,7 +67,7 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
   get profileConfig(): LocalProfilesConfig {
     if (!this.#profileConfig) {
       const root = path.join(this.config.dataDir, 'v2')
-      this.logger.debug('init profile config at:', root)
+      this.logger.debug('loading profile config at:', root)
       this.#profileConfig = localProfilesConfig(root)
     }
 

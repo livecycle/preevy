@@ -24,5 +24,5 @@
     "composite": true,
     "outDir": "dist",
   },
-  "include": ["index.ts", "main.ts", "src/**/*"],
+  "include": ["index.ts", "src/**/*"],
 }

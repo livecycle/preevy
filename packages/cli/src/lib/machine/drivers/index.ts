@@ -1,16 +1,24 @@
 import { map } from 'lodash'
 import lightsail from './lightsail'
 import gce from './gce'
+import azure from './azure'
 import fake from './fake'
 
 export const machineDrivers = {
   lightsail,
   gce,
   fake,
+  azure,
 } as const
 
 type MachineDrivers = typeof machineDrivers
 export type DriverName = keyof MachineDrivers
+
+export enum LocationType {
+  LOCAL = 'local',
+  AWS_S3 = 's3',
+  GOOGLE_CLOUD_STORAGE= 'gs',
+}
 
 type FlagType = 'flags' | 'machineCreationFlags'
 
@@ -50,11 +58,13 @@ export const machineCreationDriverFlags = <Name extends DriverName>(driverName: 
 export const flagsForAllDrivers = {
   ...driverFlags('lightsail'),
   ...driverFlags('gce'),
+  ...driverFlags('azure'),
   ...driverFlags('fake'),
 }
 
 export const machineCreationflagsForAllDrivers = {
   ...machineCreationDriverFlags('lightsail'),
   ...machineCreationDriverFlags('gce'),
+  ...machineCreationDriverFlags('azure'),
   ...machineCreationDriverFlags('fake'),
 }
