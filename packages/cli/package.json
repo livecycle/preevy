@@ -19,9 +19,8 @@
   ],
   "dependencies": {
     "@oclif/core": "^2",
-    "@oclif/plugin-help": "^5",
-    "@oclif/plugin-plugins": "^2.3.0",
-    "@preevy/common": "0.0.28-alpha.0",
+    "@preevy/cli-common": "0.0.29-alpha.0",
+    "@preevy/common": "0.0.29-alpha.0",
     "@preevy/compose-tunnel-agent": "0.0.29-alpha.0",
     "@preevy/core": "0.0.29-alpha.0",
     "@preevy/driver-gce": "0.0.29-alpha.0",
@@ -65,6 +64,7 @@
       "init": [
         "./dist/hooks/init/async-trace",
         "./dist/hooks/init/sync-logging",
+        "./dist/hooks/init/load-plugins",
         "./dist/hooks/init/telemetry"
       ],
       "prerun": [

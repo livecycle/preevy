@@ -1,0 +1,30 @@
+{
+  "name": "@preevy/plugin-github-pr-link",
+  "version": "0.0.29-alpha.0",
+  "description": "",
+  "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@preevy/cli-common": "0.0.29-alpha.0",
+    "@preevy/core": "0.0.29-alpha.0",
+    "@oclif/core": "^2",
+    "lodash": "^4.17.21",
+    "octokit": "^2.0.14"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.55.0",
+    "@typescript-eslint/parser": "^5.55.0",
+    "eslint": "^8.36.0",
+    "typescript": "^5.0.4"
+  },
+  "scripts": {
+    "lint": "eslint . --ext .ts,.tsx --cache",
+    "clean": "rm -rf dist",
+    "build": "tsc -b",
+    "prepack": "yarn clean && yarn build",
+    "prepare": "cd ../.. && husky install"
+  }
+}

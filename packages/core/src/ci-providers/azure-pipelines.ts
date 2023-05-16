@@ -9,4 +9,5 @@ export const azurePipelinesCiProvider = (): CiProvider => ({
   pullRequestNumber: () => stringOrUndefinedToNumber(
     process.env.SYSTEM_PULLREQUEST_PULLREQUESTNUMBER || process.env.SYSTEM_PULLREQUEST_PULLREQUESTID,
   ),
+  repoUrl: () => process.env.BUILD_REPOSITORYURI,
 })

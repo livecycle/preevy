@@ -5,6 +5,7 @@ import {
   commands, flattenTunnels, profileStore, sshKeysStore,
   telemetryEmitter,
 } from '@preevy/core'
+import { asyncReduce } from 'iter-tools-es'
 import MachineCreationDriverCommand from '../machine-creation-driver-command'
 import { carefulBooleanPrompt } from '../prompt'
 import { envIdFlags, composeFlags } from '../common-flags'
@@ -106,6 +107,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       debug: flags.debug,
       machineDriver: driver,
       machineCreationDriver,
+      userModel: await this.ensureUserModel(),
       userSpecifiedProjectName: flags.project,
       userSpecifiedEnvId: flags.id,
       tunnelOpts,
@@ -119,14 +121,23 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
     const flatTunnels = flattenTunnels(tunnels)
 
+    const result = await asyncReduce(
+      { urls: flatTunnels },
+      async ({ urls }, envCreated) => envCreated(
+        { log: this.logger, userModel: await this.ensureUserModel() },
+        { envId, urls },
+      ),
+      this.config.preevyHooks.envCreated,
+    )
+
     if (flags.json) {
-      return flatTunnels
+      return result.urls
     }
 
     this.log(`Preview environment ${envId} provisioned: ${machine.publicIPAddress}`)
 
     ux.table(
-      flatTunnels,
+      result.urls,
       {
         service: { header: 'Service' },
         port: { header: 'Port' },

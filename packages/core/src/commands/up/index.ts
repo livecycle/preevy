@@ -5,7 +5,7 @@ import yaml from 'yaml'
 import { BaseUrl, formatPublicKey } from '@preevy/common'
 import { FileToCopy } from '../../ssh/client'
 import { SSHKeyConfig } from '../../ssh/keypair'
-import { fixModelForRemote } from '../../compose/model'
+import { ComposeModel, fixModelForRemote } from '../../compose/model'
 import { TunnelOpts } from '../../ssh/url'
 import { ensureCustomizedMachine } from './machine'
 import { wrapWithDockerSocket } from '../../docker'
@@ -55,6 +55,7 @@ const up = async ({
   machineDriver,
   machineCreationDriver,
   tunnelOpts,
+  userModel,
   userSpecifiedProjectName,
   userSpecifiedEnvId,
   userSpecifiedServices,
@@ -71,6 +72,7 @@ const up = async ({
   machineDriver: MachineDriver
   machineCreationDriver: MachineCreationDriver
   tunnelOpts: TunnelOpts
+  userModel: ComposeModel
   userSpecifiedProjectName: string | undefined
   userSpecifiedEnvId: string | undefined
   userSpecifiedServices: string[]
@@ -83,19 +85,15 @@ const up = async ({
 }): Promise<{ machine: Machine; tunnels: Tunnel[]; envId: string }> => {
   log.debug('Normalizing compose files')
 
-  // We start by getting the user model without injecting Preevy's environment
-  // variables (e.g. `PREEVY_BASE_URI_BACKEND_3000`) so we can have the list of services
-  // required to create said variables
-  const userModel = await localComposeClient({
-    composeFiles: userComposeFiles,
-    projectName: userSpecifiedProjectName,
-  }).getModel()
   const projectName = userSpecifiedProjectName ?? userModel.name
   const remoteDir = remoteProjectDir(projectName)
 
   const envId = userSpecifiedEnvId || await findAmbientEnvId(projectName)
   log.info(`Using environment ID: ${envId}`)
 
+  // We start by getting the user model without injecting Preevy's environment
+  // variables (e.g. `PREEVY_BASE_URI_BACKEND_3000`) so we can have the list of services
+  // required to create said variables
   const composeEnv = getExposedTcpServices(userModel).reduce((envMapAgg, [service, port]) => ({
     ...envMapAgg,
     [`PREEVY_BASE_URI_${service}_${port}`.toUpperCase()]: tunnelUrl({
