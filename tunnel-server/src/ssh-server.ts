@@ -147,7 +147,7 @@ export const sshServer = ({
           }
           const channel = accept()
           log.info({clientId, tunnels: [...tunnels]}, 'client connected')
-          channel.stdout.write(onHello?.(clientId, [...tunnels]))
+          channel.stdout.write(onHello(clientId, [...tunnels]))
           channel.stdout.exit(0)
           if (tunnels.size === 0) {
             channel.close()

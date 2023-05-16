@@ -5,6 +5,11 @@ import { tryParseJson } from '../json'
 import { Logger } from '../log'
 import { formatPublicKey, parseKey } from './keys'
 
+export interface BaseUrl {
+  protocol: string
+  hostname: string
+  port: number
+}
 export type SshBaseConnectionConfig = {
   hostname: string
   port: number
@@ -44,6 +49,7 @@ export const parseSshUrl = (s: string): Pick<SshConnectionConfig, 'hostname' | '
 export type HelloResponse = {
   clientId: string
   tunnels: Record<string, string>
+  baseUrl: BaseUrl
 }
 
 const connectTls = (

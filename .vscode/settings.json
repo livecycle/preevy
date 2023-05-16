@@ -7,10 +7,7 @@
   ],
   "eslint.format.enable": true,
   "eslint.workingDirectories": [
-    "packages/cli",
-    "packages/common",
-    "packages/tunnel-server",
-    "packages/compose-tunnel-agent",
+    { "pattern": "./packages/*/" },
   ],
   "eslint.useESLintClass": true,
   "eslint.packageManager": "yarn",
@@ -27,4 +24,6 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "markdown.extension.preview.autoShowPreviewToSide": true,
   "markdown.extension.toc.levels": "2..6",
+  "prettier.enable": false,
+  "editor.defaultFormatter": "dbaeumer.vscode-eslint",
 }

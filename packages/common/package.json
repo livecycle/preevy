@@ -1,6 +1,6 @@
 {
   "name": "@preevy/common",
-  "version": "0.0.24",
+  "version": "0.0.28-alpha.0",
   "description": "",
   "main": "dist/index.js",
   "files": [
@@ -30,13 +30,14 @@
     "husky": "^8.0.0",
     "lint-staged": "^13.1.2",
     "tsx": "^3.12.3",
-    "typescript": "^5.0.2"
+    "typescript": "^5.0.4"
   },
   "scripts": {
-    "start": "node dist/index.js",
-    "dev": "tsx watch ./index.ts",
-    "lint": "eslint . --ext .ts,.tsx",
+    "start": "node dist/main.js",
+    "dev": "tsx watch ./main.ts",
+    "lint": "eslint . --ext .ts,.tsx --cache",
     "build": "tsc -b",
-    "prepack": "yarn build"
+    "prepack": "yarn build",
+    "bump-to": "yarn version --no-commit-hooks --no-git-tag-version --new-version"
   }
 }

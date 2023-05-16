@@ -1,9 +1,8 @@
+import { baseSshClient, HelloResponse, SshClientOpts, TunnelNameResolver } from '@preevy/common'
 import net from 'net'
-import { inspect } from 'util'
 import plimit from 'p-limit'
-import { baseSshClient, HelloResponse, SshClientOpts } from '@preevy/common'
+import { inspect } from 'util'
 import { RunningService } from '../docker'
-import { TunnelNameResolver } from '../tunnel-name'
 import * as maps from '../maps'
 
 export type Tunnel = {
@@ -138,7 +137,7 @@ export const sshClient = async ({
   return {
     updateTunnels: async (services: RunningService[]): Promise<SshState> => limit(async () => {
       const forwards = new Map(
-        services.flatMap(service => tunnelNameResolver(service)
+        services.flatMap(service => service.ports.map(x => tunnelNameResolver({ ...service, port: x }))
           .map(({ port, tunnel }) => ([tunnel, { host: service.name, port, service }])))
       )
 

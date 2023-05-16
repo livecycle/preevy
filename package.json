@@ -5,6 +5,7 @@
   ],
   "devDependencies": {
     "husky": "^8.0.0",
+    "lerna": "^6.6.2",
     "lint-staged": "^13.1.2",
     "lodash": "^4.17.21",
     "syncpack": "^9.8.4"
@@ -15,10 +16,12 @@
     ]
   },
   "scripts": {
-    "lint": "yarn workspaces run lint",
+    "lint": "yarn -s run lerna -- run lint --parallel --",
+    "build": "yarn -s run lerna run build --",
     "check-mismatches": "syncpack list-mismatches",
     "fix-mismatches": "syncpack fix-mismatches",
     "prepare": "husky install"
   },
-  "version": "0.0.1"
+  "version": "0.0.27",
+  "dependencies": {}
 }

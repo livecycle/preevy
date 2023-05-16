@@ -1,12 +1,12 @@
 import { Args, ux } from '@oclif/core'
+import {
+  sshKeysStore,
+  connectSshClient as createSshClient,
+  FlatTunnel, findAmbientEnvId,
+  findAmbientProjectName, flattenTunnels, localComposeClient, queryTunnels,
+} from '@preevy/core'
 import DriverCommand from '../driver-command'
-import { sshKeysStore } from '../lib/state/ssh'
-import { connectSshClient as createSshClient } from '../lib/ssh/client'
-import { envIdFlags, findAmbientEnvId, findAmbientProjectName } from '../lib/env-id'
-import { queryTunnels } from '../lib/compose-tunnel-agent-client'
-import { localComposeClient } from '../lib/compose/client'
-import { composeFlags } from '../lib/compose/flags'
-import { flattenTunnels, FlatTunnel } from '../lib/tunneling'
+import { envIdFlags, composeFlags } from '../common-flags'
 
 // eslint-disable-next-line no-use-before-define
 export default class Urls extends DriverCommand<typeof Urls> {
@@ -42,7 +42,8 @@ export default class Urls extends DriverCommand<typeof Urls> {
     if (!sshKey) {
       throw new Error(`No key pair found for alias ${keyAlias}`)
     }
-    const projectName = flags.project || await findAmbientProjectName(localComposeClient(flags.file))
+
+    const projectName = flags.project || await findAmbientProjectName(localComposeClient({ composeFiles: flags.file }))
     log.debug(`project: ${projectName}`)
     const envId = flags.id || await findAmbientEnvId(projectName)
     log.debug(`envId: ${envId}`)
@@ -61,7 +62,7 @@ export default class Urls extends DriverCommand<typeof Urls> {
     })
 
     try {
-      const { tunnels } = await queryTunnels({ sshClient, projectName })
+      const { tunnels } = await queryTunnels({ sshClient, projectName, retryOpts: { retries: 2 } })
 
       const flatTunnels: FlatTunnel[] = flattenTunnels(tunnels)
         .filter(tunnel => !args.service || (

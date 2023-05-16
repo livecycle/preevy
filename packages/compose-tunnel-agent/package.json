@@ -1,6 +1,6 @@
 {
   "name": "@preevy/compose-tunnel-agent",
-  "version": "0.0.24",
+  "version": "0.0.28-alpha.0",
   "description": "",
   "main": "dist/index.js",
   "files": [
@@ -9,7 +9,7 @@
   ],
   "license": "Apache-2.0",
   "dependencies": {
-    "@preevy/common": "0.0.24",
+    "@preevy/common": "0.0.28-alpha.0",
     "dockerode": "^3.3.4",
     "http-proxy": "^1.18.1",
     "lodash": "^4.17.21",
@@ -32,15 +32,16 @@
     "husky": "^8.0.0",
     "lint-staged": "^13.1.2",
     "tsx": "^3.12.3",
-    "typescript": "^5.0.2"
+    "typescript": "^5.0.4"
   },
   "scripts": {
     "start": "node dist/index.js",
     "dev": "tsx watch ./index.ts",
-    "lint": "eslint . --ext .ts,.tsx",
+    "lint": "eslint . --ext .ts,.tsx --cache",
     "clean": "rm -rf dist",
     "build": "node build.mjs",
     "prepack": "yarn build",
-    "prepare": "cd ../.. && husky install"
+    "prepare": "cd ../.. && husky install",
+    "bump-to": "yarn version --no-commit-hooks --no-git-tag-version --new-version"
   }
 }
