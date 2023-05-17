@@ -10,7 +10,8 @@ import {
 import { ResourceManagementClient } from '@azure/arm-resources'
 import {
   ComputeManagementClient,
-  ImageReference, Resource,
+  ImageReference,
+  Resource,
   VirtualMachine,
   VirtualMachineImageResource,
 } from '@azure/arm-compute'
@@ -21,12 +22,12 @@ export const getTags = (profileId: string, envId: string) => ({
   envId,
   client: 'preevy',
 })
-export async function createResourceGroup(
+export const createResourceGroup = async (
   resourceGroupName: string,
   location: string,
   tags: Resource['tags'],
   resourceClient: ResourceManagementClient
-) {
+) => {
   const groupParameters = {
     location,
     tags,
@@ -37,14 +38,14 @@ export async function createResourceGroup(
   )
 }
 
-export async function createStorageAccount(
+export const createStorageAccount = async (
   storageAccountName: string,
   location: string,
   resourceGroupName: string,
   tags: Resource['tags'],
   storageClient: StorageManagementClient,
   storageAccountType = 'Standard_LRS',
-) {
+) => {
   const createParameters = {
     location,
     sku: {
@@ -60,14 +61,14 @@ export async function createStorageAccount(
   )
 }
 
-export async function createVnet(
+export const createVnet = async (
   tags: Resource['tags'],
   vnetName: string,
   location: string,
   subnetName: string,
   resourceGroupName: string,
   networkClient: NetworkManagementClient
-) {
+) => {
   const vnetParameters: VirtualNetwork = {
     tags,
     location,
@@ -86,7 +87,7 @@ export async function createVnet(
   )
 }
 
-export async function createSecurityGroup(
+export const createSecurityGroup = async (
   tags: Resource['tags'],
   vnetName: string,
   securityRuleName: string,
@@ -94,7 +95,7 @@ export async function createSecurityGroup(
   nsgName: string,
   location: string,
   networkClient: NetworkManagementClient
-) {
+) => {
   const securityRuleParameters: SecurityRule = {
     protocol: 'tcp',
     sourcePortRange: '*',
@@ -114,27 +115,14 @@ export async function createSecurityGroup(
   })
 }
 
-export async function getSubnetInfo(
-  subnetName: string,
-  resourceGroupName: string,
-  vnetName: string,
-  networkClient: NetworkManagementClient
-) {
-  return networkClient.subnets.get(
-    resourceGroupName,
-    vnetName,
-    subnetName
-  )
-}
-
-export async function createPublicIP(
+export const createPublicIP = async (
   tags: Resource['tags'],
   publicIPName: string,
   location: string,
   resourceGroupName: string,
   domainNameLabel: string,
   networkClient: NetworkManagementClient
-) {
+) => {
   const publicIPParameters: PublicIPAddress = {
     location,
     publicIPAllocationMethod: 'Dynamic',
@@ -150,7 +138,7 @@ export async function createPublicIP(
   )
 }
 
-export async function createNIC(
+export const createNIC = async (
   tags: Resource['tags'],
   subnetInfo: Subnet,
   publicIPInfo: PublicIPAddress,
@@ -160,7 +148,7 @@ export async function createNIC(
   resourceGroupName: string,
   nsg: NetworkSecurityGroup,
   networkClient: NetworkManagementClient
-) {
+) => {
   const nicParameters: NetworkInterface = {
     location,
     ipConfigurations: [
@@ -181,7 +169,11 @@ export async function createNIC(
   )
 }
 
-export async function findVMImage(location: string, imageRef: ImageReference, computeClient: ComputeManagementClient) {
+export const findVMImage = async (
+  location: string,
+  imageRef: ImageReference,
+  computeClient: ComputeManagementClient
+) => {
   if (!imageRef.sku || !imageRef.offer || !imageRef.publisher) {
     throw new Error('Missing required image reference parameters')
   }
@@ -194,18 +186,16 @@ export async function findVMImage(location: string, imageRef: ImageReference, co
     .then((images: Array<VirtualMachineImageResource>) => images.find(x => x.name))
 }
 
-export async function getNICInfo(
+export const getNicInfo = async (
   resourceGroupName: string,
   networkInterfaceName: string,
   networkClient: NetworkManagementClient
-) {
-  return networkClient.networkInterfaces.get(
-    resourceGroupName,
-    networkInterfaceName
-  )
-}
+) => networkClient.networkInterfaces.get(
+  resourceGroupName,
+  networkInterfaceName
+)
 
-export async function createVirtualMachine(tags: Resource['tags'], nicId: string, imageRef: ImageReference, osDiskName: string, vmName: string, location: string, resourceGroupName: string, computeClient: ComputeManagementClient, sshPublicKey: string, networkSecurityGroupId: string, vmSize = 'Standard_B2s', adminUsername = 'preevy') {
+export const createVirtualMachine = async (tags: Resource['tags'], nicId: string, imageRef: ImageReference, osDiskName: string, vmName: string, location: string, resourceGroupName: string, computeClient: ComputeManagementClient, sshPublicKey: string, networkSecurityGroupId: string, vmSize = 'Standard_B2s', adminUsername = 'preevy') => {
   const vmParameters: VirtualMachine = {
     location,
     tags: { ...tags, preevyVm: resourceGroupName },
@@ -252,4 +242,42 @@ export async function createVirtualMachine(tags: Resource['tags'], nicId: string
     vmName,
     vmParameters
   )
+}
+export const getVmName = (envId: string) => `vm${envId.replace(/[^a-zA-Z0-9]/g, '')}}`
+export const getResourceGroupName = (envId: string) => `preevy-${envId}`
+export const extractResourceNameFromId = (rId: string) => {
+  const name = rId.split('/')
+    .at(-1)
+  if (!name) {
+    throw new Error(`Could not extract resource name from id ${rId}`)
+  }
+  return name
+}
+export const extractResourceGroupNameFromId = (rId: string) => {
+  const resourceGroupName = rId.split('/')[4]
+  if (!resourceGroupName) {
+    throw new Error(`Could not extract resource group name from id ${rId}`)
+  }
+  return rId.split('/')[4]
+}
+export const getIpAddresses = async (networkClient: NetworkManagementClient, vm: VirtualMachine) => {
+  if (!vm.id || !vm.networkProfile?.networkInterfaces?.[0].id) {
+    throw new Error('Network interface configuration not found')
+  }
+  const resourceGroupName = extractResourceGroupNameFromId(vm.id)
+  const nicName = extractResourceNameFromId(vm.networkProfile.networkInterfaces[0].id)
+  const nic = await getNicInfo(resourceGroupName, nicName, networkClient)
+  if (!nic.ipConfigurations?.[0].publicIPAddress?.id) {
+    throw new Error('publicIPAddress configuration not found')
+  }
+  const publicIPName = nic.ipConfigurations[0].publicIPAddress.id.split('/')
+    .at(-1) as string
+  const publicIPAddress = await networkClient.publicIPAddresses.get(resourceGroupName, publicIPName)
+  if (!publicIPAddress.ipAddress || !nic.ipConfigurations?.[0].privateIPAddress) {
+    throw new Error('ipAddress not found')
+  }
+  return {
+    privateIPAddress: nic.ipConfigurations[0].privateIPAddress,
+    publicIPAddress: publicIPAddress.ipAddress,
+  }
 }

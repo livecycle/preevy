@@ -1,5 +1,5 @@
 import { Profile } from './profile'
-import { SSHKeyConfig } from './ssh/keypair'
+import { SSHKeyConfig } from './ssh'
 
 export type Machine = {
   providerId: string
@@ -29,7 +29,7 @@ export type MachineDriver = {
   listMachines: () => AsyncIterableIterator<Machine & { envId: string }>
   listSnapshots: () => AsyncIterableIterator<{ providerId: string }>
 
-  removeMachine: (driverMachineId: string, wait: boolean, envId: string) => Promise<void>
+  removeMachine: (driverMachineId: string, wait: boolean) => Promise<void>
   removeSnapshot: (providerId: string) => Promise<void>
   removeKeyPair: (alias: string) => Promise<void>
 }

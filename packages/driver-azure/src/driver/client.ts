@@ -12,10 +12,12 @@ import {
   createSecurityGroup,
   createStorageAccount,
   createVirtualMachine,
-  createVnet,
+  createVnet, extractResourceGroupNameFromId,
   findVMImage,
-  getNICInfo,
+  getIpAddresses,
+  getResourceGroupName,
   getTags,
+  getVmName,
 } from './vm-creation-utils'
 
 // Uncomment to see Azure logs (import @azure/logger)
@@ -58,51 +60,11 @@ type VMInstance = {
   publicIPAddress: string
 }
 
-export const nameGenerator = (alias: string) => (name: string, prefix = 'preevy') => `${`${prefix}${alias.replaceAll('-', '')}${name}`.toLowerCase()
+export const nameGenerator = (alias: string) => (name: string, prefix = 'preevy') => `${`${prefix}${alias.replace(/[^a-zA-Z0-9]/g, '')}${name}`.toLowerCase()
   .substring(0, 16)}${randomBytes(16)
   .toString('hex')
   .substring(0, 8)}`
 
-export const getVmName = (envId: string) => `vm${envId.replaceAll('-', '')}`
-
-export const getResourceGroupName = (envId: string) => `preevy-${envId}`
-
-function extractResourceNameFromId(rId: string) {
-  const name = rId.split('/').at(-1)
-  if (!name) {
-    throw new Error(`Could not extract resource name from id ${rId}`)
-  }
-  return name
-}
-
-function extractResourceGroupNameFromId(rId: string) {
-  const resourceGroupName = rId.split('/')[4]
-  if (!resourceGroupName) {
-    throw new Error(`Could not extract resource group name from id ${rId}`)
-  }
-  return rId.split('/')[4]
-}
-
-const getIpAddresses = async (networkClient: NetworkManagementClient, vm: VirtualMachine) => {
-  if (!vm.id || !vm.networkProfile?.networkInterfaces?.[0].id) {
-    throw new Error('Network interface configuration not found')
-  }
-  const resourceGroupName = extractResourceGroupNameFromId(vm.id)
-  const nicName = extractResourceNameFromId(vm.networkProfile.networkInterfaces[0].id)
-  const nic = await getNICInfo(resourceGroupName, nicName, networkClient)
-  if (!nic.ipConfigurations?.[0].publicIPAddress?.id) {
-    throw new Error('publicIPAddress configuration not found')
-  }
-  const publicIPName = nic.ipConfigurations[0].publicIPAddress.id.split('/').at(-1) as string
-  const publicIPAddress = await networkClient.publicIPAddresses.get(resourceGroupName, publicIPName)
-  if (!publicIPAddress.ipAddress || !nic.ipConfigurations?.[0].privateIPAddress) {
-    throw new Error('ipAddress not found')
-  }
-  return {
-    privateIPAddress: nic.ipConfigurations[0].privateIPAddress,
-    publicIPAddress: publicIPAddress.ipAddress,
-  }
-}
 export const client = ({
   region,
   subscriptionId,
@@ -113,7 +75,6 @@ export const client = ({
   profileId: string
 }) => {
   const credentials = new DefaultAzureCredential()
-  // Azure services
   const resourceClient = new ResourceManagementClient(
     credentials,
     subscriptionId
@@ -122,8 +83,8 @@ export const client = ({
   const storageClient = new StorageManagementClient(credentials, subscriptionId)
   const networkClient = new NetworkManagementClient(credentials, subscriptionId)
   return {
-    deleteInstance: async (vmName: string, wait: boolean, envId: string) => {
-      const resourceGroupName = getResourceGroupName(envId)
+    deleteInstance: async (vmId: string, wait: boolean) => {
+      const resourceGroupName = extractResourceGroupNameFromId(vmId)
       if (wait) {
         await resourceClient.resourceGroups.beginDeleteAndWait(resourceGroupName, {
           forceDeletionTypes: 'Microsoft.Compute/virtualMachines,Microsoft.Compute/virtualMachineScaleSets',

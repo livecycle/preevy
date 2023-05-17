@@ -96,7 +96,7 @@ export default class Purge extends DriverCommand<typeof Purge> {
     }
 
     await Promise.all([
-      ...machines.map(m => driver.removeMachine(m.providerId, flags.wait, m.envId)),
+      ...machines.map(m => driver.removeMachine(m.providerId, flags.wait)),
       ...snapshots.map(s => driver.removeSnapshot(s.providerId)),
     ])
 

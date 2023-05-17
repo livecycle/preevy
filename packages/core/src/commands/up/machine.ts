@@ -1,7 +1,6 @@
 import { EOL } from 'os'
 import retry from 'p-retry'
-import { connectSshClient } from '../../ssh/client'
-import { SSHKeyConfig } from '../../ssh/keypair'
+import { connectSshClient, SSHKeyConfig } from '../../ssh'
 import { withSpinner } from '../../spinner'
 import { MachineCreationDriver, SpecDiffItem, MachineDriver } from '../../driver'
 import { telemetryEmitter } from '../../telemetry'
@@ -37,7 +36,7 @@ const ensureMachine = async ({
   return withSpinner(async spinner => {
     if (recreating) {
       spinner.text = 'Deleting machine'
-      await machineDriver.removeMachine(existingMachine.providerId, false, envId)
+      await machineDriver.removeMachine(existingMachine.providerId, false)
     }
     spinner.text = 'Checking for existing snapshot'
     const machineCreation = await machineCreationDriver.createMachine({ envId, keyConfig: sshKey })
@@ -103,7 +102,7 @@ export const ensureCustomizedMachine = async ({
         await sshClient.execScript(script, {})
       }
 
-      log.info('Ensure docker is accessible')
+      log.info('Ensuring docker is accessible')
       await retry(
         () => sshClient.execCommand('docker run hello-world', { }),
         {

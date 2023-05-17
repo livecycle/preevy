@@ -15,8 +15,23 @@ import {
   telemetryEmitter,
 } from '@preevy/core'
 import { client, REGIONS } from './client'
-import { AzureErrorResponse } from './types'
 import { CUSTOMIZE_BARE_MACHINE } from './scripts'
+
+type RootObjectDetailsError = {
+  code: string
+  message: string
+}
+type RootObjectDetails = {
+  error: RootObjectDetailsError
+}
+
+export type AzureErrorResponse = {
+  details: RootObjectDetails
+  name: string
+  code: string
+  statusCode: number
+  message: string
+}
 
 type DriverContext = {
   profileId: string
@@ -26,6 +41,7 @@ type DriverContext = {
 
 type MachineCreationContext = DriverContext & {
   vmSize?: string
+  resourceGroupId: string
 }
 
 const UBUNTU_IMAGE_DETAILS = {
@@ -47,13 +63,13 @@ const machineFromInstance = (
     publicIPAddress: string
     vm: VirtualMachine}
 ): Machine & { envId: string } => {
-  if (!vm.name || !vm.osProfile?.adminUsername) {
-    throw new Error('Could not create a VM')
+  if (!vm.id || !vm.osProfile?.adminUsername) {
+    throw new Error('Could not create a machine from instance')
   }
   return {
     privateIPAddress,
     publicIPAddress,
-    providerId: vm.name,
+    providerId: vm.id,
     sshKeyName: 'default',
     sshUsername: vm.osProfile.adminUsername,
     version: '',
@@ -84,7 +100,7 @@ const machineDriver = ({ region, subscriptionId, profileId }: DriverContext): Ma
       }
     },
 
-    removeMachine: async (driverMachineId, wait, envId) => cl.deleteInstance(driverMachineId, wait, envId),
+    removeMachine: async (driverMachineId, wait) => cl.deleteInstance(driverMachineId, wait),
     removeSnapshot: async () => undefined,
     removeKeyPair: async () => undefined,
 
@@ -98,10 +114,6 @@ const flags = {
   }),
   'subscription-id': Flags.string({
     description: 'Microsoft Azure subscription id',
-    required: true,
-  }),
-  'resource-group-name': Flags.string({
-    description: 'Microsoft Azure resource group name',
     required: true,
   }),
 } as const
@@ -211,6 +223,10 @@ machineDriver.machineCreationFlags = {
     default: DEFAULT_VM_SIZE,
     required: false,
   }),
+  'resource-group-name': Flags.string({
+    description: 'Microsoft Azure resource group name',
+    required: true,
+  }),
 } as const
 
 type MachineCreationFlagTypes = InferredFlags<typeof machineDriver.machineCreationFlags>
@@ -219,6 +235,7 @@ const machineCreationContextFromFlags = (f: MachineCreationFlagTypes): Omit<Mach
   ...contextFromFlags(f),
   region: f.region,
   vmSize: f['vm-size'],
+  resourceGroupId: f['resource-group-name'],
 })
 
 const factory: MachineDriverFactory<
