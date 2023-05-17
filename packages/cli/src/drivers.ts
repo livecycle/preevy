@@ -1,12 +1,12 @@
 import { map, mapKeys } from 'lodash'
 import { lightsail } from '@preevy/driver-lightsail'
 import { gce } from '@preevy/driver-gce'
+import { azure } from '@preevy/driver-azure'
 
 // TODO: move driver and import
 export const machineDrivers = {
   lightsail,
   gce,
-  fake,
   azure,
 } as const
 

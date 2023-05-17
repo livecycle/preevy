@@ -6,13 +6,17 @@ import { Resource, VirtualMachine } from '@azure/arm-compute'
 import { inspect } from 'util'
 import { DefaultAzureCredential } from '@azure/identity'
 import { SubscriptionClient } from '@azure/arm-subscriptions'
-import { generateSshKeyPair } from '../../../ssh/keypair'
-import { Machine, MachineDriver } from '../../driver'
-import { MachineCreationDriver, MachineCreationDriverFactory, MachineDriverFactory } from '../../driver/driver'
+import {
+  generateSshKeyPair,
+  Machine,
+  MachineCreationDriver, MachineCreationDriverFactory,
+  MachineDriver,
+  MachineDriverFactory,
+  telemetryEmitter,
+} from '@preevy/core'
 import { client, REGIONS } from './client'
-import { telemetryEmitter } from '../../../telemetry'
-import { CUSTOMIZE_BARE_MACHINE } from '../lightsail/scripts'
 import { AzureErrorResponse } from './types'
+import { CUSTOMIZE_BARE_MACHINE } from './scripts'
 
 type DriverContext = {
   profileId: string
