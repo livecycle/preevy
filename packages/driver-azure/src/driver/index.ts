@@ -88,7 +88,6 @@ const machineDriver = ({ region, subscriptionId, profileId }: DriverContext): Ma
     customizationScripts: CUSTOMIZE_BARE_MACHINE,
     friendlyName: 'Microsoft Azure',
     getMachine: async ({ envId }) => cl.getInstance(envId).then(vm => machineFromInstance(vm)),
-
     listMachines: () => asyncMap(machineFromInstance, cl.listInstances()),
     listSnapshots: () => asyncMap(x => x, []),
     createKeyPair: async () => {
@@ -206,7 +205,9 @@ const machineCreationDriver = (
       }
       return ({
         ...machineFromInstance(vmInstance),
-        specDiff: [],
+        specDiff: vmSize && vmSize !== vmInstance.vm.hardwareProfile?.vmSize
+          ? [{ name: 'vm-size', old: vmInstance.vm.hardwareProfile?.vmSize as string, new: vmSize }]
+          : [],
       })
     },
   }

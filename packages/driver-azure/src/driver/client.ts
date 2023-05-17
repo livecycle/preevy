@@ -4,7 +4,7 @@ import { ResourceManagementClient } from '@azure/arm-resources'
 import { StorageManagementClient } from '@azure/arm-storage'
 import { DefaultAzureCredential } from '@azure/identity'
 import { randomBytes } from 'crypto'
-import { asyncFilter, asyncMap } from 'iter-tools-es'
+import { asyncFilter, asyncFirst, asyncMap } from 'iter-tools-es'
 import {
   createNIC,
   createPublicIP,
@@ -12,16 +12,26 @@ import {
   createSecurityGroup,
   createStorageAccount,
   createVirtualMachine,
-  createVnet, extractResourceGroupNameFromId,
+  createVnet, extractResourceGroupNameFromId, extractResourceNameFromId,
   findVMImage,
   getIpAddresses,
-  getResourceGroupName,
   getTags,
-  getVmName,
 } from './vm-creation-utils'
 
 // Uncomment to see Azure logs (import @azure/logger)
 // setLogLevel('info')
+
+export class AzureResourceNotFound extends Error {
+  statusCode = 404
+  constructor(message: string) {
+    super(message)
+    Object.setPrototypeOf(this, AzureResourceNotFound.prototype)
+  }
+
+  getErrorMessage() {
+    return `Could not find resource: ${this.message}`
+  }
+}
 
 export const REGIONS = [
   'eastus',
@@ -60,7 +70,7 @@ type VMInstance = {
   publicIPAddress: string
 }
 
-export const nameGenerator = (alias: string) => (name: string, prefix = 'preevy') => `${`${prefix}${alias.replace(/[^a-zA-Z0-9]/g, '')}${name}`.toLowerCase()
+export const nameGenerator = (alias: string) => (name: string, prefix = 'preevy') => `${`${prefix}${name}${alias}`.toLowerCase().replace(/[^a-zA-Z0-9]/g, '')
   .substring(0, 16)}${randomBytes(16)
   .toString('hex')
   .substring(0, 8)}`
@@ -103,8 +113,13 @@ export const client = ({
       ),
 
     getInstance: async (envId: string): Promise<VMInstance> => {
-      const name = getVmName(envId)
-      const resourceGroupName = getResourceGroupName(envId)
+      const filter = `tagName eq 'envId' and tagValue eq '${envId}'`
+      const vmResource = await asyncFirst(asyncFilter(x => x.type === 'Microsoft.Compute/virtualMachines', resourceClient.resources.list({ filter })))
+      if (!vmResource?.id) {
+        throw new AzureResourceNotFound(`envId: ${envId}`)
+      }
+      const name = extractResourceNameFromId(vmResource.id)
+      const resourceGroupName = extractResourceGroupNameFromId(vmResource.id)
       const vm = await computeClient.virtualMachines.get(resourceGroupName, name)
       const addresses = await getIpAddresses(networkClient, vm)
       return { vm, ...addresses }
@@ -121,9 +136,15 @@ export const client = ({
       envId: string
 
     }): Promise<VMInstance> => {
+      const availableVmSize = await asyncFirst(
+        asyncFilter(size => size.name === vmSize, computeClient.virtualMachineSizes.list(region))
+      )
+      if (!availableVmSize) {
+        throw new Error(`Size ${vmSize} isn't supported for location ${region}`)
+      }
       const generateId = nameGenerator(envId)
-      const vmName = getVmName(envId)
-      const resourceGroupName = getResourceGroupName(envId)
+      const vmName = generateId('vm')
+      const resourceGroupName = generateId('rg')
       const storageAccountName = generateId('storage')
       const vnetName = generateId('vet')
       const subnetName = generateId('subnet')
@@ -132,8 +153,8 @@ export const client = ({
       const ipConfigName = generateId('ipc')
       const domainNameLabel = generateId('domain')
       const osDiskName = generateId('osdisk')
-      const nsgName = generateId('networksecuritygroup')
-      const securityRuleName = generateId('securityrule')
+      const nsgName = generateId('nsg')
+      const securityRuleName = generateId('sr')
       const tags = getTags(profileId, envId)
 
       void await createResourceGroup(resourceGroupName, region, tags, resourceClient)

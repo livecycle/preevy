@@ -38,9 +38,7 @@ export default class Down extends DriverCommand<typeof Down> {
     const envId = flags.id ?? await findEnvId(log, flags)
 
     log.debug(`envId: ${envId}`)
-
     const machine = await driver.getMachine({ envId })
-
     if (!machine) {
       if (!flags.force) {
         throw new Error(`No machine found for environment ${envId}`)
@@ -49,7 +47,7 @@ export default class Down extends DriverCommand<typeof Down> {
     }
 
     await withSpinner(async () => {
-      await driver.removeMachine(machine.providerId, flags.wait, envId)
+      await driver.removeMachine(machine.providerId, flags.wait)
     }, { opPrefix: `Deleting ${driver.friendlyName} machine ${machine.providerId} for environment ${envId}` })
 
     if (flags.json) {

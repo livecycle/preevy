@@ -243,8 +243,6 @@ export const createVirtualMachine = async (tags: Resource['tags'], nicId: string
     vmParameters
   )
 }
-export const getVmName = (envId: string) => `vm${envId.replace(/[^a-zA-Z0-9]/g, '')}}`
-export const getResourceGroupName = (envId: string) => `preevy-${envId}`
 export const extractResourceNameFromId = (rId: string) => {
   const name = rId.split('/')
     .at(-1)
@@ -255,7 +253,7 @@ export const extractResourceNameFromId = (rId: string) => {
 }
 export const extractResourceGroupNameFromId = (rId: string) => {
   const resourceGroupName = rId.split('/')[4]
-  if (!resourceGroupName) {
+  if (!resourceGroupName.length) {
     throw new Error(`Could not extract resource group name from id ${rId}`)
   }
   return rId.split('/')[4]
