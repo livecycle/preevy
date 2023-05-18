@@ -1,7 +1,7 @@
 import { Hook } from '@oclif/core'
 import { createTelemetryEmitter, registerEmitter, wireProcessExit } from '@preevy/core'
 
-const hook: Hook<'init'> = async ({ config }) => {
+const hook: Hook.Init = async ({ config }) => {
   const disableTelemetry = config.scopedEnvVarTrue('DISABLE_TELEMETRY')
 
   if (disableTelemetry) {

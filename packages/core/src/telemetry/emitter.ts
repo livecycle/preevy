@@ -126,7 +126,6 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
       throttledFlush.cancel()
       return flush()
     },
-    cancel: () => { throttledFlush.cancel() },
   })
 }
 
@@ -137,5 +136,4 @@ export const nullTelemetryEmitter: TelemetryEmitter = {
   capture: async () => undefined,
   setProps: () => undefined,
   flush: async () => undefined,
-  cancel: () => undefined,
 }

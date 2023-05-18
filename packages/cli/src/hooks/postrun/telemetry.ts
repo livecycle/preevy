@@ -1,14 +1,8 @@
 import { Hook } from '@oclif/core'
 import { telemetryEmitter } from '@preevy/core'
 
-const hook: Hook.Postrun = async ({ config }) => {
-  const disableTelemetry = config.scopedEnvVarTrue('DISABLE_TELEMETRY')
-
-  if (disableTelemetry) {
-    return
-  }
-
-  telemetryEmitter().cancel()
+const hook: Hook.Postrun = async () => {
+  void telemetryEmitter().flush()
 }
 
 export default hook
