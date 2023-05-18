@@ -122,7 +122,7 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
     setProps: (props: TelemetryProperties) => {
       Object.assign(commonProperties, props)
     },
-    flush: async () => {
+    flush: () => {
       throttledFlush.cancel()
       return flush()
     },
