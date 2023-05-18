@@ -69,6 +69,9 @@
       ],
       "prerun": [
         "./dist/hooks/prerun/telemetry"
+      ],
+      "postrun": [
+        "./dist/hooks/postrun/telemetry"
       ]
     },
     "topicSeparator": " "

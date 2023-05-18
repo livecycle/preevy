@@ -1,5 +1,5 @@
 import path from 'path'
-import { debounce } from 'lodash'
+import { throttle } from 'lodash'
 import { ExpandedTransferProgress } from './ssh/client/progress-expanded'
 import { FileToCopy, SshClient } from './ssh/client'
 import { withSpinner } from './spinner'
@@ -44,7 +44,7 @@ export const copyFilesWithoutRecreatingDirUsingSftp = async (
     const sftp = await sshClient.sftp({ concurrency: 4 })
     try {
       const progress = await sftp.putFilesWithExpandedProgress(filesToCopyToTempDir, { chunkSize: 128 * 1024 })
-      progress.addListener(debounce((p: ExpandedTransferProgress) => { spinner.text = progressText(p) }, 100))
+      progress.addListener(throttle((p: ExpandedTransferProgress) => { spinner.text = progressText(p) }, 100))
       progress.addOneTimeListener(state => telemetryEmitter().capture('sftp copy start', { total_bytes: state.totalBytes, files: state.totalFiles }))
       await progress.done
       const doneProgress = await progress.current()
