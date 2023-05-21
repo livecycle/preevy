@@ -40,6 +40,7 @@ Visit The full documentation here: https://preevy.dev/
 - [CI Integration](#ci-integration)
 - [Security](#security)
   - [Notice on preview environments exposure](#notice-on-preview-environments-exposure)
+- [Plugins](#plugins)
 - [Docs and support](#docs-and-support)
 - [Telemetry](#telemetry)
 
@@ -133,6 +134,25 @@ Every Compose service is exposed individually with a generated URL in the follow
 - `tunnel-service-domain` is where the tunnel service is hosted. It can be specified using the `--tunnel-url` flag of the `preevy up` command, and defaults to our free service at `*.livecycle.run`.
 
 When using the default `*.livecycle.run` domain, environments are publicly accessible to those who know the URLs. You can create private environments by hosting the tunnel service yourself, e.g, on a private network or behind a login page.
+
+## Plugins
+
+Plugins are a way to extend Preevy's functionality via externally-published NPM packages.
+
+A plugin can execute code in response to events. It can also add new commands.
+
+Plugins are configured in the docker compose file. Add a `plugins` section to the `x-preevy` element:
+
+```yaml
+services:
+  ...
+x-preevy:
+  plugins:
+    - module: '@preevy/plugin-github-pr-link'
+    # ...additional plugin-specific configuration goes here
+```
+
+See the [included GitHub PR Link Plugin](packages/plugin-github-pr-link) for an example.
 
 ## Docs and support
 
