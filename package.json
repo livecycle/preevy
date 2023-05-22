@@ -8,7 +8,8 @@
     "lerna": "^6.6.2",
     "lint-staged": "^13.1.2",
     "lodash": "^4.17.21",
-    "syncpack": "^9.8.4"
+    "syncpack": "^9.8.4",
+    "typescript": "^5.0.4"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

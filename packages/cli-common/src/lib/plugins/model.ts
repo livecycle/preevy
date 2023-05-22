@@ -1,7 +1,9 @@
 import { FlagProps } from '@oclif/core/lib/interfaces/parser'
 import { Command } from '@oclif/core'
+import { ComposeModel, config as coreConfig } from '@preevy/core'
 import { PluginInitContext } from './context'
-import { HookFuncs } from './hooks'
+import { HookFuncs, HooksListeners } from '../hooks'
+import PreevyConfig = coreConfig.PreevyConfig
 
 export type Flags = Record<string, FlagProps>
 export type CommandFlags = { command: string; flags: Flags }
@@ -17,4 +19,20 @@ export type Plugin<PluginConfig extends {} = {}> = {
 
 export type PluginModule = {
   preevyPlugin: Plugin
+}
+
+declare module '@oclif/core/lib/config/config' {
+  export interface Config {
+    initialUserModel: ComposeModel | Error
+    preevyHooks: HooksListeners
+    preevyConfig: PreevyConfig
+  }
+}
+
+declare module '@oclif/core/lib/interfaces' {
+  export interface Config {
+    initialUserModel: ComposeModel | Error
+    preevyHooks: HooksListeners
+    preevyConfig: PreevyConfig
+  }
 }

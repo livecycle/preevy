@@ -22,5 +22,6 @@
     { "path": "../cli-common" },
     { "path": "../driver-lightsail" },
     { "path": "../driver-gce" },
+    { "path": "../plugin-github-pr-link" },
   ]
 }

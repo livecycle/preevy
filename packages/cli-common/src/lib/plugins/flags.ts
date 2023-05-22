@@ -1,10 +1,11 @@
 import { Command } from '@oclif/core'
 import { groupBy } from 'lodash'
-import { CommandFlags } from './plugins'
+import { CommandFlags } from './model'
+import { LoadedPlugin } from './load'
 
-export const addFlags = (
+const addFlags = (
   commands: Command.Loadable[],
-  ...commandFlags: CommandFlags[]
+  commandFlags: CommandFlags[]
 ) => {
   const grouped = groupBy(commandFlags, c => c.command)
   return commands.map(c => {
@@ -25,3 +26,8 @@ export const addFlags = (
     })
   })
 }
+
+export const addPluginFlags = (
+  commands: Command.Loadable[],
+  loadedPlugins: LoadedPlugin[]
+) => addFlags(commands, loadedPlugins.flatMap(p => (p.initResults.flags ?? [])))

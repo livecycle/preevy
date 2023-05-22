@@ -26,3 +26,4 @@ export {
 } from './tunneling'
 export { ciProviders, detectCiProvider } from './ci-providers'
 export * as git from './git'
+export * as config from './config'

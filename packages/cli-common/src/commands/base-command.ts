@@ -4,6 +4,7 @@ import {
 } from '@preevy/core'
 import { asyncReduce } from 'iter-tools-es'
 import { commandLogger } from '../lib/log'
+import { configFlags } from '../lib/flags'
 
 // eslint-disable-next-line no-use-before-define
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof BaseCommand['baseFlags'] & T['flags']>
@@ -28,6 +29,7 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
         { type: 'none', flags: ['log-level'] },
       ],
     }),
+    ...configFlags,
   }
 
   protected flags!: Flags<T>
@@ -48,6 +50,10 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
       )
     }
     return this.#userModel
+  }
+
+  protected get preevyConfig() {
+    return this.config.preevyConfig
   }
 
   protected async ensureUserModel() {

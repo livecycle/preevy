@@ -1,5 +1,7 @@
 import { Config as OclifConfig } from '@oclif/core/lib/interfaces'
-import { ComposeModel, Logger } from '@preevy/core'
+import { ComposeModel, Logger, config } from '@preevy/core'
+
+import PreevyConfig = config.PreevyConfig
 
 export type PluginContext = {
   userModel: ComposeModel
@@ -10,5 +12,6 @@ export type PluginInitContext<PluginConfig extends {} = {}> = {
   userModel: ComposeModel
   oclifConfig: OclifConfig
   pluginConfig: PluginConfig
+  preevyConfig: PreevyConfig
   argv: string[]
 }

@@ -1,5 +1,5 @@
 import { ComposeModel, FlatTunnel } from '@preevy/core'
-import { PluginContext } from './context'
+import { PluginContext } from './plugins/context'
 
 export type Hooks = {
   envCreated: {
