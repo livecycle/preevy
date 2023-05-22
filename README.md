@@ -40,6 +40,8 @@ Visit The full documentation here: https://preevy.dev/
 - [CI Integration](#ci-integration)
 - [Security](#security)
   - [Notice on preview environments exposure](#notice-on-preview-environments-exposure)
+- [Configuration files](#configuration-files)
+  - [Preevy-specific configuration](#preevy-specific-configuration)
 - [Plugins](#plugins)
 - [Docs and support](#docs-and-support)
 - [Telemetry](#telemetry)
@@ -135,13 +137,42 @@ Every Compose service is exposed individually with a generated URL in the follow
 
 When using the default `*.livecycle.run` domain, environments are publicly accessible to those who know the URLs. You can create private environments by hosting the tunnel service yourself, e.g, on a private network or behind a login page.
 
+## Configuration files
+
+For most purposes, Preevy extracts its runtime settings from the [Compose file](https://docs.docker.com/compose/compose-file/03-compose-file/), and no additional configuration is required.
+
+The Compose file is loaded using the `docker compose` command and thus follows the same [rules](https://docs.docker.com/compose/reference/#use--f-to-specify-name-and-path-of-one-or-more-compose-files) regarding default loading order. Just like with `docker compose`, you can use the `--file | -f` option with most of the commands to specify path(s) for the Compose file.
+
+### Preevy-specific configuration
+
+Additional configuration, if needed, can be specified by adding a `x-preevy` top-level element to the Compose file(s). Currently only the `plugins` section is supported:
+
+```yaml
+services:
+  ...
+x-preevy:
+  plugins:
+    ...
+```
+
+See [Plugins](#plugins).
+
+In addition to the Compose file, a preevy-specific configuration file can be specified by the `--config | -c` option. The file can be in YAML or JSON format, and its schema corresponds to the `x-preevy` top-level element:
+
+```yaml
+plugins:
+  ...
+```
+
+If the `--config | -c` option is not specified, preevy attempts to load `preevy.yaml`, `preevy.yml` and `preevy.json`, in this order, from the current working directory.
+
 ## Plugins
 
 Plugins are a way to extend Preevy's functionality via externally-published NPM packages.
 
-A plugin can execute code in response to events. It can also add new commands.
+A plugin can execute code in response to events. It can also defined new commands, and add flags to existing commands to customize their behavior.
 
-Plugins are configured in the docker compose file. Add a `plugins` section to the `x-preevy` element:
+Plugins are specified in the [Preevy configuration](#configuration-files). Add a `plugins` section to the `x-preevy` top-level element:
 
 ```yaml
 services:
@@ -149,7 +180,8 @@ services:
 x-preevy:
   plugins:
     - module: '@preevy/plugin-github-pr-link'
-    # ...additional plugin-specific configuration goes here
+      disabled: false # optional, set to true to disable plugin
+      # ...additional plugin-specific configuration goes here
 ```
 
 See the [included GitHub PR Link Plugin](packages/plugin-github-pr-link) for an example.
