@@ -34,7 +34,7 @@ export const sshServer = ({
   sshPrivateKey: string
   socketDir: string
   onPipeCreated?: (props: {clientId: string, remotePath: string, localSocketPath: string, publicKey: ParsedKey, access: 'private' | 'public' }) => void
-  onPipeDestroyed?: (clientId: string, remotePath: string, localSocketPath: string) => void
+  onPipeDestroyed?: (props: {clientId: string, remotePath: string, localSocketPath: string}) => void
   onHello: (clientId: string, tunnels: string[]) => string
 }) => new ssh2.Server(
   {
@@ -145,7 +145,7 @@ export const sshServer = ({
           .on('close', () => {
             log.debug('socketServer close: %j', socketPath)
             tunnels.delete(requestedSocketPath)
-            onPipeDestroyed?.(clientId, requestedSocketPath, socketPath)
+            onPipeDestroyed?.({clientId, remotePath: requestedSocketPath, localSocketPath: socketPath})
             client.removeListener('close', closeSocketServer)
           })
 

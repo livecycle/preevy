@@ -56,7 +56,7 @@ const sshServer = createSshServer({
     await envStore.set(key, { target: localSocketPath, clientId, publicKey, access })
     tunnelsGauge.inc({clientId})
   },
-  onPipeDestroyed: async (clientId, remotePath) => {
+  onPipeDestroyed: async ({clientId, remotePath}) => {
     const key = tunnelName(clientId, remotePath);
     sshLogger.debug('deleting tunnel %s', key)
     await envStore.delete(key)
