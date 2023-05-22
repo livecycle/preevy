@@ -1,6 +1,10 @@
+import { ParsedKey } from 'ssh2'
+
 export type PreviewEnv = {
   clientId: string
   target: string
+  publicKey: ParsedKey,
+  access: 'private' | 'public'
 }
 
 export type PreviewEnvStore = {
