@@ -1,6 +1,6 @@
 export { Logger, LogFunc, nullLogFunc, LogLevel, logLevels } from './log'
 export { LocalProfilesConfig, localProfilesConfig } from './profile'
-export { Machine, MachineDriver, MachineCreationDriver, MachineCreationDriverFactory, MachineDriverFactory } from './driver'
+export { Machine, PartialMachine, MachineDriver, MachineCreationDriver, MachineCreationDriverFactory, MachineDriverFactory } from './driver'
 export { profileStore, Profile, ProfileStore } from './profile'
 export { telemetryEmitter, registerEmitter, wireProcessExit, createTelemetryEmitter } from './telemetry'
 export { fsTypeFromUrl, Store, VirtualFS, localFsFromUrl } from './store'

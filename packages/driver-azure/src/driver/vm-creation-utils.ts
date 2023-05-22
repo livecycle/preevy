@@ -17,11 +17,12 @@ import {
 } from '@azure/arm-compute'
 import { StorageManagementClient } from '@azure/arm-storage'
 
-export const getTags = (profileId: string, envId: string) => ({
-  profile: profileId,
-  envId,
-  client: 'preevy',
-})
+export enum AzureCustomTags {
+  ENV_ID = 'preevyEnvId',
+  PROFILE_ID = 'preevyProfile',
+  VM_ID = 'preevyVm'
+}
+
 export const createResourceGroup = async (
   resourceGroupName: string,
   location: string,
@@ -198,7 +199,7 @@ export const getNicInfo = async (
 export const createVirtualMachine = async (tags: Resource['tags'], nicId: string, imageRef: ImageReference, osDiskName: string, vmName: string, location: string, resourceGroupName: string, computeClient: ComputeManagementClient, sshPublicKey: string, networkSecurityGroupId: string, vmSize = 'Standard_B2s', adminUsername = 'preevy') => {
   const vmParameters: VirtualMachine = {
     location,
-    tags: { ...tags, preevyVm: resourceGroupName },
+    tags: { ...tags, [AzureCustomTags.VM_ID]: resourceGroupName },
     osProfile: {
       computerName: vmName,
       adminUsername,
@@ -249,14 +250,14 @@ export const extractResourceNameFromId = (rId: string) => {
   if (!name) {
     throw new Error(`Could not extract resource name from id ${rId}`)
   }
-  return name
+  return name.toLowerCase()
 }
 export const extractResourceGroupNameFromId = (rId: string) => {
   const resourceGroupName = rId.split('/')[4]
   if (!resourceGroupName.length) {
     throw new Error(`Could not extract resource group name from id ${rId}`)
   }
-  return rId.split('/')[4]
+  return resourceGroupName.toLowerCase()
 }
 export const getIpAddresses = async (networkClient: NetworkManagementClient, vm: VirtualMachine) => {
   if (!vm.id || !vm.networkProfile?.networkInterfaces?.[0].id) {
@@ -268,8 +269,7 @@ export const getIpAddresses = async (networkClient: NetworkManagementClient, vm:
   if (!nic.ipConfigurations?.[0].publicIPAddress?.id) {
     throw new Error('publicIPAddress configuration not found')
   }
-  const publicIPName = nic.ipConfigurations[0].publicIPAddress.id.split('/')
-    .at(-1) as string
+  const publicIPName = extractResourceNameFromId(nic.ipConfigurations[0].publicIPAddress.id)
   const publicIPAddress = await networkClient.publicIPAddresses.get(resourceGroupName, publicIPName)
   if (!publicIPAddress.ipAddress || !nic.ipConfigurations?.[0].privateIPAddress) {
     throw new Error('ipAddress not found')

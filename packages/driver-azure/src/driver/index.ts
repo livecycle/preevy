@@ -1,5 +1,5 @@
 import { Flags, Interfaces } from '@oclif/core'
-import { asyncFirst, asyncMap } from 'iter-tools-es'
+import { asyncFirst, asyncMap, asyncToArray } from 'iter-tools-es'
 import { ListQuestion, Question } from 'inquirer'
 import { InferredFlags } from '@oclif/core/lib/interfaces'
 import { Resource, VirtualMachine } from '@azure/arm-compute'
@@ -9,13 +9,16 @@ import { SubscriptionClient } from '@azure/arm-subscriptions'
 import {
   generateSshKeyPair,
   Machine,
-  MachineCreationDriver, MachineCreationDriverFactory,
+  MachineCreationDriver,
+  MachineCreationDriverFactory,
   MachineDriver,
   MachineDriverFactory,
+  PartialMachine,
   telemetryEmitter,
 } from '@preevy/core'
 import { client, REGIONS } from './client'
 import { CUSTOMIZE_BARE_MACHINE } from './scripts'
+import { AzureCustomTags, extractResourceGroupNameFromId } from './vm-creation-utils'
 
 type RootObjectDetailsError = {
   code: string
@@ -69,11 +72,11 @@ const machineFromInstance = (
   return {
     privateIPAddress,
     publicIPAddress,
-    providerId: vm.id,
+    providerId: extractResourceGroupNameFromId(vm.id),
     sshKeyName: 'default',
     sshUsername: vm.osProfile.adminUsername,
     version: '',
-    envId: requireTagValue(vm.tags, 'envId'),
+    envId: requireTagValue(vm.tags, AzureCustomTags.ENV_ID),
   }
 }
 
@@ -88,7 +91,23 @@ const machineDriver = ({ region, subscriptionId, profileId }: DriverContext): Ma
     customizationScripts: CUSTOMIZE_BARE_MACHINE,
     friendlyName: 'Microsoft Azure',
     getMachine: async ({ envId }) => cl.getInstance(envId).then(vm => machineFromInstance(vm)),
-    listMachines: () => asyncMap(machineFromInstance, cl.listInstances()),
+    listMachines: async () => {
+      const vmInstances = await asyncToArray(cl.listInstances())
+      const allResourceGroups = cl.listResourceGroups()
+      return asyncMap(async resourceGroup => {
+        const vm = typeof resourceGroup.name === 'string' && vmInstances.find(i => extractResourceGroupNameFromId(i.vm.id as string) === (resourceGroup.name as string).toLowerCase())
+        if (vm) {
+          return { ...machineFromInstance(vm),
+            partial: false } as (Machine|PartialMachine) & { envId: string }
+        }
+        return {
+          providerId: resourceGroup.name as string,
+          envId: resourceGroup.tags?.[AzureCustomTags.ENV_ID] as string,
+          partial: true,
+        }
+      }, allResourceGroups)
+    },
+
     listSnapshots: () => asyncMap(x => x, []),
     createKeyPair: async () => {
     // https://learn.microsoft.com/en-us/rest/api/compute/ssh-public-keys/generate-key-pair?tabs=HTTP
@@ -99,7 +118,7 @@ const machineDriver = ({ region, subscriptionId, profileId }: DriverContext): Ma
       }
     },
 
-    removeMachine: async (driverMachineId, wait) => cl.deleteInstance(driverMachineId, wait),
+    removeMachine: async (driverMachineId, wait) => cl.deleteResourcesResourceGroup(driverMachineId, wait),
     removeSnapshot: async () => undefined,
     removeKeyPair: async () => undefined,
 

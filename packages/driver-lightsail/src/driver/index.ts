@@ -11,7 +11,7 @@ import {
   telemetryEmitter,
   Machine, MachineDriver, MachineCreationDriver, MachineCreationDriverFactory, MachineDriverFactory,
 } from '@preevy/core'
-import { extractDefined } from '../aws-utils/nulls'
+import { extractDefined } from '../aws-utils'
 import createClient, { REGIONS } from './client'
 import { BUNDLE_IDS, BundleId, bundleIdFromString } from './bundle-id'
 import { CUSTOMIZE_BARE_MACHINE } from './scripts'
@@ -51,7 +51,7 @@ const machineDriver = ({
       return instance && machineFromInstance(instance)
     },
 
-    listMachines: () => asyncMap(
+    listMachines: async () => asyncMap(
       machineFromInstance,
       client.listInstances(),
     ),

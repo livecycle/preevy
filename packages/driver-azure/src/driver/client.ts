@@ -1,21 +1,23 @@
 import { ComputeManagementClient, ImageReference, VirtualMachine } from '@azure/arm-compute'
 import { NetworkManagementClient, Subnet } from '@azure/arm-network'
-import { ResourceManagementClient } from '@azure/arm-resources'
+import { GenericResource, ResourceGroup, ResourceManagementClient } from '@azure/arm-resources'
 import { StorageManagementClient } from '@azure/arm-storage'
 import { DefaultAzureCredential } from '@azure/identity'
 import { randomBytes } from 'crypto'
 import { asyncFilter, asyncFirst, asyncMap } from 'iter-tools-es'
 import {
+  AzureCustomTags,
   createNIC,
   createPublicIP,
   createResourceGroup,
   createSecurityGroup,
   createStorageAccount,
   createVirtualMachine,
-  createVnet, extractResourceGroupNameFromId, extractResourceNameFromId,
+  createVnet,
+  extractResourceGroupNameFromId,
+  extractResourceNameFromId,
   findVMImage,
   getIpAddresses,
-  getTags,
 } from './vm-creation-utils'
 
 // Uncomment to see Azure logs (import @azure/logger)
@@ -24,7 +26,7 @@ import {
 export class AzureResourceNotFound extends Error {
   statusCode = 404
   constructor(message: string) {
-    super(message)
+    super(`AzureResourceNotFound ${message}`)
     Object.setPrototypeOf(this, AzureResourceNotFound.prototype)
   }
 
@@ -75,6 +77,10 @@ export const nameGenerator = (alias: string) => (name: string, prefix = 'preevy'
   .toString('hex')
   .substring(0, 8)}`
 
+export const getTags = (profileId: string, envId: string) => ({
+  [AzureCustomTags.PROFILE_ID]: profileId,
+  [AzureCustomTags.ENV_ID]: envId,
+})
 export const client = ({
   region,
   subscriptionId,
@@ -93,8 +99,7 @@ export const client = ({
   const storageClient = new StorageManagementClient(credentials, subscriptionId)
   const networkClient = new NetworkManagementClient(credentials, subscriptionId)
   return {
-    deleteInstance: async (vmId: string, wait: boolean) => {
-      const resourceGroupName = extractResourceGroupNameFromId(vmId)
+    deleteResourcesResourceGroup: async (resourceGroupName: string, wait: boolean) => {
       if (wait) {
         await resourceClient.resourceGroups.beginDeleteAndWait(resourceGroupName, {
           forceDeletionTypes: 'Microsoft.Compute/virtualMachines,Microsoft.Compute/virtualMachineScaleSets',
@@ -104,16 +109,22 @@ export const client = ({
         forceDeletionTypes: 'Microsoft.Compute/virtualMachines,Microsoft.Compute/virtualMachineScaleSets',
       })
     },
-    listInstances: (): AsyncIterableIterator<VMInstance> =>
-      asyncMap(
-        async vm => (
-          { vm, ...(await getIpAddresses(networkClient, vm)) }),
-        asyncFilter<VirtualMachine>(({ tags }) =>
-          tags?.profile === profileId, computeClient.virtualMachines.listAll())
-      ),
-
+    listResourceGroups: (): AsyncIterableIterator<ResourceGroup> => {
+      const filter = `tagName eq '${AzureCustomTags.PROFILE_ID}' and tagValue eq '${profileId}'`
+      return resourceClient.resourceGroups.list({ filter })
+    },
+    listResource: (): AsyncIterableIterator<GenericResource> => {
+      const filter = `tagName eq '${AzureCustomTags.PROFILE_ID}' and tagValue eq '${profileId}'`
+      return resourceClient.resources.list({ filter })
+    },
+    listInstances: (): AsyncIterableIterator<VMInstance> => asyncMap(
+      async vm => (
+        { vm, ...(await getIpAddresses(networkClient, vm)) }),
+      asyncFilter<VirtualMachine>(({ tags, provisioningState }) =>
+        tags?.[AzureCustomTags.PROFILE_ID] === profileId && provisioningState !== 'Deleting', computeClient.virtualMachines.listAll())
+    ),
     getInstance: async (envId: string): Promise<VMInstance> => {
-      const filter = `tagName eq 'envId' and tagValue eq '${envId}'`
+      const filter = `tagName eq '${AzureCustomTags.ENV_ID}' and tagValue eq '${envId}'`
       const vmResource = await asyncFirst(asyncFilter(x => x.type === 'Microsoft.Compute/virtualMachines', resourceClient.resources.list({ filter })))
       if (!vmResource?.id) {
         throw new AzureResourceNotFound(`envId: ${envId}`)
@@ -121,6 +132,9 @@ export const client = ({
       const name = extractResourceNameFromId(vmResource.id)
       const resourceGroupName = extractResourceGroupNameFromId(vmResource.id)
       const vm = await computeClient.virtualMachines.get(resourceGroupName, name)
+      if (vm.provisioningState === 'Deleting') {
+        throw new AzureResourceNotFound(`current vm instance for envId: ${envId} is deleting`)
+      }
       const addresses = await getIpAddresses(networkClient, vm)
       return { vm, ...addresses }
     },

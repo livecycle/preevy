@@ -3,6 +3,7 @@
   "version": "0.0.28-alpha.0",
   "description": "Core functionality for Preevy",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],
