@@ -66,7 +66,7 @@ export function proxyHandlers({
 
         const basicAuth = Buffer.from(authorization?.split('Basic ')[1] || '', 'base64').toString('ascii');
         const [username, password] = basicAuth.split(':');
-        if (username !== 'x-preevy-key'){
+        if (username !== 'x-preevy-profile-key'){
           return unauthorized(res)
         }
         const signature = Buffer.from(password, 'base64');
