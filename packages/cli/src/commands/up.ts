@@ -100,6 +100,8 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
     telemetryEmitter().identify({ proxy_client_id: clientId })
 
+    const userModel = await this.ensureUserModel()
+
     const { machine, tunnels, envId } = await commands.up({
       clientId,
       baseUrl,
@@ -107,7 +109,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       debug: flags.debug,
       machineDriver: driver,
       machineCreationDriver,
-      userModel: await this.ensureUserModel(),
+      userModel,
       userSpecifiedProjectName: flags.project,
       userSpecifiedEnvId: flags.id,
       tunnelOpts,
@@ -124,7 +126,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
     const result = await asyncReduce(
       { urls: flatTunnels },
       async ({ urls }, envCreated) => envCreated(
-        { log: this.logger, userModel: await this.ensureUserModel() },
+        { log: this.logger, userModel },
         { envId, urls },
       ),
       this.config.preevyHooks.envCreated,
