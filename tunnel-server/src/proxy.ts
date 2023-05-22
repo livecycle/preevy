@@ -60,7 +60,7 @@ export function proxyHandlers({
 
       if(env.access === 'private'){
         const authorization = req.headers['authorization'];
-        if (!authorization) {
+        if (!(authorization && authorization.startsWith('Basic '))) {
           return unauthorized(res)
         }
 
