@@ -2,11 +2,25 @@ import crypto, { randomBytes } from 'crypto'
 import { FastifyBaseLogger } from 'fastify/types/logger'
 import net from 'net'
 import path from 'path'
-import ssh2 from 'ssh2'
+import ssh2, { ParsedKey, SocketBindInfo } from 'ssh2'
 import { inspect } from 'util'
 
 const idFromPublicSsh = (key: Buffer) =>
   crypto.createHash('sha1').update(key).digest('base64url').replace(/[_-]/g, '').slice(0, 8).toLowerCase()
+
+const getRequestedSocketPath = (info: ssh2.SocketBindInfo) => {
+  const [path, access] = info.socketPath.split('#')
+  if (access === 'private'){
+    return {
+      path,
+      access: 'private' as const
+    }
+  }
+  return {
+    path,
+    access: 'public' as const
+  }
+}
 
 export const sshServer = ({
   log,
@@ -19,7 +33,7 @@ export const sshServer = ({
   log: FastifyBaseLogger
   sshPrivateKey: string
   socketDir: string
-  onPipeCreated?: (clientId: string, remotePath: string, localSocketPath: string) => void
+  onPipeCreated?: (props: {clientId: string, remotePath: string, localSocketPath: string, publicKey: ParsedKey, access: 'private' | 'public' }) => void
   onPipeDestroyed?: (clientId: string, remotePath: string, localSocketPath: string) => void
   onHello: (clientId: string, tunnels: string[]) => string
 }) => new ssh2.Server(
@@ -32,6 +46,7 @@ export const sshServer = ({
   (client) => {
     let clientId: string
     const tunnels = new Set<string>()
+    let publicKey: ParsedKey
 
     client
       .on('error', (err) => log.error(`client error: %j`, inspect(err)))
@@ -57,6 +72,7 @@ export const sshServer = ({
           return
         }
 
+        publicKey = keyOrError
         clientId = idFromPublicSsh(keyOrError.getPublicSSH())
         log.debug('accepting clientId %j', clientId)
         ctx.accept()
@@ -70,7 +86,7 @@ export const sshServer = ({
         }
 
         if ((name as string) == 'cancel-streamlocal-forward@openssh.com') {
-          const requestedSocketPath = (info as unknown as { socketPath: string }).socketPath
+          const requestedSocketPath = getRequestedSocketPath(info as unknown as SocketBindInfo).path
           if (!tunnels.delete(requestedSocketPath)) {
             log.error('cancel-streamlocal-forward@openssh.com: socketPath %j not found, rejecting', requestedSocketPath)
             reject?.()
@@ -84,7 +100,7 @@ export const sshServer = ({
           return
         }
 
-        const requestedSocketPath = (info as unknown as { socketPath: string} ).socketPath
+        const {path: requestedSocketPath, access} = getRequestedSocketPath(info as unknown as SocketBindInfo)
 
         if (tunnels.has(requestedSocketPath)) {
           log.error('duplicate socket request %j', requestedSocketPath)
@@ -92,10 +108,11 @@ export const sshServer = ({
           return
         }
 
+        
         const socketServer = net.createServer((socket) => {
           log.debug('socketServer connected %j', socket)
           client.openssh_forwardOutStreamLocal(
-            requestedSocketPath,
+            (info as unknown as SocketBindInfo).socketPath,
             (err, upstream) => {
               if (err) {
                 log.error('error forwarding: %j', inspect(err))
@@ -119,7 +136,7 @@ export const sshServer = ({
             log.debug('calling accept: %j', accept)
             accept?.()
             tunnels.add(requestedSocketPath)
-            onPipeCreated?.(clientId, requestedSocketPath, socketPath)
+            onPipeCreated?.({clientId, remotePath: requestedSocketPath, localSocketPath: socketPath, publicKey, access})
           })
           .on('error', (err: unknown) => {
             log.error('socketServer error: %j', err)

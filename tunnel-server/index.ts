@@ -31,12 +31,7 @@ const BASE_URL = (() => {
 
 type BaseUrl = typeof BASE_URL
 
-const envStore = inMemoryPreviewEnvStore({
-  test: {
-    clientId: "",
-    target: 'http://3.73.126.120',
-  },
-})
+const envStore = inMemoryPreviewEnvStore()
 
 const logger = pino(appLoggerFromEnv())
 const app = createApp({ sshPublicKey, isProxyRequest: isProxyRequest(BASE_URL), proxyHandlers: proxyHandlers({envStore, logger}), logger })
@@ -55,10 +50,10 @@ const sshServer = createSshServer({
   log: sshLogger,
   sshPrivateKey,
   socketDir: '/tmp', // TODO
-  onPipeCreated: async (clientId, remotePath, localSocket) => {
+  onPipeCreated: async ({clientId, remotePath, localSocketPath, publicKey, access}) => {
     const key = tunnelName(clientId, remotePath);
-    sshLogger.debug('creating tunnel %s for localSocket %s', key, localSocket)
-    await envStore.set(key, { target: localSocket, clientId })
+    sshLogger.debug('creating tunnel %s for localSocket %s', key, localSocketPath)
+    await envStore.set(key, { target: localSocketPath, clientId, publicKey, access })
     tunnelsGauge.inc({clientId})
   },
   onPipeDestroyed: async (clientId, remotePath) => {

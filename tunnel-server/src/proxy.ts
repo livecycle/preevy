@@ -23,6 +23,12 @@ function asyncHandler<TArgs extends unknown[]>(fn: (...args: TArgs) => Promise<v
   }
 }
 
+const unauthorized = (res: ServerResponse<IncomingMessage>) => {
+  res.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"');
+  res.statusCode = 401;
+  res.end('Unauthorized');
+}
+
 export function proxyHandlers({
   envStore,
   logger
@@ -52,6 +58,24 @@ export function proxyHandlers({
         return;
       }
 
+      if(env.access === 'private'){
+        const authorization = req.headers['authorization'];
+        if (!authorization) {
+          return unauthorized(res)
+        }
+
+        const basicAuth = Buffer.from(authorization?.split('Basic ')[1] || '', 'base64').toString('ascii');
+        const [username, password] = basicAuth.split(':');
+        if (username !== 'x-preevy-key'){
+          return unauthorized(res)
+        }
+        const signature = Buffer.from(password, 'base64');
+        const isAuthenticated = env.publicKey.verify(username, signature)
+        if (!isAuthenticated) {
+          return unauthorized(res)
+        }
+      }
+      
       logger.debug('proxying to %j', { target: env.target, url: req.url })
       requestsCounter.inc({clientId: env.clientId})
 
