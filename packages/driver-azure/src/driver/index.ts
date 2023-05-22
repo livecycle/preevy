@@ -60,7 +60,7 @@ const requireTagValue = (tags: Resource['tags'], key: string) => {
   return tags[key]
 }
 
-const machineFromInstance = (
+const machineFromVm = (
   { privateIPAddress, publicIPAddress, vm }: {
     privateIPAddress: string
     publicIPAddress: string
@@ -90,14 +90,14 @@ const machineDriver = ({ region, subscriptionId, profileId }: DriverContext): Ma
   return {
     customizationScripts: CUSTOMIZE_BARE_MACHINE,
     friendlyName: 'Microsoft Azure',
-    getMachine: async ({ envId }) => cl.getInstance(envId).then(vm => machineFromInstance(vm)),
+    getMachine: async ({ envId }) => cl.getInstance(envId).then(vm => machineFromVm(vm)),
     listMachines: async () => {
       const vmInstances = await asyncToArray(cl.listInstances())
       const allResourceGroups = cl.listResourceGroups()
       return asyncMap(async resourceGroup => {
         const vm = typeof resourceGroup.name === 'string' && vmInstances.find(i => extractResourceGroupNameFromId(i.vm.id as string) === (resourceGroup.name as string).toLowerCase())
         if (vm) {
-          return { ...machineFromInstance(vm),
+          return { ...machineFromVm(vm),
             partial: false } as (Machine|PartialMachine) & { envId: string }
         }
         return {
@@ -208,7 +208,7 @@ const machineCreationDriver = (
           envId,
         })
         telemetryEmitter().capture('azure create machine end', { region, elapsed_sec: (new Date().getTime() - startTime) / 1000 })
-        return machineFromInstance({ privateIPAddress, publicIPAddress, vm })
+        return machineFromVm({ privateIPAddress, publicIPAddress, vm })
       })(),
     }),
     ensureMachineSnapshot: async () => undefined,
@@ -223,7 +223,7 @@ const machineCreationDriver = (
         return undefined
       }
       return ({
-        ...machineFromInstance(vmInstance),
+        ...machineFromVm(vmInstance),
         specDiff: vmSize && vmSize !== vmInstance.vm.hardwareProfile?.vmSize
           ? [{ name: 'vm-size', old: vmInstance.vm.hardwareProfile?.vmSize as string, new: vmSize }]
           : [],

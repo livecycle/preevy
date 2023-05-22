@@ -17,10 +17,10 @@ import {
 } from '@azure/arm-compute'
 import { StorageManagementClient } from '@azure/arm-storage'
 
-export enum AzureCustomTags {
-  ENV_ID = 'preevyEnvId',
-  PROFILE_ID = 'preevyProfile',
-  VM_ID = 'preevyVm'
+export const AzureCustomTags = {
+  ENV_ID: 'preevyEnvId',
+  PROFILE_ID: 'preevyProfile',
+  VM_ID: 'preevyVm',
 }
 
 export const createResourceGroup = async (

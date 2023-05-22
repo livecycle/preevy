@@ -4,7 +4,7 @@ import { GenericResource, ResourceGroup, ResourceManagementClient } from '@azure
 import { StorageManagementClient } from '@azure/arm-storage'
 import { DefaultAzureCredential } from '@azure/identity'
 import { randomBytes } from 'crypto'
-import { asyncFilter, asyncFirst, asyncMap } from 'iter-tools-es'
+import { asyncFilter, asyncFirst, asyncFlatMap, asyncMap } from 'iter-tools-es'
 import {
   AzureCustomTags,
   createNIC,
@@ -22,7 +22,6 @@ import {
 
 // Uncomment to see Azure logs (import @azure/logger)
 // setLogLevel('info')
-
 export class AzureResourceNotFound extends Error {
   statusCode = 404
   constructor(message: string) {
@@ -117,12 +116,20 @@ export const client = ({
       const filter = `tagName eq '${AzureCustomTags.PROFILE_ID}' and tagValue eq '${profileId}'`
       return resourceClient.resources.list({ filter })
     },
-    listInstances: (): AsyncIterableIterator<VMInstance> => asyncMap(
-      async vm => (
-        { vm, ...(await getIpAddresses(networkClient, vm)) }),
-      asyncFilter<VirtualMachine>(({ tags, provisioningState }) =>
-        tags?.[AzureCustomTags.PROFILE_ID] === profileId && provisioningState !== 'Deleting', computeClient.virtualMachines.listAll())
-    ),
+    listInstances: (): AsyncIterableIterator<VMInstance> => {
+      const filter = `tagName eq '${AzureCustomTags.PROFILE_ID}' and tagValue eq '${profileId}'`
+      const resourceGroups = resourceClient.resourceGroups.list({ filter })
+      const vms = asyncFlatMap(
+        rg => computeClient.virtualMachines.list(rg.name as string),
+        resourceGroups
+      )
+      return asyncMap(
+        async vm => (
+          { vm, ...(await getIpAddresses(networkClient, vm)) }),
+        asyncFilter<VirtualMachine>(({ tags, provisioningState }) =>
+          tags?.[AzureCustomTags.PROFILE_ID] === profileId && provisioningState !== 'Deleting', vms)
+      )
+    },
     getInstance: async (envId: string): Promise<VMInstance> => {
       const filter = `tagName eq '${AzureCustomTags.ENV_ID}' and tagValue eq '${envId}'`
       const vmResource = await asyncFirst(asyncFilter(x => x.type === 'Microsoft.Compute/virtualMachines', resourceClient.resources.list({ filter })))
@@ -218,7 +225,7 @@ export const client = ({
       const vmImageInfo = await findVMImage(region, imageRef, computeClient)
 
       if (!nic.id || !vmImageInfo?.name || !publicIPInfo.name || !nic.ipConfigurations?.[0].privateIPAddress) {
-        throw new Error('Could not create vm, missing properties')
+        throw new Error(`Could not create vm, missing properties, nic id: ${nic.id} , image name: ${vmImageInfo?.name}, public IP name: ${publicIPInfo.name}, private IP: ${nic.ipConfigurations?.[0].privateIPAddress}`)
       }
       const vm = await createVirtualMachine(tags, nic.id, {
         ...imageRef,
