@@ -1,5 +1,5 @@
 import Docker from 'dockerode'
-import { debounce } from 'lodash'
+import { throttle } from 'lodash'
 import { tryParseJson, Logger } from '@preevy/common'
 
 const composeFilter = {
@@ -40,15 +40,14 @@ const client = ({
   return {
     getRunningServices,
     startListening: async ({ onChange }: { onChange: (services: RunningService[]) => void }) => {
-      const handler = debounce(
+      const handler = throttle(
         async (data?: Buffer) => {
           log.debug('event handler: %j', data && tryParseJson(data.toString()))
 
           const services = await getRunningServices()
           onChange(services)
         },
-        debounceWait,
-        { leading: true }
+        debounceWait
       )
 
       const stream = await docker.getEvents({

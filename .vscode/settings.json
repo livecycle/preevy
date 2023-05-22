@@ -7,7 +7,7 @@
   ],
   "eslint.format.enable": true,
   "eslint.workingDirectories": [
-    { "pattern": "./packages/*/" },
+    { "pattern": "./packages/*/" }
   ],
   "eslint.useESLintClass": true,
   "eslint.packageManager": "yarn",
@@ -26,4 +26,7 @@
   "markdown.extension.toc.levels": "2..6",
   "prettier.enable": false,
   "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  }
 }

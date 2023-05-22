@@ -2,7 +2,7 @@ import os from 'os'
 import crypto from 'crypto'
 import stringify from 'fast-safe-stringify'
 import fetch from 'node-fetch'
-import { debounce } from 'lodash'
+import { throttle } from 'lodash'
 import { memoizedMachineId } from './machine-id'
 import { TelemetryEvent, TelemetryProperties, serializableEvent } from './events'
 import { detectCiProvider } from '../ci-providers'
@@ -47,11 +47,11 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
     }
   }
 
-  const debouncedFlush = debounce(flush, FLUSH_INTERVAL)
+  const throttledFlush = throttle(flush, FLUSH_INTERVAL)
 
   const pushEvent = (event: TelemetryEvent) => {
     pendingEvents.push(event)
-    void debouncedFlush()
+    void throttledFlush()
   }
 
   const ciProvider = detectCiProvider()
@@ -123,7 +123,7 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
       Object.assign(commonProperties, props)
     },
     flush: () => {
-      debouncedFlush.cancel()
+      throttledFlush.cancel()
       return flush()
     },
   })

@@ -1,7 +1,7 @@
 import ah from 'async_hooks'
 import { Hook } from '@oclif/core'
 
-const hook: Hook<'init'> = async () => {
+const hook: Hook.Init = async () => {
   const traces = new Map()
 
   const originalCaptureStackTrace = global.Error.captureStackTrace
