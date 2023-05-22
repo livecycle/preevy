@@ -1,4 +1,4 @@
-import BaseCommand from '../base-command'
+import { BaseCommand } from '@preevy/cli-common'
 
 // eslint-disable-next-line no-use-before-define
 export default class Version extends BaseCommand<typeof Version> {

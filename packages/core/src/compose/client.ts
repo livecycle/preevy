@@ -7,6 +7,12 @@ import { childProcessPromise, childProcessStdoutPromise, ProcessError } from '..
 
 const DOCKER_COMPOSE_NO_CONFIGURATION_FILE_ERROR_CODE = 14
 
+class LoadComposeFileError extends Error {
+  constructor(readonly cause: Error) {
+    super(`Could not load compose file: ${cause.message}`)
+  }
+}
+
 const isExposedService = (x: [string, ComposeService]): x is [string, RequiredProperties<ComposeService, 'ports'>] => hasPropertyDefined(x[1], 'ports')
 const getExposedServices = (model: ComposeModel) => Object.entries(model.services ?? []).filter(isExposedService)
 
@@ -39,11 +45,12 @@ const composeClient = (
 
   return {
     getModel,
-    getModelOrUndefined: async () => getModel().catch(e => {
+    getModelOrError: async () => getModel().catch(e => {
+      const error = new LoadComposeFileError(e)
       if (e instanceof ProcessError && e.code === DOCKER_COMPOSE_NO_CONFIGURATION_FILE_ERROR_CODE) {
-        return undefined
+        return error
       }
-      throw e
+      throw error
     }),
     getModelName: async () => (await getModel()).name,
     getServiceLogs: (service: string) => execComposeCommand(['logs', '--no-color', '--no-log-prefix', service]),

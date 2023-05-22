@@ -8,4 +8,5 @@ export const circleCiProvider = (): CiProvider => ({
   branchName: () => process.env.CIRCLE_BRANCH,
   pullRequestNumber: () => stringOrUndefinedToNumber(process.env.CIRCLE_PR_NUMBER)
     || extractPrNumberFromUrlPath(process.env.CIRCLE_PULL_REQUEST),
+  repoUrl: () => process.env.CIRCLE_REPOSITORY_URL,
 })

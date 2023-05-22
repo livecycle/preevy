@@ -5,6 +5,7 @@ import path from 'path'
 import { asyncMapValues } from '../async'
 import { statOrUndefined } from '../files'
 import { FileToCopy } from '../ssh/client'
+import { PreevyConfig } from '../config/model'
 
 export type ComposeSecretOrConfig = {
   name: string
@@ -50,16 +51,6 @@ export type ComposeService = {
   ports?: ComposePort[]
   environment?: Record<string, string | undefined> | EnvString[]
   user?: string
-}
-
-export type PreevyPluginConfig = {
-  module: string
-  disabled?: boolean
-  [key: string]: unknown
-}
-
-export type PreevyConfig = {
-  plugins?: PreevyPluginConfig[]
 }
 
 export type ComposeModel = {

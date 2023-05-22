@@ -1,8 +1,10 @@
 import { Command, Flags, Interfaces, settings as oclifSettings } from '@oclif/core'
-import path from 'path'
-import { LogLevel, Logger, logLevels, LocalProfilesConfig, localProfilesConfig } from '@preevy/core'
-import { commandLogger } from './log'
-import { fsFromUrl } from './fs'
+import {
+  LogLevel, Logger, logLevels, ComposeModel, ProcessError,
+} from '@preevy/core'
+import { asyncReduce } from 'iter-tools-es'
+import { commandLogger } from '../lib/log'
+import { configFlags } from '../lib/flags'
 
 // eslint-disable-next-line no-use-before-define
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof BaseCommand['baseFlags'] & T['flags']>
@@ -27,10 +29,49 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
         { type: 'none', flags: ['log-level'] },
       ],
     }),
+    ...configFlags,
   }
 
   protected flags!: Flags<T>
   protected args!: Args<T>
+
+  #userModel?: ComposeModel
+  protected async userModel() {
+    const { initialUserModel, preevyHooks } = this.config
+    if (initialUserModel instanceof Error) {
+      return initialUserModel
+    }
+
+    if (!this.#userModel) {
+      this.#userModel = await asyncReduce(
+        initialUserModel,
+        (userModel, hook) => hook({ log: this.logger, userModel }, undefined),
+        preevyHooks?.userModelFilter || [],
+      )
+    }
+    return this.#userModel
+  }
+
+  protected get preevyConfig() {
+    return this.config.preevyConfig
+  }
+
+  protected async ensureUserModel() {
+    const result = await this.userModel()
+    if (result instanceof Error) {
+      this.error(result, {
+        exit: result.cause instanceof ProcessError ? result.cause.process.exitCode ?? 1 : 1,
+        code: 'ERR_LOADING_COMPOSE_FILE',
+        message: result.message,
+        ref: 'https://docs.docker.com/compose/compose-file/03-compose-file/',
+        suggestions: [
+          'Run the command at a directory containing a compose file',
+          'Specify the -f flag',
+        ],
+      })
+    }
+    return result
+  }
 
   public async init(): Promise<void> {
     await super.init()
@@ -62,17 +103,6 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
 
   public logToStderr(message?: string | undefined, ...args: unknown[]): void {
     this.stdErrLogger.info(message, ...args)
-  }
-
-  #profileConfig: LocalProfilesConfig | undefined
-  get profileConfig(): LocalProfilesConfig {
-    if (!this.#profileConfig) {
-      const root = path.join(this.config.dataDir, 'v2')
-      this.logger.debug('init profile config at:', root)
-      this.#profileConfig = localProfilesConfig(root, fsFromUrl)
-    }
-
-    return this.#profileConfig
   }
 }
 

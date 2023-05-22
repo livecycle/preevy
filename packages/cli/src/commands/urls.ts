@@ -1,10 +1,5 @@
 import { Args, ux } from '@oclif/core'
-import {
-  sshKeysStore,
-  connectSshClient as createSshClient,
-  FlatTunnel, findAmbientEnvId,
-  findAmbientProjectName, flattenTunnels, localComposeClient, queryTunnels,
-} from '@preevy/core'
+import { commands, findAmbientEnvId } from '@preevy/core'
 import DriverCommand from '../driver-command'
 import { envIdFlags, composeFlags } from '../common-flags'
 
@@ -34,58 +29,35 @@ export default class Urls extends DriverCommand<typeof Urls> {
   async run(): Promise<unknown> {
     const log = this.logger
     const { flags, args } = await this.parse(Urls)
-    const driver = await this.driver()
-    const keyAlias = await driver.getKeyPairAlias()
-
-    const keyStore = sshKeysStore(this.store)
-    const sshKey = await keyStore.getKey(keyAlias)
-    if (!sshKey) {
-      throw new Error(`No key pair found for alias ${keyAlias}`)
-    }
-
-    const projectName = flags.project || await findAmbientProjectName(localComposeClient({ composeFiles: flags.file }))
+    const projectName = (await this.ensureUserModel()).name
     log.debug(`project: ${projectName}`)
     const envId = flags.id || await findAmbientEnvId(projectName)
     log.debug(`envId: ${envId}`)
 
-    const machine = await driver.getMachine({ envId })
-    if (!machine) {
-      throw new Error(`No machine found for envId ${envId}`)
-    }
-
-    const sshClient = await createSshClient({
-      debug: flags.debug,
-      host: machine.publicIPAddress,
-      username: machine.sshUsername,
-      privateKey: sshKey.privateKey.toString('utf-8'),
+    const flatTunnels = await commands.urls({
       log,
+      envId,
+      projectName,
+      driver: await this.driver(),
+      debug: flags.debug,
+      store: this.store,
+      serviceAndPort: args.service ? { service: args.service, port: args.port } : undefined,
     })
 
-    try {
-      const { tunnels } = await queryTunnels({ sshClient, projectName, retryOpts: { retries: 2 } })
-
-      const flatTunnels: FlatTunnel[] = flattenTunnels(tunnels)
-        .filter(tunnel => !args.service || (
-          tunnel.service === args.service && (!args.port || tunnel.port === args.port)
-        ))
-
-      if (flags.json) {
-        return flatTunnels
-      }
-
-      ux.table(
-        flatTunnels,
-        {
-          service: { header: 'Service' },
-          port: { header: 'Port' },
-          url: { header: 'URL' },
-        },
-        this.flags,
-      )
-
-      return undefined
-    } finally {
-      sshClient.dispose()
+    if (flags.json) {
+      return flatTunnels
     }
+
+    ux.table(
+      flatTunnels,
+      {
+        service: { header: 'Service' },
+        port: { header: 'Port' },
+        url: { header: 'URL' },
+      },
+      flags,
+    )
+
+    return undefined
   }
 }

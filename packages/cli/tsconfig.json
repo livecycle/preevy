@@ -19,7 +19,9 @@
     { "path": "../core" },
     { "path": "../compose-tunnel-agent" },
     { "path": "../common" },
+    { "path": "../cli-common" },
     { "path": "../driver-lightsail" },
     { "path": "../driver-gce" },
+    { "path": "../plugin-github-pr-link" },
   ]
 }

@@ -1,11 +1,9 @@
+import path from 'path'
 import { Command, Flags, Interfaces } from '@oclif/core'
 import chalk from 'chalk'
-import { Profile, Store, fsTypeFromUrl, telemetryEmitter } from '@preevy/core'
-import BaseCommand from './base-command'
-
-// eslint-disable-next-line no-use-before-define
-export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof ProfileCommand['baseFlags'] & T['flags']>
-export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>
+import { LocalProfilesConfig, Profile, Store, fsTypeFromUrl, localProfilesConfig, telemetryEmitter } from '@preevy/core'
+import { BaseCommand } from '@preevy/cli-common'
+import { fsFromUrl } from './fs'
 
 export const onProfileChange = (profile: Profile, alias: string, location: string) => {
   telemetryEmitter().identify(profile.id, {
@@ -15,6 +13,15 @@ export const onProfileChange = (profile: Profile, alias: string, location: strin
     profile_store_type: fsTypeFromUrl(location),
   })
 }
+
+export const loadProfileConfig = ({ dataDir }: { dataDir: string }): LocalProfilesConfig => {
+  const profileRoot = path.join(dataDir, 'v2')
+  return localProfilesConfig(profileRoot, fsFromUrl)
+}
+
+// eslint-disable-next-line no-use-before-define
+export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof ProfileCommand['baseFlags'] & T['flags']>
+export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>
 
 abstract class ProfileCommand<T extends typeof Command> extends BaseCommand<T> {
   static baseFlags = {
@@ -34,6 +41,15 @@ abstract class ProfileCommand<T extends typeof Command> extends BaseCommand<T> {
       this.#store = currentProfileInfo.store
       onProfileChange(currentProfileInfo.info, currentProfile.alias, currentProfile.location)
     }
+  }
+
+  #profileConfig: LocalProfilesConfig | undefined
+  get profileConfig(): LocalProfilesConfig {
+    if (!this.#profileConfig) {
+      this.#profileConfig = loadProfileConfig(this.config)
+    }
+
+    return this.#profileConfig
   }
 
   #store: Store | undefined
