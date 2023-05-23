@@ -7,13 +7,12 @@ export type PartialMachine = {
 }
 
 export type Machine = {
-  providerId: string
   version: string
   publicIPAddress: string
   privateIPAddress: string
   sshKeyName: string
   sshUsername: string
-}
+} & PartialMachine
 
 export type SpecDiffItem = {
   name: string
