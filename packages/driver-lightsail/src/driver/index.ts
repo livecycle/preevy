@@ -51,7 +51,7 @@ const machineDriver = ({
       return instance && machineFromInstance(instance)
     },
 
-    listMachines: async () => asyncMap(
+    listMachines: () => asyncMap(
       machineFromInstance,
       client.listInstances(),
     ),

@@ -47,7 +47,7 @@ const machineDriver = ({ zone, projectId, profileId }: DriverContext): MachineDr
       return instance && machineFromInstance(instance)
     },
 
-    listMachines: async () => asyncMap(machineFromInstance, client.listInstances()),
+    listMachines: () => asyncMap(machineFromInstance, client.listInstances()),
     listSnapshots: () => asyncMap(x => x, []),
 
     createKeyPair: async () => ({

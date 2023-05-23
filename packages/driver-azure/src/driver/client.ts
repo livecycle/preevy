@@ -130,6 +130,16 @@ export const client = ({
           tags?.[AzureCustomTags.PROFILE_ID] === profileId && provisioningState !== 'Deleting', vms)
       )
     },
+    getInstanceByRg: async (resourceGroup: string) => asyncFirst(
+      asyncFilter(x => x.provisioningState !== 'Deleting', computeClient.virtualMachines.list(resourceGroup))
+    )
+      .then(async vm => {
+        if (vm) {
+          const addresses = await getIpAddresses(networkClient, vm)
+          return { vm, ...addresses }
+        }
+        return undefined
+      }),
     getInstance: async (envId: string): Promise<VMInstance> => {
       const filter = `tagName eq '${AzureCustomTags.ENV_ID}' and tagValue eq '${envId}'`
       const vmResource = await asyncFirst(asyncFilter(x => x.type === 'Microsoft.Compute/virtualMachines', resourceClient.resources.list({ filter })))

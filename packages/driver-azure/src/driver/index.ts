@@ -1,5 +1,5 @@
 import { Flags, Interfaces } from '@oclif/core'
-import { asyncFirst, asyncMap, asyncToArray } from 'iter-tools-es'
+import { asyncFirst, asyncMap } from 'iter-tools-es'
 import { ListQuestion, Question } from 'inquirer'
 import { InferredFlags } from '@oclif/core/lib/interfaces'
 import { Resource, VirtualMachine } from '@azure/arm-compute'
@@ -13,7 +13,6 @@ import {
   MachineCreationDriverFactory,
   MachineDriver,
   MachineDriverFactory,
-  PartialMachine,
   telemetryEmitter,
 } from '@preevy/core'
 import { client, REGIONS } from './client'
@@ -91,22 +90,19 @@ const machineDriver = ({ region, subscriptionId, profileId }: DriverContext): Ma
     customizationScripts: CUSTOMIZE_BARE_MACHINE,
     friendlyName: 'Microsoft Azure',
     getMachine: async ({ envId }) => cl.getInstance(envId).then(vm => machineFromVm(vm)),
-    listMachines: async () => {
-      const vmInstances = await asyncToArray(cl.listInstances())
-      const allResourceGroups = cl.listResourceGroups()
-      return asyncMap(async resourceGroup => {
-        const vm = typeof resourceGroup.name === 'string' && vmInstances.find(i => extractResourceGroupNameFromId(i.vm.id as string) === (resourceGroup.name as string).toLowerCase())
+    listMachines: () => asyncMap(
+      rg => cl.getInstanceByRg(rg.name as string).then(vm => {
         if (vm) {
-          return { ...machineFromVm(vm),
-            partial: false } as (Machine|PartialMachine) & { envId: string }
+          return machineFromVm(vm)
         }
         return {
-          providerId: resourceGroup.name as string,
-          envId: resourceGroup.tags?.[AzureCustomTags.ENV_ID] as string,
-          partial: true,
+          providerId: rg.name as string,
+          envId: rg.tags?.[AzureCustomTags.ENV_ID] as string,
+          error: 'VM creation is incomplete',
         }
-      }, allResourceGroups)
-    },
+      }),
+      cl.listResourceGroups()
+    ),
 
     listSnapshots: () => asyncMap(x => x, []),
     createKeyPair: async () => {

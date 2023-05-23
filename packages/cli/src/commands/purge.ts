@@ -79,7 +79,7 @@ export default class Purge extends DriverCommand<typeof Purge> {
     ]
 
     const [machines, snapshots] = await Promise.all([
-      removeMachines ? asyncToArray(await driver.listMachines()) : [],
+      removeMachines ? asyncToArray(driver.listMachines()) : [],
       removeSnapshots ? asyncToArray(driver.listSnapshots()) : [],
     ])
     if (!flags.force && !await confirmPurge({
