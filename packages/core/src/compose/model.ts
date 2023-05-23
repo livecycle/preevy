@@ -62,6 +62,11 @@ export type ComposeModel = {
   'x-preevy'?: PreevyConfig
 }
 
+const volumeSkipList = [
+  /^\/var\/log(\/|$)/,
+  /^\/$/,
+]
+
 export const fixModelForRemote = async (
   { remoteDir, skipServices = [] }: {
     remoteDir: string
@@ -96,8 +101,6 @@ export const fixModelForRemote = async (
     { source }: Pick<ComposeBindVolume, 'source'>,
   ) => path.join('volumes', relativePath(source))
 
-  const volumePrefixSkipList = ['/var/log']
-
   const overrideServices = await asyncMapValues(services, async (service, serviceName) => {
     if (skipServices.includes(serviceName)) {
       return service
@@ -114,7 +117,7 @@ export const fixModelForRemote = async (
         if (volume.type !== 'bind') {
           throw new Error(`Unsupported volume type: ${volume.type} in service ${serviceName}`)
         }
-        if (volumePrefixSkipList.some(prefix => volume.source.startsWith(prefix))) {
+        if (volumeSkipList.some(re => re.test(volume.source))) {
           return volume
         }
 
