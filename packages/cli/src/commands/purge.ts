@@ -82,7 +82,6 @@ export default class Purge extends DriverCommand<typeof Purge> {
       removeMachines ? asyncToArray(driver.listMachines()) : [],
       removeSnapshots ? asyncToArray(driver.listSnapshots()) : [],
     ])
-
     if (!flags.force && !await confirmPurge({
       driverFriendlyName: driver.friendlyName,
       envIds: machines.map(m => m.envId),

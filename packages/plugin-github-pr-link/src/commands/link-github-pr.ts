@@ -1,9 +1,9 @@
-import { Command, Flags, Interfaces } from '@oclif/core'
+import { Command, Interfaces } from '@oclif/core'
 import { BaseCommand, composeFlags, envIdFlags } from '@preevy/cli-common'
 import { Octokit } from 'octokit'
-import { FlatTunnel, findAmbientEnvId } from '@preevy/core'
-import { ParsedFlags, flagsDef } from '../flags'
-import { PluginConfig, loadGithubConfig } from '../config'
+import { findAmbientEnvId, FlatTunnel } from '@preevy/core'
+import { flagsDef, ParsedFlags } from '../flags'
+import { loadGithubConfig, PluginConfig } from '../config'
 import { upsertPreevyComment } from '../lib/github-comment'
 
 // eslint-disable-next-line no-use-before-define

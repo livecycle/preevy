@@ -35,9 +35,7 @@ export default class Down extends DriverCommand<typeof Down> {
     const envId = flags.id ?? await findAmbientEnvId(projectName)
 
     log.debug(`envId: ${envId}`)
-
     const machine = await driver.getMachine({ envId })
-
     if (!machine) {
       if (!flags.force) {
         throw new Error(`No machine found for environment ${envId}`)

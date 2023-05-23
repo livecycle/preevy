@@ -1,7 +1,6 @@
 import path from 'path'
 import { throttle } from 'lodash'
-import { ExpandedTransferProgress } from './ssh/client/progress-expanded'
-import { FileToCopy, SshClient } from './ssh/client'
+import { FileToCopy, SshClient, ExpandedTransferProgress } from './ssh'
 import { withSpinner } from './spinner'
 import { telemetryEmitter } from './telemetry'
 

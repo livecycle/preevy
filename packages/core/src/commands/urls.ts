@@ -4,7 +4,7 @@ import { Logger } from '../log'
 import { Store } from '../store'
 import { connectSshClient } from '../ssh'
 import { queryTunnels } from '../compose-tunnel-agent-client'
-import { FlatTunnel, flattenTunnels } from '../tunneling'
+import { flattenTunnels } from '../tunneling'
 
 export const urls = async ({ log, envId, driver, store, debug, projectName, serviceAndPort }: {
   log: Logger
@@ -39,12 +39,10 @@ export const urls = async ({ log, envId, driver, store, debug, projectName, serv
   try {
     const { tunnels } = await queryTunnels({ sshClient, projectName, retryOpts: { retries: 2 } })
 
-    const flatTunnels: FlatTunnel[] = flattenTunnels(tunnels)
+    return flattenTunnels(tunnels)
       .filter(tunnel => !serviceAndPort || (
         tunnel.service === serviceAndPort.service && (!serviceAndPort.port || tunnel.port === serviceAndPort.port)
       ))
-
-    return flatTunnels
   } finally {
     sshClient.dispose()
   }

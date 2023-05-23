@@ -1,7 +1,7 @@
 {
-  "name": "@preevy/driver-gce",
-  "version": "0.0.30",
-  "description": "Google Compute Engine driver for Preevy",
+  "name": "@preevy/driver-azure",
+  "version": "0.0.29-alpha.0",
+  "description": "Microsoft Azure Virtual Machine for Preevy",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -9,17 +9,21 @@
   ],
   "license": "Apache-2.0",
   "dependencies": {
-    "@google-cloud/compute": "^3.9.1",
-    "@google-cloud/storage": "^6.9.5",
+    "@azure/arm-compute": "^20.0.0",
+    "@azure/arm-network": "^30.2.0",
+    "@azure/arm-resources": "^5.2.0",
+    "@azure/arm-storage": "^18.1.0",
+    "@azure/arm-subscriptions": "^5.1.0",
+    "@azure/identity": "^3.2.2",
+    "@azure/logger": "^1.0.4",
     "@oclif/core": "^2",
     "@preevy/core": "0.0.30",
-    "google-auth-library": "^8.7.0",
-    "google-gax": "^3.6.0",
     "inquirer": "^8.0.0",
     "iter-tools-es": "^7.5.1",
     "lodash": "^4.17.21"
   },
   "devDependencies": {
+    "@types/azure": "^0.9.20",
     "@types/lodash": "^4.14.192",
     "@types/node": "18",
     "@typescript-eslint/eslint-plugin": "^5.55.0",

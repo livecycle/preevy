@@ -7,7 +7,7 @@
   ],
   "eslint.format.enable": true,
   "eslint.workingDirectories": [
-    { "pattern": "./packages/*/" },
+    { "pattern": "./packages/*/" }
   ],
   "eslint.useESLintClass": true,
   "eslint.packageManager": "yarn",
@@ -28,5 +28,5 @@
   "editor.defaultFormatter": "dbaeumer.vscode-eslint",
   "[json]": {
     "editor.defaultFormatter": "vscode.json-language-features"
-  },
+  }
 }
