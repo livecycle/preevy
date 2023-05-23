@@ -2,7 +2,7 @@ import { HookFunc } from '@preevy/cli-common'
 import { Octokit } from 'octokit'
 import { Config as OclifConfig } from '@oclif/core/lib/interfaces'
 import { upsertPreevyComment } from '../lib/github-comment'
-import { parseFlags } from '../flags'
+import { parseFlags, prefixedFlagsDef } from '../flags'
 import { PluginConfig, loadGithubConfigOrSkip } from '../config'
 
 export const envDeleted = ({ argv, pluginConfig, oclifConfig }: {
@@ -10,7 +10,7 @@ export const envDeleted = ({ argv, pluginConfig, oclifConfig }: {
   pluginConfig: PluginConfig
   oclifConfig: OclifConfig
 }): HookFunc<'envDeleted'> => async ({ log }, { envId }) => {
-  const flags = await parseFlags(argv)
+  const flags = await parseFlags(prefixedFlagsDef, argv)
   const config = await loadGithubConfigOrSkip(oclifConfig, pluginConfig, flags, log)
   if (!config) {
     return

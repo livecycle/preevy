@@ -33,7 +33,7 @@ abstract class BaseGithubPrCommand<T extends typeof Command> extends BaseCommand
   }
 
   protected async loadGithubConfig() {
-    const config = await loadGithubConfig(this.pluginConfig, this.flags as ParsedFlags)
+    const config = await loadGithubConfig(this.pluginConfig, this.flags as ParsedFlags<typeof flagsDef>)
 
     if (!config) {
       throw new Error('No GitHub config provided for plugin - specify env vars, flags or populate the compose file')

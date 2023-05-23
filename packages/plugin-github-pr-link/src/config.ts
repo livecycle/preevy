@@ -2,7 +2,7 @@ import { defaults } from 'lodash'
 import { Config as OclifConfig } from '@oclif/core'
 import { Logger, detectCiProvider, git } from '@preevy/core'
 import { tryParseRepo, tryParseUrlToRepo } from './repo'
-import { ParsedFlags } from './flags'
+import { ParsedFlags, prefixedFlagsDef } from './flags'
 
 export type PluginConfig = {
   repo?: string
@@ -39,11 +39,17 @@ const ambientGithubConfig = async (): Promise<Partial<GithubConfig>> => {
   return result
 }
 
-const githubConfigFromFlags = (flags: ParsedFlags): Partial<GithubConfig> => ({
+const githubConfigFromPrefixedFlags = (flags: ParsedFlags<typeof prefixedFlagsDef>): Partial<GithubConfig> => ({
   pullRequest: flags['github-pr-link-pr'],
   repo: flags['github-pr-link-repo'],
   token: flags['github-pr-link-token'],
 })
+
+// const githubConfigFromFlags = (flags: ParsedFlags<typeof flagsDef>): Partial<GithubConfig> => ({
+//   pullRequest: flags.pr,
+//   repo: flags.repo,
+//   token: flags.token,
+// })
 
 const githubConfigFromPluginConfig = (config: PluginConfig): Partial<GithubConfig> => ({
   pullRequest: config.pullRequest,
@@ -53,12 +59,12 @@ const githubConfigFromPluginConfig = (config: PluginConfig): Partial<GithubConfi
 
 export const loadGithubConfig = async (
   config: PluginConfig,
-  flags: ParsedFlags,
+  fromFlags: Partial<GithubConfig>,
 ): Promise<GithubConfig | undefined> => {
   let result = defaults(
     {},
     githubConfigFromPluginConfig(config),
-    githubConfigFromFlags(flags),
+    fromFlags,
   )
 
   if (config.detect === undefined || config.detect) {
@@ -77,7 +83,7 @@ const SCOPED_ENV_VAR = 'GITHUB_LINK'
 export const loadGithubConfigOrSkip = async (
   oclifConfig: Pick<OclifConfig, 'scopedEnvVar' | 'scopedEnvVarTrue'>,
   pluginConfig: PluginConfig,
-  flags: ParsedFlags,
+  flags: ParsedFlags<typeof prefixedFlagsDef>,
   log: Logger,
 ) => {
   if (oclifConfig.scopedEnvVar(SCOPED_ENV_VAR) && !oclifConfig.scopedEnvVarTrue(SCOPED_ENV_VAR)) {
@@ -90,5 +96,5 @@ export const loadGithubConfigOrSkip = async (
     return false
   }
 
-  return loadGithubConfig(pluginConfig, flags)
+  return loadGithubConfig(pluginConfig, githubConfigFromPrefixedFlags(flags))
 }
