@@ -34,6 +34,7 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
     }
 
     const body = stringify({ batch: pendingEvents.map(serializableEvent) })
+    pendingEvents.length = 0
 
     const response = await fetch(TELEMETRY_URL, {
       headers: { 'Content-Type': 'application/json' },

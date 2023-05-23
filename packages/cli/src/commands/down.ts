@@ -1,13 +1,7 @@
 import { Flags } from '@oclif/core'
-import { Logger, findAmbientEnvId, findAmbientProjectName, localComposeClient, withSpinner } from '@preevy/core'
+import { findAmbientEnvId, withSpinner } from '@preevy/core'
 import DriverCommand from '../driver-command'
 import { envIdFlags, composeFlags } from '../common-flags'
-
-const findEnvId = async (log: Logger, { project, file }: { project?: string; file: string[] }) => {
-  const projectName = project || await findAmbientProjectName(localComposeClient({ composeFiles: file }))
-  log.debug(`project: ${projectName}`)
-  return findAmbientEnvId(projectName)
-}
 
 // eslint-disable-next-line no-use-before-define
 export default class Down extends DriverCommand<typeof Down> {
@@ -35,7 +29,10 @@ export default class Down extends DriverCommand<typeof Down> {
     const log = this.logger
     const { flags } = await this.parse(Down)
     const driver = await this.driver()
-    const envId = flags.id ?? await findEnvId(log, flags)
+    const userModel = await this.ensureUserModel()
+    const projectName = userModel.name
+    log.debug(`project: ${projectName}`)
+    const envId = flags.id ?? await findAmbientEnvId(projectName)
 
     log.debug(`envId: ${envId}`)
     const machine = await driver.getMachine({ envId })
@@ -49,6 +46,13 @@ export default class Down extends DriverCommand<typeof Down> {
     await withSpinner(async () => {
       await driver.removeMachine(machine.providerId, flags.wait)
     }, { opPrefix: `Deleting ${driver.friendlyName} machine ${machine.providerId} for environment ${envId}` })
+
+    await Promise.all(
+      this.config.preevyHooks.envDeleted.map(envDeleted => envDeleted(
+        { log: this.logger, userModel },
+        { envId },
+      )),
+    )
 
     if (flags.json) {
       return envId

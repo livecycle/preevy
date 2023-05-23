@@ -3,7 +3,7 @@ import { SSHKeyConfig } from './ssh'
 
 export type PartialMachine = {
   providerId: string
-  error: string
+  error?: string
 }
 
 export type Machine = {

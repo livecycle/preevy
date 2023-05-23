@@ -1,6 +1,5 @@
 import { detectCiProvider } from './ci-providers'
 import { gitBranchName } from './git'
-import { ComposeClient } from './compose/client'
 
 const envIdFromBranch = (branch: string) => branch.replace(/[^a-zA-Z0-9]/g, '')
 
@@ -27,8 +26,6 @@ const findAmbientEnvIdSuffix = async (): Promise<string> => {
 }
 
 const envId = ({ projectName, suffix }: { projectName: string; suffix: string }) => `${projectName}-${suffix}`
-
-export const findAmbientProjectName = async (composeClient: ComposeClient) => composeClient.getModelName()
 
 export const findAmbientEnvId = async (projectName: string) => envId({
   projectName,

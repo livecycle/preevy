@@ -1,6 +1,6 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
 import { MachineCreationDriver, profileStore } from '@preevy/core'
-import BaseCommand from './base-command'
+import { BaseCommand } from '@preevy/cli-common'
 import DriverCommand from './driver-command'
 import { DriverFlags, DriverName, machineCreationflagsForAllDrivers, machineDrivers, removeDriverPrefix } from './drivers'
 

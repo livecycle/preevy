@@ -19,7 +19,7 @@ $ npm install -g preevy
 $ preevy COMMAND
 running command...
 $ preevy (--version)
-preevy/0.0.29-alpha.0 darwin-arm64 node-v18.12.1
+preevy/0.0.30 darwin-arm64 node-v18.12.1
 $ preevy --help [COMMAND]
 USAGE
   $ preevy COMMAND
@@ -50,7 +50,7 @@ Delete preview environments
 
 ```
 USAGE
-  $ preevy down [-D] [-d lightsail|gce] [--lightsail-region
+  $ preevy down [-D] [-c <value>] [-d lightsail|gce] [--lightsail-region
     us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu
     -central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>] [--gce-zone <value>] [--id <value>]
     [-f <value>] [-p <value>] [--force] [--wait] [--json]
@@ -66,8 +66,9 @@ FLAGS
                          but not waited for
 
 GLOBAL FLAGS
-  -D, --debug  Enable debug logging
-  --json       Format output as json.
+  -D, --debug              Enable debug logging
+  -c, --config=<value>...  Path to a JSON/YAML configuration file containing the Preevy config
+  --json                   Format output as json.
 
 GCE DRIVER FLAGS
   --gce-project-id=<value>  Google Cloud project ID
@@ -82,7 +83,7 @@ DESCRIPTION
   Delete preview environments
 ```
 
-_See code: [dist/commands/down.ts](https://github.com/livecycle/preevy/blob/v0.0.29-alpha.0/dist/commands/down.ts)_
+_See code: [dist/commands/down.ts](https://github.com/livecycle/preevy/blob/v0.0.30/dist/commands/down.ts)_
 
 ## `preevy help [COMMANDS]`
 
@@ -110,7 +111,7 @@ Initialize or import a new profile
 
 ```
 USAGE
-  $ preevy init [PROFILE-ALIAS] [-D] [-f <value>]
+  $ preevy init [PROFILE-ALIAS] [-D] [-c <value>] [-f <value>]
 
 ARGUMENTS
   PROFILE-ALIAS  [default: default] Alias of the profile
@@ -119,13 +120,14 @@ FLAGS
   -f, --from=<value>  Import profile from existing path
 
 GLOBAL FLAGS
-  -D, --debug  Enable debug logging
+  -D, --debug              Enable debug logging
+  -c, --config=<value>...  Path to a JSON/YAML configuration file containing the Preevy config
 
 DESCRIPTION
   Initialize or import a new profile
 ```
 
-_See code: [dist/commands/init.ts](https://github.com/livecycle/preevy/blob/v0.0.29-alpha.0/dist/commands/init.ts)_
+_See code: [dist/commands/init.ts](https://github.com/livecycle/preevy/blob/v0.0.30/dist/commands/init.ts)_
 
 ## `preevy logs [SERVICES]`
 
@@ -133,7 +135,7 @@ Show logs for an existing environment
 
 ```
 USAGE
-  $ preevy logs [SERVICES] [-D] [-d lightsail|gce] [--lightsail-region
+  $ preevy logs [SERVICES] [-D] [-c <value>] [-d lightsail|gce] [--lightsail-region
     us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu
     -central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>] [--gce-zone <value>] [--id <value>]
     [-f <value>] [-p <value>] [--columns <value> | -x] [--sort <value>] [--filter <value>] [--output csv|json|yaml |  |
@@ -159,7 +161,8 @@ FLAGS
   --sort=<value>         property to sort by (prepend '-' for descending)
 
 GLOBAL FLAGS
-  -D, --debug  Enable debug logging
+  -D, --debug              Enable debug logging
+  -c, --config=<value>...  Path to a JSON/YAML configuration file containing the Preevy config
 
 GCE DRIVER FLAGS
   --gce-project-id=<value>  Google Cloud project ID
@@ -174,7 +177,7 @@ DESCRIPTION
   Show logs for an existing environment
 ```
 
-_See code: [dist/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.29-alpha.0/dist/commands/logs.ts)_
+_See code: [dist/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.30/dist/commands/logs.ts)_
 
 ## `preevy ls`
 
@@ -182,7 +185,7 @@ List preview environments
 
 ```
 USAGE
-  $ preevy ls [-D] [-d lightsail|gce] [--lightsail-region
+  $ preevy ls [-D] [-c <value>] [-d lightsail|gce] [--lightsail-region
     us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu
     -central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>] [--gce-zone <value>] [--columns
     <value> | -x] [--sort <value>] [--filter <value>] [--output csv|json|yaml |  | [--csv | --no-truncate]] [--no-header
@@ -202,8 +205,9 @@ FLAGS
   --sort=<value>         property to sort by (prepend '-' for descending)
 
 GLOBAL FLAGS
-  -D, --debug  Enable debug logging
-  --json       Format output as json.
+  -D, --debug              Enable debug logging
+  -c, --config=<value>...  Path to a JSON/YAML configuration file containing the Preevy config
+  --json                   Format output as json.
 
 GCE DRIVER FLAGS
   --gce-project-id=<value>  Google Cloud project ID
@@ -218,7 +222,7 @@ DESCRIPTION
   List preview environments
 ```
 
-_See code: [dist/commands/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.29-alpha.0/dist/commands/ls.ts)_
+_See code: [dist/commands/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.30/dist/commands/ls.ts)_
 
 ## `preevy profile create NAME URL`
 
@@ -226,7 +230,7 @@ Create a new profile
 
 ```
 USAGE
-  $ preevy profile create NAME URL [-D] [-d lightsail|gce] [--lightsail-region
+  $ preevy profile create NAME URL [-D] [-c <value>] [-d lightsail|gce] [--lightsail-region
     us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu
     -central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>] [--gce-zone <value>] [--json]
 
@@ -239,8 +243,9 @@ FLAGS
                          <options: lightsail|gce>
 
 GLOBAL FLAGS
-  -D, --debug  Enable debug logging
-  --json       Format output as json.
+  -D, --debug              Enable debug logging
+  -c, --config=<value>...  Path to a JSON/YAML configuration file containing the Preevy config
+  --json                   Format output as json.
 
 GCE DRIVER FLAGS
   --gce-project-id=<value>  Google Cloud project ID
@@ -261,11 +266,12 @@ Display current profile in use
 
 ```
 USAGE
-  $ preevy profile current [-D] [--json]
+  $ preevy profile current [-D] [-c <value>] [--json]
 
 GLOBAL FLAGS
-  -D, --debug  Enable debug logging
-  --json       Format output as json.
+  -D, --debug              Enable debug logging
+  -c, --config=<value>...  Path to a JSON/YAML configuration file containing the Preevy config
+  --json                   Format output as json.
 
 DESCRIPTION
   Display current profile in use
@@ -277,7 +283,7 @@ Import an existing profile
 
 ```
 USAGE
-  $ preevy profile import LOCATION [-D] [--name <value>] [--json]
+  $ preevy profile import LOCATION [-D] [-c <value>] [--name <value>] [--json]
 
 ARGUMENTS
   LOCATION  location of the profile
@@ -286,8 +292,9 @@ FLAGS
   --name=<value>  name of the profile
 
 GLOBAL FLAGS
-  -D, --debug  Enable debug logging
-  --json       Format output as json.
+  -D, --debug              Enable debug logging
+  -c, --config=<value>...  Path to a JSON/YAML configuration file containing the Preevy config
+  --json                   Format output as json.
 
 DESCRIPTION
   Import an existing profile
@@ -299,11 +306,12 @@ Lists profiles
 
 ```
 USAGE
-  $ preevy profile ls [-D] [--json]
+  $ preevy profile ls [-D] [-c <value>] [--json]
 
 GLOBAL FLAGS
-  -D, --debug  Enable debug logging
-  --json       Format output as json.
+  -D, --debug              Enable debug logging
+  -c, --config=<value>...  Path to a JSON/YAML configuration file containing the Preevy config
+  --json                   Format output as json.
 
 DESCRIPTION
   Lists profiles
@@ -315,14 +323,15 @@ Remove a profile
 
 ```
 USAGE
-  $ preevy profile rm NAME [-D] [--json]
+  $ preevy profile rm NAME [-D] [-c <value>] [--json]
 
 ARGUMENTS
   NAME  name of the profile to remove
 
 GLOBAL FLAGS
-  -D, --debug  Enable debug logging
-  --json       Format output as json.
+  -D, --debug              Enable debug logging
+  -c, --config=<value>...  Path to a JSON/YAML configuration file containing the Preevy config
+  --json                   Format output as json.
 
 DESCRIPTION
   Remove a profile
@@ -334,14 +343,15 @@ Set current profile
 
 ```
 USAGE
-  $ preevy profile use NAME [-D] [--json]
+  $ preevy profile use NAME [-D] [-c <value>] [--json]
 
 ARGUMENTS
   NAME  name of the profile to use
 
 GLOBAL FLAGS
-  -D, --debug  Enable debug logging
-  --json       Format output as json.
+  -D, --debug              Enable debug logging
+  -c, --config=<value>...  Path to a JSON/YAML configuration file containing the Preevy config
+  --json                   Format output as json.
 
 DESCRIPTION
   Set current profile
@@ -353,7 +363,7 @@ Remove all cloud provider resources
 
 ```
 USAGE
-  $ preevy purge [-D] [-d lightsail|gce] [--lightsail-region
+  $ preevy purge [-D] [-c <value>] [-d lightsail|gce] [--lightsail-region
     us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu
     -central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>] [--gce-zone <value>] [--snapshots]
     [--machines] [--key-pair] [--all] [--force] [--wait] [--json]
@@ -370,8 +380,9 @@ FLAGS
                          but not waited for
 
 GLOBAL FLAGS
-  -D, --debug  Enable debug logging
-  --json       Format output as json.
+  -D, --debug              Enable debug logging
+  -c, --config=<value>...  Path to a JSON/YAML configuration file containing the Preevy config
+  --json                   Format output as json.
 
 GCE DRIVER FLAGS
   --gce-project-id=<value>  Google Cloud project ID
@@ -386,7 +397,7 @@ DESCRIPTION
   Remove all cloud provider resources
 ```
 
-_See code: [dist/commands/purge.ts](https://github.com/livecycle/preevy/blob/v0.0.29-alpha.0/dist/commands/purge.ts)_
+_See code: [dist/commands/purge.ts](https://github.com/livecycle/preevy/blob/v0.0.30/dist/commands/purge.ts)_
 
 ## `preevy up [SERVICE]`
 
@@ -394,7 +405,7 @@ Bring up a preview environment
 
 ```
 USAGE
-  $ preevy up [SERVICE] [-D] [-d lightsail|gce] [--lightsail-region
+  $ preevy up [SERVICE] [-D] [-c <value>] [-d lightsail|gce] [--lightsail-region
     us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu
     -central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>] [--gce-zone <value>]
     [--lightsail-availability-zone <value>] [--lightsail-bundle-id
@@ -426,7 +437,8 @@ FLAGS
   --tls-hostname=<value>    Override TLS server name when tunneling via HTTPS
 
 GLOBAL FLAGS
-  -D, --debug  Enable debug logging
+  -D, --debug              Enable debug logging
+  -c, --config=<value>...  Path to a JSON/YAML configuration file containing the Preevy config
 
 GCE DRIVER FLAGS
   --gce-machine-type=<value>  Machine type to be provisioned
@@ -447,7 +459,7 @@ DESCRIPTION
   Bring up a preview environment
 ```
 
-_See code: [dist/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.29-alpha.0/dist/commands/up.ts)_
+_See code: [dist/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.30/dist/commands/up.ts)_
 
 ## `preevy urls [SERVICE] [PORT]`
 
@@ -455,7 +467,7 @@ Show urls for an existing environment
 
 ```
 USAGE
-  $ preevy urls [SERVICE] [PORT] [-D] [-d lightsail|gce] [--lightsail-region
+  $ preevy urls [SERVICE] [PORT] [-D] [-c <value>] [-d lightsail|gce] [--lightsail-region
     us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu
     -central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>] [--gce-zone <value>] [--id <value>]
     [-f <value>] [-p <value>] [--columns <value> | -x] [--sort <value>] [--filter <value>] [--output csv|json|yaml |  |
@@ -482,8 +494,9 @@ FLAGS
   --sort=<value>         property to sort by (prepend '-' for descending)
 
 GLOBAL FLAGS
-  -D, --debug  Enable debug logging
-  --json       Format output as json.
+  -D, --debug              Enable debug logging
+  -c, --config=<value>...  Path to a JSON/YAML configuration file containing the Preevy config
+  --json                   Format output as json.
 
 GCE DRIVER FLAGS
   --gce-project-id=<value>  Google Cloud project ID
@@ -498,7 +511,7 @@ DESCRIPTION
   Show urls for an existing environment
 ```
 
-_See code: [dist/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.29-alpha.0/dist/commands/urls.ts)_
+_See code: [dist/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.30/dist/commands/urls.ts)_
 
 ## `preevy version`
 
@@ -506,15 +519,16 @@ Show Preevy version
 
 ```
 USAGE
-  $ preevy version [-D] [--json]
+  $ preevy version [-D] [-c <value>] [--json]
 
 GLOBAL FLAGS
-  -D, --debug  Enable debug logging
-  --json       Format output as json.
+  -D, --debug              Enable debug logging
+  -c, --config=<value>...  Path to a JSON/YAML configuration file containing the Preevy config
+  --json                   Format output as json.
 
 DESCRIPTION
   Show Preevy version
 ```
 
-_See code: [dist/commands/version.ts](https://github.com/livecycle/preevy/blob/v0.0.29-alpha.0/dist/commands/version.ts)_
+_See code: [dist/commands/version.ts](https://github.com/livecycle/preevy/blob/v0.0.30/dist/commands/version.ts)_
 <!-- commandsstop -->

@@ -5,12 +5,13 @@ import { githubActionsCiProvider } from './github-actions'
 import { gitlabActionsCiProvider } from './gitlab'
 import { travisCiProvider } from './travis'
 
-const providersInOrder = [
-  githubActionsCiProvider(),
-  gitlabActionsCiProvider(),
-  travisCiProvider(),
-  circleCiProvider(),
-  azurePipelinesCiProvider(),
-] as const
+export const ciProviders = {
+  githubActions: githubActionsCiProvider(),
+  gitlabActions: gitlabActionsCiProvider(),
+  travis: travisCiProvider(),
+  circle: circleCiProvider(),
+  azurePipelines: azurePipelinesCiProvider(),
+}
 
-export const detectCiProvider = (): CiProvider | undefined => providersInOrder.find(p => p.currentlyRunningInProvider())
+export const detectCiProvider = (): CiProvider | undefined => Object.values(ciProviders)
+  .find(p => p.currentlyRunningInProvider())

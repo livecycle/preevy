@@ -4,11 +4,12 @@ export { Machine, PartialMachine, MachineDriver, MachineCreationDriver, MachineC
 export { profileStore, Profile, ProfileStore } from './profile'
 export { telemetryEmitter, registerEmitter, wireProcessExit, createTelemetryEmitter } from './telemetry'
 export { fsTypeFromUrl, Store, VirtualFS, localFsFromUrl } from './store'
-export { localComposeClient } from './compose'
+export { localComposeClient, ComposeModel } from './compose'
 export { withSpinner } from './spinner'
-export { findAmbientEnvId, findAmbientProjectName } from './env-id'
+export { findAmbientEnvId } from './env-id'
 export { sshKeysStore } from './state'
 export { connectSshClient, generateSshKeyPair } from './ssh'
+export { ProcessError } from './child-process'
 export {
   COMPOSE_TUNNEL_AGENT_SERVICE_NAME,
   addBaseComposeTunnelAgentService,
@@ -23,3 +24,6 @@ export {
   ensureTunnelKeyPair,
   performTunnelConnectionCheck,
 } from './tunneling'
+export { ciProviders, detectCiProvider } from './ci-providers'
+export * as git from './git'
+export * as config from './config'

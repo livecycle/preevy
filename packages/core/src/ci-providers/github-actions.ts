@@ -9,4 +9,9 @@ export const githubActionsCiProvider = (): CiProvider => ({
   pullRequestNumber: () => stringOrUndefinedToNumber(
     process.env.GITHUB_REF?.match(/^refs\/pull\/(\d+)/)?.[1],
   ),
+  repoUrl: () => (
+    (process.env.GITHUB_REPOSITORY && process.env.GITHUB_SERVER_URL)
+      ? `https://${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}.git`
+      : undefined
+  ),
 })

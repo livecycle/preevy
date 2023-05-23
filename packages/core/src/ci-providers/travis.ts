@@ -9,4 +9,5 @@ export const travisCiProvider = (): CiProvider => ({
   pullRequestNumber: () => (process.env.TRAVIS_PULL_REQUEST && process.env.TRAVIS_PULL_REQUEST !== 'false'
     ? nanToUndefined(Number(process.env.TRAVIS_PULL_REQUEST))
     : undefined),
+  repoUrl: () => undefined,
 })

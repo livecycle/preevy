@@ -1,6 +1,6 @@
 {
   "name": "preevy",
-  "version": "0.0.29-alpha.0",
+  "version": "0.0.30",
   "description": "Quickly deploy preview environments to the cloud!",
   "author": "Livecycle",
   "bin": {
@@ -19,14 +19,14 @@
   ],
   "dependencies": {
     "@oclif/core": "^2",
-    "@oclif/plugin-help": "^5",
-    "@oclif/plugin-plugins": "^2.3.0",
-    "@preevy/common": "0.0.28-alpha.0",
-    "@preevy/compose-tunnel-agent": "0.0.29-alpha.0",
-    "@preevy/core": "0.0.29-alpha.0",
-    "@preevy/driver-gce": "0.0.29-alpha.0",
+    "@preevy/cli-common": "0.0.30",
+    "@preevy/common": "0.0.30",
+    "@preevy/compose-tunnel-agent": "0.0.30",
+    "@preevy/core": "0.0.30",
+    "@preevy/driver-gce": "0.0.30",
     "@preevy/driver-azure": "0.0.29-alpha.0",
-    "@preevy/driver-lightsail": "0.0.29-alpha.0",
+    "@preevy/driver-lightsail": "0.0.30",
+    "@preevy/plugin-github-pr-link": "0.0.30",
     "chalk": "^4.1.2",
     "inquirer": "^8.0.0",
     "iter-tools-es": "^7.5.1",
@@ -52,6 +52,7 @@
     "oclif": "^3",
     "shx": "^0.3.3",
     "ts-node": "^10.9.1",
+    "tsconfig-paths": "^4.2.0",
     "tslib": "^2.5.0",
     "typescript": "^5.0.4"
   },
@@ -66,6 +67,7 @@
       "init": [
         "./dist/hooks/init/async-trace",
         "./dist/hooks/init/sync-logging",
+        "./dist/hooks/init/load-plugins",
         "./dist/hooks/init/telemetry"
       ],
       "prerun": [
@@ -89,7 +91,7 @@
     "bump-to": "yarn version --no-commit-hooks --no-git-tag-version --new-version"
   },
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=18.0.0"
   },
   "bugs": "https://github.com/livecycle/preevy/issues",
   "keywords": [

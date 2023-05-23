@@ -2,8 +2,9 @@ import { Flags, Args, ux } from '@oclif/core'
 import inquirer from 'inquirer'
 import { defaultBucketName as gsDefaultBucketName, defaultProjectId as defaultGceProjectId } from '@preevy/driver-gce'
 import { defaultBucketName as s3DefaultBucketName, AWS_REGIONS, awsUtils } from '@preevy/driver-lightsail'
-import BaseCommand from '../base-command'
+import { BaseCommand } from '@preevy/cli-common'
 import { DriverName, machineDrivers } from '../drivers'
+import { loadProfileConfig } from '../profile-command'
 
 import ambientAwsAccountId = awsUtils.ambientAccountId
 
@@ -26,7 +27,8 @@ export default class Init extends BaseCommand {
   }
 
   async run(): Promise<unknown> {
-    const existingProfiles = await this.profileConfig.list()
+    const profileConfig = loadProfileConfig(this.config)
+    const existingProfiles = await profileConfig.list()
     let profileAlias = this.args['profile-alias']
     const profileExists = existingProfiles.find(p => p.alias === profileAlias)
     if (profileExists) {

@@ -3,3 +3,4 @@ import ls from './ls'
 import ssh from './ssh'
 
 export { up, ls, ssh }
+export { urls } from './urls'

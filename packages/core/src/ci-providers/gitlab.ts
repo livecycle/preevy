@@ -11,4 +11,5 @@ export const gitlabActionsCiProvider = (): CiProvider => ({
   pullRequestNumber: () => stringOrUndefinedToNumber(
     process.env.CI_MERGE_REQUEST_IID || process.env.CI_EXTERNAL_PULL_REQUEST_IID
   ),
+  repoUrl: () => process.env.CI_REPOSITORY_URL,
 })

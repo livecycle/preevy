@@ -3,8 +3,7 @@ import { Args, ux } from '@oclif/core'
 import {
   sshKeysStore, connectSshClient as createSshClient,
   COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addBaseComposeTunnelAgentService,
-  findAmbientEnvId, findAmbientProjectName,
-  localComposeClient, wrapWithDockerSocket,
+  findAmbientEnvId, localComposeClient, wrapWithDockerSocket,
 } from '@preevy/core'
 import DriverCommand from '../driver-command'
 import { envIdFlags, composeFlags } from '../common-flags'
@@ -42,7 +41,7 @@ export default class Logs extends DriverCommand<typeof Logs> {
       throw new Error(`No key pair found for alias ${keyAlias}`)
     }
 
-    const projectName = flags.project || await findAmbientProjectName(localComposeClient({ composeFiles: flags.file }))
+    const projectName = (await this.ensureUserModel()).name
     log.debug(`project: ${projectName}`)
     const envId = flags.id || await findAmbientEnvId(projectName)
     log.debug(`envId: ${envId}`)
