@@ -15,13 +15,13 @@ class UnLinkGithubPr extends BaseGithubPrCommand<typeof UnLinkGithubPr> {
   static flags = {}
 
   async run() {
-    const { repo, pullRequest, token } = await this.loadGithubConfig()
+    const { flags } = await this.parse(UnLinkGithubPr)
+    const config = await this.loadGithubConfig(flags)
 
     await upsertPreevyComment({
-      octokit: new Octokit({ auth: token }),
+      octokit: new Octokit({ auth: config.token }),
     }, {
-      repo,
-      pullRequest,
+      ...config,
       envId: await this.getEnvId(),
       content: 'deleted',
     })

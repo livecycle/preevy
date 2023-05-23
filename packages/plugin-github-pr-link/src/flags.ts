@@ -23,7 +23,7 @@ export const flagsDef = {
       return result
     },
   })(),
-  pr: Flags.custom<number>({
+  'pull-request': Flags.custom<number>({
     description: 'GitHub Pull Request number. Will auto-detect if not specified',
     required: false,
     helpGroup: HELP_GROUP,
@@ -35,6 +35,11 @@ export const flagsDef = {
       return result
     },
   })(),
+  'comment-template-file': Flags.string({
+    description: 'Path to nunjucks template file',
+    required: false,
+    helpGroup: HELP_GROUP,
+  }),
 } as const
 
 const flagPrefix = 'github-pr-link' as const
@@ -44,7 +49,7 @@ type PrefixedFlagsDef = {
 }
 
 export const prefixedFlagsDef = {
-  ...mapKeys(flagsDef, k => `${flagPrefix}-${k}`) as PrefixedFlagsDef,
+  ...mapKeys(flagsDef, (_v, k) => `${flagPrefix}-${k}`) as PrefixedFlagsDef,
   [`${flagPrefix}-enabled` as const]: Flags.custom<'auto' | 'no' | 'always'>({
     description: 'Whether to enable posting to the GitHub PR',
     required: false,

@@ -24,13 +24,13 @@ class LinkGithubPr extends BaseGithubPrCommand<typeof LinkGithubPr> {
       '--json',
     ]) as FlatTunnel[]
 
-    const { repo, pullRequest, token } = await this.loadGithubConfig()
+    const { flags } = await this.parse(LinkGithubPr)
+    const config = await this.loadGithubConfig(flags)
 
     await upsertPreevyComment({
-      octokit: new Octokit({ auth: token }),
+      octokit: new Octokit({ auth: config.token }),
     }, {
-      repo,
-      pullRequest,
+      ...config,
       envId: await this.getEnvId(),
       content: { urls },
     })

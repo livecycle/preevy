@@ -34,6 +34,14 @@ const findDefaultFiles = () => {
   return overrideFile ? [defaultFile, overrideFile] : [defaultFile]
 }
 
-export const resolveComposeFiles = (
+const ensureFileReadable = async (path: string) => {
+  await fs.promises.readFile(path)
+  return path
+}
+
+export const resolveComposeFiles = async (
   { userSpecifiedFiles, systemFiles }: ComposeFiles,
-): string[] => [...userSpecifiedFiles.length ? userSpecifiedFiles : findDefaultFiles(), ...systemFiles]
+): Promise<string[]> => [
+  ...userSpecifiedFiles.length ? userSpecifiedFiles : findDefaultFiles(),
+  ...await Promise.all(systemFiles.map(ensureFileReadable)),
+]

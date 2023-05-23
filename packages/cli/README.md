@@ -28,21 +28,21 @@ USAGE
 <!-- usagestop -->
 # Commands
 <!-- commands -->
-* [`preevy down`](#preevy-down)
-* [`preevy help [COMMANDS]`](#preevy-help-commands)
-* [`preevy init [PROFILE-ALIAS]`](#preevy-init-profile-alias)
-* [`preevy logs [SERVICES]`](#preevy-logs-services)
-* [`preevy ls`](#preevy-ls)
-* [`preevy profile create NAME URL`](#preevy-profile-create-name-url)
-* [`preevy profile current`](#preevy-profile-current)
-* [`preevy profile import LOCATION`](#preevy-profile-import-location)
-* [`preevy profile ls`](#preevy-profile-ls)
-* [`preevy profile rm NAME`](#preevy-profile-rm-name)
-* [`preevy profile use NAME`](#preevy-profile-use-name)
-* [`preevy purge`](#preevy-purge)
-* [`preevy up [SERVICE]`](#preevy-up-service)
-* [`preevy urls [SERVICE] [PORT]`](#preevy-urls-service-port)
-* [`preevy version`](#preevy-version)
+- [`preevy down`](#preevy-down)
+- [`preevy help [COMMANDS]`](#preevy-help-commands)
+- [`preevy init [PROFILE-ALIAS]`](#preevy-init-profile-alias)
+- [`preevy logs [SERVICES]`](#preevy-logs-services)
+- [`preevy ls`](#preevy-ls)
+- [`preevy profile create NAME URL`](#preevy-profile-create-name-url)
+- [`preevy profile current`](#preevy-profile-current)
+- [`preevy profile import LOCATION`](#preevy-profile-import-location)
+- [`preevy profile ls`](#preevy-profile-ls)
+- [`preevy profile rm NAME`](#preevy-profile-rm-name)
+- [`preevy profile use NAME`](#preevy-profile-use-name)
+- [`preevy purge`](#preevy-purge)
+- [`preevy up [SERVICE]`](#preevy-up-service)
+- [`preevy urls [SERVICE] [PORT]`](#preevy-urls-service-port)
+- [`preevy version`](#preevy-version)
 
 ## `preevy down`
 

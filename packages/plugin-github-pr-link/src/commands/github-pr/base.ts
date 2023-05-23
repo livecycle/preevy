@@ -2,7 +2,7 @@ import { Command, Flags, Interfaces } from '@oclif/core'
 import { BaseCommand, envIdFlags } from '@preevy/cli-common'
 import { findAmbientEnvId } from '@preevy/core'
 import { ParsedFlags, flagsDef } from '../../flags'
-import { PluginConfig, loadGithubConfig } from '../../config'
+import { PluginConfig, githubConfigFromFlags, loadGithubConfig } from '../../config'
 
 // eslint-disable-next-line no-use-before-define
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof BaseGithubPrCommand['baseFlags'] & T['flags']>
@@ -32,14 +32,8 @@ abstract class BaseGithubPrCommand<T extends typeof Command> extends BaseCommand
     return envId
   }
 
-  protected async loadGithubConfig() {
-    const config = await loadGithubConfig(this.pluginConfig, this.flags as ParsedFlags<typeof flagsDef>)
-
-    if (!config) {
-      throw new Error('No GitHub config provided for plugin - specify env vars, flags or populate the compose file')
-    }
-
-    return config
+  protected async loadGithubConfig(flags: ParsedFlags<typeof flagsDef>) {
+    return loadGithubConfig(this.pluginConfig, await githubConfigFromFlags(flags))
   }
 }
 

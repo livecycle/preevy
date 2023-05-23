@@ -102,7 +102,7 @@ const up = async ({
     }),
   }), {})
 
-  const composeFiles = resolveComposeFiles({
+  const composeFiles = await resolveComposeFiles({
     userSpecifiedFiles: userSpecifiedComposeFiles,
     systemFiles: systemComposeFiles,
   })
