@@ -25,7 +25,7 @@ const findPreevyCommentId = async (
   return undefined
 }
 
-type Status = { urls: FlatTunnel[] } | 'deleted'
+type Content = { urls: FlatTunnel[] } | 'deleted'
 
 const formatPreevyCommentWithUrls = (envId: string, urls: FlatTunnel[]) => `
 ${markdownMarker(envId)}
@@ -43,7 +43,7 @@ ${markdownMarker(envId)}
 The [Preevy](https://preevy.dev) preview environment for this PR has been deleted.
 `
 
-const formatPreevyComment = (envId: string, status: Status) => (
+const formatPreevyComment = (envId: string, status: Content) => (
   status === 'deleted'
     ? formatPreevyCommentDeleted(envId)
     : formatPreevyCommentWithUrls(envId, status.urls)
@@ -51,18 +51,18 @@ const formatPreevyComment = (envId: string, status: Status) => (
 
 export const upsertPreevyComment = async (
   { octokit }: { octokit: Octokit },
-  { repo: { owner, repo }, envId, pullRequest, status }: {
+  { repo: { owner, repo }, envId, pullRequest, content }: {
     repo: { owner: string; repo: string }
     envId: string
     pullRequest: number
-    status: Status
+    content: Content
   },
 ) => {
   const args = {
     issue_number: pullRequest,
     owner,
     repo,
-    body: formatPreevyComment(envId, status),
+    body: formatPreevyComment(envId, content),
   }
 
   const commentId = await findPreevyCommentId({ octokit }, { repo: { owner, repo }, issue: pullRequest, envId })

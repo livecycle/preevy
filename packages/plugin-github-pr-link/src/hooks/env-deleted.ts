@@ -24,6 +24,6 @@ export const envDeleted = ({ argv, pluginConfig, oclifConfig }: {
     repo,
     pullRequest,
     envId,
-    status: 'deleted',
+    content: 'deleted',
   })
 }

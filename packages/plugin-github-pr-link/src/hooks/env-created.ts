@@ -27,7 +27,7 @@ export const envCreated = ({ argv, pluginConfig, oclifConfig }: {
     repo,
     pullRequest,
     envId,
-    status: { urls },
+    content: { urls },
   })
 
   return { urls }
