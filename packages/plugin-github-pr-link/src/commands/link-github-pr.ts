@@ -1,5 +1,5 @@
-import { Command, Interfaces } from '@oclif/core'
-import { BaseCommand, composeFlags, envIdFlags } from '@preevy/cli-common'
+import { Command, Flags, Interfaces } from '@oclif/core'
+import { BaseCommand, envIdFlags } from '@preevy/cli-common'
 import { Octokit } from 'octokit'
 import { findAmbientEnvId, FlatTunnel } from '@preevy/core'
 import { flagsDef, ParsedFlags } from '../flags'
@@ -16,7 +16,6 @@ class LinkGithubPr extends BaseCommand<typeof LinkGithubPr> {
   static description = 'Link a GitHub Pull Request to an existing environment'
 
   static flags = {
-    ...composeFlags,
     ...envIdFlags,
     ...flagsDef,
   }

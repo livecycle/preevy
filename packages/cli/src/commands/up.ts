@@ -8,7 +8,7 @@ import {
 import { asyncReduce } from 'iter-tools-es'
 import MachineCreationDriverCommand from '../machine-creation-driver-command'
 import { carefulBooleanPrompt } from '../prompt'
-import { envIdFlags, composeFlags } from '../common-flags'
+import { envIdFlags } from '../common-flags'
 
 const confirmHostFingerprint = async (
   { hostKeyFingerprint: hostKeySignature, hostname, port }: Parameters<HostKeySignatureConfirmer>[0],
@@ -28,7 +28,6 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
   static flags = {
     ...envIdFlags,
-    ...composeFlags,
     'tunnel-url': Flags.string({
       description: 'Tunnel url, specify ssh://hostname[:port] or ssh+tls://hostname[:port]',
       char: 't',
@@ -112,8 +111,9 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       userModel,
       userSpecifiedProjectName: flags.project,
       userSpecifiedEnvId: flags.id,
+      userSpecifiedComposeFiles: flags.file,
+      systemComposeFiles: flags['system-compose-file'],
       tunnelOpts,
-      composeFiles: flags.file,
       log: this.logger,
       dataDir: this.config.dataDir,
       sshKey: keyPair,

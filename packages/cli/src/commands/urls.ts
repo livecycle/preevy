@@ -1,7 +1,7 @@
 import { Args, ux } from '@oclif/core'
 import { commands, findAmbientEnvId } from '@preevy/core'
 import DriverCommand from '../driver-command'
-import { envIdFlags, composeFlags } from '../common-flags'
+import { envIdFlags } from '../common-flags'
 
 // eslint-disable-next-line no-use-before-define
 export default class Urls extends DriverCommand<typeof Urls> {
@@ -9,7 +9,6 @@ export default class Urls extends DriverCommand<typeof Urls> {
 
   static flags = {
     ...envIdFlags,
-    ...composeFlags,
     ...ux.table.flags(),
   }
 

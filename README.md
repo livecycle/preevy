@@ -140,13 +140,15 @@ When using the default `*.livecycle.run` domain, environments are publicly acces
 
 ## Configuration files
 
-For most purposes, Preevy extracts its runtime settings from the [Compose file](https://docs.docker.com/compose/compose-file/03-compose-file/), and no additional configuration is required.
+Preevy extracts its runtime settings from the [Compose file](https://docs.docker.com/compose/compose-file/03-compose-file/).
 
-The Compose file is loaded using the `docker compose` command and thus follows the same [rules](https://docs.docker.com/compose/reference/#use--f-to-specify-name-and-path-of-one-or-more-compose-files) regarding default loading order. Just like with `docker compose`, you can use the `--file | -f` option with most of the commands to specify path(s) for the Compose file.
+Just like with `docker compose`, you can use the global `--file | -f` option to specify path(s) for the Compose file. If not specified, the [default loading order](https://docs.docker.com/compose/reference/#use--f-to-specify-name-and-path-of-one-or-more-compose-files) is used. Multiple files are [supported](https://docs.docker.com/compose/extends/#multiple-compose-files) just like with `docker compose`.
+
+An additional option `--system-compose-file` can be used to specify paths to Compose files without overriding the default loading order. This is useful for scripts invoking the Preevy CLI (e.g, a GitHub Action), to accept user-provided compose files (including the default loading order) while ensuring a specific file is always loaded.
 
 ### Preevy-specific configuration
 
-Additional configuration, if needed, can be specified by adding a `x-preevy` top-level element to the Compose file(s). Currently only the `plugins` section is supported:
+Additional Preevy-specific configuration, if needed, can be specified by adding a `x-preevy` top-level element to the Compose file(s). Currently only the `plugins` section is supported:
 
 ```yaml
 services:
@@ -159,15 +161,6 @@ x-preevy:
 <!--lint disable double-link-->
 See [Plugins](#plugins) below.
 <!--lint enable double-link-->
-
-In addition to the Compose file, a preevy-specific configuration file can be specified by the `--config | -c` option. The file can be in YAML or JSON format, and its schema corresponds to the `x-preevy` top-level element:
-
-```yaml
-plugins:
-  ...
-```
-
-If the `--config | -c` option is not specified, Preevy attempts to load `preevy.yaml`, `preevy.yml` and `preevy.json`, in this order, from the current working directory.
 
 ## Plugins
 
