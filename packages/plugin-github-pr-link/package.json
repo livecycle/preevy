@@ -1,6 +1,6 @@
 {
   "name": "@preevy/plugin-github-pr-link",
-  "version": "0.0.29-alpha.0",
+  "version": "0.0.30-alpha.0",
   "description": "",
   "main": "dist/index.js",
   "files": [
@@ -8,9 +8,9 @@
   ],
   "license": "Apache-2.0",
   "dependencies": {
-    "@preevy/cli-common": "0.0.29-alpha.0",
-    "@preevy/core": "0.0.29-alpha.0",
     "@oclif/core": "^2",
+    "@preevy/cli-common": "0.0.30-alpha.0",
+    "@preevy/core": "0.0.30-alpha.0",
     "lodash": "^4.17.21",
     "octokit": "^2.0.14"
   },

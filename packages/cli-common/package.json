@@ -1,6 +1,6 @@
 {
   "name": "@preevy/cli-common",
-  "version": "0.0.29-alpha.0",
+  "version": "0.0.30-alpha.0",
   "description": "Common library for the Preevy CLI and plugins",
   "main": "dist/index.js",
   "files": [
@@ -8,8 +8,8 @@
   ],
   "license": "Apache-2.0",
   "dependencies": {
-    "@preevy/core": "0.0.29-alpha.0",
     "@oclif/core": "^2",
+    "@preevy/core": "0.0.30-alpha.0",
     "chalk": "^4.1.2",
     "iter-tools-es": "^7.5.1",
     "lodash": "^4.17.21"
