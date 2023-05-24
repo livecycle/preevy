@@ -1,7 +1,20 @@
 import { Octokit } from 'octokit'
 import { FlatTunnel } from '@preevy/core'
+import nunjacks from 'nunjucks'
 
 const markdownMarker = (envId: string) => `<!-- preevy-env-id: ${envId} -->`
+
+export const defaultCommentTemplate = `{% if urls %}[Preevy](https://preevy.dev) has created a preview environment for this PR.
+
+Here's how to access it:
+
+| Service | Port | URL |
+|---------|------|-----|
+{% for url in urls %}| {{ url.service }} | {{ url.port }} | {{ url.url }} |
+{% endfor %}
+{% else %}The [Preevy](https://preevy.dev) preview environment for this PR has been deleted.
+{% endif %}
+`
 
 const findPreevyCommentId = async (
   { octokit }: { octokit: Octokit },
@@ -25,44 +38,28 @@ const findPreevyCommentId = async (
   return undefined
 }
 
-type Status = { urls: FlatTunnel[] } | 'deleted'
+export type Content = { urls: FlatTunnel[] } | 'deleted'
 
-const formatPreevyCommentWithUrls = (envId: string, urls: FlatTunnel[]) => `
-${markdownMarker(envId)}
-[Preevy](https://preevy.dev) has created a preview environment for this PR.
-
-Here's how to access it:
-
-| Service | Port | URL |
-|---------|------|-----|
-${urls.map(({ service, port, url }) => `| ${service} | ${port} | ${url} |`).join('\n')}
-`
-
-const formatPreevyCommentDeleted = (envId: string) => `
-${markdownMarker(envId)}
-The [Preevy](https://preevy.dev) preview environment for this PR has been deleted.
-`
-
-const formatPreevyComment = (envId: string, status: Status) => (
-  status === 'deleted'
-    ? formatPreevyCommentDeleted(envId)
-    : formatPreevyCommentWithUrls(envId, status.urls)
-)
+const formatPreevyComment = (envId: string, content: Content, template: string) => [
+  markdownMarker(envId),
+  nunjacks.renderString(template, { urls: content === 'deleted' ? undefined : content.urls }),
+].join('\n')
 
 export const upsertPreevyComment = async (
   { octokit }: { octokit: Octokit },
-  { repo: { owner, repo }, envId, pullRequest, status }: {
+  { repo: { owner, repo }, envId, pullRequest, content, commentTemplate }: {
     repo: { owner: string; repo: string }
     envId: string
     pullRequest: number
-    status: Status
+    commentTemplate: string
+    content: Content
   },
 ) => {
   const args = {
     issue_number: pullRequest,
     owner,
     repo,
-    body: formatPreevyComment(envId, status),
+    body: formatPreevyComment(envId, content, commentTemplate),
   }
 
   const commentId = await findPreevyCommentId({ octokit }, { repo: { owner, repo }, issue: pullRequest, envId })
