@@ -84,11 +84,13 @@ export const localComposeClient = (
     return [null, null, null]
   }
 
+  const fileArgs = composeFileArgs(composeFiles, projectName)
+
   const spawnComposeArgs = (...[args, opts]: ParametersExceptFirst<typeof spawn>): Parameters<typeof spawn> => [
     'docker',
     [
       'compose',
-      ...composeFileArgs(composeFiles, projectName),
+      ...fileArgs,
       ...args,
     ],
     {

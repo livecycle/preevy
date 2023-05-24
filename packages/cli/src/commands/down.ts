@@ -1,7 +1,7 @@
 import { Flags } from '@oclif/core'
 import { findAmbientEnvId, withSpinner } from '@preevy/core'
 import DriverCommand from '../driver-command'
-import { envIdFlags, composeFlags } from '../common-flags'
+import { envIdFlags } from '../common-flags'
 
 // eslint-disable-next-line no-use-before-define
 export default class Down extends DriverCommand<typeof Down> {
@@ -9,7 +9,6 @@ export default class Down extends DriverCommand<typeof Down> {
 
   static flags = {
     ...envIdFlags,
-    ...composeFlags,
     force: Flags.boolean({
       description: 'Do not error if the environment is not found',
       default: false,

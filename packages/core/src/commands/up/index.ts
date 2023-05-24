@@ -15,6 +15,7 @@ import { Machine, MachineCreationDriver, MachineDriver } from '../../driver'
 import { REMOTE_DIR_BASE, remoteProjectDir } from '../../remote-files'
 import { Logger } from '../../log'
 import { Tunnel, tunnelUrl } from '../../tunneling'
+import { resolveComposeFiles } from '../../compose'
 
 const createCopiedFileInDataDir = (
   { projectLocalDataDir, filesToCopy, remoteDir } : {
@@ -56,8 +57,9 @@ const up = async ({
   userSpecifiedProjectName,
   userSpecifiedEnvId,
   userSpecifiedServices,
+  userSpecifiedComposeFiles,
+  systemComposeFiles,
   log,
-  composeFiles: userComposeFiles,
   dataDir,
   sshKey,
   allowedSshHostKeys: hostKey,
@@ -73,15 +75,14 @@ const up = async ({
   userSpecifiedProjectName: string | undefined
   userSpecifiedEnvId: string | undefined
   userSpecifiedServices: string[]
+  userSpecifiedComposeFiles: string[]
+  systemComposeFiles: string[]
   log: Logger
-  composeFiles: string[]
   dataDir: string
   sshKey: SSHKeyConfig
   sshTunnelPrivateKey: string
   allowedSshHostKeys: Buffer
 }): Promise<{ machine: Machine; tunnels: Tunnel[]; envId: string }> => {
-  log.debug('Normalizing compose files')
-
   const projectName = userSpecifiedProjectName ?? userModel.name
   const remoteDir = remoteProjectDir(projectName)
 
@@ -101,10 +102,17 @@ const up = async ({
     }),
   }), {})
 
+  const composeFiles = resolveComposeFiles({
+    userSpecifiedFiles: userSpecifiedComposeFiles,
+    systemFiles: systemComposeFiles,
+  })
+
+  log.debug(`Using compose files: ${composeFiles.join(', ')}`)
+
   // Now that we have the generated variables, we can create a new client and inject
   // them into it, to create the actual compose configurations
   const composeClientWithInjectedArgs = localComposeClient(
-    { composeFiles: userComposeFiles, env: composeEnv, projectName: userSpecifiedProjectName }
+    { composeFiles, env: composeEnv, projectName: userSpecifiedProjectName }
   )
 
   const { model: fixedModel, filesToCopy } = await fixModelForRemote(

@@ -1,9 +1,8 @@
 import { Hook as OclifHook, Command } from '@oclif/core'
 import { Parser } from '@oclif/core/lib/parser/parse'
 import { Config, Topic } from '@oclif/core/lib/interfaces'
-import { localComposeClient, config as coreConfig, ComposeModel } from '@preevy/core'
-import loadConfig = coreConfig.loadConfig
-import { composeFlags, configFlags } from '../../lib/flags'
+import { localComposeClient, ComposeModel, resolveComposeFiles } from '@preevy/core'
+import { composeFlags } from '../../lib/flags'
 import { addPluginFlags, loadPlugins, hooksFromPlugins, addPluginCommands } from '../../lib/plugins'
 
 type InternalConfig = Config & {
@@ -12,7 +11,7 @@ type InternalConfig = Config & {
 
 export const initHook: OclifHook<'init'> = async function hook({ config, id: _id, argv }) {
   const { flags } = await new Parser({
-    flags: { ...composeFlags, ...configFlags },
+    flags: { ...composeFlags },
     strict: false,
     args: {},
     context: undefined,
@@ -20,12 +19,12 @@ export const initHook: OclifHook<'init'> = async function hook({ config, id: _id
   }).parse()
 
   const userModelOrError = await localComposeClient({
-    composeFiles: flags.file,
+    composeFiles: resolveComposeFiles({ userSpecifiedFiles: flags.file, systemFiles: flags['system-compose-file'] }),
     projectName: flags.project,
   }).getModelOrError()
 
   const userModel = userModelOrError instanceof Error ? {} as ComposeModel : userModelOrError
-  const preevyConfig = await loadConfig(flags.config || [], userModel)
+  const preevyConfig = userModel['x-preevy'] ?? {}
   const loadedPlugins = await loadPlugins(preevyConfig, { userModel, oclifConfig: config, argv })
   const commands = addPluginFlags(addPluginCommands(config.commands, loadedPlugins), loadedPlugins);
 

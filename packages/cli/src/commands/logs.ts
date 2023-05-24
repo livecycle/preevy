@@ -6,7 +6,7 @@ import {
   findAmbientEnvId, localComposeClient, wrapWithDockerSocket,
 } from '@preevy/core'
 import DriverCommand from '../driver-command'
-import { envIdFlags, composeFlags } from '../common-flags'
+import { envIdFlags } from '../common-flags'
 
 // eslint-disable-next-line no-use-before-define
 export default class Logs extends DriverCommand<typeof Logs> {
@@ -14,7 +14,6 @@ export default class Logs extends DriverCommand<typeof Logs> {
 
   static flags = {
     ...envIdFlags,
-    ...composeFlags,
     ...ux.table.flags(),
   }
 
@@ -46,7 +45,7 @@ export default class Logs extends DriverCommand<typeof Logs> {
     const envId = flags.id || await findAmbientEnvId(projectName)
     log.debug(`envId: ${envId}`)
 
-    const model = await localComposeClient({ composeFiles: flags.file, projectName }).getModel()
+    const model = await this.ensureUserModel()
 
     // exclude docker proxy service unless explicitly specified
     const modelServices = Object.keys(model.services ?? {})

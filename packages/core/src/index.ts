@@ -4,7 +4,7 @@ export { Machine, PartialMachine, MachineDriver, MachineCreationDriver, MachineC
 export { profileStore, Profile, ProfileStore } from './profile'
 export { telemetryEmitter, registerEmitter, wireProcessExit, createTelemetryEmitter } from './telemetry'
 export { fsTypeFromUrl, Store, VirtualFS, localFsFromUrl } from './store'
-export { localComposeClient, ComposeModel } from './compose'
+export { localComposeClient, ComposeModel, resolveComposeFiles } from './compose'
 export { withSpinner } from './spinner'
 export { findAmbientEnvId } from './env-id'
 export { sshKeysStore } from './state'
