@@ -39,7 +39,7 @@ export function proxyHandlers({
   const proxy = httpProxy.createProxy({})
   const resolveTargetEnv = async (req: IncomingMessage)=>{
     const {url} = req
-    const host = req.headers['host']
+    const host = req.headers['host']?.split(':')?.[0]
     const targetHost = host?.split('.', 1)[0]
     const env = await envStore.get(targetHost as string)
     if (!env) {
@@ -75,7 +75,7 @@ export function proxyHandlers({
           return unauthorized(res)
         }
       }
-      
+
       logger.debug('proxying to %j', { target: env.target, url: req.url })
       requestsCounter.inc({clientId: env.clientId})
 
