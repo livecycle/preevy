@@ -25,4 +25,7 @@ jobs:
         set -x
 
         yarn lerna run prepack
-        yarn lerna run -- npm-publish --token ${{ secrets.NPM_TOKEN }} --access public ./package.json
+
+        for packageDir in $(ls packages); do
+          npm-publish --token ${{ secrets.NPM_TOKEN }} --access public packages/${packageDir}/package.json
+        done
