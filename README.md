@@ -73,7 +73,7 @@ You can read more about the story and philosophy behind Preevy [here](https://pr
 To start using the Preevy CLI you will need:
 
 - A local Cloud provider configuration context:
-  - In AWS, it could be by using `aws login` or `aws configure`
+  - In AWS, it could be by using `aws configure`
   - In GCP, it could be by using `gcloud auth application-default login`
 - A Docker-Compose application (examples can be found [here](https://github.com/docker/awesome-compose))
 
