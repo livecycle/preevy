@@ -22,7 +22,6 @@ export { BundleId, BUNDLE_IDS, bundleIdFromString as bundleId }
 const machineFromInstance = (
   instance: Instance,
 ): Machine & { envId: string } => ({
-  privateIPAddress: extractDefined(instance, 'privateIpAddress'),
   publicIPAddress: extractDefined(instance, 'publicIpAddress'),
   sshKeyName: extractDefined(instance, 'sshKeyName'),
   sshUsername: 'ubuntu',

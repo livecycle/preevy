@@ -28,7 +28,6 @@ const DEFAULT_MACHINE_TYPE = 'e2-small'
 const machineFromInstance = (
   instance: Instance,
 ): Machine & { envId: string } => ({
-  privateIPAddress: instance.networkInterfaces?.[0].networkIP as string,
   publicIPAddress: instance.networkInterfaces?.[0].accessConfigs?.[0].natIP as string,
   sshKeyName: SSH_KEYPAIR_ALIAS,
   sshUsername: SSH_USERNAME,
