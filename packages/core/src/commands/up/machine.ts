@@ -1,7 +1,6 @@
 import { EOL } from 'os'
 import retry from 'p-retry'
-import { connectSshClient } from '../../ssh/client'
-import { SSHKeyConfig } from '../../ssh/keypair'
+import { connectSshClient, SSHKeyConfig } from '../../ssh'
 import { withSpinner } from '../../spinner'
 import { MachineCreationDriver, SpecDiffItem, MachineDriver } from '../../driver'
 import { telemetryEmitter } from '../../telemetry'
@@ -100,12 +99,12 @@ export const ensureCustomizedMachine = async ({
       log.debug('Executing machine scripts')
       for (const script of machineDriver.customizationScripts ?? []) {
         // eslint-disable-next-line no-await-in-loop
-        await sshClient.execScript(script)
+        await sshClient.execScript(script, {})
       }
 
-      // ensure docker is accessible
+      log.info('Ensuring docker is accessible')
       await retry(
-        () => sshClient.execCommand('docker run hello-world', {}),
+        () => sshClient.execCommand('docker run hello-world', { }),
         {
           minTimeout: 2000,
           maxTimeout: 5000,

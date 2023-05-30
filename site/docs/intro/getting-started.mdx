@@ -46,18 +46,16 @@ Preevy is designed to be easy to use, with an API smiliar to [docker-compose](ht
   ```
 
 2. Choose the cloud provider you're going to use and configure credentials:
-   - For AWS: use `aws login` or `aws configure`. See [AWS lightsail credentials configurations](/drivers/aws-lightsail#credentials-configuration).
+   - For AWS: use `aws configure`. See [AWS lightsail credentials configurations](/drivers/aws-lightsail#credentials-configuration).
    - For GCP: use `gcloud auth application-default login`. See [GCP credentials configuration](/drivers/gcp-gce#credentials-configuration)
 
-  - In AWS, it could be by using `aws login` or `aws configure`
-  - In GCP, it could be by using 
 3. Set up a profile
 
   ```bash
   preevy init
   ```
 
-4. From the same directory you run `docker comopse up` run:
+4. From the same directory you run `docker compose up` run:
 
   ```bash
   preevy up

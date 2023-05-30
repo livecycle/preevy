@@ -1,10 +1,12 @@
 import { map, mapKeys } from 'lodash'
 import { lightsail } from '@preevy/driver-lightsail'
 import { gce } from '@preevy/driver-gce'
+import { azure } from '@preevy/driver-azure'
 
 export const machineDrivers = {
   lightsail,
   gce,
+  azure,
 } as const
 
 type MachineDrivers = typeof machineDrivers
@@ -49,11 +51,13 @@ export const machineCreationDriverFlags = <Name extends DriverName>(driverName: 
 export const flagsForAllDrivers = {
   ...driverFlags('lightsail'),
   ...driverFlags('gce'),
+  ...driverFlags('azure'),
 }
 
 export const machineCreationflagsForAllDrivers = {
   ...machineCreationDriverFlags('lightsail'),
   ...machineCreationDriverFlags('gce'),
+  ...machineCreationDriverFlags('azure'),
 }
 
 export const removeDriverPrefix = <T extends {}>(

@@ -1,4 +1,5 @@
 import { FlagProps } from '@oclif/core/lib/interfaces/parser'
+import { Topic } from '@oclif/core/lib/interfaces'
 import { Command } from '@oclif/core'
 import { ComposeModel, config as coreConfig } from '@preevy/core'
 import { PluginInitContext } from './context'
@@ -10,6 +11,7 @@ export type CommandFlags = { command: string; flags: Flags }
 export type InitResults = {
   flags?: CommandFlags[]
   commands?: Command.Class[]
+  topics?: Topic[]
   hooks?: Partial<HookFuncs>
 }
 

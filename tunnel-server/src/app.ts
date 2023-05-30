@@ -4,8 +4,7 @@ import http from 'http'
 import internal from 'stream'
 import {Logger} from 'pino'
 
-export const app = ({ sshPublicKey,isProxyRequest, proxyHandlers, logger }: { 
-  sshPublicKey: string
+export const app = ({ isProxyRequest, proxyHandlers, logger }: {
   isProxyRequest: (req: http.IncomingMessage) => boolean
   logger: Logger
   proxyHandlers: { wsHandler: (req: http.IncomingMessage, socket: internal.Duplex, head: Buffer) => void, handler: (req: http.IncomingMessage, res: http.ServerResponse) => void }
@@ -31,11 +30,5 @@ export const app = ({ sshPublicKey,isProxyRequest, proxyHandlers, logger }: {
     },
     logger,
   })
-    
     .register(fastifyRequestContext)
     .get('/healthz', { logLevel: 'warn' }, async () => 'OK')
-    .get('/ssh-public-key', async () => sshPublicKey)
-
-  
-    
-    

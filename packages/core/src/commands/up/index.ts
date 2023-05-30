@@ -3,10 +3,8 @@ import path from 'path'
 import { rimraf } from 'rimraf'
 import yaml from 'yaml'
 import { BaseUrl, formatPublicKey } from '@preevy/common'
-import { FileToCopy } from '../../ssh/client'
-import { SSHKeyConfig } from '../../ssh/keypair'
-import { ComposeModel, fixModelForRemote } from '../../compose/model'
-import { TunnelOpts } from '../../ssh/url'
+import { FileToCopy, SSHKeyConfig, TunnelOpts } from '../../ssh'
+import { ComposeModel, fixModelForRemote, getExposedTcpServices, localComposeClient } from '../../compose'
 import { ensureCustomizedMachine } from './machine'
 import { wrapWithDockerSocket } from '../../docker'
 import { findAmbientEnvId } from '../../env-id'
@@ -16,8 +14,8 @@ import { withSpinner } from '../../spinner'
 import { Machine, MachineCreationDriver, MachineDriver } from '../../driver'
 import { REMOTE_DIR_BASE, remoteProjectDir } from '../../remote-files'
 import { Logger } from '../../log'
-import { getExposedTcpServices, localComposeClient } from '../../compose/client'
 import { Tunnel, tunnelUrl } from '../../tunneling'
+import { resolveComposeFiles } from '../../compose'
 
 const createCopiedFileInDataDir = (
   { projectLocalDataDir, filesToCopy, remoteDir } : {
@@ -59,8 +57,9 @@ const up = async ({
   userSpecifiedProjectName,
   userSpecifiedEnvId,
   userSpecifiedServices,
+  userSpecifiedComposeFiles,
+  systemComposeFiles,
   log,
-  composeFiles: userComposeFiles,
   dataDir,
   sshKey,
   allowedSshHostKeys: hostKey,
@@ -76,15 +75,14 @@ const up = async ({
   userSpecifiedProjectName: string | undefined
   userSpecifiedEnvId: string | undefined
   userSpecifiedServices: string[]
+  userSpecifiedComposeFiles: string[]
+  systemComposeFiles: string[]
   log: Logger
-  composeFiles: string[]
   dataDir: string
   sshKey: SSHKeyConfig
   sshTunnelPrivateKey: string
   allowedSshHostKeys: Buffer
 }): Promise<{ machine: Machine; tunnels: Tunnel[]; envId: string }> => {
-  log.debug('Normalizing compose files')
-
   const projectName = userSpecifiedProjectName ?? userModel.name
   const remoteDir = remoteProjectDir(projectName)
 
@@ -104,10 +102,17 @@ const up = async ({
     }),
   }), {})
 
+  const composeFiles = await resolveComposeFiles({
+    userSpecifiedFiles: userSpecifiedComposeFiles,
+    systemFiles: systemComposeFiles,
+  })
+
+  log.debug(`Using compose files: ${composeFiles.join(', ')}`)
+
   // Now that we have the generated variables, we can create a new client and inject
   // them into it, to create the actual compose configurations
   const composeClientWithInjectedArgs = localComposeClient(
-    { composeFiles: userComposeFiles, env: composeEnv, projectName: userSpecifiedProjectName }
+    { composeFiles, env: composeEnv, projectName: userSpecifiedProjectName }
   )
 
   const { model: fixedModel, filesToCopy } = await fixModelForRemote(

@@ -10,11 +10,11 @@ import { appLoggerFromEnv } from './src/logging'
 import pino from 'pino'
 import { tunnelsGauge } from './src/metrics'
 import { runMetricsServer } from './src/metrics'
-import { numberFromEnv, requiredEnv } from './src/utils'
+import { numberFromEnv, requiredEnv } from './src/env'
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
-const {sshPrivateKey, sshPublicKey} = await getSSHKeys({
+const { sshPrivateKey } = await getSSHKeys({
   defaultKeyLocation: path.join(__dirname, "./ssh/ssh_host_key")
 })
 
@@ -34,7 +34,11 @@ type BaseUrl = typeof BASE_URL
 const envStore = inMemoryPreviewEnvStore()
 
 const logger = pino(appLoggerFromEnv())
-const app = createApp({ sshPublicKey, isProxyRequest: isProxyRequest(BASE_URL), proxyHandlers: proxyHandlers({envStore, logger}), logger })
+const app = createApp({
+  isProxyRequest: isProxyRequest(BASE_URL.hostname),
+  proxyHandlers: proxyHandlers({envStore, logger}),
+  logger,
+})
 const sshLogger = logger.child({ name: 'ssh_server' })
 
 const tunnelName = (clientId: string, remotePath: string) => {

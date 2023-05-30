@@ -24,7 +24,8 @@ jobs:
         set -eou pipefail
         set -x
 
+        yarn lerna run prepack
+
         for packageDir in $(ls packages); do
-          yarn --cwd packages/${packageDir} prepack
           npm-publish --token ${{ secrets.NPM_TOKEN }} --access public packages/${packageDir}/package.json
         done

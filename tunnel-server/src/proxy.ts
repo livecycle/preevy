@@ -5,13 +5,9 @@ import internal from 'stream'
 import type { Logger } from 'pino'
 import { requestsCounter } from './metrics'
 
-export const isProxyRequest = (baseUrl: {hostname:string, port:string}) => (req: IncomingMessage)=> {
-  const host = req.headers["host"]
-  if (!host) return false
-  const {hostname: reqHostname, port: reqPort} = new URL(`http://${host}`)
-  if (reqPort !== baseUrl.port) return false
-  return reqHostname.endsWith(`.${baseUrl.hostname}`) && reqHostname !== baseUrl.hostname
-}
+export const isProxyRequest = (
+  hostname: string,
+) => (req: IncomingMessage)=> Boolean(req.headers.host?.split(':')?.[0]?.endsWith(`.${hostname}`))
 
 function asyncHandler<TArgs extends unknown[]>(fn: (...args: TArgs) => Promise<void>, onError: (error: unknown, ...args: TArgs)=> void ) {
   return async (...args: TArgs) => {
@@ -39,13 +35,12 @@ export function proxyHandlers({
   const proxy = httpProxy.createProxy({})
   const resolveTargetEnv = async (req: IncomingMessage)=>{
     const {url} = req
-    const host = req.headers['host']
+    const host = req.headers['host']?.split(':')?.[0]
     const targetHost = host?.split('.', 1)[0]
     const env = await envStore.get(targetHost as string)
     if (!env) {
       logger.warn('no env for %j', { targetHost, url })
-      logger.warn('no host header in request')
-      return;
+      return
     }
     return env
   }
@@ -75,7 +70,7 @@ export function proxyHandlers({
           return unauthorized(res)
         }
       }
-      
+
       logger.debug('proxying to %j', { target: env.target, url: req.url })
       requestsCounter.inc({clientId: env.clientId})
 

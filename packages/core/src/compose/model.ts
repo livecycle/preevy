@@ -4,8 +4,8 @@ import { mapValues } from 'lodash'
 import path from 'path'
 import { asyncMapValues } from '../async'
 import { statOrUndefined } from '../files'
-import { FileToCopy } from '../ssh/client'
-import { PreevyConfig } from '../config/model'
+import { FileToCopy } from '../ssh'
+import { PreevyConfig } from '../config'
 
 export type ComposeSecretOrConfig = {
   name: string

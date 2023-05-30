@@ -3,6 +3,7 @@
   "version": "0.0.30",
   "description": "Google Compute Engine driver for Preevy",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
     "dist"
   ],

@@ -63,6 +63,7 @@ export default class Init extends BaseCommand {
             choices: [
               { value: 'lightsail', name: 'AWS Lightsail' },
               { value: 'gce', name: 'Google Compute Engine' },
+              { value: 'azure', name: 'Microsoft Azure Virtual Machines' },
             ],
           }])
 

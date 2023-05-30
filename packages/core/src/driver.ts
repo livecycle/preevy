@@ -1,14 +1,18 @@
-import { Profile } from './profile/profile'
-import { SSHKeyConfig } from './ssh/keypair'
+import { Profile } from './profile'
+import { SSHKeyConfig } from './ssh'
+
+export type PartialMachine = {
+  providerId: string
+  error?: string
+}
 
 export type Machine = {
-  providerId: string
   version: string
   publicIPAddress: string
   privateIPAddress: string
   sshKeyName: string
   sshUsername: string
-}
+} & PartialMachine
 
 export type SpecDiffItem = {
   name: string
@@ -26,9 +30,8 @@ export type MachineDriver = {
 
   createKeyPair: () => Promise<SSHKeyConfig>
 
-  listMachines: () => AsyncIterableIterator<Machine & { envId: string }>
+  listMachines: () => AsyncIterableIterator<(Machine|PartialMachine) & { envId: string }>
   listSnapshots: () => AsyncIterableIterator<{ providerId: string }>
-
   removeMachine: (driverMachineId: string, wait: boolean) => Promise<void>
   removeSnapshot: (providerId: string) => Promise<void>
   removeKeyPair: (alias: string) => Promise<void>

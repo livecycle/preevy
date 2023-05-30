@@ -6,7 +6,6 @@ const envIdFromBranch = (branch: string) => branch.replace(/[^a-zA-Z0-9]/g, '')
 export class AmbientEnvIdNotFoundError extends Error {
   constructor() {
     super('Cannot find an ambient environment ID')
-    this.name = 'AmbiendEnvIdNotFoundError'
   }
 }
 
