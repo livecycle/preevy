@@ -98,7 +98,7 @@ export const sshServer = ({
 
         if ((name as string) == 'cancel-streamlocal-forward@openssh.com') {
           const res = getRequestedSocketPath(info as unknown as SocketBindInfo)
-          if(res.success === false){
+          if(!res.success){
             log.error('invalid socket path %j', res.error)
             reject?.()
             return
