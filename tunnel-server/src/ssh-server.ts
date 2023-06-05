@@ -4,23 +4,34 @@ import net from 'net'
 import path from 'path'
 import ssh2, { ParsedKey, SocketBindInfo } from 'ssh2'
 import { inspect } from 'util'
+import * as z from 'zod'
 
 const idFromPublicSsh = (key: Buffer) =>
   crypto.createHash('sha1').update(key).digest('base64url').replace(/[_-]/g, '').slice(0, 8).toLowerCase()
 
-const getRequestedSocketPath = (info: ssh2.SocketBindInfo) => {
-  const [path, access] = info.socketPath.split('#')
-  if (access === 'private'){
-    return {
-      path,
-      access: 'private' as const
-    }
+const schema = z.object({
+  path: z.string(),
+  params: z.object({ access: z.enum(['public', 'private']).default('public') }).required(),
+})
+
+export const parseRequestedPath = (requestPath: string) => {
+  const [path, params] = requestPath.split('#')
+
+  if (!params) {
+    return schema.safeParse({ path, params: {} })
   }
-  return {
-    path,
-    access: 'public' as const
-  }
+  const paramsArray = params.split(';')
+  const paramsObject = paramsArray.reduce(
+    (acc, param) => {
+      const [key, value] = param.split('=')
+      return { ...acc, [key]: value }
+    },
+    {} as Record<string, string>
+  )
+  return schema.safeParse({ path, params: paramsObject })
 }
+  
+const getRequestedSocketPath = (info: ssh2.SocketBindInfo) => parseRequestedPath(info.socketPath)
 
 export const sshServer = ({
   log,
@@ -86,12 +97,18 @@ export const sshServer = ({
         }
 
         if ((name as string) == 'cancel-streamlocal-forward@openssh.com') {
-          const requestedSocketPath = getRequestedSocketPath(info as unknown as SocketBindInfo).path
-          if (!tunnels.delete(requestedSocketPath)) {
-            log.error('cancel-streamlocal-forward@openssh.com: socketPath %j not found, rejecting', requestedSocketPath)
+          const res = getRequestedSocketPath(info as unknown as SocketBindInfo)
+          if(!res.success){
+            log.error('invalid socket path %j', res.error)
             reject?.()
             return
           }
+          const requestedSocketPath = res.data.path
+          if (!tunnels.delete(requestedSocketPath)) {
+            log.error('cancel-streamlocal-forward@openssh.com: socketPath %j not found, rejecting', (info as unknown as SocketBindInfo).socketPath)
+            reject?.()
+          }
+          return
         }
 
         if ((name as string) !== 'streamlocal-forward@openssh.com') {
@@ -100,14 +117,20 @@ export const sshServer = ({
           return
         }
 
-        const {path: requestedSocketPath, access} = getRequestedSocketPath(info as unknown as SocketBindInfo)
+        const res = getRequestedSocketPath(info as unknown as SocketBindInfo)
+        if(res.success === false){
+          log.error('invalid socket path %j', res.error)
+          reject?.()
+          return
+        }
+
+        const {path: requestedSocketPath, params} = res.data
 
         if (tunnels.has(requestedSocketPath)) {
           log.error('duplicate socket request %j', requestedSocketPath)
           reject?.()
           return
         }
-
         
         const socketServer = net.createServer((socket) => {
           log.debug('socketServer connected %j', socket)
@@ -136,7 +159,7 @@ export const sshServer = ({
             log.debug('calling accept: %j', accept)
             accept?.()
             tunnels.add(requestedSocketPath)
-            onPipeCreated?.({clientId, remotePath: requestedSocketPath, localSocketPath: socketPath, publicKey, access})
+            onPipeCreated?.({clientId, remotePath: requestedSocketPath, localSocketPath: socketPath, publicKey, access: params.access})
           })
           .on('error', (err: unknown) => {
             log.error('socketServer error: %j', err)
