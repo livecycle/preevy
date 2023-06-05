@@ -4,7 +4,7 @@ import { rimraf } from 'rimraf'
 import yaml from 'yaml'
 import { BaseUrl, formatPublicKey } from '@preevy/common'
 import { FileToCopy, SSHKeyConfig, TunnelOpts } from '../../ssh'
-import { ComposeModel, fixModelForRemote, getExposedTcpServices, localComposeClient } from '../../compose'
+import { ComposeModel, fixModelForRemote, getExposedTcpServices, localComposeClient, resolveComposeFiles } from '../../compose'
 import { ensureCustomizedMachine } from './machine'
 import { wrapWithDockerSocket } from '../../docker'
 import { findAmbientEnvId } from '../../env-id'
@@ -15,7 +15,6 @@ import { Machine, MachineCreationDriver, MachineDriver } from '../../driver'
 import { REMOTE_DIR_BASE, remoteProjectDir } from '../../remote-files'
 import { Logger } from '../../log'
 import { Tunnel, tunnelUrl } from '../../tunneling'
-import { resolveComposeFiles } from '../../compose'
 
 const createCopiedFileInDataDir = (
   { projectLocalDataDir, filesToCopy, remoteDir } : {
