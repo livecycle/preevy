@@ -1,9 +1,8 @@
 #!/usr/bin/env node
-
 require('source-map-support').install()
 
 const oclif = require('@oclif/core')
 
-oclif.settings.debug = true
+oclif.settings.debug = !!process.env["DEBUG"]
 
 oclif.run().then(require('@oclif/core/flush')).catch(require('@oclif/core/handle'))
