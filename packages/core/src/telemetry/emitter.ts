@@ -9,8 +9,8 @@ import { detectCiProvider } from '../ci-providers'
 
 const newRunId = () => `ses_${crypto.randomBytes(16).toString('base64url').replace(/[^a-zA-Z0-9]/g, '').substring(0, 10)}`
 
-const TELEMETRY_URL = 'https://preevy-telemetry.livecycle.run/v1/event'
-const FLUSH_INTERVAL = 5000
+const TELEMETRY_URL = 'https://telemetry.preevy.dev/v1/event'
+
 
 type IdentifyFunction = {
   (person: TelemetryProperties): void
