@@ -5,6 +5,7 @@ import { Store } from '../store'
 import { connectSshClient } from '../ssh'
 import { queryTunnels } from '../compose-tunnel-agent-client'
 import { flattenTunnels } from '../tunneling'
+import { remoteProjectDir } from '../remote-files'
 
 export const urls = async ({ log, envId, driver, store, debug, projectName, serviceAndPort }: {
   log: Logger
@@ -36,8 +37,10 @@ export const urls = async ({ log, envId, driver, store, debug, projectName, serv
     log,
   })
 
+  const projectDir = remoteProjectDir(projectName)
+
   try {
-    const { tunnels } = await queryTunnels({ sshClient, projectName, retryOpts: { retries: 2 } })
+    const { tunnels } = await queryTunnels({ sshClient, remoteProjectDir: projectDir, retryOpts: { retries: 2 } })
 
     return flattenTunnels(tunnels)
       .filter(tunnel => !serviceAndPort || (

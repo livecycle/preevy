@@ -66,7 +66,6 @@
     ],
     "hooks": {
       "init": [
-        "./dist/hooks/init/async-trace",
         "./dist/hooks/init/sync-logging",
         "./dist/hooks/init/load-plugins",
         "./dist/hooks/init/telemetry"
