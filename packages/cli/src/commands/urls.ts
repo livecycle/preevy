@@ -1,4 +1,4 @@
-import { Args, ux } from '@oclif/core'
+import { Args, Flags, ux } from '@oclif/core'
 import { commands, findAmbientEnvId, profileStore } from '@preevy/core'
 import { tunnelServerFlags } from '@preevy/cli-common'
 import { tunnelServerHello } from '../tunnel-server-client'
@@ -13,6 +13,10 @@ export default class Urls extends ProfileCommand<typeof Urls> {
     ...envIdFlags,
     ...tunnelServerFlags,
     ...ux.table.flags(),
+    'include-access-credentials': Flags.boolean({
+      description: 'Include access credentials for basic auth for each service URL',
+      default: false,
+    }),
   }
 
   static enableJsonFlag = true
@@ -44,15 +48,18 @@ export default class Urls extends ProfileCommand<typeof Urls> {
       insecureSkipVerify: flags['insecure-skip-verify'],
     }
 
+    const tunnelingKey = await pStore.getTunnelingKey()
     const { clientId, rootUrl } = await tunnelServerHello({
       tunnelOpts,
       knownServerPublicKeys: pStore.knownServerPublicKeys,
-      tunnelingKey: await pStore.getTunnelingKey(),
+      tunnelingKey,
       log: this.logger,
     })
 
     const flatTunnels = await commands.urls({
       rootUrl,
+      includeAccessCredentials: !!flags['include-access-credentials'],
+      tunnelingKey,
       clientId,
       envId,
       projectName,
@@ -70,7 +77,11 @@ export default class Urls extends ProfileCommand<typeof Urls> {
         port: { header: 'Port' },
         url: { header: 'URL' },
       },
-      flags,
+      {
+        ...this.flags,
+        'no-truncate': this.flags['no-truncate'] ?? (!this.flags.output && !this.flags.csv && flags['include-access-credentials']),
+        'no-header': this.flags['no-header'] ?? (!this.flags.output && !this.flags.csv && flags['include-access-credentials']),
+      },
     )
 
     return undefined

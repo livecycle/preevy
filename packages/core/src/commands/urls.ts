@@ -1,7 +1,11 @@
+import { withUserCredentials } from '../credentials'
 import { queryTunnels } from '../compose-tunnel-agent-client'
 import { flattenTunnels, tunnelUrlForEnv } from '../tunneling'
 
-export const urls = async ({ envId, rootUrl, clientId, projectName, serviceAndPort }: {
+export const urls = async ({ envId, includeAccessCredentials,
+  rootUrl, tunnelingKey, clientId, projectName, serviceAndPort }: {
+  includeAccessCredentials: boolean
+  tunnelingKey: Buffer
   envId: string
   projectName: string
   rootUrl: string
@@ -13,6 +17,7 @@ export const urls = async ({ envId, rootUrl, clientId, projectName, serviceAndPo
   const { tunnels } = await queryTunnels({ tunnelUrlForService, retryOpts: { retries: 2 } })
 
   return flattenTunnels(tunnels)
+    .map(x => ({ ...x, url: includeAccessCredentials ? withUserCredentials(x.url, tunnelingKey) : x.url }))
     .filter(tunnel => !serviceAndPort || (
       tunnel.service === serviceAndPort.service && (!serviceAndPort.port || tunnel.port === serviceAndPort.port)
     ))

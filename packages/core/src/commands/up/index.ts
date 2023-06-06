@@ -1,8 +1,8 @@
+import { formatPublicKey } from '@preevy/common'
 import fs from 'fs'
 import path from 'path'
 import { rimraf } from 'rimraf'
 import yaml from 'yaml'
-import { formatPublicKey } from '@preevy/common'
 import { inspect } from 'util'
 import { TunnelOpts } from '../../ssh'
 import { ComposeModel, fixModelForRemote, getExposedTcpServices, localComposeClient, resolveComposeFiles } from '../../compose'
@@ -16,6 +16,7 @@ import { remoteProjectDir } from '../../remote-files'
 import { Logger } from '../../log'
 import { Tunnel, tunnelUrlForEnv } from '../../tunneling'
 import { FileToCopy, uploadWithSpinner } from '../../upload-files'
+import { withUserCredentials } from '../../credentials'
 
 const createCopiedFileInDataDir = (
   { projectLocalDataDir, filesToCopy } : {
@@ -63,6 +64,7 @@ const up = async ({
   clientId,
   rootUrl,
   debug,
+  includeAccessCredentials,
   machineDriver,
   machineCreationDriver,
   tunnelOpts,
@@ -82,6 +84,7 @@ const up = async ({
   clientId: string
   rootUrl: string
   debug: boolean
+  includeAccessCredentials: boolean
   machineDriver: MachineDriver
   machineCreationDriver: MachineCreationDriver
   tunnelOpts: TunnelOpts
@@ -184,8 +187,18 @@ const up = async ({
           onFailedAttempt: e => { log.debug(`Failed to create tunnel: ${inspect(e)}`) },
         },
       })
+      if (!includeAccessCredentials) {
+        return queryResult.tunnels
+      }
 
-      return queryResult.tunnels
+      return queryResult.tunnels.map(x => ({
+        ...x,
+        ports: Object.fromEntries(
+          Object.entries(x.ports).map(
+            ([port, urls]) => [port, urls.map(url => withUserCredentials(url, sshTunnelPrivateKey))]
+          )
+        ),
+      }))
     }, { opPrefix: 'Waiting for tunnels to be created' })
 
     return { envId, machine, tunnels }

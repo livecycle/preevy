@@ -4,10 +4,12 @@ import { ProfileStore } from '../profile'
 import { generateSshKeyPair } from '../ssh/keypair'
 import { TunnelOpts } from '../ssh/url'
 
+type port = string
+type url = string
 export type Tunnel = {
   project: string
   service: string
-  ports: Record<string, string[]>
+  ports: Record<port, url[]>
 }
 
 export type FlatTunnel = {

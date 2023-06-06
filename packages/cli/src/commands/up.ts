@@ -21,6 +21,10 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       default: true,
       allowNo: true,
     }),
+    'include-access-credentials': Flags.boolean({
+      description: 'Include access credentials for basic auth for each service URL',
+      default: false,
+    }),
     ...ux.table.flags(),
   }
 
@@ -47,6 +51,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       url: flags['tunnel-url'],
       tlsServerName: flags['tls-hostname'],
       insecureSkipVerify: flags['insecure-skip-verify'],
+      includeAccessCredentials: flags['include-access-credentials'],
     }
 
     const { hostKey, clientId, rootUrl } = await tunnelServerHello({
@@ -65,6 +70,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       rootUrl,
       userSpecifiedServices: restArgs,
       debug: flags.debug,
+      includeAccessCredentials: tunnelOpts.includeAccessCredentials,
       machineDriver: driver,
       machineCreationDriver,
       userModel,
@@ -96,8 +102,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       return result.urls
     }
 
-    this.log(`Preview environment ${envId} provisioned at ${machine.locationDescription}`)
-
+    this.log(`Preview environment ${envId} provisioned at: ${machine.locationDescription}`)
     ux.table(
       result.urls,
       {
@@ -105,7 +110,11 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
         port: { header: 'Port' },
         url: { header: 'URL' },
       },
-      this.flags,
+      {
+        ...this.flags,
+        'no-truncate': this.flags['no-truncate'] ?? (!this.flags.output && !this.flags.csv && flags['include-access-credentials']),
+        'no-header': this.flags['no-header'] ?? (!this.flags.output && !this.flags.csv && flags['include-access-credentials']),
+      },
     )
 
     return undefined
