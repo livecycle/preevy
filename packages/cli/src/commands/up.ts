@@ -97,7 +97,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       keysState: pStore.knownServerPublicKeys,
     })
 
-    telemetryEmitter().identify('profile', { proxy_client_id: clientId })
+    telemetryEmitter().group({ type: 'profile' }, { proxy_client_id: clientId })
 
     const userModel = await this.ensureUserModel()
 

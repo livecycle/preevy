@@ -14,9 +14,8 @@ const TELEMETRY_URL = 'https://telemetry.preevy.dev/v1/event'
 export type GroupIdentityType = 'profile'
 
 type IdentifyFunction = {
-  (props: TelemetryProperties): void
-  (identityType: GroupIdentityType, props: TelemetryProperties): void
-  (identityType: GroupIdentityType, id: string, props: TelemetryProperties): void
+  (person: TelemetryProperties): void
+  (id: string, person?: TelemetryProperties): void
 }
 
 export const telemetryEmitter = async ({ dataDir, version, debug }: {
@@ -25,6 +24,7 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
   debug: number
 }) => {
   const machineId = await memoizedMachineId(dataDir)
+  let distinctId = machineId
   const groupIdentities = {} as Record<GroupIdentityType, string>
   const pendingEvents: TelemetryEvent[] = []
   const runId = newRunId()
@@ -88,50 +88,58 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
     run_id: runId,
   }
 
-  const identify: IdentifyFunction = (...args: unknown[]) => {
-    let groupIdentityType: GroupIdentityType | undefined; let groupId: string | undefined; let
-      props: TelemetryProperties
-    if (typeof args[2] === undefined && typeof args[1] === undefined) {
-      props = args[0] as TelemetryProperties
-    } else if (typeof args[2] === undefined) {
-      groupIdentityType = args[0] as GroupIdentityType
-      groupId = groupIdentities[groupIdentityType]
-      props = args[1] as TelemetryProperties
-    } else {
-      [groupIdentityType, groupId, props] = args as [GroupIdentityType, string, TelemetryProperties ]
-      groupIdentities[groupIdentityType] = groupId
+  const group = ({ type: groupType, id: groupId } :
+     {type: GroupIdentityType; id?: string}, props: TelemetryProperties = {}) => {
+    if (groupId) {
+      groupIdentities[groupType] = groupId
     }
-
-    if (groupIdentityType && groupId) {
+    const currentGroupId = groupIdentities[groupType]
+    if (groupId) {
       pushEvent({
         event: '$groupidentify',
         timestamp: new Date(),
-        distinct_id: machineId,
+        distinct_id: distinctId,
         properties: {
-          $group_type: groupIdentityType,
-          $group_key: groupId,
+          $group_type: groupType,
+          $group_key: currentGroupId,
           $group_set: {
-            name: groupId,
+            name: currentGroupId,
             ...props,
           },
-          ...commonProperties,
-        },
-      })
-    } else if (Object.keys(props ?? {}).length) {
-      pushEvent({
-        event: '$identify',
-        timestamp: new Date(),
-        distinct_id: machineId,
-        $set: props,
-        properties: {
           ...commonProperties,
         },
       })
     }
   }
 
+  const identify: IdentifyFunction = (...args) => {
+    const [id, person] = (
+      typeof args[0] === 'string' ? args : [undefined, args[0]]
+    ) as [string, TelemetryProperties | undefined] | [undefined, TelemetryProperties]
+
+    const shouldLinkToNewId = distinctId !== id
+
+    if (shouldLinkToNewId || Object.keys(person ?? {}).length) {
+      pushEvent({
+        event: '$identify',
+        timestamp: new Date(),
+        distinct_id: id ?? distinctId,
+        $set: person,
+        properties: {
+          ...(shouldLinkToNewId && id) ? { $anon_distinct_id: distinctId } : {},
+          ...commonProperties,
+        },
+      })
+    }
+
+    if (id) {
+      distinctId = id
+    }
+  }
+
   return ({
     identify,
+    group,
     capture: (event: string, props: TelemetryProperties) => {
       pushEvent({
         event,
@@ -149,7 +157,7 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
     },
     // For making sure we're not keeping the process running due to debounce.
     // Flush is not called as there could be other captures afterwards such as exit event.
-    release: () => {
+    unref: () => {
       debounceDisabled = true
       debouncedFlush.cancel()
     },
@@ -163,9 +171,10 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
 export type TelemetryEmitter = Awaited<ReturnType<typeof telemetryEmitter>>
 
 export const nullTelemetryEmitter: TelemetryEmitter = {
-  identify: async () => undefined,
+  identify: () => undefined,
+  group: () => undefined,
   capture: async () => undefined,
-  release: async () => undefined,
+  unref: async () => undefined,
   setProps: () => undefined,
   flush: async () => undefined,
 }

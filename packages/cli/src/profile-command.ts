@@ -1,14 +1,19 @@
 import path from 'path'
 import { Command, Flags, Interfaces } from '@oclif/core'
 import chalk from 'chalk'
-import { LocalProfilesConfig, Profile, Store, fsTypeFromUrl, localProfilesConfig, telemetryEmitter } from '@preevy/core'
+import { LocalProfilesConfig, Profile, Store, detectCiProvider, fsTypeFromUrl, localProfilesConfig, telemetryEmitter } from '@preevy/core'
 import { BaseCommand } from '@preevy/cli-common'
 import { fsFromUrl } from './fs'
 
 export const onProfileChange = (profile: Profile, alias: string, location: string) => {
-  telemetryEmitter().identify(
-    'profile',
-    profile.id,
+  const ciProvider = detectCiProvider()
+  if (ciProvider) {
+    telemetryEmitter().identify(`ci_${ciProvider ?? 'unknown'}_${profile.id}`, {
+      ci_provider: ciProvider.name,
+    })
+  }
+  telemetryEmitter().group(
+    { type: 'profile', id: profile.id },
     {
       profile_driver: profile.driver,
       profile_id: profile.id,

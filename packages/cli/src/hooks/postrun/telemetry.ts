@@ -7,7 +7,7 @@ const hook: Hook.Postrun = async ({ Command: command, argv }) => {
     command: command.name,
     argv,
   })
-  void telemetryEmitter().release()
+  void telemetryEmitter().unref()
 }
 
 export default hook
