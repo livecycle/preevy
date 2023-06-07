@@ -8,9 +8,8 @@ const isNotFoundError = (e: unknown) => (e as { code?: unknown })?.code === 'ENO
 export const localFs = (baseDir: string): VirtualFS => ({
   read: async (filename: string) => {
     const filepath = path.join(baseDir, filename)
-    const f = () => fs.readFile(filepath)
     try {
-      return await f()
+      return await fs.readFile(filepath)
     } catch (e) {
       if (isNotFoundError(e)) {
         return undefined
