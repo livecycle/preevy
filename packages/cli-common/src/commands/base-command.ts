@@ -1,6 +1,6 @@
 import { Command, Flags, Interfaces, settings as oclifSettings } from '@oclif/core'
 import {
-  LogLevel, Logger, logLevels, ComposeModel, ProcessError,
+  LogLevel, Logger, logLevels, ComposeModel, ProcessError, telemetryEmitter,
 } from '@preevy/core'
 import { asyncReduce } from 'iter-tools-es'
 import { commandLogger } from '../lib/log'
@@ -103,6 +103,17 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
 
   public logToStderr(message?: string | undefined, ...args: unknown[]): void {
     this.stdErrLogger.info(message, ...args)
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async catch(error: Error) {
+    const emitter = telemetryEmitter()
+    emitter.capture('error', {
+      error,
+    })
+    emitter.unref()
+    await emitter.flush()
+    return super.catch(error)
   }
 }
 

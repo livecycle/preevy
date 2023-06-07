@@ -1,17 +1,26 @@
 import path from 'path'
 import { Command, Flags, Interfaces } from '@oclif/core'
 import chalk from 'chalk'
-import { LocalProfilesConfig, Profile, Store, fsTypeFromUrl, localProfilesConfig, telemetryEmitter } from '@preevy/core'
+import { LocalProfilesConfig, Profile, Store, detectCiProvider, fsTypeFromUrl, localProfilesConfig, telemetryEmitter } from '@preevy/core'
 import { BaseCommand } from '@preevy/cli-common'
 import { fsFromUrl } from './fs'
 
 export const onProfileChange = (profile: Profile, alias: string, location: string) => {
-  telemetryEmitter().identify(profile.id, {
-    profile_driver: profile.driver,
-    profile_id: profile.id,
-    name: profile.id,
-    profile_store_type: fsTypeFromUrl(location),
-  })
+  const ciProvider = detectCiProvider()
+  if (ciProvider) {
+    telemetryEmitter().identify(`ci_${ciProvider ?? 'unknown'}_${profile.id}`, {
+      ci_provider: ciProvider.name,
+    })
+  }
+  telemetryEmitter().group(
+    { type: 'profile', id: profile.id },
+    {
+      profile_driver: profile.driver,
+      profile_id: profile.id,
+      name: profile.id,
+      profile_store_type: fsTypeFromUrl(location),
+    }
+  )
 }
 
 export const loadProfileConfig = ({ dataDir }: { dataDir: string }): LocalProfilesConfig => {
@@ -55,7 +64,7 @@ abstract class ProfileCommand<T extends typeof Command> extends BaseCommand<T> {
   #store: Store | undefined
   get store(): Store {
     if (!this.#store) {
-      throw new Error('Store was not initialized')
+      this.error('Store was not initialized')
     }
     return this.#store
   }
@@ -63,7 +72,7 @@ abstract class ProfileCommand<T extends typeof Command> extends BaseCommand<T> {
   #profile: Profile | undefined
   get profile(): Profile {
     if (!this.#profile) {
-      throw new Error(`Profile not initialized, run ${chalk.italic.bold.greenBright('preevy init')} to get started.`)
+      this.error(`Profile not initialized, run ${chalk.italic.bold.greenBright('preevy init')} to get started.`)
     }
     return this.#profile
   }

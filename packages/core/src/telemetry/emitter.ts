@@ -2,15 +2,16 @@ import os from 'os'
 import crypto from 'crypto'
 import stringify from 'fast-safe-stringify'
 import fetch from 'node-fetch'
-import { throttle } from 'lodash'
+import { debounce } from 'lodash'
 import { memoizedMachineId } from './machine-id'
 import { TelemetryEvent, TelemetryProperties, serializableEvent } from './events'
 import { detectCiProvider } from '../ci-providers'
 
 const newRunId = () => `ses_${crypto.randomBytes(16).toString('base64url').replace(/[^a-zA-Z0-9]/g, '').substring(0, 10)}`
 
-const TELEMETRY_URL = 'https://preevy-telemetry.livecycle.run/v1/event'
-const FLUSH_INTERVAL = 5000
+const TELEMETRY_URL = 'https://telemetry.preevy.dev/v1/event'
+
+export type GroupIdentityType = 'profile'
 
 type IdentifyFunction = {
   (person: TelemetryProperties): void
@@ -23,10 +24,11 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
   debug: number
 }) => {
   const machineId = await memoizedMachineId(dataDir)
-
+  let distinctId = machineId
+  const groupIdentities = {} as Record<GroupIdentityType, string>
   const pendingEvents: TelemetryEvent[] = []
   const runId = newRunId()
-  let currentId = runId
+  let debounceDisabled = false
 
   const flush = async () => {
     if (!pendingEvents.length) {
@@ -48,11 +50,15 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
     }
   }
 
-  const throttledFlush = throttle(flush, FLUSH_INTERVAL)
+  const debouncedFlush = debounce(flush, 3000, { maxWait: 8000 })
 
   const pushEvent = (event: TelemetryEvent) => {
     pendingEvents.push(event)
-    void throttledFlush()
+    if (debounceDisabled) {
+      void flush()
+    } else {
+      void debouncedFlush()
+    }
   }
 
   const ciProvider = detectCiProvider()
@@ -82,39 +88,65 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
     run_id: runId,
   }
 
+  const group = ({ type: groupType, id: groupId } :
+     {type: GroupIdentityType; id?: string}, props: TelemetryProperties = {}) => {
+    if (groupId) {
+      groupIdentities[groupType] = groupId
+    }
+    const currentGroupId = groupIdentities[groupType]
+    if (groupId) {
+      pushEvent({
+        event: '$groupidentify',
+        timestamp: new Date(),
+        distinct_id: distinctId,
+        properties: {
+          $group_type: groupType,
+          $group_key: currentGroupId,
+          $group_set: {
+            name: currentGroupId,
+            ...props,
+          },
+          ...commonProperties,
+        },
+      })
+    }
+  }
+
   const identify: IdentifyFunction = (...args) => {
     const [id, person] = (
       typeof args[0] === 'string' ? args : [undefined, args[0]]
     ) as [string, TelemetryProperties | undefined] | [undefined, TelemetryProperties]
 
-    const isCurrentIdAnonymous = currentId === runId
+    const shouldLinkToNewId = distinctId !== id
 
-    if (isCurrentIdAnonymous || Object.keys(person ?? {}).length) {
+    if (shouldLinkToNewId || Object.keys(person ?? {}).length) {
       pushEvent({
         event: '$identify',
         timestamp: new Date(),
-        distinct_id: id ?? currentId,
+        distinct_id: id ?? distinctId,
         $set: person,
         properties: {
-          ...(isCurrentIdAnonymous && id) ? { $anon_distinct_id: currentId } : {},
+          ...(shouldLinkToNewId && id) ? { $anon_distinct_id: distinctId } : {},
           ...commonProperties,
         },
       })
     }
 
     if (id) {
-      currentId = id
+      distinctId = id
     }
   }
 
   return ({
     identify,
+    group,
     capture: (event: string, props: TelemetryProperties) => {
       pushEvent({
         event,
         timestamp: new Date(),
-        distinct_id: currentId,
+        distinct_id: machineId,
         properties: {
+          $groups: groupIdentities,
           ...commonProperties,
           ...props,
         },
@@ -123,9 +155,15 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
     setProps: (props: TelemetryProperties) => {
       Object.assign(commonProperties, props)
     },
-    flush: () => {
-      throttledFlush.cancel()
-      return flush()
+    // For making sure we're not keeping the process running due to debounce.
+    // Flush is not called as there could be other captures afterwards such as exit event.
+    unref: () => {
+      debounceDisabled = true
+      debouncedFlush.cancel()
+    },
+    async flush() {
+      debouncedFlush.cancel()
+      await flush()
     },
   })
 }
@@ -133,8 +171,10 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
 export type TelemetryEmitter = Awaited<ReturnType<typeof telemetryEmitter>>
 
 export const nullTelemetryEmitter: TelemetryEmitter = {
-  identify: async () => undefined,
+  identify: () => undefined,
+  group: () => undefined,
   capture: async () => undefined,
+  unref: async () => undefined,
   setProps: () => undefined,
   flush: async () => undefined,
 }
