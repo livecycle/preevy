@@ -1,7 +1,6 @@
 import { Flags } from '@oclif/core'
 import { BaseCommand } from '@preevy/cli-common'
-import { localFs, login } from '@preevy/core'
-import path from 'path'
+import { login } from '@preevy/core'
 
 // eslint-disable-next-line no-use-before-define
 export default class Login extends BaseCommand<typeof Login> {
@@ -12,6 +11,6 @@ export default class Login extends BaseCommand<typeof Login> {
   }
 
   async run(): Promise<void> {
-    await login(this.config.dataDir, this.flags['login-url'])
+    await login(this.config.dataDir, this.flags['login-url'], this.logger)
   }
 }

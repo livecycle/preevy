@@ -5,21 +5,22 @@ import fetch from 'node-fetch'
 import { TokenExpiredError, TokesFileSchema, getTokens } from '../login'
 import { profileStore } from './store'
 import { Store } from '../store'
+import { Logger } from '../log'
 
-export const link = async (store: Store, dataDir: string, lcUrl: string) => {
+export const link = async (store: Store, dataDir: string, lcUrl: string, logger: Logger) => {
   let tokens: TokesFileSchema | undefined
   try {
     tokens = await getTokens(dataDir)
   } catch (e) {
     if (e instanceof TokenExpiredError) {
-      console.log('Session is expired, please log in again')
+      logger.info('Session is expired, please log in again')
       return
     }
     throw e
   }
 
   if (tokens === undefined) {
-    console.log('Please log in to link profile')
+    logger.info('Please log in to link profile')
     return
   }
 
@@ -44,8 +45,8 @@ export const link = async (store: Store, dataDir: string, lcUrl: string) => {
     .setExpirationTime('5m')
     .sign(prk)
 
-  console.log(tokenSignedByTunnelingPrivateKey)
-  console.log(pk.export({ format: 'pem', type: 'pkcs1' }))
+  logger.info(tokenSignedByTunnelingPrivateKey)
+  logger.info('public key', pk.export({ format: 'pem', type: 'pkcs1' }))
   const response = await fetch(
     `${lcUrl}/link`,
     { method: 'POST',
@@ -53,5 +54,5 @@ export const link = async (store: Store, dataDir: string, lcUrl: string) => {
       body: JSON.stringify({ profileTunnellingPublicKey: pk.export({ format: 'pem', type: 'pkcs1' }), tokenSignedByTunnelingPrivateKey }) }
   )
 
-  console.log('got response', response.status, await response.text())
+  logger.info('got response', response.status, await response.text())
 }

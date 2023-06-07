@@ -11,7 +11,7 @@ export default class Link extends ProfileCommand<typeof Link> {
   static description = "Link the profile to the logged in user's organization"
 
   async run(): Promise<unknown> {
-    link(this.store, this.config.dataDir, this.flags.lcUrl)
+    await link(this.store, this.config.dataDir, this.flags.lcUrl)
     return undefined
   }
 }

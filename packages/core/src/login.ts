@@ -1,7 +1,8 @@
 import fetch from 'node-fetch'
 import { exec } from 'child_process'
 import * as jose from 'jose'
-import { VirtualFS, localFs } from './store'
+import { localFs } from './store'
+import { Logger } from './log'
 
 export class TokenExpiredError extends Error {
   constructor() {
@@ -16,7 +17,7 @@ export type TokesFileSchema = {
   id_token: string
 }
 
-const deviceFlow = async (dataDir: string, loginUrl: string) => {
+const deviceFlow = async (dataDir: string, loginUrl: string, logger: Logger) => {
   const fs = localFs(dataDir)
   // TODO: use this.config.dataDir to save the token for next CLI sessions
   const response = await fetch(`${loginUrl}/oauth/device/code?redirect_uri=https://www.google.com/`, {
@@ -40,18 +41,18 @@ const deviceFlow = async (dataDir: string, loginUrl: string) => {
         }
 
   exec(`open ${responseData.verification_uri_complete}`) // TODO - use cross-platform, safer, opener once we get esm modules working
-  console.log('make sure code is ', responseData.user_code)
+  logger.info('make sure code is ', responseData.user_code)
   await new Promise<void>((resolve, reject) => {
-    console.log('inside interval', responseData.expires_in)
+    logger.info('inside interval', responseData.expires_in)
     const intervalId = setInterval(async () => {
       try {
-        console.log('before fetch')
+        logger.info('before fetch')
         const tokenResponse = await fetch(`${loginUrl}/oauth/token`, { method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
           body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
             device_code: responseData.device_code,
             client_id: 'jEnySAwuAaWaLOdWdALbvXj6dZEqgAJB' }) })
-        console.log('response mother fucker', tokenResponse.status, tokenResponse.statusText)
+        logger.info('response mother fucker', tokenResponse.status, tokenResponse.statusText)
         const tokenResponseData = await tokenResponse.json()
         if ('access_token' in tokenResponseData) {
           clearInterval(intervalId)
@@ -60,15 +61,15 @@ const deviceFlow = async (dataDir: string, loginUrl: string) => {
             id_token: tokenResponseData.id_token,
           }
           await fs.write(PERSISTENT_TOKEN_FILE_NAME, JSON.stringify(tokensFile))
-          console.log('got it!', tokenResponseData)
+          logger.info('got it!', tokenResponseData)
           resolve()
         }
       } catch (e) {
-        console.log(e)
+        logger.info('error ', e)
         reject(e)
       }
     }, responseData.interval * 1000)
-    console.log('after set interval')
+    logger.info('after set interval')
   })
 }
 
@@ -79,23 +80,23 @@ export const getTokens = async (dataDir: string) : Promise<TokesFileSchema | und
 
   const tokens: TokesFileSchema = JSON.parse(tokensFile.toString())
   const accessToken = jose.decodeJwt(tokens.access_token)
-  if (accessToken.exp! < Math.floor(Date.now() / 1000)) {
+  if (accessToken.exp === undefined || (accessToken.exp < Math.floor(Date.now() / 1000))) {
     throw new TokenExpiredError()
   }
   return tokens
 }
 
-export const login = async (dataDir: string, loginUrl: string) => {
+export const login = async (dataDir: string, loginUrl: string, logger: Logger) => {
   try {
     const tokens = await getTokens(dataDir)
     if (tokens !== undefined) {
-      console.log('already logged in: ', jose.decodeJwt(tokens.id_token).email)
+      logger.info('already logged in: ', jose.decodeJwt(tokens.id_token).email)
     } else {
-      await deviceFlow(dataDir, loginUrl)
+      await deviceFlow(dataDir, loginUrl, logger)
     }
   } catch (e) {
     if (e instanceof TokenExpiredError) {
-      await deviceFlow(dataDir, loginUrl)
+      await deviceFlow(dataDir, loginUrl, logger)
     } else {
       throw e
     }
