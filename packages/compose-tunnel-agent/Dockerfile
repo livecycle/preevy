@@ -15,5 +15,5 @@ CMD [ "yarn", "dev" ]
 
 FROM base as production
 COPY package.json /app/
-COPY dist /app/dist/
+COPY out /app/out/
 CMD [ "yarn", "-s", "start" ]

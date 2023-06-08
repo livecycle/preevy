@@ -23,5 +23,5 @@
     "fix-mismatches": "syncpack fix-mismatches",
     "prepare": "husky install"
   },
-  "version": "0.0.30"
+  "version": "0.0.33"
 }
