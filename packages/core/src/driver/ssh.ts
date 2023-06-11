@@ -28,7 +28,7 @@ const ensureSshMachine = (m: MachineBase): SshMachine => {
 
 export const sshDriver = (
   getSshKey: (machine: SshMachine) => Promise<Pick<SshKeyPair, 'privateKey'>>,
-): Pick<MachineDriver<SshMachine>, 'connect' | 'session'> => {
+): Pick<MachineDriver<SshMachine>, 'connect' | 'spawnRemoteCommand'> => {
   const getPrivateKey = async (machine: SshMachine) => (await getSshKey(machine)).privateKey.toString('utf-8')
 
   return {
@@ -45,10 +45,10 @@ export const sshDriver = (
       return {
         close: async () => connection.close(),
         exec: connection.exec,
-        forwardOutStreamLocal: connection.forwardOutStreamLocal,
+        portForward: connection.forwardOutStreamLocal,
       }
     },
-    session: async (m, args, stdio) => {
+    spawnRemoteCommand: async (m, command, stdio) => {
       const machine = ensureSshMachine(m)
       const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'preevy-ssh-key-'))
       const privateKeyFilename = path.join(tempDir, machine.providerId)
@@ -57,7 +57,7 @@ export const sshDriver = (
       const sshArgs = [
         '-i', privateKeyFilename,
         `${machine.sshUsername}@${machine.publicIPAddress}`,
-        ...args,
+        ...command,
       ]
 
       const sshProcess = spawn('ssh', sshArgs, { stdio })

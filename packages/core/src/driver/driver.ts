@@ -13,7 +13,7 @@ export type ForwardOutStreamLocal = {
 
 export type MachineConnection = {
   exec: CommandExecuter
-  forwardOutStreamLocal: (
+  portForward: (
     listenAddress: string | number | ListenOptions,
     remoteSocket: string,
   ) => Promise<ForwardOutStreamLocal>
@@ -30,7 +30,7 @@ export type MachineDriver<
   getMachine: (args: { envId: string }) => Promise<Machine | PartialMachine | undefined>
 
   connect: (machine: MachineBase, opts: { log: Logger; debug: boolean }) => Promise<MachineConnection>
-  session: (machine: MachineBase, args: string[], stdio: StdioOptions) => Promise<ChildProcess>
+  spawnRemoteCommand: (machine: MachineBase, command: string[], stdio: StdioOptions) => Promise<ChildProcess>
 
   listMachines: () => AsyncIterableIterator<(PartialMachine | Machine) & { envId: string }>
   removeMachine: (providerId: string, wait: boolean) => Promise<void>

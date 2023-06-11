@@ -100,7 +100,7 @@ export const queryTunnels = async ({ connection, remoteProjectDir, retryOpts = {
   remoteProjectDir: string
   retryOpts?: retry.Options
 }) => {
-  const forwarding = await connection.forwardOutStreamLocal(
+  const forwarding = await connection.portForward(
     { host: '0.0.0.0', port: 0 },
     composeTunnelAgentSocket(remoteProjectDir),
   )

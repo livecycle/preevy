@@ -67,7 +67,7 @@ export default class Logs extends DriverCommand<typeof Logs> {
 
       await withDockerSocket(() => compose.spawnPromise(['logs', ...services], { stdio: 'inherit' }))
     } finally {
-      connection.close()
+      await connection.close()
     }
   }
 }

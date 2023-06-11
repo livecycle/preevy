@@ -20,7 +20,7 @@ export const wrapWithDockerSocket = (
 ): FuncWrapper => async <Return>(
   f: () => Promise<Return>,
 ): Promise<Return> => {
-  const { localSocket, close } = await connection.forwardOutStreamLocal({ port: 0, host: '0.0.0.0' }, '/var/run/docker.sock')
+  const { localSocket, close } = await connection.portForward({ port: 0, host: '0.0.0.0' }, '/var/run/docker.sock')
 
   log.debug(`Local socket: ${JSON.stringify(localSocket)}`)
 
