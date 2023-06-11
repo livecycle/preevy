@@ -3,7 +3,8 @@ import path from 'path'
 import fs from 'fs'
 import { pack, Headers, Pack } from 'tar-stream'
 import { Writable, pipeline } from 'stream'
-import { TransferProgressEmitter, transferProgressEmitter } from './progress'
+import { EmitterConsumer } from '@preevy/common'
+import { TransferProgressEmitter, TransferProgressEvents, transferProgressEmitter } from './progress'
 import { FileInfo, FileToCopy } from './files'
 import { Visitor, fsWalker } from './walk'
 
@@ -77,7 +78,8 @@ const chainPromise = () => {
   }
 }
 
-export const tarStream = (filesToCopy: FileToCopy[] = []) => {
+export const tarStream = (initialFilesToCopy: FileToCopy[] = []) => {
+  const filesToCopy = [...initialFilesToCopy]
   const add = (fileToCopy: FileToCopy) => { filesToCopy.push(fileToCopy) }
 
   const finalize = ({ out, concurrency, filter = (_f, r) => r }: {
@@ -130,7 +132,11 @@ export const tarStream = (filesToCopy: FileToCopy[] = []) => {
       entriesPromise.chain(async () => { p.finalize() })
     })
 
-    return { done, emitter, totals: walkPromise.then(() => totals) }
+    return {
+      done,
+      emitter: emitter as EmitterConsumer<TransferProgressEvents>,
+      totals: walkPromise.then(() => totals),
+    }
   }
 
   return { add, finalize }

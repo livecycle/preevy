@@ -48,7 +48,7 @@ const createFilter = async (
   const filterCommandOutput = (await exec(filterCommand, { cwd: remoteDir })).stdout.trim()
   const store = filterStore(filterCommandOutput)
   return (fi: FileInfo, remote: string) => {
-    if (store.has(fi, remote)) {
+    if (fi.stats.isFile() && store.has(fi, remote)) {
       totals.skipped += 1
       return undefined
     }

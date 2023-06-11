@@ -33,6 +33,7 @@
     "yaml": "2.2.2"
   },
   "devDependencies": {
+    "@jest/globals": "^29.5.0",
     "@types/inquirer": "^8.0.0",
     "@types/is-stream": "^2.0.0",
     "@types/lodash": "^4.14.192",
@@ -53,11 +54,13 @@
     "eslint-plugin-jsx-a11y": "^6.7.1",
     "eslint-plugin-react": "^7.32.2",
     "jest": "^29.4.3",
+    "ts-jest": "^29.1.0",
     "ts-node": "^10.9.1",
     "tslib": "^2.5.0",
     "typescript": "^5.0.4"
   },
   "scripts": {
+    "test": "yarn jest",
     "lint": "eslint . --ext .ts,.tsx --cache",
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "build": "tsc -b",
