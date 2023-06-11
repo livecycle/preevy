@@ -29,21 +29,23 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
   const pendingEvents: TelemetryEvent[] = []
   const runId = newRunId()
   let debounceDisabled = false
-
+  let flushInProgress = Promise.resolve()
   const flush = async () => {
+    await flushInProgress
     if (!pendingEvents.length) {
       return
     }
-
     const body = stringify({ batch: pendingEvents.map(serializableEvent) })
     pendingEvents.length = 0
-
-    const response = await fetch(TELEMETRY_URL, {
+    const req = fetch(TELEMETRY_URL, {
       headers: { 'Content-Type': 'application/json' },
       method: 'POST',
       redirect: 'follow',
       body,
     })
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    flushInProgress = req.then(() => {}, () => {})
+    const response = await req
 
     if (!response.ok && debug) {
       process.stderr.write(`Error sending telemetry: ${response.status} ${response.statusText} ${response.url}${os.EOL}`)
