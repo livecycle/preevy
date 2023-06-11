@@ -8,7 +8,7 @@ import { fsFromUrl } from './fs'
 export const onProfileChange = (profile: Profile, alias: string, location: string) => {
   const ciProvider = detectCiProvider()
   if (ciProvider) {
-    telemetryEmitter().identify(`ci_${ciProvider ?? 'unknown'}_${profile.id}`, {
+    telemetryEmitter().identify(`ci_${ciProvider.telemetryId ?? 'unknown'}_${profile.id}`, {
       ci_provider: ciProvider.name,
     })
   }
