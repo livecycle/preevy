@@ -42,7 +42,7 @@ export type MachineCreationDriver<Machine extends MachineBase = MachineBase> = {
     envId: string
   }) => Promise<{ fromSnapshot: boolean; machine: Promise<Machine> }>
 
-  ensureMachineSnapshot: (args: { driverMachineId: string; envId: string; wait: boolean }) => Promise<void>
+  ensureMachineSnapshot: (args: { providerId: string; envId: string; wait: boolean }) => Promise<void>
   getMachineAndSpecDiff: (
     args: { envId: string },
   ) => Promise<(Machine & { specDiff: SpecDiffItem[] }) | PartialMachine | undefined>

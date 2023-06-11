@@ -214,7 +214,7 @@ const machineCreationDriver = (
       }
     },
 
-    ensureMachineSnapshot: async ({ driverMachineId: providerId, envId, wait }) => {
+    ensureMachineSnapshot: async ({ providerId, envId, wait }) => {
       const instanceSnapshot = await client.findInstanceSnapshot({ version: CURRENT_MACHINE_VERSION, bundleId })
       if (instanceSnapshot) {
         return undefined

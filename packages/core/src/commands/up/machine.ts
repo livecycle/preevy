@@ -116,7 +116,7 @@ export const ensureCustomizedMachine = async ({
       )
 
       await machineCreationDriver.ensureMachineSnapshot({
-        driverMachineId: machine.providerId,
+        providerId: machine.providerId,
         envId,
         wait: false,
       })
