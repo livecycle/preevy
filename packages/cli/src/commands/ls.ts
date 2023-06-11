@@ -19,12 +19,7 @@ export default class Ls extends DriverCommand<typeof Ls> {
   async run(): Promise<unknown> {
     const { flags } = await this.parse(Ls)
     const driver = await this.driver()
-    const machines = await asyncToArray(
-      asyncMap(
-        x => ({ ...x, state: ('error' in x) ? x.error : 'OK' }),
-        await commands.ls({ machineDriver: driver, log: this.logger }),
-      ),
-    )
+    const machines = await asyncToArray(asyncMap(x => ({ ...x, state: ('error' in x) ? x.error : 'OK' }), await commands.ls({ machineDriver: driver, log: this.logger })))
 
     if (flags.json) {
       return machines
@@ -35,7 +30,7 @@ export default class Ls extends DriverCommand<typeof Ls> {
       {
         envId: { header: 'Env' },
         providerId: { header: 'Driver ID' },
-        locationDescription: { header: 'Location' },
+        publicIPAddress: { header: 'IP address' },
         version: { header: 'Version', extended: true },
         state: { header: 'State' },
       },

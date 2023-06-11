@@ -3,23 +3,24 @@ import path from 'path'
 import { rimraf } from 'rimraf'
 import yaml from 'yaml'
 import { BaseUrl, formatPublicKey } from '@preevy/common'
-import { SSHKeyConfig, TunnelOpts } from '../../ssh'
+import { FileToCopy, SSHKeyConfig, TunnelOpts } from '../../ssh'
 import { ComposeModel, fixModelForRemote, getExposedTcpServices, localComposeClient, resolveComposeFiles } from '../../compose'
 import { ensureCustomizedMachine } from './machine'
 import { wrapWithDockerSocket } from '../../docker'
 import { findAmbientEnvId } from '../../env-id'
-import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addComposeTunnelAgentService, queryTunnels } from '../../compose-tunnel-agent-client'
+import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addComposeTunnelAgentService, composeTunnelAgentSocket, queryTunnels } from '../../compose-tunnel-agent-client'
+import { copyFilesWithoutRecreatingDirUsingSftp } from '../../sftp-copy'
 import { withSpinner } from '../../spinner'
 import { Machine, MachineCreationDriver, MachineDriver } from '../../driver'
-import { remoteProjectDir } from '../../remote-files'
+import { REMOTE_DIR_BASE, remoteProjectDir } from '../../remote-files'
 import { Logger } from '../../log'
 import { Tunnel, tunnelUrl } from '../../tunneling'
-import { FileToCopy, uploadWithSpinner } from '../../upload-files'
 
 const createCopiedFileInDataDir = (
-  { projectLocalDataDir, filesToCopy } : {
+  { projectLocalDataDir, filesToCopy, remoteDir } : {
     projectLocalDataDir: string
     filesToCopy: FileToCopy[]
+    remoteDir: string
   }
 ) => async (
   filename: string,
@@ -28,23 +29,17 @@ const createCopiedFileInDataDir = (
   const local = path.join(projectLocalDataDir, filename)
   await fs.promises.mkdir(path.dirname(local), { recursive: true })
   await fs.promises.writeFile(local, content, { flag: 'w' })
-  const result = { local, remote: filename }
-  filesToCopy.push(result)
-  return result
+  filesToCopy.push({ local, remote: filename })
+  return { local, remote: path.join(remoteDir, filename) }
 }
 
-const calcComposeArgs = ({ userSpecifiedServices, debug, cwd } : {
-  userSpecifiedServices: string[]
-  debug: boolean
-  cwd: string
-}) => {
+const calcComposeArgs = (userSpecifiedServices: string[], debug: boolean) => {
   const upServices = userSpecifiedServices.length
     ? userSpecifiedServices.concat(COMPOSE_TUNNEL_AGENT_SERVICE_NAME)
     : []
 
   return [
     ...debug ? ['--verbose'] : [],
-    '--project-directory', cwd,
     'up', '-d', '--remove-orphans', '--build',
     ...upServices,
   ]
@@ -68,8 +63,6 @@ const up = async ({
   sshKey,
   allowedSshHostKeys: hostKey,
   sshTunnelPrivateKey,
-  cwd,
-  skipUnchangedFiles,
 }: {
   clientId: string
   baseUrl: BaseUrl
@@ -88,8 +81,6 @@ const up = async ({
   sshKey: SSHKeyConfig
   sshTunnelPrivateKey: string
   allowedSshHostKeys: Buffer
-  cwd: string
-  skipUnchangedFiles: boolean
 }): Promise<{ machine: Machine; tunnels: Tunnel[]; envId: string }> => {
   const projectName = userSpecifiedProjectName ?? userModel.name
   const remoteDir = remoteProjectDir(projectName)
@@ -124,14 +115,14 @@ const up = async ({
   )
 
   const { model: fixedModel, filesToCopy } = await fixModelForRemote(
-    { cwd, remoteBaseDir: remoteDir },
+    { remoteDir },
     await composeClientWithInjectedArgs.getModel()
   )
 
   const projectLocalDataDir = path.join(dataDir, projectName)
   await rimraf(projectLocalDataDir)
 
-  const createCopiedFile = createCopiedFileInDataDir({ projectLocalDataDir, filesToCopy })
+  const createCopiedFile = createCopiedFileInDataDir({ projectLocalDataDir, filesToCopy, remoteDir })
   const [sshPrivateKeyFile, knownServerPublicKey] = await Promise.all([
     createCopiedFile('tunnel_client_private_key', sshTunnelPrivateKey),
     createCopiedFile('tunnel_server_public_key', formatPublicKey(hostKey)),
@@ -141,43 +132,41 @@ const up = async ({
     machineDriver, machineCreationDriver, sshKey, envId, log, debug,
   })
 
-  const exec = sshClient.execCommand
-
   const composeTunnelAgentUser = (
-    await exec('echo "$(id -u):$(stat -c %g /var/run/docker.sock)"')
+    await sshClient.execCommand('echo "$(id -u):$(stat -c %g /var/run/docker.sock)"')
   ).stdout.trim()
 
   const remoteModel = addComposeTunnelAgentService({
     debug,
     tunnelOpts,
     urlSuffix: envId,
-    sshPrivateKeyPath: path.join(remoteDir, sshPrivateKeyFile.remote),
-    knownServerPublicKeyPath: path.join(remoteDir, knownServerPublicKey.remote),
-    remoteBaseDir: remoteDir,
+    sshPrivateKeyPath: sshPrivateKeyFile.remote,
+    knownServerPublicKeyPath: knownServerPublicKey.remote,
+    listenAddress: composeTunnelAgentSocket(projectName),
     user: composeTunnelAgentUser,
   }, fixedModel)
 
-  const modelStr = yaml.stringify(remoteModel)
-  log.debug('model', modelStr)
-  const composeFilePath = (await createCopiedFile('docker-compose.yml', modelStr)).local
+  log.debug('model', yaml.stringify(remoteModel))
+
+  const composeFilePath = (await createCopiedFile('docker-compose.yml', yaml.stringify(remoteModel))).local
 
   const withDockerSocket = wrapWithDockerSocket({ sshClient, log })
 
   try {
-    await exec(`sudo mkdir -p "${remoteDir}" && sudo chown $USER "${remoteDir}"`)
+    await sshClient.execCommand(`sudo mkdir -p "${remoteDir}" && sudo chown $USER "${remoteDir}"`)
 
     log.debug('Files to copy', filesToCopy)
 
-    await uploadWithSpinner(exec, remoteDir, filesToCopy, skipUnchangedFiles)
+    await copyFilesWithoutRecreatingDirUsingSftp(sshClient, REMOTE_DIR_BASE, remoteDir, filesToCopy)
 
     const compose = localComposeClient({ composeFiles: [composeFilePath], projectName })
-    const composeArgs = calcComposeArgs({ userSpecifiedServices, debug, cwd })
+    const composeArgs = calcComposeArgs(userSpecifiedServices, debug)
     log.debug('Running compose up with args: ', composeArgs)
     await withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit' }))
 
     const tunnels = await withSpinner(async () => {
       const queryResult = await queryTunnels({
-        sshClient, remoteProjectDir: remoteDir, retryOpts: { minTimeout: 1000, maxTimeout: 2000, retries: 10 },
+        sshClient, projectName, retryOpts: { minTimeout: 1000, maxTimeout: 2000, retries: 10 },
       })
 
       return queryResult.tunnels

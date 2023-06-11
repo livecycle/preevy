@@ -17,7 +17,6 @@
     ]
   },
   "scripts": {
-    "test": "yarn -s run lerna -- run test --",
     "lint": "yarn -s run lerna -- run lint --parallel --",
     "build": "yarn -s run lerna run build --",
     "check-mismatches": "syncpack list-mismatches",

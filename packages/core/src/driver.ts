@@ -9,6 +9,7 @@ export type PartialMachine = {
 export type Machine = {
   version: string
   publicIPAddress: string
+  privateIPAddress: string
   sshKeyName: string
   sshUsername: string
 } & PartialMachine

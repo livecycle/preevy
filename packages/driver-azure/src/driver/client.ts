@@ -66,6 +66,7 @@ export const REGIONS = [
 ]
 
 type VMInstance = {
+  privateIPAddress: string
   vm: VirtualMachine
   publicIPAddress: string
 }
@@ -233,8 +234,8 @@ export const client = ({
       )
       const vmImageInfo = await findVMImage(region, imageRef, computeClient)
 
-      if (!nic.id || !vmImageInfo?.name || !publicIPInfo.name) {
-        throw new Error(`Could not create vm, missing properties, nic id: ${nic.id} , image name: ${vmImageInfo?.name}, public IP name: ${publicIPInfo.name}`)
+      if (!nic.id || !vmImageInfo?.name || !publicIPInfo.name || !nic.ipConfigurations?.[0].privateIPAddress) {
+        throw new Error(`Could not create vm, missing properties, nic id: ${nic.id} , image name: ${vmImageInfo?.name}, public IP name: ${publicIPInfo.name}, private IP: ${nic.ipConfigurations?.[0].privateIPAddress}`)
       }
       const vm = await createVirtualMachine(tags, nic.id, {
         ...imageRef,
@@ -246,6 +247,7 @@ export const client = ({
       }
       return {
         vm,
+        privateIPAddress: nic.ipConfigurations[0].privateIPAddress,
         publicIPAddress: publicIPAddress.ipAddress,
       }
     },

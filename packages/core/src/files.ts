@@ -7,6 +7,10 @@ export const undefinedOnNoEntError = <T>(p: Promise<T>) => p.catch(err => {
   throw err
 })
 
-export const lstatOrUndefined = (
-  file: string,
-): Promise<fs.Stats | undefined> => undefinedOnNoEntError(fs.promises.lstat(file))
+type Stat = typeof fs.promises.stat
+
+export const statOrUndefined = (
+  ...args: Parameters<Stat>
+): Promise<Awaited<ReturnType<Stat>> | undefined> => undefinedOnNoEntError(
+  fs.promises.stat(...args)
+)

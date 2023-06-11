@@ -5,7 +5,6 @@ import { withSpinner } from '../../spinner'
 import { MachineCreationDriver, SpecDiffItem, MachineDriver } from '../../driver'
 import { telemetryEmitter } from '../../telemetry'
 import { Logger } from '../../log'
-import { scriptExecuter } from '../../script-executer'
 
 const machineDiffText = (diff: SpecDiffItem[]) => diff
   .map(({ name, old, new: n }) => `* ${name}: ${old} -> ${n}`).join(EOL)
@@ -96,17 +95,14 @@ export const ensureCustomizedMachine = async ({
   }
 
   try {
-    await withSpinner(async spinner => {
-      const execScript = scriptExecuter({ exec: sshClient.execCommand, log })
-      let i = 0
+    await withSpinner(async () => {
+      log.debug('Executing machine scripts')
       for (const script of machineDriver.customizationScripts ?? []) {
-        i += 1
-        spinner.text = `Executing customization scripts (${i}/${machineDriver.customizationScripts?.length})`
         // eslint-disable-next-line no-await-in-loop
-        await execScript(script, {})
+        await sshClient.execScript(script, {})
       }
 
-      spinner.text = 'Ensuring docker is accessible...'
+      log.info('Ensuring docker is accessible')
       await retry(
         () => sshClient.execCommand('docker run hello-world', { }),
         {
@@ -126,7 +122,7 @@ export const ensureCustomizedMachine = async ({
         envId,
         wait: false,
       })
-    }, { opPrefix: 'Configuring machine', successText: 'Machine configured' })
+    }, { opPrefix: 'Configuring machine' })
   } catch (e) {
     sshClient.dispose()
     throw e
