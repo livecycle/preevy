@@ -4,7 +4,6 @@ import { promisify } from 'util'
 import { pLimit } from '../../limit'
 import { DirToCopy, FileToCopy, isDirEnt, normalizeDirInfo, normalizeFileInfo, pathFromStringOrFileInfo } from './files'
 import { TransferOptions } from './transfer'
-import { putFilesWithExpandedProgress } from './progress-expanded'
 
 type ErrorCodeHandler<T> = [number, () => T]
 const handleCodeError = <T>(...codes: ErrorCodeHandler<T>[]) => (err: unknown) => {
@@ -115,9 +114,7 @@ export const sftpClient = (
     close: () => sftp.end(),
   }
 
-  return Object.assign(self, {
-    putFilesWithExpandedProgress: putFilesWithExpandedProgress(self.putFiles),
-  })
+  return self
 }
 
 export type SftpClient = Awaited<ReturnType<ReturnType<typeof sftpClient>>>

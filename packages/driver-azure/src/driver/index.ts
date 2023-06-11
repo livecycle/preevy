@@ -60,8 +60,7 @@ const requireTagValue = (tags: Resource['tags'], key: string) => {
 }
 
 const machineFromVm = (
-  { privateIPAddress, publicIPAddress, vm }: {
-    privateIPAddress: string
+  { publicIPAddress, vm }: {
     publicIPAddress: string
     vm: VirtualMachine}
 ): Machine & { envId: string } => {
@@ -69,7 +68,6 @@ const machineFromVm = (
     throw new Error('Could not create a machine from instance')
   }
   return {
-    privateIPAddress,
     publicIPAddress,
     providerId: extractResourceGroupNameFromId(vm.id),
     sshKeyName: 'default',
@@ -194,7 +192,6 @@ const machineCreationDriver = (
           .capture('azure create machine start', { region })
 
         const {
-          privateIPAddress,
           publicIPAddress,
           vm,
         } = await cl.createVMInstance({
@@ -204,7 +201,7 @@ const machineCreationDriver = (
           envId,
         })
         telemetryEmitter().capture('azure create machine end', { region, elapsed_sec: (new Date().getTime() - startTime) / 1000 })
-        return machineFromVm({ privateIPAddress, publicIPAddress, vm })
+        return machineFromVm({ publicIPAddress, vm })
       })(),
     }),
     ensureMachineSnapshot: async () => undefined,

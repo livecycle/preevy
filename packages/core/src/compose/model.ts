@@ -1,10 +1,9 @@
-import fs from 'fs'
 import { asyncMap, asyncToArray } from 'iter-tools-es'
 import { mapValues } from 'lodash'
 import path from 'path'
 import { asyncMapValues } from '../async'
-import { statOrUndefined } from '../files'
-import { FileToCopy } from '../ssh'
+import { lstatOrUndefined } from '../files'
+import { FileToCopy } from '../upload-files'
 import { PreevyConfig } from '../config'
 
 export type ComposeSecretOrConfig = {
@@ -68,38 +67,39 @@ const volumeSkipList = [
 ]
 
 export const fixModelForRemote = async (
-  { remoteDir, skipServices = [] }: {
-    remoteDir: string
+  { skipServices = [], cwd, remoteBaseDir }: {
     skipServices?: string[]
+    cwd: string
+    remoteBaseDir: string
   },
   model: ComposeModel,
 ): Promise<{ model: Required<Omit<ComposeModel, 'x-preevy'>>; filesToCopy: FileToCopy[] }> => {
   const filesToCopy: FileToCopy[] = []
 
-  const relativePath = (p: string) => path.resolve(remoteDir, p)
+  const remotePath = (absolutePath: string) => {
+    if (!path.isAbsolute(absolutePath)) {
+      throw new Error(`expected absolute path: "${absolutePath}"`)
+    }
 
-  const remoteSecretOrConfigPath = (
-    type: 'secret' | 'config',
-    { file }: Pick<ComposeSecretOrConfig, 'file'>,
-  ) => path.join(`${type}s`, relativePath(file))
+    const relativePath = path.relative(cwd, absolutePath)
+
+    return relativePath.startsWith('..')
+      ? path.join('absolute', absolutePath)
+      : path.join('relative', relativePath)
+  }
 
   const overrideSecretsOrConfigs = (
-    type: 'secret' | 'config',
     c?: Record<string, ComposeSecretOrConfig>,
   ) => mapValues(c ?? {}, secretOrConfig => {
-    const remote = remoteSecretOrConfigPath(type, secretOrConfig)
+    const remote = remotePath(secretOrConfig.file)
     filesToCopy.push({ local: secretOrConfig.file, remote })
-    return { ...secretOrConfig, file: path.join(remoteDir, remote) }
+    return { ...secretOrConfig, file: path.join(remoteBaseDir, remote) }
   })
 
-  const overrideSecrets = overrideSecretsOrConfigs('secret', model.secrets)
-  const overrideConfigs = overrideSecretsOrConfigs('config', model.configs)
+  const overrideSecrets = overrideSecretsOrConfigs(model.secrets)
+  const overrideConfigs = overrideSecretsOrConfigs(model.configs)
 
   const services = model.services ?? {}
-
-  const remoteVolumePath = (
-    { source }: Pick<ComposeBindVolume, 'source'>,
-  ) => path.join('volumes', relativePath(source))
 
   const overrideServices = await asyncMapValues(services, async (service, serviceName) => {
     if (skipServices.includes(serviceName)) {
@@ -121,8 +121,8 @@ export const fixModelForRemote = async (
           return volume
         }
 
-        const remote = remoteVolumePath(volume)
-        const stats = await statOrUndefined(volume.source) as fs.Stats | undefined
+        const remote = remotePath(volume.source)
+        const stats = await lstatOrUndefined(volume.source)
 
         if (stats) {
           if (!stats.isDirectory() && !stats.isFile() && !stats.isSymbolicLink()) {
@@ -131,10 +131,10 @@ export const fixModelForRemote = async (
 
           // ignore non-existing files like docker and compose do,
           //  they will be created as directories in the container
-          filesToCopy.push({ local: { path: volume.source, stats }, remote })
+          filesToCopy.push({ local: volume.source, remote })
         }
 
-        return { ...volume, source: path.join(remoteDir, remote) }
+        return { ...volume, source: path.join(remoteBaseDir, remote) }
       }, service.volumes)),
     })
   })

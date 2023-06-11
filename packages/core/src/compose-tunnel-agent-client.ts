@@ -5,7 +5,6 @@ import { ComposeModel, ComposeService } from './compose/model'
 import { SshClient } from './ssh/client'
 import { TunnelOpts } from './ssh/url'
 import { Tunnel } from './tunneling'
-import { remoteProjectDir } from './remote-files'
 
 export const COMPOSE_TUNNEL_AGENT_SERVICE_NAME = 'preevy_proxy'
 const COMPOSE_TUNNEL_AGENT_DIR = path.join(path.dirname(require.resolve('@preevy/compose-tunnel-agent')), '..')
@@ -33,72 +32,78 @@ export const addBaseComposeTunnelAgentService = (
   },
 })
 
+const composeTunnelAgentSocket = (remoteProjectDir: string) => path.join(remoteProjectDir, 'compose-tunnel-agent.sock')
+
 export const addComposeTunnelAgentService = (
-  { tunnelOpts, sshPrivateKeyPath, knownServerPublicKeyPath, urlSuffix, debug, listenAddress, user }: {
+  { tunnelOpts, sshPrivateKeyPath, knownServerPublicKeyPath, urlSuffix, debug, remoteBaseDir, user }: {
     tunnelOpts: TunnelOpts
     urlSuffix: string
     sshPrivateKeyPath: string
     knownServerPublicKeyPath: string
     debug: boolean
-    listenAddress: string
+    remoteBaseDir: string
     user: string
   },
   model: ComposeModel,
-): ComposeModel => ({
-  ...model,
-  services: {
-    ...model.services,
-    [COMPOSE_TUNNEL_AGENT_SERVICE_NAME]: {
-      ...baseDockerProxyService,
-      restart: 'always',
-      networks: Object.keys(model.networks || {}),
-      volumes: [
-        {
-          type: 'bind',
-          source: '/var/run/docker.sock',
-          target: '/var/run/docker.sock',
+): ComposeModel => {
+  const socket = composeTunnelAgentSocket(remoteBaseDir)
+  return ({
+    ...model,
+    services: {
+      ...model.services,
+      [COMPOSE_TUNNEL_AGENT_SERVICE_NAME]: {
+        ...baseDockerProxyService,
+        restart: 'always',
+        networks: Object.keys(model.networks || {}),
+        volumes: [
+          {
+            type: 'bind',
+            source: '/var/run/docker.sock',
+            target: '/var/run/docker.sock',
+          },
+          {
+            type: 'bind',
+            source: sshPrivateKeyPath,
+            target: '/preevy/.ssh/id_rsa',
+            read_only: true,
+            bind: { create_host_path: true },
+          },
+          {
+            type: 'bind',
+            source: knownServerPublicKeyPath,
+            target: '/preevy/known_server_keys/tunnel_server',
+            read_only: true,
+            bind: { create_host_path: true },
+          },
+          {
+            type: 'bind',
+            source: path.dirname(socket),
+            target: '/preevy/socket',
+          },
+        ],
+        user,
+        environment: {
+          SSH_URL: tunnelOpts.url,
+          TLS_SERVERNAME: tunnelOpts.tlsServerName,
+          TUNNEL_URL_SUFFIX: urlSuffix,
+          PORT: path.join('/preevy/socket', path.basename(socket)),
+          ...debug ? { DEBUG: '1' } : {},
+          HOME: '/preevy',
         },
-        {
-          type: 'bind',
-          source: sshPrivateKeyPath,
-          target: '/preevy/.ssh/id_rsa',
-          read_only: true,
-          bind: { create_host_path: true },
-        },
-        {
-          type: 'bind',
-          source: knownServerPublicKeyPath,
-          target: '/preevy/known_server_keys/tunnel_server',
-          read_only: true,
-          bind: { create_host_path: true },
-        },
-        {
-          type: 'bind',
-          source: path.dirname(listenAddress),
-          target: '/preevy/socket',
-        },
-      ],
-      user,
-      environment: {
-        SSH_URL: tunnelOpts.url,
-        TLS_SERVERNAME: tunnelOpts.tlsServerName,
-        TUNNEL_URL_SUFFIX: urlSuffix,
-        PORT: path.join('/preevy/socket', path.basename(listenAddress)),
-        ...debug ? { DEBUG: '1' } : {},
-        HOME: '/preevy',
       },
     },
-  },
-})
+  })
+}
 
-export const composeTunnelAgentSocket = (projectName: string) => path.join(remoteProjectDir(projectName), 'compose-tunnel-agent.sock')
-
-export const queryTunnels = async ({ sshClient, projectName, retryOpts = { retries: 0 } }: {
+export const queryTunnels = async ({ sshClient, remoteProjectDir, retryOpts = { retries: 0 } }: {
   sshClient: SshClient
-  projectName: string
+  remoteProjectDir: string
   retryOpts?: retry.Options
 }) => {
-  const forwarding = await sshClient.forwardOutStreamLocal({ host: '0.0.0.0', port: 0 }, composeTunnelAgentSocket(projectName))
+  const forwarding = await sshClient.forwardOutStreamLocal(
+    { host: '0.0.0.0', port: 0 },
+    composeTunnelAgentSocket(remoteProjectDir),
+  )
   if (typeof forwarding.localSocket !== 'object') {
     throw new Error(`Invalid response from ssh forward: ${forwarding.localSocket}`)
   }

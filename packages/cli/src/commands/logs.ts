@@ -1,7 +1,7 @@
 import yaml from 'yaml'
 import { Args, ux } from '@oclif/core'
 import {
-  sshKeysStore, connectSshClient as createSshClient,
+  isPartialMachine,
   COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addBaseComposeTunnelAgentService,
   findAmbientEnvId, localComposeClient, wrapWithDockerSocket,
 } from '@preevy/core'
@@ -32,13 +32,6 @@ export default class Logs extends DriverCommand<typeof Logs> {
     const { flags, raw } = await this.parse(Logs)
     const restArgs = raw.filter(arg => arg.type === 'arg').map(arg => arg.input)
     const driver = await this.driver()
-    const keyAlias = await driver.getKeyPairAlias()
-
-    const keyStore = sshKeysStore(this.store)
-    const sshKey = await keyStore.getKey(keyAlias)
-    if (!sshKey) {
-      throw new Error(`No key pair found for alias ${keyAlias}`)
-    }
 
     const projectName = (await this.ensureUserModel()).name
     log.debug(`project: ${projectName}`)
@@ -59,20 +52,14 @@ export default class Logs extends DriverCommand<typeof Logs> {
     }
 
     const machine = await driver.getMachine({ envId })
-    if (!machine) {
+    if (!machine || isPartialMachine(machine)) {
       throw new Error(`No machine found for envId ${envId}`)
     }
 
-    const sshClient = await createSshClient({
-      debug: flags.debug,
-      host: machine.publicIPAddress,
-      username: machine.sshUsername,
-      privateKey: sshKey.privateKey.toString('utf-8'),
-      log,
-    })
+    const connection = await driver.connect(machine, { log, debug: flags.debug })
 
     try {
-      const withDockerSocket = wrapWithDockerSocket({ sshClient, log })
+      const withDockerSocket = wrapWithDockerSocket({ connection, log })
 
       const compose = localComposeClient(
         { composeFiles: Buffer.from(yaml.stringify(addBaseComposeTunnelAgentService(model))), projectName }
@@ -80,7 +67,7 @@ export default class Logs extends DriverCommand<typeof Logs> {
 
       await withDockerSocket(() => compose.spawnPromise(['logs', ...services], { stdio: 'inherit' }))
     } finally {
-      sshClient.dispose()
+      connection.close()
     }
   }
 }
