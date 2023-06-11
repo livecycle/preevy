@@ -6,8 +6,8 @@ export const wireProcessExit = (process: NodeJS.Process, emitter: TelemetryEmitt
     return async (event: string, code?: number): Promise<void> => {
       if (!exitCaptured) {
         emitter.capture('exit', { event, code })
+        exitCaptured = true
       }
-      exitCaptured = true
       return emitter.flush()
     }
   })();
