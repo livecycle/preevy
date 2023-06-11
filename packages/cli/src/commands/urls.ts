@@ -39,7 +39,6 @@ export default class Urls extends DriverCommand<typeof Urls> {
       projectName,
       driver: await this.driver(),
       debug: flags.debug,
-      store: this.store,
       serviceAndPort: args.service ? { service: args.service, port: args.port } : undefined,
     })
 

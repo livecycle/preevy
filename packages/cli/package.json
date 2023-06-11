@@ -86,7 +86,6 @@
     "posttest": "yarn lint",
     "prepack": "yarn build && oclif manifest && oclif readme",
     "cli": "./bin/dev",
-    "test": "mocha --forbid-only \"test/**/*.test.ts\"",
     "version": "oclif readme && git add README.md",
     "bump-to": "yarn version --no-commit-hooks --no-git-tag-version --new-version"
   },

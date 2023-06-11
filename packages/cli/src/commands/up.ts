@@ -2,7 +2,7 @@ import { Args, Flags, ux } from '@oclif/core'
 import os from 'os'
 import {
   performTunnelConnectionCheck, HostKeySignatureConfirmer,
-  commands, flattenTunnels, profileStore, sshKeysStore,
+  commands, flattenTunnels, profileStore,
   telemetryEmitter,
 } from '@preevy/core'
 import { asyncReduce } from 'iter-tools-es'
@@ -64,16 +64,6 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
     const driver = await this.driver()
     const machineCreationDriver = await this.machineCreationDriver()
-    const keyAlias = await driver.getKeyPairAlias()
-
-    const keyStore = sshKeysStore(this.store)
-    let keyPair = await keyStore.getKey(keyAlias)
-    if (!keyPair) {
-      this.logger.info(`key pair ${keyAlias} not found, creating a new key pair`)
-      keyPair = await driver.createKeyPair()
-      await keyStore.addKey(keyPair)
-      this.logger.info(`keypair ${keyAlias} created`)
-    }
 
     const pStore = profileStore(this.store)
     const tunnelingKey = await pStore.getTunnelingKey()
@@ -121,7 +111,6 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       tunnelOpts,
       log: this.logger,
       dataDir: this.config.dataDir,
-      sshKey: keyPair,
       sshTunnelPrivateKey: tunnelingKey,
       allowedSshHostKeys: hostKey,
       cwd: process.cwd(),
@@ -143,7 +132,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       return result.urls
     }
 
-    this.log(`Preview environment ${envId} provisioned: ${machine.publicIPAddress}`)
+    this.log(`Preview environment ${envId} provisioned at ${machine.locationDescription}`)
 
     ux.table(
       result.urls,

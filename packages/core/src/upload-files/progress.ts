@@ -1,4 +1,4 @@
-import { SimpleEmitter, simpleEmitter, StateEmitter, StateEmitterConsumer, stateEmitter } from '@preevy/common'
+import { SimpleEmitter, simpleEmitter, StateEmitter, StateEmitterConsumer, stateEmitter, EmitterConsumer } from '@preevy/common'
 import { map, reduce } from 'iter-tools-es'
 
 export type TransferProgressEvents = {
@@ -32,7 +32,7 @@ const ttlStore = <T>(ttl: number) => {
 const bytesPerSecSampleWindowInSeconds = 5
 
 export const expandedTransferProgressEmitter = (
-  s: TransferProgressEmitter,
+  s: EmitterConsumer<TransferProgressEvents>,
 ): StateEmitter<ExpandedTransferProgress> => {
   const e = stateEmitter<ExpandedTransferProgress>(
     { bytes: 0, files: 0, currentFile: undefined, bytesPerSec: 0 },
