@@ -2,7 +2,7 @@ import { AddressInfo, ListenOptions } from 'net'
 import { ChildProcess, StdioOptions } from 'child_process'
 import { CommandExecuter } from '../command-executer'
 import { Profile } from '../profile'
-import { MachineBase, PartialMachine, SpecDiffItem } from './machine'
+import { MachineBase, PartialMachine, Resource, SpecDiffItem } from './machine'
 import { Store } from '../store'
 import { Logger } from '../log'
 
@@ -22,25 +22,19 @@ export type MachineConnection = {
 
 export type MachineDriver<
   Machine extends MachineBase = MachineBase,
-  NonMachineResourceType extends string = string
+  ResourceType extends string = string
 > = {
   customizationScripts?: string[]
   friendlyName: string
+  resourcePlurals: Record<string, string>
 
   getMachine: (args: { envId: string }) => Promise<Machine | PartialMachine | undefined>
 
   connect: (machine: MachineBase, opts: { log: Logger; debug: boolean }) => Promise<MachineConnection>
   spawnRemoteCommand: (machine: MachineBase, command: string[], stdio: StdioOptions) => Promise<ChildProcess>
 
-  listMachines: () => AsyncIterableIterator<(PartialMachine | Machine) & { envId: string }>
-  removeMachine: (providerId: string, wait: boolean) => Promise<void>
-
-  listNonMachineResources: () => AsyncIterableIterator<{ type: NonMachineResourceType; providerId: string }>
-  removeNonMachineResource: (
-    resource: { type: string; providerId: string },
-    wait: boolean,
-  ) => Promise<void>
-  pluralNonMachineResourceType: (type: string) => string
+  listDeletableResources: () => AsyncIterableIterator<Resource<ResourceType>>
+  deleteResources: (wait: boolean, ...resource: Resource<string>[]) => Promise<void>
 }
 
 export type MachineCreationDriver<Machine extends MachineBase = MachineBase> = {

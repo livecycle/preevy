@@ -7,7 +7,7 @@ import { InferredFlags } from '@oclif/core/lib/interfaces'
 import { ListQuestion, Question } from 'inquirer'
 import {
   telemetryEmitter,
-  SshMachine, MachineDriver, MachineCreationDriver, MachineCreationDriverFactory,
+  SshMachine, MachineDriver, MachineCreationDriver, MachineCreationDriverFactory, machineResourceType,
   MachineDriverFactory, sshKeysStore, Store,
   getStoredSshKey, sshDriver,
 } from '@preevy/core'
@@ -19,9 +19,12 @@ import { CURRENT_MACHINE_VERSION, TAGS, requiredTag } from './tags'
 
 export { BundleId, BUNDLE_IDS, bundleIdFromString as bundleId }
 
+type ResourceType = typeof machineResourceType | 'snapshot' | 'keypair'
+
 const machineFromInstance = (
   instance: Instance,
 ): SshMachine & { envId: string } => ({
+  type: machineResourceType,
   locationDescription: extractDefined(instance, 'publicIpAddress'),
   publicIPAddress: extractDefined(instance, 'publicIpAddress'),
   sshKeyName: extractDefined(instance, 'sshKeyName'),
@@ -30,8 +33,6 @@ const machineFromInstance = (
   version: requiredTag(instance.tags || [], TAGS.MACHINE_VERSION),
   envId: requiredTag(instance.tags || [], TAGS.ENV_ID),
 })
-
-type NonMachineResourceType = 'snapshot' | 'key pair'
 
 type DriverContext = {
   region: string
@@ -43,7 +44,7 @@ const machineDriver = ({
   region,
   profileId,
   store,
-}: DriverContext): MachineDriver<SshMachine, NonMachineResourceType> => {
+}: DriverContext): MachineDriver<SshMachine, ResourceType> => {
   const client = createClient({ region, profileId })
   const keyAlias = region
 
@@ -56,48 +57,45 @@ const machineDriver = ({
       return instance && machineFromInstance(instance)
     },
 
-    listMachines: () => asyncMap(
-      machineFromInstance,
-      client.listInstances(),
-    ),
+    listDeletableResources: () => {
+      const machines = asyncMap(
+        machineFromInstance,
+        client.listInstances(),
+      )
 
-    listNonMachineResources: () => {
-      const instances = asyncMap(
-        ({ name }) => ({ type: 'snapshot' as NonMachineResourceType, providerId: name as string }),
+      const snapshots = asyncMap(
+        ({ name }) => ({ type: 'snapshot' as ResourceType, providerId: name as string }),
         client.listInstanceSnapshots(),
       )
       const keyPairs = asyncMap(
-        ({ name }) => ({ type: 'key pair' as NonMachineResourceType, providerId: name as string }),
+        ({ name }) => ({ type: 'keypair' as ResourceType, providerId: name as string }),
         client.listKeyPairsByAlias(keyAlias),
       )
-      return asyncConcat(instances, keyPairs)
+
+      return asyncConcat(machines, snapshots, keyPairs)
     },
 
-    removeMachine: (providerId, wait) => client.deleteInstance(providerId, wait),
-    removeNonMachineResource: async ({ type, providerId }, wait) => {
-      if (type === 'snapshot') {
-        await client.deleteInstanceSnapshot({ instanceSnapshotName: providerId, wait })
-        return
-      }
-      if (type === 'key pair') {
-        await Promise.all([
-          client.deleteKeyPair(providerId, wait),
-          sshKeysStore(store).deleteKey(keyAlias),
-        ])
-        return
-      }
-      throw new Error(`Unknown resource type "${type}"`)
+    deleteResources: async (wait, ...resources) => {
+      await Promise.all(resources.map(({ type, providerId }) => {
+        if (type === 'snapshot') {
+          return client.deleteInstanceSnapshot({ instanceSnapshotName: providerId, wait })
+        }
+        if (type === 'keypair') {
+          return Promise.all([
+            client.deleteKeyPair(providerId, wait),
+            sshKeysStore(store).deleteKey(keyAlias),
+          ])
+        }
+        if (type === 'machine') {
+          return client.deleteInstance(providerId, wait)
+        }
+        throw new Error(`Unknown resource type "${type}"`)
+      }))
     },
 
-    pluralNonMachineResourceType: (type: string) => {
-      if (type === 'snapshot') {
-        return 'snapshots'
-      }
-      if (type === 'key pair') {
-        return 'key pairs'
-      }
-
-      throw new Error(`Unknown resource type "${type}"`)
+    resourcePlurals: {
+      snapshot: 'snapshots',
+      keypair: 'keypairs',
     },
 
     ...sshDriver(() => getStoredSshKey(store, keyAlias)),
@@ -139,7 +137,7 @@ const flagsFromAnswers = async (answers: Record<string, unknown>): Promise<FlagT
 
 machineDriver.flagsFromAnswers = flagsFromAnswers
 
-const factory: MachineDriverFactory<FlagTypes, SshMachine, NonMachineResourceType> = (
+const factory: MachineDriverFactory<FlagTypes, SshMachine, ResourceType> = (
   f,
   profile,
   store,

@@ -1,21 +1,24 @@
 import os from 'os'
-import { Flags } from '@oclif/core'
-import { asyncToArray } from 'iter-tools-es'
-import { groupBy } from 'lodash'
+import { Flags, ux } from '@oclif/core'
+import { asyncFilter, asyncToArray } from 'iter-tools-es'
+import { groupBy, partition } from 'lodash'
+import { MachineResource, isPartialMachine, machineResourceType } from '@preevy/core'
 import DriverCommand from '../driver-command'
 import { carefulBooleanPrompt } from '../prompt'
 
+const isMachineResource = (r: { type: string }): r is MachineResource => r.type === machineResourceType
+
 const confirmPurge = async (
-  { driverFriendlyName, envIds, groupedOtherResources, pluralTypeName }: {
+  { driverFriendlyName, envIds, groupedNonMachineResources, resourcePlurals }: {
     driverFriendlyName: string
     envIds: string[]
-    groupedOtherResources: [type: string, count: number][]
-    pluralTypeName: (t: string) => string
+    groupedNonMachineResources: [type: string, count: number][]
+    resourcePlurals: Record<string, string>
   },
 ) => {
   const resources = [
-    ...envIds.map(e => `Machine for env ${e}`),
-    ...groupedOtherResources.map(([type, count]) => `${count > 1 ? pluralTypeName(type) : type} (${count})`),
+    ...envIds.map(e => `Environment ${e}`),
+    ...groupedNonMachineResources.map(([type, count]) => `${count} ${count > 1 ? resourcePlurals[type] : type}`),
   ].filter(Boolean)
 
   if (!resources.length) {
@@ -37,8 +40,13 @@ export default class Purge extends DriverCommand<typeof Purge> {
 
   static flags = {
     all: Flags.boolean({
-      description: 'Remove not just machines, but all resources (snapshots, keypairs, and other resource types)',
+      description: 'Remove all resources types (snapshots, keypairs, and other resource types)',
       default: false,
+    }),
+    type: Flags.string({
+      description: 'Resource type(s) to delete',
+      default: [machineResourceType],
+      multiple: true,
     }),
     force: Flags.boolean({
       description: 'Do not ask for confirmation',
@@ -58,21 +66,37 @@ export default class Purge extends DriverCommand<typeof Purge> {
     const { flags } = await this.parse(Purge)
 
     const driver = await this.driver()
+    const resourcePlurals: Record<string, string> = { [machineResourceType]: 'machines', ...driver.resourcePlurals }
+    const driverResourceTypes = new Set(Object.keys(resourcePlurals))
 
-    const [machines, otherResources] = await Promise.all([
-      asyncToArray(driver.listMachines()),
-      flags.all ? asyncToArray(driver.listNonMachineResources()) : [],
-    ])
+    flags.type.forEach(type => {
+      if (!driverResourceTypes.has(type)) {
+        ux.error(
+          `Unknown resource type "${type}". Available resource types: ${Array.from(driverResourceTypes).join(', ')}`,
+          { exit: 1 },
+        )
+      }
+    })
 
-    const groupedOtherResources = Object.entries(
-      groupBy(otherResources, ({ type }) => type)
+    const allResources = await asyncToArray(
+      asyncFilter(
+        ({ type }) => flags.all || flags.type.includes(type),
+        driver.listDeletableResources(),
+      ),
+    )
+
+    const [machines, nonMachineResources] = partition(allResources, isMachineResource)
+    const [partialMachines, envMachines] = partition(machines, isPartialMachine)
+
+    const groupedNonMachineResources = Object.entries(
+      groupBy([...partialMachines, ...nonMachineResources], ({ type }) => type)
     ).map(([type, resources]) => [type, resources.length] as [string, number])
 
     if (!flags.force && !await confirmPurge({
       driverFriendlyName: driver.friendlyName,
-      envIds: machines.map(m => m.envId),
-      groupedOtherResources,
-      pluralTypeName: driver.pluralNonMachineResourceType,
+      envIds: envMachines.map(m => m.envId),
+      groupedNonMachineResources,
+      resourcePlurals,
     })) {
       if (!flags.json) {
         this.logger.warn('Aborting purge')
@@ -80,23 +104,10 @@ export default class Purge extends DriverCommand<typeof Purge> {
       return undefined
     }
 
-    await Promise.all([
-      ...machines.map(m => driver.removeMachine(m.providerId, flags.wait)),
-      ...otherResources.map(s => driver.removeNonMachineResource(s, flags.wait)),
-    ])
-
-    // if (removeKeyPair) {
-    //   const keyAlias = await driver.getKeyPairAlias()
-    //   const keyStore = sshKeysStore(this.store)
-    //   await keyStore.deleteKey(keyAlias)
-    //   await driver.removeKeyPair(keyAlias)
-    // }
+    await driver.deleteResources(flags.wait, ...allResources)
 
     if (flags.json) {
-      return {
-        machines: machines.map(m => m.envId),
-        otherResources,
-      }
+      return allResources
     }
 
     const action = flags.wait ? 'Deleted' : 'Started deletion of'
@@ -105,8 +116,8 @@ export default class Purge extends DriverCommand<typeof Purge> {
       this.logger.info(`${action} ${machines.length} machine${machines.length > 1 ? 's' : ''}`)
     }
 
-    groupedOtherResources.forEach(([type, count]) => {
-      this.logger.info(`${action} ${count} ${count > 1 ? driver.pluralNonMachineResourceType(type) : type}`)
+    groupedNonMachineResources.forEach(([type, count]) => {
+      this.logger.info(`${action} ${count} ${count > 1 ? resourcePlurals[type] : type}`)
     })
 
     return undefined

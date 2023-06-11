@@ -3,12 +3,14 @@ export { LocalProfilesConfig, localProfilesConfig } from './profile'
 export {
   SshMachine,
   MachineBase,
+  MachineResource,
   MachineDriver,
   MachineCreationDriver,
   MachineCreationDriverFactory,
   MachineDriverFactory,
   isPartialMachine,
   sshDriver,
+  machineResourceType,
   getStoredKey as getStoredSshKey,
   getStoredKeyOrUndefined as getStoredSshKeyOrUndefined,
 } from './driver'

@@ -10,6 +10,7 @@ import {
   getStoredSshKey,
   sshKeysStore,
   sshDriver,
+  machineResourceType,
 } from '@preevy/core'
 import createClient, { Instance, availableRegions, defaultProjectId, shortResourceName } from './client'
 import { LABELS } from './labels'
@@ -26,7 +27,7 @@ type MachineCreationDriverContext = DriverContext & {
   store: Store
 }
 
-type NonMachineResourceType = never
+type ResourceType = typeof machineResourceType
 
 const SSH_KEYPAIR_ALIAS = 'preevy-gce'
 const SSH_USERNAME = 'preevy'
@@ -38,6 +39,7 @@ const machineFromInstance = (
 ): SshMachine & { envId: string } => {
   const publicIPAddress = instance.networkInterfaces?.[0].accessConfigs?.[0].natIP as string
   return {
+    type: machineResourceType,
     locationDescription: publicIPAddress,
     publicIPAddress,
     sshKeyName: SSH_KEYPAIR_ALIAS,
@@ -50,7 +52,7 @@ const machineFromInstance = (
 
 const machineDriver = (
   { zone, projectId, profileId, store }: DriverContext,
-): MachineDriver<SshMachine, NonMachineResourceType> => {
+): MachineDriver<SshMachine, ResourceType> => {
   const client = createClient({ zone, project: projectId, profileId })
   return ({
     friendlyName: 'Google Cloud',
@@ -60,12 +62,18 @@ const machineDriver = (
       return instance && machineFromInstance(instance)
     },
 
-    listMachines: () => asyncMap(machineFromInstance, client.listInstances()),
-    listNonMachineResources: () => asyncMap(x => x, []),
+    listDeletableResources: () => asyncMap(machineFromInstance, client.listInstances()),
+    deleteResources: async (wait, ...resources) => {
+      await Promise.all(resources.map(({ type, providerId }) => {
+        if (type === 'machine') {
+          return client.deleteInstance(providerId, wait)
+        }
+        throw new Error(`Unknown resource type: "${type}"`)
+      }))
+    },
 
-    removeMachine: async (driverMachineId, wait) => client.deleteInstance(driverMachineId, wait),
-    pluralNonMachineResourceType: () => { throw new Error('Not implemented') },
-    removeNonMachineResource: async () => undefined,
+    resourcePlurals: {},
+
     ...sshDriver(() => getStoredSshKey(store, SSH_KEYPAIR_ALIAS)),
   })
 }
@@ -200,7 +208,7 @@ const machineCreationContextFromFlags = (
 const factory: MachineDriverFactory<
   Interfaces.InferredFlags<typeof machineDriver.flags>,
   SshMachine,
-  NonMachineResourceType
+  ResourceType
 > = (f, profile, store) => machineDriver({ ...contextFromFlags(f), profileId: profile.id, store })
 machineDriver.factory = factory
 

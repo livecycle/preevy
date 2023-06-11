@@ -1,5 +1,5 @@
 import { Flags } from '@oclif/core'
-import { findAmbientEnvId, withSpinner } from '@preevy/core'
+import { findAmbientEnvId, machineResourceType, withSpinner } from '@preevy/core'
 import DriverCommand from '../driver-command'
 import { envIdFlags } from '../common-flags'
 
@@ -43,7 +43,7 @@ export default class Down extends DriverCommand<typeof Down> {
     }
 
     await withSpinner(async () => {
-      await driver.removeMachine(machine.providerId, flags.wait)
+      await driver.deleteResources(flags.wait, { type: machineResourceType, providerId: machine.providerId })
     }, { opPrefix: `Deleting ${driver.friendlyName} machine ${machine.providerId} for environment ${envId}` })
 
     await Promise.all(

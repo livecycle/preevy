@@ -18,6 +18,7 @@ import {
   sshKeysStore,
   sshDriver,
   getStoredSshKey,
+  machineResourceType,
 } from '@preevy/core'
 import { client, REGIONS } from './client'
 import { CUSTOMIZE_BARE_MACHINE } from './scripts'
@@ -39,7 +40,7 @@ export type AzureErrorResponse = {
   message: string
 }
 
-type NonMachineResourceType = never
+type ResourceType = typeof machineResourceType
 
 type DriverContext = {
   profileId: string
@@ -78,6 +79,7 @@ const machineFromVm = (
     throw new Error('Could not create a machine from instance')
   }
   return {
+    type: machineResourceType,
     locationDescription: publicIPAddress,
     publicIPAddress,
     providerId: extractResourceGroupNameFromId(vm.id),
@@ -90,7 +92,7 @@ const machineFromVm = (
 
 const machineDriver = (
   { region, subscriptionId, profileId, store }: DriverContext,
-): MachineDriver<SshMachine, NonMachineResourceType> => {
+): MachineDriver<SshMachine, ResourceType> => {
   const cl = client({
     region,
     subscriptionId,
@@ -101,12 +103,14 @@ const machineDriver = (
     customizationScripts: CUSTOMIZE_BARE_MACHINE,
     friendlyName: 'Microsoft Azure',
     getMachine: async ({ envId }) => cl.getInstance(envId).then(vm => machineFromVm(vm)),
-    listMachines: () => asyncMap(
+
+    listDeletableResources: () => asyncMap(
       rg => cl.getInstanceByRg(rg.name as string).then(vm => {
         if (vm) {
           return machineFromVm(vm)
         }
         return {
+          type: machineResourceType,
           providerId: rg.name as string,
           envId: rg.tags?.[AzureCustomTags.ENV_ID] as string,
           error: 'VM creation is incomplete',
@@ -115,11 +119,16 @@ const machineDriver = (
       cl.listResourceGroups()
     ),
 
-    listNonMachineResources: () => asyncMap(x => x, []),
-    removeMachine: async (driverMachineId, wait) => cl.deleteResourcesResourceGroup(driverMachineId, wait),
+    deleteResources: async (wait, ...resources) => {
+      await Promise.all(resources.map(({ type, providerId }) => {
+        if (type === machineResourceType) {
+          return cl.deleteResourcesResourceGroup(providerId, wait)
+        }
+        throw new Error(`Unknown resource type "${type}"`)
+      }))
+    },
 
-    pluralNonMachineResourceType: () => { throw new Error('Not implemented') },
-    removeNonMachineResource: async () => undefined,
+    resourcePlurals: {},
 
     ...sshDriver(() => getStoredSshKey(store, SSH_KEYPAIR_ALIAS)),
   }
@@ -267,7 +276,7 @@ const machineCreationContextFromFlags = (f: MachineCreationFlagTypes): Omit<Mach
 const factory: MachineDriverFactory<
   Interfaces.InferredFlags<typeof machineDriver.flags>,
   SshMachine,
-  NonMachineResourceType
+  ResourceType
 > = (f, { id }, store) => machineDriver({ profileId: id, ...contextFromFlags(f), store })
 
 machineDriver.factory = factory

@@ -6,6 +6,6 @@ const ls = async ({
 }: {
   machineDriver: MachineDriver
   log: Logger
-}) => machineDriver.listMachines()
+}) => machineDriver.listDeletableResources()
 
 export default ls

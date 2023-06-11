@@ -1,7 +1,7 @@
 import { EOL } from 'os'
 import retry from 'p-retry'
 import { withSpinner } from '../../spinner'
-import { MachineCreationDriver, SpecDiffItem, MachineDriver, MachineConnection, MachineBase, isPartialMachine } from '../../driver'
+import { MachineCreationDriver, SpecDiffItem, MachineDriver, MachineConnection, MachineBase, isPartialMachine, machineResourceType } from '../../driver'
 import { telemetryEmitter } from '../../telemetry'
 import { Logger } from '../../log'
 import { scriptExecuter } from '../../remote-script-executer'
@@ -41,7 +41,7 @@ const ensureMachine = async ({
   return withSpinner(async spinner => {
     if (existingMachine && recreating) {
       spinner.text = 'Deleting machine'
-      await machineDriver.removeMachine(existingMachine.providerId, false)
+      await machineDriver.deleteResources(false, { type: machineResourceType, providerId: existingMachine.providerId })
     }
     spinner.text = 'Checking for existing snapshot'
     const machineCreation = await machineCreationDriver.createMachine({ envId })
