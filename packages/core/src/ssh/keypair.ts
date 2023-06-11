@@ -22,4 +22,4 @@ export const generateSshKeyPair = async (): Promise<{ privateKey: string; public
     publicKey: forge.ssh.publicKeyToOpenSSH(forge.pki.publicKeyFromPem(publicKey)),
   }
 }
-export type SSHKeyConfig = SshKeyPair & { alias: string; metadata?: Record<string, object> }
+export type SSHKeyConfig = SshKeyPair & { alias: string }

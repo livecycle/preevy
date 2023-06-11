@@ -1,5 +1,4 @@
 import {
-  GetKeyPairsCommandOutput,
   Instance,
   InstanceSnapshot,
   KeyPair,
@@ -7,7 +6,7 @@ import {
   LightsailClient,
 } from '@aws-sdk/client-lightsail'
 import { randomBytes } from 'crypto'
-import { asyncFilter, asyncFind } from 'iter-tools-es'
+import { asyncFilter, asyncFind, asyncFirst } from 'iter-tools-es'
 
 import { ensureDefined, extractDefined } from '../aws-utils/nulls'
 import { paginationIterator } from '../aws-utils/pagination'
@@ -58,12 +57,30 @@ const client = ({
   const lsClient = new LightsailClient({ region })
   const ls = new Lightsail({ region })
 
-  const findKeyPairByAlias = async (alias:string) => {
+  const potentiallyWait = (
+    wait: boolean,
+    ...args: Parameters<typeof waitUntilAllOperationsSucceed>
+  ): Promise<void> => {
+    if (wait) {
+      return waitUntilAllOperationsSucceed(...args)
+    }
+    return Promise.resolve()
+  }
+
+  const listKeyPairsByAlias = (alias: string) => {
     const tagsPredicate = keypairTagsPredicate({ alias, profileId })
-    return asyncFind(
+    return asyncFilter(
       (x: KeyPair) => tagsPredicate(x.tags ?? []),
       paginationIterator(pageToken => ls.getKeyPairs({ pageToken }), 'keyPairs'),
     )
+  }
+
+  const findKeyPairByAlias = async (alias: string) => {
+    const result = await asyncFirst(listKeyPairsByAlias(alias))
+    if (!result) {
+      return undefined
+    }
+    return ensureDefined(result, 'name')
   }
 
   return {
@@ -133,16 +150,12 @@ const client = ({
       return {
         publicKey: publicKeyBase64,
         privateKey: privateKeyBase64,
-        ref: extractDefined(keyPair, 'name'),
+        providerId: extractDefined(keyPair, 'name'),
       }
     },
 
     findKeyPairByAlias,
-
-    listKeyPairs: () => paginationIterator<KeyPair, 'keyPairs', GetKeyPairsCommandOutput>(
-      pageToken => ls.getKeyPairs({ pageToken }),
-      'keyPairs',
-    ),
+    listKeyPairsByAlias,
 
     createInstance: async ({
       name,
@@ -231,49 +244,44 @@ const client = ({
       instanceSnapshotName: string
       version: string
       wait: boolean
-    }) => {
-      const op = await ls.createInstanceSnapshot({
+    }) => potentiallyWait(
+      wait,
+      { client: lsClient, maxWaitTime: 120 },
+      await ls.createInstanceSnapshot({
         instanceSnapshotName,
         instanceName,
         tags: snapshotTags({ profileId, version }),
-      })
-
-      if (wait) {
-        await waitUntilAllOperationsSucceed(
-          { client: lsClient, maxWaitTime: 120 },
-          op,
-        )
-      }
-    },
+      }),
+    ),
 
     deleteInstanceSnapshot: async ({
       instanceSnapshotName,
+      wait,
     }: {
       instanceSnapshotName: string
-    }) => waitUntilAllOperationsSucceed(
+      wait: boolean
+    }) => potentiallyWait(
+      wait,
       { client: lsClient, maxWaitTime: 120 },
-      ls.deleteInstanceSnapshot({ instanceSnapshotName })
+      await ls.deleteInstanceSnapshot({ instanceSnapshotName }),
     ),
 
-    deleteInstance: async (name: string, wait: boolean) => {
-      const op = await ls.deleteInstance({ instanceName: name, forceDeleteAddOns: true })
-      if (!wait) {
-        return undefined
-      }
-      return waitUntilAllOperationsSucceed(
-        { client: lsClient, maxWaitTime: 120 },
-        op,
-      )
-    },
+    deleteInstance: async (name: string, wait: boolean) => potentiallyWait(
+      wait,
+      { client: lsClient, maxWaitTime: 120 },
+      await ls.deleteInstance({ instanceName: name, forceDeleteAddOns: true }),
+    ),
 
-    deleteKeyPair: async (alias: string) => {
+    deleteKeyPair: async (alias: string, wait: boolean) => {
       const keyPair = await findKeyPairByAlias(alias)
       if (!keyPair) {
         return
       }
-      await waitUntilAllOperationsSucceed(
+
+      await potentiallyWait(
+        wait,
         { client: lsClient, maxWaitTime: 120 },
-        ls.deleteKeyPair({ keyPairName: keyPair.name })
+        await ls.deleteKeyPair({ keyPairName: keyPair.name }),
       )
     },
   }

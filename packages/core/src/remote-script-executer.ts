@@ -4,7 +4,7 @@ import { CommandExecuter, ExecResult, mkdir } from './command-executer'
 import { Logger } from './log'
 import { upload } from './upload-files'
 
-export type ScriptExecuter = (
+export type RemoteScriptExecuter = (
   script: string,
   opts?: { env?: Record<string, string | undefined> },
 ) => Promise<ExecResult>
@@ -12,7 +12,7 @@ export type ScriptExecuter = (
 export const scriptExecuter = ({ exec, log }: {
   exec: CommandExecuter
   log: Logger
-}): ScriptExecuter => async (script, opts = {}) => {
+}): RemoteScriptExecuter => async (script, opts = {}) => {
   const scriptFile = path.basename(script)
   const destination = `/tmp/scripts/${scriptFile}.${randomBytes(16).toString('hex')}`
   log.debug(`executing script ${scriptFile} at ${destination}`)

@@ -2,7 +2,7 @@ import path from 'path'
 import util from 'util'
 import fs from 'fs'
 import { rimraf } from 'rimraf'
-import { tarStream } from './tar'
+import { tarStreamer } from './tar'
 
 const PREEVY_ROOT_DIR = path.resolve(__dirname, '..', '..', '..', '..')
 
@@ -14,11 +14,11 @@ const log = (s: string, ...args: unknown[]) => {
 
 void (async () => {
   await rimraf(TARGET_FILE)
-  const u = tarStream()
+  const u = tarStreamer()
   u.add({ local: path.join(PREEVY_ROOT_DIR, 'node_modules'), remote: '/tmp/myprefix/node_modules' })
   const out = fs.createWriteStream(TARGET_FILE)
   log('calling finalize')
-  const { totals, done } = u.finalize({ out, concurrency: 5 })
+  const { totals, done } = u.startStreaming({ out, concurrency: 5 })
   log('finalize')
   log('counts', await totals)
   await done

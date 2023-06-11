@@ -3,22 +3,30 @@ import { asyncMap } from 'iter-tools-es'
 import { InputQuestion, ListQuestion } from 'inquirer'
 import {
   MachineDriver,
-  Machine, MachineCreationDriver, MachineCreationDriverFactory, MachineDriverFactory,
+  SshMachine, MachineCreationDriver, MachineCreationDriverFactory, MachineDriverFactory,
   telemetryEmitter,
   generateSshKeyPair,
+  Store,
+  getStoredSshKey,
+  sshKeysStore,
+  sshDriver,
 } from '@preevy/core'
 import createClient, { Instance, availableRegions, defaultProjectId, shortResourceName } from './client'
 import { LABELS } from './labels'
 
 type DriverContext = {
   profileId: string
+  store: Store
   projectId: string
   zone: string
 }
 
 type MachineCreationDriverContext = DriverContext & {
   machineType?: string
+  store: Store
 }
+
+type NonMachineResourceType = never
 
 const SSH_KEYPAIR_ALIAS = 'preevy-gce'
 const SSH_USERNAME = 'preevy'
@@ -27,16 +35,22 @@ const DEFAULT_MACHINE_TYPE = 'e2-small'
 
 const machineFromInstance = (
   instance: Instance,
-): Machine & { envId: string } => ({
-  publicIPAddress: instance.networkInterfaces?.[0].accessConfigs?.[0].natIP as string,
-  sshKeyName: SSH_KEYPAIR_ALIAS,
-  sshUsername: SSH_USERNAME,
-  providerId: instance.name as string,
-  version: '',
-  envId: instance.labels?.[LABELS.ENV_ID] as string,
-})
+): SshMachine & { envId: string } => {
+  const publicIPAddress = instance.networkInterfaces?.[0].accessConfigs?.[0].natIP as string
+  return {
+    locationDescription: publicIPAddress,
+    publicIPAddress,
+    sshKeyName: SSH_KEYPAIR_ALIAS,
+    sshUsername: SSH_USERNAME,
+    providerId: instance.name as string,
+    version: '',
+    envId: instance.labels?.[LABELS.ENV_ID] as string,
+  }
+}
 
-const machineDriver = ({ zone, projectId, profileId }: DriverContext): MachineDriver => {
+const machineDriver = (
+  { zone, projectId, profileId, store }: DriverContext,
+): MachineDriver<SshMachine, NonMachineResourceType> => {
   const client = createClient({ zone, project: projectId, profileId })
   return ({
     friendlyName: 'Google Cloud',
@@ -47,17 +61,12 @@ const machineDriver = ({ zone, projectId, profileId }: DriverContext): MachineDr
     },
 
     listMachines: () => asyncMap(machineFromInstance, client.listInstances()),
-    listSnapshots: () => asyncMap(x => x, []),
-
-    createKeyPair: async () => ({
-      ...(await generateSshKeyPair()),
-      alias: SSH_KEYPAIR_ALIAS,
-    }),
+    listNonMachineResources: () => asyncMap(x => x, []),
 
     removeMachine: async (driverMachineId, wait) => client.deleteInstance(driverMachineId, wait),
-    removeSnapshot: async () => undefined,
-    removeKeyPair: async () => undefined,
-    getKeyPairAlias: async () => SSH_KEYPAIR_ALIAS,
+    pluralNonMachineResourceType: () => { throw new Error('Not implemented') },
+    removeNonMachineResource: async () => undefined,
+    ...sshDriver(() => getStoredSshKey(store, SSH_KEYPAIR_ALIAS)),
   })
 }
 
@@ -76,7 +85,7 @@ machineDriver.flags = flags
 
 type FlagTypes = Omit<Interfaces.InferredFlags<typeof machineDriver.flags>, 'json'>
 
-const contextFromFlags = ({ 'project-id': projectId, zone }: FlagTypes): Omit<DriverContext, 'profileId'> => ({
+const contextFromFlags = ({ 'project-id': projectId, zone }: FlagTypes): Omit<DriverContext, 'profileId' | 'store'> => ({
   projectId,
   zone,
 })
@@ -112,12 +121,28 @@ const flagsFromAnswers = async (answers: Record<string, unknown>): Promise<FlagT
 machineDriver.flagsFromAnswers = flagsFromAnswers
 
 const machineCreationDriver = (
-  { zone, projectId, profileId, machineType: specifiedMachineType }: MachineCreationDriverContext,
-): MachineCreationDriver => {
+  { zone, projectId, profileId, machineType: specifiedMachineType, store }: MachineCreationDriverContext,
+): MachineCreationDriver<SshMachine> => {
   const machineType = specifiedMachineType || DEFAULT_MACHINE_TYPE
   const client = createClient({ zone, project: projectId, profileId })
+
+  const ensureStoredKeyPairPublicKey = async () => {
+    const keyStore = sshKeysStore(store)
+    let storedKeyPair = await keyStore.getKey(SSH_KEYPAIR_ALIAS)
+    if (!storedKeyPair) {
+      const newKeyPair = await generateSshKeyPair()
+      storedKeyPair = {
+        alias: SSH_KEYPAIR_ALIAS,
+        ...newKeyPair,
+      }
+      await keyStore.addKey(storedKeyPair)
+    }
+
+    return storedKeyPair.publicKey.toString('utf-8')
+  }
+
   return ({
-    createMachine: async ({ envId, keyConfig }) => {
+    createMachine: async ({ envId }) => {
       const startTime = new Date().getTime()
       telemetryEmitter().capture('google compute engine create machine start', { zone, machine_type: machineType })
 
@@ -127,7 +152,7 @@ const machineCreationDriver = (
           async () => {
             const instance = await client.createInstance({
               envId,
-              sshPublicKey: keyConfig.publicKey.toString('utf-8'),
+              sshPublicKey: await ensureStoredKeyPairPublicKey(),
               machineType,
               username: SSH_USERNAME,
             })
@@ -167,19 +192,26 @@ machineDriver.machineCreationFlags = {
 
 const machineCreationContextFromFlags = (
   fl: Interfaces.InferredFlags<typeof machineDriver.machineCreationFlags>
-): Omit<MachineCreationDriverContext, 'profileId'> => ({
+): Omit<MachineCreationDriverContext, 'profileId' | 'store'> => ({
   ...contextFromFlags(fl),
   machineType: fl['machine-type'],
 })
 
 const factory: MachineDriverFactory<
-  Interfaces.InferredFlags<typeof machineDriver.flags>
-> = (f, profile) => machineDriver({ ...contextFromFlags(f), profileId: profile.id })
+  Interfaces.InferredFlags<typeof machineDriver.flags>,
+  SshMachine,
+  NonMachineResourceType
+> = (f, profile, store) => machineDriver({ ...contextFromFlags(f), profileId: profile.id, store })
 machineDriver.factory = factory
 
 const machineCreationFactory: MachineCreationDriverFactory<
-  Interfaces.InferredFlags<typeof machineDriver.machineCreationFlags>
-> = (f, profile) => machineCreationDriver({ ...machineCreationContextFromFlags(f), profileId: profile.id })
+  Interfaces.InferredFlags<typeof machineDriver.machineCreationFlags>,
+  SshMachine
+> = (f, profile, store) => machineCreationDriver({
+  ...machineCreationContextFromFlags(f),
+  profileId: profile.id,
+  store,
+})
 
 machineDriver.machineCreationFactory = machineCreationFactory
 

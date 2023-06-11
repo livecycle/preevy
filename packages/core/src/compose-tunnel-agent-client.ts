@@ -2,9 +2,9 @@ import path from 'path'
 import fetch from 'node-fetch'
 import retry from 'p-retry'
 import { ComposeModel, ComposeService } from './compose/model'
-import { SshClient } from './ssh/client'
 import { TunnelOpts } from './ssh/url'
 import { Tunnel } from './tunneling'
+import { MachineConnection } from './driver'
 
 export const COMPOSE_TUNNEL_AGENT_SERVICE_NAME = 'preevy_proxy'
 const COMPOSE_TUNNEL_AGENT_DIR = path.join(path.dirname(require.resolve('@preevy/compose-tunnel-agent')), '..')
@@ -95,17 +95,17 @@ export const addComposeTunnelAgentService = (
   })
 }
 
-export const queryTunnels = async ({ sshClient, remoteProjectDir, retryOpts = { retries: 0 } }: {
-  sshClient: SshClient
+export const queryTunnels = async ({ connection, remoteProjectDir, retryOpts = { retries: 0 } }: {
+  connection: MachineConnection
   remoteProjectDir: string
   retryOpts?: retry.Options
 }) => {
-  const forwarding = await sshClient.forwardOutStreamLocal(
+  const forwarding = await connection.forwardOutStreamLocal(
     { host: '0.0.0.0', port: 0 },
     composeTunnelAgentSocket(remoteProjectDir),
   )
   if (typeof forwarding.localSocket !== 'object') {
-    throw new Error(`Invalid response from ssh forward: ${forwarding.localSocket}`)
+    throw new Error(`Invalid response from forwardOutStreamLocal: ${forwarding.localSocket}`)
   }
 
   const { address, port } = forwarding.localSocket
@@ -125,6 +125,6 @@ export const queryTunnels = async ({ sshClient, remoteProjectDir, retryOpts = { 
       tunnelId,
     }
   } finally {
-    forwarding.close()
+    await forwarding.close()
   }
 }

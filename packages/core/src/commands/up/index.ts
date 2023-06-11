@@ -3,14 +3,15 @@ import path from 'path'
 import { rimraf } from 'rimraf'
 import yaml from 'yaml'
 import { BaseUrl, formatPublicKey } from '@preevy/common'
-import { SSHKeyConfig, TunnelOpts } from '../../ssh'
+import { inspect } from 'util'
+import { TunnelOpts } from '../../ssh'
 import { ComposeModel, fixModelForRemote, getExposedTcpServices, localComposeClient, resolveComposeFiles } from '../../compose'
 import { ensureCustomizedMachine } from './machine'
 import { wrapWithDockerSocket } from '../../docker'
 import { findAmbientEnvId } from '../../env-id'
 import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addComposeTunnelAgentService, queryTunnels } from '../../compose-tunnel-agent-client'
 import { withSpinner } from '../../spinner'
-import { Machine, MachineCreationDriver, MachineDriver } from '../../driver'
+import { MachineCreationDriver, MachineDriver, MachineBase } from '../../driver'
 import { remoteProjectDir } from '../../remote-files'
 import { Logger } from '../../log'
 import { Tunnel, tunnelUrl } from '../../tunneling'
@@ -65,7 +66,6 @@ const up = async ({
   systemComposeFiles,
   log,
   dataDir,
-  sshKey,
   allowedSshHostKeys: hostKey,
   sshTunnelPrivateKey,
   cwd,
@@ -85,12 +85,11 @@ const up = async ({
   systemComposeFiles: string[]
   log: Logger
   dataDir: string
-  sshKey: SSHKeyConfig
   sshTunnelPrivateKey: string
   allowedSshHostKeys: Buffer
   cwd: string
   skipUnchangedFiles: boolean
-}): Promise<{ machine: Machine; tunnels: Tunnel[]; envId: string }> => {
+}): Promise<{ machine: MachineBase; tunnels: Tunnel[]; envId: string }> => {
   const projectName = userSpecifiedProjectName ?? userModel.name
   const remoteDir = remoteProjectDir(projectName)
 
@@ -137,11 +136,11 @@ const up = async ({
     createCopiedFile('tunnel_server_public_key', formatPublicKey(hostKey)),
   ])
 
-  const { machine, sshClient } = await ensureCustomizedMachine({
-    machineDriver, machineCreationDriver, sshKey, envId, log, debug,
+  const { machine, connection } = await ensureCustomizedMachine({
+    machineDriver, machineCreationDriver, envId, log, debug,
   })
 
-  const exec = sshClient.execCommand
+  const { exec } = connection
 
   const composeTunnelAgentUser = (
     await exec('echo "$(id -u):$(stat -c %g /var/run/docker.sock)"')
@@ -161,7 +160,7 @@ const up = async ({
   log.debug('model', modelStr)
   const composeFilePath = (await createCopiedFile('docker-compose.yml', modelStr)).local
 
-  const withDockerSocket = wrapWithDockerSocket({ sshClient, log })
+  const withDockerSocket = wrapWithDockerSocket({ connection, log })
 
   try {
     await exec(`sudo mkdir -p "${remoteDir}" && sudo chown $USER "${remoteDir}"`)
@@ -177,7 +176,14 @@ const up = async ({
 
     const tunnels = await withSpinner(async () => {
       const queryResult = await queryTunnels({
-        sshClient, remoteProjectDir: remoteDir, retryOpts: { minTimeout: 1000, maxTimeout: 2000, retries: 10 },
+        connection,
+        remoteProjectDir: remoteDir,
+        retryOpts: {
+          minTimeout: 1000,
+          maxTimeout: 2000,
+          retries: 10,
+          onFailedAttempt: e => { log.debug(`Failed to create tunnel: ${inspect(e)}`) },
+        },
       })
 
       return queryResult.tunnels
@@ -185,7 +191,7 @@ const up = async ({
 
     return { envId, machine, tunnels }
   } finally {
-    sshClient.dispose()
+    await connection.close()
   }
 }
 

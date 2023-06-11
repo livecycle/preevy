@@ -3,7 +3,7 @@ import path from 'path'
 import fs from 'fs'
 import os from 'os'
 import { rimraf } from 'rimraf'
-import { tarStream } from './tar'
+import { tarStreamer } from './tar'
 import { execPromise, execPromiseStdout } from '../child-process'
 
 const TEST_FILE_DIR = path.join(__dirname, 'test', 'tar')
@@ -27,12 +27,12 @@ describe('tar', () => {
     const local2 = path.join(TEST_FILE_DIR, 'd2')
     const remote2 = 'foo/2'
 
-    const u = tarStream([{ local: local1, remote: remote1 }])
+    const u = tarStreamer([{ local: local1, remote: remote1 }])
     u.add({ local: local2, remote: remote2 })
 
     const filename = path.join(tempDir, 'test.tar')
     const out = fs.createWriteStream(filename)
-    const { done, totals, emitter } = u.finalize({ out, concurrency: 5 })
+    const { done, totals, emitter } = u.startStreaming({ out, concurrency: 5 })
     let emittedBytes = 0
     const emittedFiles: string[] = []
     emitter.addListener('bytes', ({ bytes }) => { emittedBytes += bytes })

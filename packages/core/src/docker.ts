@@ -1,6 +1,6 @@
 import { AddressInfo } from 'net'
-import { SshClient } from './ssh/client'
 import { Logger } from './log'
+import { MachineConnection } from './driver'
 
 export type FuncWrapper = <Return>(
   f: () => Promise<Return>,
@@ -13,14 +13,14 @@ const dockerHost = (s: string | AddressInfo) => (
 )
 
 export const wrapWithDockerSocket = (
-  { sshClient, log }: {
-    sshClient: SshClient
+  { connection, log }: {
+    connection: MachineConnection
     log: Logger
   },
 ): FuncWrapper => async <Return>(
   f: () => Promise<Return>,
 ): Promise<Return> => {
-  const { localSocket, close } = await sshClient.forwardOutStreamLocal({ port: 0, host: '0.0.0.0' }, '/var/run/docker.sock')
+  const { localSocket, close } = await connection.forwardOutStreamLocal({ port: 0, host: '0.0.0.0' }, '/var/run/docker.sock')
 
   log.debug(`Local socket: ${JSON.stringify(localSocket)}`)
 

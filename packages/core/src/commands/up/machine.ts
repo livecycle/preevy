@@ -1,11 +1,10 @@
 import { EOL } from 'os'
 import retry from 'p-retry'
-import { connectSshClient, SSHKeyConfig } from '../../ssh'
 import { withSpinner } from '../../spinner'
-import { MachineCreationDriver, SpecDiffItem, MachineDriver } from '../../driver'
+import { MachineCreationDriver, SpecDiffItem, MachineDriver, MachineConnection, MachineBase, isPartialMachine } from '../../driver'
 import { telemetryEmitter } from '../../telemetry'
 import { Logger } from '../../log'
-import { scriptExecuter } from '../../script-executer'
+import { scriptExecuter } from '../../remote-script-executer'
 
 const machineDiffText = (diff: SpecDiffItem[]) => diff
   .map(({ name, old, new: n }) => `* ${name}: ${old} -> ${n}`).join(EOL)
@@ -14,33 +13,38 @@ const ensureMachine = async ({
   machineDriver,
   machineCreationDriver,
   envId,
-  sshKey,
   log,
 }: {
   machineDriver: MachineDriver
   machineCreationDriver: MachineCreationDriver
-  sshKey: SSHKeyConfig
   envId: string
   log: Logger
 }) => {
   log.debug('checking for existing machine')
   const existingMachine = await machineCreationDriver.getMachineAndSpecDiff({ envId })
-  if (existingMachine && existingMachine.specDiff.length === 0) {
-    return { machine: existingMachine, installed: true }
-  }
 
-  const recreating = existingMachine && existingMachine.specDiff.length > 0
-  if (recreating) {
-    log.info(`Recreating machine due to changes:${EOL}${machineDiffText(existingMachine.specDiff)}`)
+  let recreating = false
+  if (existingMachine) {
+    if (isPartialMachine(existingMachine)) {
+      recreating = true
+      log.info(`Recreating machine due to error state: ${existingMachine.error}`)
+    } else {
+      recreating = existingMachine.specDiff.length > 0
+      if (recreating) {
+        log.info(`Recreating machine due to changes:${EOL}${machineDiffText(existingMachine.specDiff)}`)
+      } else {
+        return { machine: existingMachine, installed: true }
+      }
+    }
   }
 
   return withSpinner(async spinner => {
-    if (recreating) {
+    if (existingMachine && recreating) {
       spinner.text = 'Deleting machine'
       await machineDriver.removeMachine(existingMachine.providerId, false)
     }
     spinner.text = 'Checking for existing snapshot'
-    const machineCreation = await machineCreationDriver.createMachine({ envId, keyConfig: sshKey })
+    const machineCreation = await machineCreationDriver.createMachine({ envId })
 
     spinner.text = machineCreation.fromSnapshot
       ? 'Creating from existing snapshot'
@@ -62,42 +66,32 @@ export const ensureCustomizedMachine = async ({
   machineDriver,
   machineCreationDriver,
   envId,
-  sshKey,
   log,
   debug,
 }: {
   machineDriver: MachineDriver
   machineCreationDriver: MachineCreationDriver
   envId: string
-  sshKey: SSHKeyConfig
   log: Logger
   debug: boolean
-}) => {
-  const { machine, installed } = await ensureMachine({ machineDriver, machineCreationDriver, envId, sshKey, log })
+}): Promise<{ machine: MachineBase; connection: MachineConnection }> => {
+  const { machine, installed } = await ensureMachine({ machineDriver, machineCreationDriver, envId, log })
 
-  const connect = () => connectSshClient({
-    debug,
-    host: machine.publicIPAddress,
-    username: machine.sshUsername,
-    privateKey: sshKey.privateKey.toString('utf-8'),
-    log,
-  })
-
-  let sshClient = await withSpinner(
+  let connection = await withSpinner(
     () => retry(
-      () => connect(),
+      () => machineDriver.connect(machine, { log, debug }),
       { minTimeout: 2000, maxTimeout: 5000, retries: 10 }
     ),
-    { text: `Connecting to ${machineDriver.friendlyName} machine at ${machine.publicIPAddress}` },
+    { text: `Connecting to ${machineDriver.friendlyName} machine at ${machine.locationDescription}` },
   )
 
   if (installed) {
-    return { machine, sshClient }
+    return { machine, connection }
   }
 
   try {
     await withSpinner(async spinner => {
-      const execScript = scriptExecuter({ exec: sshClient.execCommand, log })
+      const execScript = scriptExecuter({ exec: connection.exec, log })
       let i = 0
       for (const script of machineDriver.customizationScripts ?? []) {
         i += 1
@@ -108,15 +102,15 @@ export const ensureCustomizedMachine = async ({
 
       spinner.text = 'Ensuring docker is accessible...'
       await retry(
-        () => sshClient.execCommand('docker run hello-world', { }),
+        () => connection.exec('docker run hello-world', { }),
         {
           minTimeout: 2000,
           maxTimeout: 5000,
           retries: 5,
           onFailedAttempt: async err => {
             log.debug(`Failed to execute docker run hello-world: ${err}`)
-            sshClient.dispose()
-            sshClient = await connect()
+            await connection.close()
+            connection = await machineDriver.connect(machine, { log, debug })
           },
         }
       )
@@ -128,9 +122,9 @@ export const ensureCustomizedMachine = async ({
       })
     }, { opPrefix: 'Configuring machine', successText: 'Machine configured' })
   } catch (e) {
-    sshClient.dispose()
+    await connection.close()
     throw e
   }
 
-  return { machine, sshClient }
+  return { machine, connection }
 }
