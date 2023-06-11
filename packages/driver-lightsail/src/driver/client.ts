@@ -177,7 +177,7 @@ const client = ({
         : ls.createInstances({ ...commonArgs, blueprintId: 'ubuntu_20_04' })
 
       await waitUntilAllOperationsSucceed(
-        { client: lsClient, maxWaitTime: 120 },
+        { client: lsClient, maxWaitTime: 150 },
         res
       )
 

@@ -23,6 +23,8 @@ export type Hooks = {
 
 export type HookName = keyof Hooks
 
+export const hookNames: HookName[] = ['envCreated', 'envDeleted', 'userModelFilter']
+
 export type HookFunc<Name extends HookName> = (context: PluginContext, args: Hooks[Name]['args']) => Promise<Hooks[Name]['return']>
 
 export type HookFuncs = {

@@ -41,6 +41,11 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       description: 'Skip TLS or SSH certificate verification',
       default: false,
     }),
+    'skip-unchanged-files': Flags.boolean({
+      description: 'Detect and skip unchanged files when copying (default: true)',
+      default: true,
+      allowNo: true,
+    }),
     ...ux.table.flags(),
   }
 
@@ -119,6 +124,8 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       sshKey: keyPair,
       sshTunnelPrivateKey: tunnelingKey,
       allowedSshHostKeys: hostKey,
+      cwd: process.cwd(),
+      skipUnchangedFiles: flags['skip-unchanged-files'],
     })
 
     const flatTunnels = flattenTunnels(tunnels)

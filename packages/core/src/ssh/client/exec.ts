@@ -1,34 +1,7 @@
-import shellEscape from 'shell-escape'
 import ssh2 from 'ssh2'
-import stream from 'stream'
 import { readable as isReadableStream } from 'is-stream'
 import { inspect } from 'util'
-
-export type ExecOptions = {
-  cwd?: string
-  stdin?: string | Buffer | stream.Readable
-  env?: Record<string, string | undefined>
-  encoding?: BufferEncoding
-  ignoreExitCode?: boolean
-}
-
-const commandWithEnv = (command: string, env: ExecOptions['env']) => [
-  ...Object.entries(env ?? {}).map(
-    ([key, val]) => `export ${shellEscape([key])}=${shellEscape([val ?? ''])}`
-  ),
-  command,
-].join('; ')
-
-const commandWithCd = (command: string, cwd: ExecOptions['cwd']) => (
-  cwd ? `cd ${shellEscape([cwd])}; ${command}` : command
-)
-
-export type ExecResult = {
-  stdout: string
-  stderr: string
-} & ({ code: number } | { signal: string })
-
-export type CommandExecuter = (command: string, options?: ExecOptions) => Promise<ExecResult>
+import { ExecResult, CommandExecuter, commandWithCd, commandWithEnv } from '../../command-executer'
 
 export class CommandError extends Error {
   constructor(name: string, field: 'code' | 'signal', value: number | string, result: ExecResult) {
