@@ -3,6 +3,7 @@ import crypto from 'crypto'
 import stringify from 'fast-safe-stringify'
 import fetch from 'node-fetch'
 import { debounce } from 'lodash'
+import pLimit from 'p-limit'
 import { memoizedMachineId } from './machine-id'
 import { TelemetryEvent, TelemetryProperties, serializableEvent } from './events'
 import { detectCiProvider } from '../ci-providers'
@@ -29,26 +30,25 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
   const pendingEvents: TelemetryEvent[] = []
   const runId = newRunId()
   let debounceDisabled = false
-
-  const flush = async () => {
-    if (!pendingEvents.length) {
-      return
-    }
-
-    const body = stringify({ batch: pendingEvents.map(serializableEvent) })
-    pendingEvents.length = 0
-
-    const response = await fetch(TELEMETRY_URL, {
-      headers: { 'Content-Type': 'application/json' },
-      method: 'POST',
-      redirect: 'follow',
-      body,
+  const flushLimit = pLimit(1)
+  const flush = async () =>
+    flushLimit(async () => {
+      if (!pendingEvents.length) {
+        return
+      }
+      const body = stringify({ batch: pendingEvents.map(serializableEvent) })
+      pendingEvents.length = 0
+      const req = fetch(TELEMETRY_URL, {
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+        redirect: 'follow',
+        body,
+      })
+      const response = await req
+      if (!response.ok && debug) {
+        process.stderr.write(`Error sending telemetry: ${response.status} ${response.statusText} ${response.url}${os.EOL}`)
+      }
     })
-
-    if (!response.ok && debug) {
-      process.stderr.write(`Error sending telemetry: ${response.status} ${response.statusText} ${response.url}${os.EOL}`)
-    }
-  }
 
   const debouncedFlush = debounce(flush, 3000, { maxWait: 8000 })
 
