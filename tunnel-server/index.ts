@@ -68,7 +68,7 @@ const sshServer = createSshServer({
   },
   onHello: (clientId, tunnels) => JSON.stringify({
     clientId,
-    baseUrl: BASE_URL,
+    baseUrl: BASE_URL.toString(),
     tunnels: Object.fromEntries(tunnels.map(tunnel => [
       tunnel,
       tunnelUrl(BASE_URL, clientId, tunnel),

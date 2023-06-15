@@ -1,26 +1,13 @@
 import { Args, Flags, ux } from '@oclif/core'
-import os from 'os'
 import {
-  performTunnelConnectionCheck, HostKeySignatureConfirmer,
   commands, flattenTunnels, profileStore,
   telemetryEmitter,
 } from '@preevy/core'
 import { asyncReduce } from 'iter-tools-es'
+import { tunnelServerFlags } from '@preevy/cli-common'
+import { tunnelServerHello } from '../tunnel-server-client'
 import MachineCreationDriverCommand from '../machine-creation-driver-command'
-import { carefulBooleanPrompt } from '../prompt'
 import { envIdFlags } from '../common-flags'
-
-const confirmHostFingerprint = async (
-  { hostKeyFingerprint: hostKeySignature, hostname, port }: Parameters<HostKeySignatureConfirmer>[0],
-) => {
-  const formattedHost = port ? `${hostname}:${port}` : hostname
-  const message = [
-    `The authenticity of host '${formattedHost}' can't be established.`,
-    `Key fingerprint is ${hostKeySignature}`,
-    'Are you sure you want to continue connecting (yes/no)?',
-  ].join(os.EOL)
-  return carefulBooleanPrompt(message)
-}
 
 // eslint-disable-next-line no-use-before-define
 export default class Up extends MachineCreationDriverCommand<typeof Up> {
@@ -28,19 +15,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
   static flags = {
     ...envIdFlags,
-    'tunnel-url': Flags.string({
-      description: 'Tunnel url, specify ssh://hostname[:port] or ssh+tls://hostname[:port]',
-      char: 't',
-      default: 'ssh+tls://livecycle.run' ?? process.env.PREVIEW_TUNNEL_OVERRIDE,
-    }),
-    'tls-hostname': Flags.string({
-      description: 'Override TLS server name when tunneling via HTTPS',
-      required: false,
-    }),
-    'insecure-skip-verify': Flags.boolean({
-      description: 'Skip TLS or SSH certificate verification',
-      default: false,
-    }),
+    ...tunnelServerFlags,
     'skip-unchanged-files': Flags.boolean({
       description: 'Detect and skip unchanged files when copying (default: true)',
       default: true,
@@ -77,20 +52,20 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       insecureSkipVerify: flags['insecure-skip-verify'],
     }
 
-    const { hostKey, clientId, baseUrl } = await performTunnelConnectionCheck({
+    const helloResponse = await tunnelServerHello({
       log: this.logger,
       tunnelOpts,
-      clientPrivateKey: tunnelingKey,
-      username: process.env.USER || 'preview',
-      confirmHostFingerprint: async o => {
-        const confirmed = await confirmHostFingerprint(o)
-        if (!confirmed) {
-          this.log('Exiting')
-          this.exit(0)
-        }
-      },
       keysState: pStore.knownServerPublicKeys,
+      tunnelingKey,
     })
+
+    if (!helloResponse) {
+      this.log('Exiting')
+      this.exit(0)
+      return undefined
+    }
+
+    const { hostKey, clientId, baseUrl } = helloResponse
 
     telemetryEmitter().group({ type: 'profile' }, { proxy_client_id: clientId })
 

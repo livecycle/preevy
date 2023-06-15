@@ -9,8 +9,6 @@ export {
   baseSshClient, SshClientOpts,
 } from './src/ssh'
 
-export { BaseUrl } from './src/ssh/base-client'
-
 export {
   simpleEmitter,
   stateEmitter,

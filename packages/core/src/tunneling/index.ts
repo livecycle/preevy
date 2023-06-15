@@ -1,4 +1,4 @@
-import { BaseUrl, checkConnection, formatSshConnectionConfig, keyFingerprint, parseSshUrl, tunnelNameResolver } from '@preevy/common'
+import { checkConnection, formatSshConnectionConfig, keyFingerprint, parseSshUrl, tunnelNameResolver } from '@preevy/common'
 import { Logger } from '../log'
 import { ProfileStore } from '../profile'
 import { generateSshKeyPair } from '../ssh/keypair'
@@ -35,7 +35,7 @@ export class UnverifiedHostKeyError extends Error {
 
 export type HostKeySignatureConfirmer = (
   o: { hostKeyFingerprint: string; hostname: string; port: number | undefined }
-) => Promise<void>
+) => Promise<boolean>
 
 export const performTunnelConnectionCheck = async ({
   log,
@@ -62,7 +62,15 @@ export const performTunnelConnectionCheck = async ({
     insecureSkipVerify: tunnelOpts.insecureSkipVerify,
   }
 
-  const check = async (): Promise<{ hostKey: Buffer; clientId: string; baseUrl: BaseUrl }> => {
+  // TODO: baseUrl should be a string in the next deployment of the tunnel service, this is for backwards compat
+  const normalizeBaseUrl = (baseUrl: string | { hostname: string; port: string; protocol: string }) => {
+    if (typeof baseUrl === 'string') {
+      return baseUrl
+    }
+    return new URL(`${baseUrl.protocol}//${baseUrl.hostname}:${baseUrl.port}`).toString()
+  }
+
+  const check = async (): Promise<{ hostKey: Buffer; clientId: string; baseUrl: string } | false> => {
     const knownServerPublicKeys = await keysState.read(parsed.hostname, parsed.port)
     const connectionConfig = { ...connectionConfigBase, knownServerPublicKeys }
 
@@ -74,7 +82,7 @@ export const performTunnelConnectionCheck = async ({
       if (!knownServerPublicKeys.includes(result.hostKey)) { // TODO: check if this is correct
         await keysState.write(parsed.hostname, parsed.port, result.hostKey)
       }
-      return { hostKey: result.hostKey, clientId: result.clientId, baseUrl: result.baseUrl }
+      return { hostKey: result.hostKey, clientId: result.clientId, baseUrl: normalizeBaseUrl(result.baseUrl) }
     }
 
     if ('error' in result) {
@@ -82,11 +90,15 @@ export const performTunnelConnectionCheck = async ({
       throw new Error(`Cannot connect to ${tunnelOpts.url}: ${result.error.message}`)
     }
 
-    await confirmHostFingerprint({
+    const confirmation = await confirmHostFingerprint({
       hostKeyFingerprint: keyFingerprint(result.unverifiedHostKey),
       hostname: parsed.hostname,
       port: parsed.port,
     })
+
+    if (!confirmation) {
+      return false
+    }
 
     await keysState.write(parsed.hostname, parsed.port, result.unverifiedHostKey)
 
@@ -112,20 +124,19 @@ export const ensureTunnelKeyPair = async (
   return keyPair
 }
 
-export function tunnelUrl({
-  service: { name: serviceName, port: servicePort },
-  envId,
-  baseUrl: { hostname, protocol, port },
-  clientId,
-}: {
-  service: {name: string; port: number}
-  envId: string
-  baseUrl: BaseUrl
-  clientId: string
-}) {
-  const { tunnel: tunnelName } = tunnelNameResolver({})({ name: serviceName, project: envId, port: servicePort })
-  const subDomain = `${tunnelName}-${clientId}`.toLowerCase()
-  return new URL(
-    `${protocol}//${subDomain}.${hostname}:${port}`
-  ).toString()
+export const tunnelUrlForEnv = (
+  { projectName, envId, baseUrl: { hostname, protocol, port }, clientId }: {
+    projectName: string
+    envId: string
+    baseUrl: { hostname: string; protocol: string; port: string | number }
+    clientId: string
+  }
+) => {
+  const resolver = tunnelNameResolver({ userDefinedSuffix: envId })
+  return ({ name: serviceName, port: servicePort }: { name: string; port: number }) => {
+    const { tunnel } = resolver({ name: serviceName, project: projectName, port: servicePort })
+    return new URL(
+      `${protocol}//${tunnel}-${clientId}.${hostname}:${port}`
+    ).toString()
+  }
 }

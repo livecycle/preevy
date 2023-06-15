@@ -1,5 +1,7 @@
 import { Args, ux } from '@oclif/core'
-import { commands, findAmbientEnvId } from '@preevy/core'
+import { commands, findAmbientEnvId, profileStore } from '@preevy/core'
+import { tunnelServerFlags } from '@preevy/cli-common'
+import { tunnelServerHello } from '../tunnel-server-client'
 import DriverCommand from '../driver-command'
 import { envIdFlags } from '../common-flags'
 
@@ -9,6 +11,7 @@ export default class Urls extends DriverCommand<typeof Urls> {
 
   static flags = {
     ...envIdFlags,
+    ...tunnelServerFlags,
     ...ux.table.flags(),
   }
 
@@ -33,12 +36,38 @@ export default class Urls extends DriverCommand<typeof Urls> {
     const envId = flags.id || await findAmbientEnvId(projectName)
     log.debug(`envId: ${envId}`)
 
+    const pStore = profileStore(this.store)
+    const tunnelingKey = await pStore.getTunnelingKey()
+    if (!tunnelingKey) {
+      throw new Error('Tunneling key is not configured correctly, please recreate the profile')
+    }
+
+    const tunnelOpts = {
+      url: flags['tunnel-url'],
+      tlsServerName: flags['tls-hostname'],
+      insecureSkipVerify: flags['insecure-skip-verify'],
+    }
+
+    const helloResponse = await tunnelServerHello({
+      log: this.logger,
+      tunnelOpts,
+      keysState: pStore.knownServerPublicKeys,
+      tunnelingKey,
+    })
+
+    if (!helloResponse) {
+      this.log('Exiting')
+      this.exit(0)
+      return undefined
+    }
+
+    const { clientId, baseUrl } = helloResponse
+
     const flatTunnels = await commands.urls({
-      log,
+      baseUrl,
+      clientId,
       envId,
       projectName,
-      driver: await this.driver(),
-      debug: flags.debug,
       serviceAndPort: args.service ? { service: args.service, port: args.port } : undefined,
     })
 

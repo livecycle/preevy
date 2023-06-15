@@ -1,35 +1,19 @@
-import { MachineDriver } from '../driver/driver'
-import { Logger } from '../log'
 import { queryTunnels } from '../compose-tunnel-agent-client'
-import { flattenTunnels } from '../tunneling'
-import { remoteProjectDir } from '../remote-files'
-import { isPartialMachine } from '../driver'
+import { flattenTunnels, tunnelUrlForEnv } from '../tunneling'
 
-export const urls = async ({ log, envId, driver, debug, projectName, serviceAndPort }: {
-  log: Logger
+export const urls = async ({ envId, baseUrl, clientId, projectName, serviceAndPort }: {
   envId: string
   projectName: string
-  driver: MachineDriver
-  debug: boolean
+  baseUrl: string
+  clientId: string
   serviceAndPort?: { service: string; port?: number }
 }) => {
-  const projectDir = remoteProjectDir(projectName)
+  const tunnelUrlForService = tunnelUrlForEnv({ projectName, envId, baseUrl: new URL(baseUrl), clientId })
 
-  const machine = await driver.getMachine({ envId })
-  if (!machine || isPartialMachine(machine)) {
-    throw new Error(`No machine found for envId ${envId}`)
-  }
+  const { tunnels } = await queryTunnels({ tunnelUrlForService, retryOpts: { retries: 2 } })
 
-  const connection = await driver.connect(machine, { log, debug })
-
-  try {
-    const { tunnels } = await queryTunnels({ connection, remoteProjectDir: projectDir, retryOpts: { retries: 2 } })
-
-    return flattenTunnels(tunnels)
-      .filter(tunnel => !serviceAndPort || (
-        tunnel.service === serviceAndPort.service && (!serviceAndPort.port || tunnel.port === serviceAndPort.port)
-      ))
-  } finally {
-    await connection.close()
-  }
+  return flattenTunnels(tunnels)
+    .filter(tunnel => !serviceAndPort || (
+      tunnel.service === serviceAndPort.service && (!serviceAndPort.port || tunnel.port === serviceAndPort.port)
+    ))
 }

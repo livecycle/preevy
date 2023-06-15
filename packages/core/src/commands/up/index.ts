@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { rimraf } from 'rimraf'
 import yaml from 'yaml'
-import { BaseUrl, formatPublicKey } from '@preevy/common'
+import { formatPublicKey } from '@preevy/common'
 import { inspect } from 'util'
 import { TunnelOpts } from '../../ssh'
 import { ComposeModel, fixModelForRemote, getExposedTcpServices, localComposeClient, resolveComposeFiles } from '../../compose'
@@ -14,7 +14,7 @@ import { withSpinner } from '../../spinner'
 import { MachineCreationDriver, MachineDriver, MachineBase } from '../../driver'
 import { remoteProjectDir } from '../../remote-files'
 import { Logger } from '../../log'
-import { Tunnel, tunnelUrl } from '../../tunneling'
+import { Tunnel, tunnelUrlForEnv } from '../../tunneling'
 import { FileToCopy, uploadWithSpinner } from '../../upload-files'
 
 const createCopiedFileInDataDir = (
@@ -51,6 +51,14 @@ const calcComposeArgs = ({ userSpecifiedServices, debug, cwd } : {
   ]
 }
 
+const serviceLinkEnvVars = (
+  userModel: Pick<ComposeModel, 'services'>,
+  tunnelUrlForService: (servicePort: { name: string; port: number }) => string,
+) => getExposedTcpServices(userModel).reduce((envMapAgg, [service, port]) => ({
+  ...envMapAgg,
+  [`PREEVY_BASE_URI_${service}_${port}`.toUpperCase()]: tunnelUrlForService({ name: service, port }),
+}), {})
+
 const up = async ({
   clientId,
   baseUrl,
@@ -72,7 +80,7 @@ const up = async ({
   skipUnchangedFiles,
 }: {
   clientId: string
-  baseUrl: BaseUrl
+  baseUrl: string
   debug: boolean
   machineDriver: MachineDriver
   machineCreationDriver: MachineCreationDriver
@@ -99,15 +107,8 @@ const up = async ({
   // We start by getting the user model without injecting Preevy's environment
   // variables (e.g. `PREEVY_BASE_URI_BACKEND_3000`) so we can have the list of services
   // required to create said variables
-  const composeEnv = getExposedTcpServices(userModel).reduce((envMapAgg, [service, port]) => ({
-    ...envMapAgg,
-    [`PREEVY_BASE_URI_${service}_${port}`.toUpperCase()]: tunnelUrl({
-      service: { name: service, port },
-      envId,
-      baseUrl,
-      clientId,
-    }),
-  }), {})
+  const tunnelUrlForService = tunnelUrlForEnv({ projectName, envId, baseUrl: new URL(baseUrl), clientId })
+  const composeEnv = { ...serviceLinkEnvVars(userModel, tunnelUrlForService) }
 
   const composeFiles = await resolveComposeFiles({
     userSpecifiedFiles: userSpecifiedComposeFiles,
@@ -152,7 +153,6 @@ const up = async ({
     urlSuffix: envId,
     sshPrivateKeyPath: path.join(remoteDir, sshPrivateKeyFile.remote),
     knownServerPublicKeyPath: path.join(remoteDir, knownServerPublicKey.remote),
-    remoteBaseDir: remoteDir,
     user: composeTunnelAgentUser,
   }, fixedModel)
 
@@ -176,8 +176,7 @@ const up = async ({
 
     const tunnels = await withSpinner(async () => {
       const queryResult = await queryTunnels({
-        connection,
-        remoteProjectDir: remoteDir,
+        tunnelUrlForService,
         retryOpts: {
           minTimeout: 1000,
           maxTimeout: 2000,

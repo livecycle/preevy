@@ -30,3 +30,19 @@ export const envIdFlags = {
     required: false,
   }),
 } as const
+
+export const tunnelServerFlags = {
+  'tunnel-url': Flags.string({
+    description: 'Tunnel url, specify ssh://hostname[:port] or ssh+tls://hostname[:port]',
+    char: 't',
+    default: 'ssh+tls://livecycle.run' ?? process.env.PREVIEW_TUNNEL_OVERRIDE,
+  }),
+  'tls-hostname': Flags.string({
+    description: 'Override TLS server name when tunneling via HTTPS',
+    required: false,
+  }),
+  'insecure-skip-verify': Flags.boolean({
+    description: 'Skip TLS or SSH certificate verification',
+    default: false,
+  }),
+} as const
