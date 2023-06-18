@@ -4,6 +4,7 @@ import fs from 'fs'
 import os from 'os'
 import { rimraf } from 'rimraf'
 import { inspect } from 'util'
+import { AddressInfo } from 'net'
 import { Store } from '../store'
 import { SshKeyPair, connectSshClient } from '../ssh'
 import { MachineDriver } from './driver'
@@ -45,7 +46,14 @@ export const sshDriver = (
       return {
         close: async () => connection.close(),
         exec: connection.exec,
-        portForward: connection.forwardOutStreamLocal,
+        dockerSocket: async () => {
+          const host = '0.0.0.0'
+          const forward = await connection.forwardOutStreamLocal({ port: 0, host }, '/var/run/docker.sock')
+          return {
+            close: forward.close,
+            address: { host, port: (forward.localSocket as AddressInfo).port },
+          }
+        },
       }
     },
     spawnRemoteCommand: async (m, command, stdio) => {

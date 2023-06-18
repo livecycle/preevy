@@ -1,4 +1,4 @@
-import { AddressInfo, ListenOptions } from 'net'
+import { AddressInfo } from 'net'
 import { ChildProcess, StdioOptions } from 'child_process'
 import { CommandExecuter } from '../command-executer'
 import { Profile } from '../profile'
@@ -11,12 +11,14 @@ export type ForwardOutStreamLocal = {
   close: () => Promise<void>
 }
 
+export type DockerSocket = {
+  address: { host: string; port: number }
+  close: () => Promise<void>
+}
+
 export type MachineConnection = {
   exec: CommandExecuter
-  portForward: (
-    listenAddress: string | number | ListenOptions,
-    remoteSocket: string,
-  ) => Promise<ForwardOutStreamLocal>
+  dockerSocket: () => Promise<DockerSocket>
   close: () => Promise<void>
 }
 

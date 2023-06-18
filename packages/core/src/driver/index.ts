@@ -14,4 +14,5 @@ export {
   MachineCreationDriverFactory,
   MachineDriverFactory,
   MachineConnection,
+  DockerSocket,
 } from './driver'
