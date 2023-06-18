@@ -7,7 +7,6 @@ import { inspect } from 'util'
 import { DefaultAzureCredential } from '@azure/identity'
 import { SubscriptionClient } from '@azure/arm-subscriptions'
 import {
-  generateSshKeyPair,
   SshMachine,
   MachineCreationDriver,
   MachineCreationDriverFactory,
@@ -191,21 +190,6 @@ const machineCreationDriver = ({
 }: MachineCreationContext): MachineCreationDriver<SshMachine> => {
   const cl = client({ region, subscriptionId, profileId })
 
-  const ensureStoredKeyPairPublicKey = async () => {
-    const keyStore = sshKeysStore(store)
-    let storedKeyPair = await keyStore.getKey(SSH_KEYPAIR_ALIAS)
-    if (!storedKeyPair) {
-      const newKeyPair = await generateSshKeyPair()
-      storedKeyPair = {
-        alias: SSH_KEYPAIR_ALIAS,
-        ...newKeyPair,
-      }
-      await keyStore.addKey(storedKeyPair)
-    }
-
-    return storedKeyPair.publicKey.toString('utf-8')
-  }
-
   return {
     createMachine: async ({ envId }) => ({
       fromSnapshot: false,
@@ -218,7 +202,7 @@ const machineCreationDriver = ({
           vm,
         } = await cl.createVMInstance({
           imageRef: UBUNTU_IMAGE_DETAILS,
-          sshPublicKey: await ensureStoredKeyPairPublicKey(),
+          sshPublicKey: await sshKeysStore(store).upsertKey(SSH_KEYPAIR_ALIAS),
           vmSize: vmSize ?? DEFAULT_VM_SIZE,
           envId,
         })

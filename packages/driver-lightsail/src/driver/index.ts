@@ -170,7 +170,7 @@ const machineCreationDriver = (
     }
 
     const newProviderKeyPair = await client.createKeyPair({ alias: keyAlias })
-    await sshKeysStore(store).addKey({
+    await sshKeysStore(store).writeKey({
       alias: keyAlias,
       privateKey: newProviderKeyPair.privateKey,
       publicKey: newProviderKeyPair.publicKey,

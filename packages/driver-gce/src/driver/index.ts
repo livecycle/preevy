@@ -5,7 +5,6 @@ import {
   MachineDriver,
   SshMachine, MachineCreationDriver, MachineCreationDriverFactory, MachineDriverFactory,
   telemetryEmitter,
-  generateSshKeyPair,
   Store,
   getStoredSshKey,
   sshKeysStore,
@@ -134,21 +133,6 @@ const machineCreationDriver = (
   const machineType = specifiedMachineType || DEFAULT_MACHINE_TYPE
   const client = createClient({ zone, project: projectId, profileId })
 
-  const ensureStoredKeyPairPublicKey = async () => {
-    const keyStore = sshKeysStore(store)
-    let storedKeyPair = await keyStore.getKey(SSH_KEYPAIR_ALIAS)
-    if (!storedKeyPair) {
-      const newKeyPair = await generateSshKeyPair()
-      storedKeyPair = {
-        alias: SSH_KEYPAIR_ALIAS,
-        ...newKeyPair,
-      }
-      await keyStore.addKey(storedKeyPair)
-    }
-
-    return storedKeyPair.publicKey.toString('utf-8')
-  }
-
   return ({
     createMachine: async ({ envId }) => {
       const startTime = new Date().getTime()
@@ -160,7 +144,7 @@ const machineCreationDriver = (
           async () => {
             const instance = await client.createInstance({
               envId,
-              sshPublicKey: await ensureStoredKeyPairPublicKey(),
+              sshPublicKey: await sshKeysStore(store).upsertKey(SSH_KEYPAIR_ALIAS),
               machineType,
               username: SSH_USERNAME,
             })

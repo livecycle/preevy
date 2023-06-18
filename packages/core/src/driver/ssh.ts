@@ -69,7 +69,7 @@ export const sshDriver = (
 
 export const getStoredKeyOrUndefined = (store: Store, alias: string) => {
   const keyStore = sshKeysStore(store)
-  return keyStore.getKey(alias)
+  return keyStore.readKey(alias)
 }
 
 export const getStoredKey = async (store: Store, alias: string) => {
