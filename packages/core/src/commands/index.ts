@@ -1,6 +1,6 @@
 import up from './up'
 import ls from './ls'
-import exec from './exec'
+import shell from './shell'
 
-export { up, ls, exec }
+export { up, ls, shell }
 export { urls } from './urls'

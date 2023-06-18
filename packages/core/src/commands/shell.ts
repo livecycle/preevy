@@ -1,7 +1,7 @@
 import { MachineDriver, isPartialMachine } from '../driver'
 import { Logger } from '../log'
 
-const exec = async ({
+const shell = async ({
   envId,
   args,
   machineDriver,
@@ -24,4 +24,4 @@ const exec = async ({
   })
 }
 
-export default exec
+export default shell
