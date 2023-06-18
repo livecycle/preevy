@@ -28,7 +28,9 @@ const ensureSshMachine = (m: MachineBase): SshMachine => {
 }
 
 export const sshDriver = (
-  getSshKey: (machine: SshMachine) => Promise<Pick<SshKeyPair, 'privateKey'>>,
+  { getSshKey }: {
+    getSshKey: (machine: SshMachine) => Promise<Pick<SshKeyPair, 'privateKey'>>
+  },
 ): Pick<MachineDriver<SshMachine>, 'connect' | 'spawnRemoteCommand'> => {
   const getPrivateKey = async (machine: SshMachine) => (await getSshKey(machine)).privateKey.toString('utf-8')
 

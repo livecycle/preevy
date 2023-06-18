@@ -129,7 +129,7 @@ const machineDriver = (
 
     resourcePlurals: {},
 
-    ...sshDriver(() => getStoredSshKey(store, SSH_KEYPAIR_ALIAS)),
+    ...sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) }),
   }
 }
 const flags = {

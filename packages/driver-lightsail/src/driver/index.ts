@@ -98,7 +98,7 @@ const machineDriver = ({
       keypair: 'keypairs',
     },
 
-    ...sshDriver(() => getStoredSshKey(store, keyAlias)),
+    ...sshDriver({ getSshKey: () => getStoredSshKey(store, keyAlias) }),
   }
 }
 
