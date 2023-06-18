@@ -1,4 +1,4 @@
-import { checkConnection, formatSshConnectionConfig, keyFingerprint, parseSshUrl, tunnelNameResolver } from '@preevy/common'
+import { checkConnection, formatSshConnectionConfig, keyFingerprint, parseSshUrl, replaceHostname, tunnelNameResolver } from '@preevy/common'
 import { Logger } from '../log'
 import { ProfileStore } from '../profile'
 import { generateSshKeyPair } from '../ssh/keypair'
@@ -111,18 +111,16 @@ export const performTunnelConnectionCheck = async ({
 export const createTunnelingKey = async () => Buffer.from((await generateSshKeyPair()).privateKey)
 
 export const tunnelUrlForEnv = (
-  { projectName, envId, baseUrl: { hostname, protocol, port }, clientId }: {
+  { projectName, envId, baseUrl, clientId }: {
     projectName: string
     envId: string
-    baseUrl: { hostname: string; protocol: string; port: string | number }
+    baseUrl: URL
     clientId: string
   }
 ) => {
   const resolver = tunnelNameResolver({ userDefinedSuffix: envId })
   return ({ name: serviceName, port: servicePort }: { name: string; port: number }) => {
     const { tunnel } = resolver({ name: serviceName, project: projectName, port: servicePort })
-    return new URL(
-      `${protocol}//${tunnel}-${clientId}.${hostname}:${port}`
-    ).toString()
+    return replaceHostname(baseUrl, `${tunnel}-${clientId}.${baseUrl.hostname}`).toString()
   }
 }
