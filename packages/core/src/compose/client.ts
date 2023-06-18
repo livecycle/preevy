@@ -14,11 +14,10 @@ class LoadComposeFileError extends Error {
 }
 
 const isExposedService = (x: [string, ComposeService]): x is [string, RequiredProperties<ComposeService, 'ports'>] => hasPropertyDefined(x[1], 'ports')
-const getExposedServices = (model: ComposeModel) => Object.entries(model.services ?? []).filter(isExposedService)
+const getExposedServices = (model: Pick<ComposeModel, 'services'>) => Object.entries(model.services ?? []).filter(isExposedService)
 
-export const getExposedTcpServices = (model: ComposeModel) => getExposedServices(model)
-  .flatMap(x => x[1].ports
-    .map(k => [x[0], k] as const))
+export const getExposedTcpServices = (model: Pick<ComposeModel, 'services'>) => getExposedServices(model)
+  .flatMap(x => x[1].ports.map(k => [x[0], k] as const))
   .filter(x => x[1].protocol === 'tcp')
   .map(x => [x[0], x[1].target] as const)
 

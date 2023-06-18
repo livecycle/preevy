@@ -78,11 +78,11 @@ const chainPromise = () => {
   }
 }
 
-export const tarStream = (initialFilesToCopy: FileToCopy[] = []) => {
+export const tarStreamer = (initialFilesToCopy: FileToCopy[] = []) => {
   const filesToCopy = [...initialFilesToCopy]
   const add = (fileToCopy: FileToCopy) => { filesToCopy.push(fileToCopy) }
 
-  const finalize = ({ out, concurrency, filter = (_f, r) => r }: {
+  const startStreaming = ({ out, concurrency, filter = (_f, r) => r }: {
     out: Writable
     concurrency: number
     filter?: (fi: FileInfo, remote: string) => string | undefined
@@ -139,7 +139,7 @@ export const tarStream = (initialFilesToCopy: FileToCopy[] = []) => {
     }
   }
 
-  return { add, finalize }
+  return { add, startStreaming }
 }
 
-export type FinalizeResult = Awaited<ReturnType<ReturnType<typeof tarStream>['finalize']>>
+export type StartStreamingResult = Awaited<ReturnType<ReturnType<typeof tarStreamer>['startStreaming']>>

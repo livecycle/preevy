@@ -1,6 +1,6 @@
 import { inspect } from 'util'
 
-type HasRequired<T, P extends keyof T> = Omit<T, P> & {
+export type HasRequired<T, P extends keyof T> = Omit<T, P> & {
   [P2 in P]-?: NonNullable<T[P2]>;
 }
 

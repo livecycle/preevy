@@ -1,6 +1,19 @@
 export { Logger, LogFunc, nullLogFunc, LogLevel, logLevels } from './log'
 export { LocalProfilesConfig, localProfilesConfig } from './profile'
-export { Machine, PartialMachine, MachineDriver, MachineCreationDriver, MachineCreationDriverFactory, MachineDriverFactory } from './driver'
+export {
+  SshMachine,
+  MachineBase,
+  MachineResource,
+  MachineDriver,
+  MachineCreationDriver,
+  MachineCreationDriverFactory,
+  MachineDriverFactory,
+  isPartialMachine,
+  sshDriver,
+  machineResourceType,
+  getStoredKey as getStoredSshKey,
+  getStoredKeyOrUndefined as getStoredSshKeyOrUndefined,
+} from './driver'
 export { profileStore, Profile, ProfileStore } from './profile'
 export { telemetryEmitter, registerEmitter, wireProcessExit, createTelemetryEmitter } from './telemetry'
 export { fsTypeFromUrl, Store, VirtualFS, localFsFromUrl } from './store'
@@ -21,7 +34,7 @@ export {
   FlatTunnel,
   flattenTunnels,
   HostKeySignatureConfirmer,
-  ensureTunnelKeyPair,
+  createTunnelingKey,
   performTunnelConnectionCheck,
 } from './tunneling'
 export { ciProviders, detectCiProvider } from './ci-providers'

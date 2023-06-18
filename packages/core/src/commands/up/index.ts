@@ -2,18 +2,19 @@ import fs from 'fs'
 import path from 'path'
 import { rimraf } from 'rimraf'
 import yaml from 'yaml'
-import { BaseUrl, formatPublicKey } from '@preevy/common'
-import { SSHKeyConfig, TunnelOpts } from '../../ssh'
+import { formatPublicKey } from '@preevy/common'
+import { inspect } from 'util'
+import { TunnelOpts } from '../../ssh'
 import { ComposeModel, fixModelForRemote, getExposedTcpServices, localComposeClient, resolveComposeFiles } from '../../compose'
 import { ensureCustomizedMachine } from './machine'
 import { wrapWithDockerSocket } from '../../docker'
 import { findAmbientEnvId } from '../../env-id'
 import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addComposeTunnelAgentService, queryTunnels } from '../../compose-tunnel-agent-client'
 import { withSpinner } from '../../spinner'
-import { Machine, MachineCreationDriver, MachineDriver } from '../../driver'
+import { MachineCreationDriver, MachineDriver, MachineBase } from '../../driver'
 import { remoteProjectDir } from '../../remote-files'
 import { Logger } from '../../log'
-import { Tunnel, tunnelUrl } from '../../tunneling'
+import { Tunnel, tunnelUrlForEnv } from '../../tunneling'
 import { FileToCopy, uploadWithSpinner } from '../../upload-files'
 
 const createCopiedFileInDataDir = (
@@ -50,6 +51,14 @@ const calcComposeArgs = ({ userSpecifiedServices, debug, cwd } : {
   ]
 }
 
+const serviceLinkEnvVars = (
+  userModel: Pick<ComposeModel, 'services'>,
+  tunnelUrlForService: (servicePort: { name: string; port: number }) => string,
+) => getExposedTcpServices(userModel).reduce((envMapAgg, [service, port]) => ({
+  ...envMapAgg,
+  [`PREEVY_BASE_URI_${service}_${port}`.toUpperCase()]: tunnelUrlForService({ name: service, port }),
+}), {})
+
 const up = async ({
   clientId,
   baseUrl,
@@ -65,14 +74,13 @@ const up = async ({
   systemComposeFiles,
   log,
   dataDir,
-  sshKey,
   allowedSshHostKeys: hostKey,
   sshTunnelPrivateKey,
   cwd,
   skipUnchangedFiles,
 }: {
   clientId: string
-  baseUrl: BaseUrl
+  baseUrl: string
   debug: boolean
   machineDriver: MachineDriver
   machineCreationDriver: MachineCreationDriver
@@ -85,12 +93,11 @@ const up = async ({
   systemComposeFiles: string[]
   log: Logger
   dataDir: string
-  sshKey: SSHKeyConfig
-  sshTunnelPrivateKey: string
+  sshTunnelPrivateKey: string | Buffer
   allowedSshHostKeys: Buffer
   cwd: string
   skipUnchangedFiles: boolean
-}): Promise<{ machine: Machine; tunnels: Tunnel[]; envId: string }> => {
+}): Promise<{ machine: MachineBase; tunnels: Tunnel[]; envId: string }> => {
   const projectName = userSpecifiedProjectName ?? userModel.name
   const remoteDir = remoteProjectDir(projectName)
 
@@ -100,15 +107,8 @@ const up = async ({
   // We start by getting the user model without injecting Preevy's environment
   // variables (e.g. `PREEVY_BASE_URI_BACKEND_3000`) so we can have the list of services
   // required to create said variables
-  const composeEnv = getExposedTcpServices(userModel).reduce((envMapAgg, [service, port]) => ({
-    ...envMapAgg,
-    [`PREEVY_BASE_URI_${service}_${port}`.toUpperCase()]: tunnelUrl({
-      service: { name: service, port },
-      envId,
-      baseUrl,
-      clientId,
-    }),
-  }), {})
+  const tunnelUrlForService = tunnelUrlForEnv({ projectName, envId, baseUrl: new URL(baseUrl), clientId })
+  const composeEnv = { ...serviceLinkEnvVars(userModel, tunnelUrlForService) }
 
   const composeFiles = await resolveComposeFiles({
     userSpecifiedFiles: userSpecifiedComposeFiles,
@@ -137,11 +137,11 @@ const up = async ({
     createCopiedFile('tunnel_server_public_key', formatPublicKey(hostKey)),
   ])
 
-  const { machine, sshClient } = await ensureCustomizedMachine({
-    machineDriver, machineCreationDriver, sshKey, envId, log, debug,
+  const { machine, connection } = await ensureCustomizedMachine({
+    machineDriver, machineCreationDriver, envId, log, debug,
   })
 
-  const exec = sshClient.execCommand
+  const { exec } = connection
 
   const composeTunnelAgentUser = (
     await exec('echo "$(id -u):$(stat -c %g /var/run/docker.sock)"')
@@ -153,7 +153,6 @@ const up = async ({
     urlSuffix: envId,
     sshPrivateKeyPath: path.join(remoteDir, sshPrivateKeyFile.remote),
     knownServerPublicKeyPath: path.join(remoteDir, knownServerPublicKey.remote),
-    remoteBaseDir: remoteDir,
     user: composeTunnelAgentUser,
   }, fixedModel)
 
@@ -161,7 +160,7 @@ const up = async ({
   log.debug('model', modelStr)
   const composeFilePath = (await createCopiedFile('docker-compose.yml', modelStr)).local
 
-  const withDockerSocket = wrapWithDockerSocket({ sshClient, log })
+  const withDockerSocket = wrapWithDockerSocket({ connection, log })
 
   try {
     await exec(`sudo mkdir -p "${remoteDir}" && sudo chown $USER "${remoteDir}"`)
@@ -177,7 +176,13 @@ const up = async ({
 
     const tunnels = await withSpinner(async () => {
       const queryResult = await queryTunnels({
-        sshClient, remoteProjectDir: remoteDir, retryOpts: { minTimeout: 1000, maxTimeout: 2000, retries: 10 },
+        tunnelUrlForService,
+        retryOpts: {
+          minTimeout: 1000,
+          maxTimeout: 2000,
+          retries: 10,
+          onFailedAttempt: e => { log.debug(`Failed to create tunnel: ${inspect(e)}`) },
+        },
       })
 
       return queryResult.tunnels
@@ -185,7 +190,7 @@ const up = async ({
 
     return { envId, machine, tunnels }
   } finally {
-    sshClient.dispose()
+    await connection.close()
   }
 }
 

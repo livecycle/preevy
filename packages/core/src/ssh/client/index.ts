@@ -32,12 +32,12 @@ export const connectSshClient = async (
   const self = {
     mkdir: mkdir(exec),
     sftp,
-    execCommand: exec,
+    exec,
     forwardOutStreamLocal: (
       listenAddress: string | number | ListenOptions,
       remoteSocket: string,
     ) => forwardOutStreamLocal({ ssh, log, listenAddress, remoteSocket }),
-    dispose: () => ssh.end(),
+    close: () => { ssh.end() },
   }
 
   return self

@@ -5,7 +5,7 @@ import { telemetryEmitter } from '../telemetry'
 import { filterCommand, filterStore } from './files-filter'
 import { FileInfo, FileToCopy } from './files'
 import { ExpandedTransferProgress, expandedTransferProgressEmitter } from './progress'
-import { FinalizeResult, tarStream } from './tar'
+import { StartStreamingResult, tarStreamer } from './tar'
 import { CommandExecuter } from '../command-executer'
 
 const displayAndUnit = (nbytes: number) => {
@@ -63,14 +63,14 @@ export const upload = async (
   filesToCopy: FileToCopy[],
   skipUnchangedFiles = false,
   { onStart } : {
-    onStart?: (finalizeResult: Omit<FinalizeResult, 'totals'> & { totals: Promise<Totals> }) => void
+    onStart?: (finalizeResult: Omit<StartStreamingResult, 'totals'> & { totals: Promise<Totals> }) => void
   } = {},
 ) => {
-  const tar = tarStream(filesToCopy)
+  const tar = tarStreamer(filesToCopy)
   const gzip = zlib.createGzip()
   const totalSkipped = { skipped: 0 }
   const filter = skipUnchangedFiles ? await createFilter(exec, remoteDir, totalSkipped) : undefined
-  const finalizeResult = tar.finalize({ out: gzip, concurrency: CONCURRENCY, filter })
+  const finalizeResult = tar.startStreaming({ out: gzip, concurrency: CONCURRENCY, filter })
   const execPromise = exec(`tar xz -C "${remoteDir}"`, { stdin: gzip })
   onStart?.({
     ...finalizeResult,

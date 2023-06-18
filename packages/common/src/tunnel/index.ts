@@ -1,5 +1,5 @@
 const concat = (...v: (string | number)[]) => v.join('-')
-const tunnel = (port: number, v: (string | number)[]) => ({ port, tunnel: concat(...v) })
+const tunnel = (port: number, v: (string | number)[]) => ({ port, tunnel: concat(...v).toLowerCase() })
 
 export type TunnelNameResolver = (x: {
   name: string
