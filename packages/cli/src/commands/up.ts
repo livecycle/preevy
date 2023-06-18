@@ -1,26 +1,13 @@
 import { Args, Flags, ux } from '@oclif/core'
-import os from 'os'
 import {
-  performTunnelConnectionCheck, HostKeySignatureConfirmer,
-  commands, flattenTunnels, profileStore, sshKeysStore,
+  commands, flattenTunnels, profileStore,
   telemetryEmitter,
 } from '@preevy/core'
 import { asyncReduce } from 'iter-tools-es'
+import { tunnelServerFlags } from '@preevy/cli-common'
+import { tunnelServerHello } from '../tunnel-server-client'
 import MachineCreationDriverCommand from '../machine-creation-driver-command'
-import { carefulBooleanPrompt } from '../prompt'
 import { envIdFlags } from '../common-flags'
-
-const confirmHostFingerprint = async (
-  { hostKeyFingerprint: hostKeySignature, hostname, port }: Parameters<HostKeySignatureConfirmer>[0],
-) => {
-  const formattedHost = port ? `${hostname}:${port}` : hostname
-  const message = [
-    `The authenticity of host '${formattedHost}' can't be established.`,
-    `Key fingerprint is ${hostKeySignature}`,
-    'Are you sure you want to continue connecting (yes/no)?',
-  ].join(os.EOL)
-  return carefulBooleanPrompt(message)
-}
 
 // eslint-disable-next-line no-use-before-define
 export default class Up extends MachineCreationDriverCommand<typeof Up> {
@@ -28,18 +15,11 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
   static flags = {
     ...envIdFlags,
-    'tunnel-url': Flags.string({
-      description: 'Tunnel url, specify ssh://hostname[:port] or ssh+tls://hostname[:port]',
-      char: 't',
-      default: 'ssh+tls://livecycle.run' ?? process.env.PREVIEW_TUNNEL_OVERRIDE,
-    }),
-    'tls-hostname': Flags.string({
-      description: 'Override TLS server name when tunneling via HTTPS',
-      required: false,
-    }),
-    'insecure-skip-verify': Flags.boolean({
-      description: 'Skip TLS or SSH certificate verification',
-      default: false,
+    ...tunnelServerFlags,
+    'skip-unchanged-files': Flags.boolean({
+      description: 'Detect and skip unchanged files when copying (default: true)',
+      default: true,
+      allowNo: true,
     }),
     ...ux.table.flags(),
   }
@@ -59,22 +39,9 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
     const driver = await this.driver()
     const machineCreationDriver = await this.machineCreationDriver()
-    const keyAlias = await driver.getKeyPairAlias()
-
-    const keyStore = sshKeysStore(this.store)
-    let keyPair = await keyStore.getKey(keyAlias)
-    if (!keyPair) {
-      this.logger.info(`key pair ${keyAlias} not found, creating a new key pair`)
-      keyPair = await driver.createKeyPair()
-      await keyStore.addKey(keyPair)
-      this.logger.info(`keypair ${keyAlias} created`)
-    }
-
     const pStore = profileStore(this.store)
+
     const tunnelingKey = await pStore.getTunnelingKey()
-    if (!tunnelingKey) {
-      throw new Error('Tunneling key is not configured correctly, please recreate the profile')
-    }
 
     const tunnelOpts = {
       url: flags['tunnel-url'],
@@ -82,22 +49,14 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       insecureSkipVerify: flags['insecure-skip-verify'],
     }
 
-    const { hostKey, clientId, baseUrl } = await performTunnelConnectionCheck({
-      log: this.logger,
+    const { hostKey, clientId, baseUrl } = await tunnelServerHello({
+      tunnelingKey,
+      knownServerPublicKeys: pStore.knownServerPublicKeys,
       tunnelOpts,
-      clientPrivateKey: tunnelingKey,
-      username: process.env.USER || 'preview',
-      confirmHostFingerprint: async o => {
-        const confirmed = await confirmHostFingerprint(o)
-        if (!confirmed) {
-          this.log('Exiting')
-          this.exit(0)
-        }
-      },
-      keysState: pStore.knownServerPublicKeys,
+      log: this.logger,
     })
 
-    telemetryEmitter().identify({ proxy_client_id: clientId })
+    telemetryEmitter().group({ type: 'profile' }, { proxy_client_id: clientId })
 
     const userModel = await this.ensureUserModel()
 
@@ -116,9 +75,10 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       tunnelOpts,
       log: this.logger,
       dataDir: this.config.dataDir,
-      sshKey: keyPair,
       sshTunnelPrivateKey: tunnelingKey,
       allowedSshHostKeys: hostKey,
+      cwd: process.cwd(),
+      skipUnchangedFiles: flags['skip-unchanged-files'],
     })
 
     const flatTunnels = flattenTunnels(tunnels)
@@ -136,7 +96,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       return result.urls
     }
 
-    this.log(`Preview environment ${envId} provisioned: ${machine.publicIPAddress}`)
+    this.log(`Preview environment ${envId} provisioned at ${machine.locationDescription}`)
 
     ux.table(
       result.urls,

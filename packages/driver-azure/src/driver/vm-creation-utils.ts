@@ -271,11 +271,10 @@ export const getIpAddresses = async (networkClient: NetworkManagementClient, vm:
   }
   const publicIPName = extractResourceNameFromId(nic.ipConfigurations[0].publicIPAddress.id)
   const publicIPAddress = await networkClient.publicIPAddresses.get(resourceGroupName, publicIPName)
-  if (!publicIPAddress.ipAddress || !nic.ipConfigurations?.[0].privateIPAddress) {
+  if (!publicIPAddress.ipAddress) {
     throw new Error('ipAddress not found')
   }
   return {
-    privateIPAddress: nic.ipConfigurations[0].privateIPAddress,
     publicIPAddress: publicIPAddress.ipAddress,
   }
 }

@@ -1,7 +1,5 @@
-import {
-  Instance,
-} from '@aws-sdk/client-lightsail'
-import { asyncMap } from 'iter-tools-es'
+import { Instance } from '@aws-sdk/client-lightsail'
+import { asyncConcat, asyncMap } from 'iter-tools-es'
 
 import { Flags } from '@oclif/core'
 import { randomBytes } from 'crypto'
@@ -9,7 +7,9 @@ import { InferredFlags } from '@oclif/core/lib/interfaces'
 import { ListQuestion, Question } from 'inquirer'
 import {
   telemetryEmitter,
-  Machine, MachineDriver, MachineCreationDriver, MachineCreationDriverFactory, MachineDriverFactory,
+  SshMachine, MachineDriver, MachineCreationDriver, MachineCreationDriverFactory, machineResourceType,
+  MachineDriverFactory, sshKeysStore, Store,
+  getStoredSshKey, sshDriver,
 } from '@preevy/core'
 import { extractDefined } from '../aws-utils'
 import createClient, { REGIONS } from './client'
@@ -19,10 +19,13 @@ import { CURRENT_MACHINE_VERSION, TAGS, requiredTag } from './tags'
 
 export { BundleId, BUNDLE_IDS, bundleIdFromString as bundleId }
 
+type ResourceType = typeof machineResourceType | 'snapshot' | 'keypair'
+
 const machineFromInstance = (
   instance: Instance,
-): Machine & { envId: string } => ({
-  privateIPAddress: extractDefined(instance, 'privateIpAddress'),
+): SshMachine & { envId: string } => ({
+  type: machineResourceType,
+  locationDescription: extractDefined(instance, 'publicIpAddress'),
   publicIPAddress: extractDefined(instance, 'publicIpAddress'),
   sshKeyName: extractDefined(instance, 'sshKeyName'),
   sshUsername: 'ubuntu',
@@ -34,14 +37,17 @@ const machineFromInstance = (
 type DriverContext = {
   region: string
   profileId: string
+  store: Store
 }
 
 const machineDriver = ({
   region,
   profileId,
-}: DriverContext): MachineDriver => {
+  store,
+}: DriverContext): MachineDriver<SshMachine, ResourceType> => {
   const client = createClient({ region, profileId })
-  const keyAlias = `${region}`
+  const keyAlias = region
+
   return {
     friendlyName: 'AWS Lightsail',
     customizationScripts: CUSTOMIZE_BARE_MACHINE,
@@ -51,31 +57,48 @@ const machineDriver = ({
       return instance && machineFromInstance(instance)
     },
 
-    listMachines: () => asyncMap(
-      machineFromInstance,
-      client.listInstances(),
-    ),
+    listDeletableResources: () => {
+      const machines = asyncMap(
+        machineFromInstance,
+        client.listInstances(),
+      )
 
-    listSnapshots: () => asyncMap(
-      ({ name }) => ({ providerId: name as string }),
-      client.listInstanceSnapshots(),
-    ),
+      const snapshots = asyncMap(
+        ({ name }) => ({ type: 'snapshot' as ResourceType, providerId: name as string }),
+        client.listInstanceSnapshots(),
+      )
+      const keyPairs = asyncMap(
+        ({ name }) => ({ type: 'keypair' as ResourceType, providerId: name as string }),
+        client.listKeyPairsByAlias(keyAlias),
+      )
 
-    getKeyPairAlias: async () => keyAlias,
-
-    createKeyPair: async () => {
-      const keyPair = await client.createKeyPair({
-        alias: keyAlias,
-      })
-      return {
-        alias: keyAlias,
-        ...keyPair,
-      }
+      return asyncConcat(machines, snapshots, keyPairs)
     },
 
-    removeMachine: (providerId, wait) => client.deleteInstance(providerId, wait),
-    removeSnapshot: providerId => client.deleteInstanceSnapshot({ instanceSnapshotName: providerId }),
-    removeKeyPair: async alias => { await client.deleteKeyPair(alias) },
+    deleteResources: async (wait, ...resources) => {
+      await Promise.all(resources.map(({ type, providerId }) => {
+        if (type === 'snapshot') {
+          return client.deleteInstanceSnapshot({ instanceSnapshotName: providerId, wait })
+        }
+        if (type === 'keypair') {
+          return Promise.all([
+            client.deleteKeyPair(providerId, wait),
+            sshKeysStore(store).deleteKey(keyAlias),
+          ])
+        }
+        if (type === 'machine') {
+          return client.deleteInstance(providerId, wait)
+        }
+        throw new Error(`Unknown resource type "${type}"`)
+      }))
+    },
+
+    resourcePlurals: {
+      snapshot: 'snapshots',
+      keypair: 'keypairs',
+    },
+
+    ...sshDriver({ getSshKey: () => getStoredSshKey(store, keyAlias) }),
   }
 }
 
@@ -92,7 +115,7 @@ machineDriver.flags = flags
 
 type FlagTypes = Omit<InferredFlags<typeof flags>, 'json'>
 
-const contextFromFlags = ({ region }: FlagTypes): Omit<DriverContext, 'profileId'> => ({
+const contextFromFlags = ({ region }: FlagTypes): Omit<DriverContext, 'profileId' | 'store'> => ({
   region: region as string,
 })
 
@@ -114,12 +137,14 @@ const flagsFromAnswers = async (answers: Record<string, unknown>): Promise<FlagT
 
 machineDriver.flagsFromAnswers = flagsFromAnswers
 
-const factory: MachineDriverFactory<FlagTypes> = (
+const factory: MachineDriverFactory<FlagTypes, SshMachine, ResourceType> = (
   f,
   profile,
+  store,
 ) => machineDriver({
   ...contextFromFlags(f),
   profileId: profile.id,
+  store,
 })
 
 machineDriver.factory = factory
@@ -132,11 +157,27 @@ type MachineCreationContext = DriverContext & {
 const DEFAULT_BUNDLE_ID: BundleId = 'medium_2_0'
 
 const machineCreationDriver = (
-  context: MachineCreationContext
-): MachineCreationDriver => {
-  const { region, profileId, availabilityZone, bundleId: specifiedBundleId } = context
+  { region, profileId, availabilityZone, bundleId: specifiedBundleId, store }: MachineCreationContext
+): MachineCreationDriver<SshMachine> => {
   const client = createClient({ region, profileId })
   const bundleId = specifiedBundleId ?? DEFAULT_BUNDLE_ID
+  const keyAlias = region
+
+  const ensureStoredKeyPairName = async () => {
+    const existingProviderKeyPair = await client.findKeyPairByAlias(keyAlias)
+    if (existingProviderKeyPair) {
+      return existingProviderKeyPair.name
+    }
+
+    const newProviderKeyPair = await client.createKeyPair({ alias: keyAlias })
+    await sshKeysStore(store).writeKey({
+      alias: keyAlias,
+      privateKey: newProviderKeyPair.privateKey,
+      publicKey: newProviderKeyPair.publicKey,
+    })
+
+    return newProviderKeyPair.providerId
+  }
 
   return ({
     getMachineAndSpecDiff: async ({ envId }) => {
@@ -149,7 +190,7 @@ const machineCreationDriver = (
       }
     },
 
-    createMachine: async ({ envId, keyConfig }) => {
+    createMachine: async ({ envId }) => {
       const instanceSnapshot = await client.findInstanceSnapshot({ version: CURRENT_MACHINE_VERSION, bundleId })
       const haveSnapshot = instanceSnapshot?.state === 'available'
       const startTime = new Date().getTime()
@@ -157,10 +198,6 @@ const machineCreationDriver = (
       return {
         fromSnapshot: haveSnapshot,
         machine: (async () => {
-          const keyPair = await client.findKeyPairByAlias(keyConfig.alias)
-          if (!keyPair || !keyPair.name) {
-            throw new Error(`Key pair not found for alias: ${keyConfig.alias} and profile ${profileId}`)
-          }
           const instance = await client.createInstance({
             bundleId: bundleId ?? DEFAULT_BUNDLE_ID,
             instanceSnapshotName: haveSnapshot ? instanceSnapshot?.name : undefined,
@@ -168,7 +205,7 @@ const machineCreationDriver = (
             name: `preevy-${envId}-${randomBytes(16).toString('hex')}`,
             envId,
             versionTag: CURRENT_MACHINE_VERSION,
-            keyPairName: keyPair.name,
+            keyPairName: await ensureStoredKeyPairName(),
           })
 
           telemetryEmitter().capture('aws lightsail create machine end', { region, bundle_id: bundleId, have_snapshot: haveSnapshot, elapsed_sec: (new Date().getTime() - startTime) / 1000 })
@@ -177,7 +214,7 @@ const machineCreationDriver = (
       }
     },
 
-    ensureMachineSnapshot: async ({ driverMachineId: providerId, envId, wait }) => {
+    ensureMachineSnapshot: async ({ providerId, envId, wait }) => {
       const instanceSnapshot = await client.findInstanceSnapshot({ version: CURRENT_MACHINE_VERSION, bundleId })
       if (instanceSnapshot) {
         return undefined
@@ -210,18 +247,22 @@ machineDriver.machineCreationFlags = {
 
 type MachineCreationFlagTypes = InferredFlags<typeof machineDriver.machineCreationFlags>
 
-const machineCreationContextFromFlags = (fl: MachineCreationFlagTypes): Omit<MachineCreationContext, 'profileId'> => ({
+const machineCreationContextFromFlags = (
+  fl: MachineCreationFlagTypes,
+): Omit<MachineCreationContext, 'profileId' | 'store'> => ({
   ...contextFromFlags(fl),
   availabilityZone: fl['availability-zone'] as string,
   bundleId: fl['bundle-id'] as BundleId,
 })
 
-const machineCreationFactory: MachineCreationDriverFactory<MachineCreationFlagTypes> = (
+const machineCreationFactory: MachineCreationDriverFactory<MachineCreationFlagTypes, SshMachine> = (
   f,
   profile,
+  store,
 ) => machineCreationDriver({
   ...machineCreationContextFromFlags(f),
   profileId: profile.id,
+  store,
 })
 
 machineDriver.machineCreationFactory = machineCreationFactory

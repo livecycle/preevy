@@ -1,6 +1,6 @@
 {
   "name": "preevy",
-  "version": "0.0.30",
+  "version": "0.0.35",
   "description": "Quickly deploy preview environments to the cloud!",
   "author": "Livecycle",
   "bin": {
@@ -19,14 +19,15 @@
   ],
   "dependencies": {
     "@oclif/core": "^2",
-    "@preevy/cli-common": "0.0.30",
-    "@preevy/common": "0.0.30",
-    "@preevy/compose-tunnel-agent": "0.0.30",
-    "@preevy/core": "0.0.30",
-    "@preevy/driver-azure": "0.0.29-alpha.0",
-    "@preevy/driver-gce": "0.0.30",
-    "@preevy/driver-lightsail": "0.0.30",
-    "@preevy/plugin-github-pr-link": "0.0.30",
+    "@oclif/plugin-help": "^5",
+    "@preevy/cli-common": "0.0.35",
+    "@preevy/common": "0.0.35",
+    "@preevy/compose-tunnel-agent": "0.0.35",
+    "@preevy/core": "0.0.35",
+    "@preevy/driver-azure": "0.0.35",
+    "@preevy/driver-gce": "0.0.35",
+    "@preevy/driver-lightsail": "0.0.35",
+    "@preevy/plugin-github-pr-link": "0.0.35",
     "chalk": "^4.1.2",
     "inquirer": "^8.0.0",
     "iter-tools-es": "^7.5.1",
@@ -65,7 +66,6 @@
     ],
     "hooks": {
       "init": [
-        "./dist/hooks/init/async-trace",
         "./dist/hooks/init/sync-logging",
         "./dist/hooks/init/load-plugins",
         "./dist/hooks/init/telemetry"
@@ -87,7 +87,6 @@
     "posttest": "yarn lint",
     "prepack": "yarn build && oclif manifest && oclif readme",
     "cli": "./bin/dev",
-    "test": "mocha --forbid-only \"test/**/*.test.ts\"",
     "version": "oclif readme && git add README.md",
     "bump-to": "yarn version --no-commit-hooks --no-git-tag-version --new-version"
   },

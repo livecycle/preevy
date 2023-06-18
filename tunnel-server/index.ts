@@ -11,6 +11,7 @@ import pino from 'pino'
 import { tunnelsGauge } from './src/metrics'
 import { runMetricsServer } from './src/metrics'
 import { numberFromEnv, requiredEnv } from './src/env'
+import { replaceHostname } from './src/url'
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
@@ -26,10 +27,8 @@ const BASE_URL = (() => {
   if (result.pathname !== '/' || result.search || result.username || result.password || result.hash) {
     throw new Error(`Invalid URL: ${result} - cannot specify path, search, username, password, or hash`)
   }
-  return { hostname: result.hostname, port: result.port, protocol: result.protocol }
+  return result
 })()
-
-type BaseUrl = typeof BASE_URL
 
 const envStore = inMemoryPreviewEnvStore()
 
@@ -46,9 +45,11 @@ const tunnelName = (clientId: string, remotePath: string) => {
   return `${serviceName}-${clientId}`.toLowerCase()
 }
 
-const tunnelUrl = ({ hostname, protocol, port }: BaseUrl, clientId: string, tunnel: string) => new URL(
-  `${protocol}//${tunnelName(clientId, tunnel)}.${hostname}:${port}`
-).toString()
+const tunnelUrl = (
+  baseUrl: URL,
+  clientId: string,
+  tunnel: string,
+) => replaceHostname(baseUrl, `${tunnelName(clientId, tunnel)}.${baseUrl.hostname}`).toString()
 
 const sshServer = createSshServer({
   log: sshLogger,
@@ -68,7 +69,7 @@ const sshServer = createSshServer({
   },
   onHello: (clientId, tunnels) => JSON.stringify({
     clientId,
-    baseUrl: BASE_URL,
+    baseUrl: BASE_URL.toString(),
     tunnels: Object.fromEntries(tunnels.map(tunnel => [
       tunnel,
       tunnelUrl(BASE_URL, clientId, tunnel),

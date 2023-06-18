@@ -46,8 +46,8 @@ abstract class DriverCommand<T extends typeof Command> extends ProfileCommand<T>
       ...await profileStore(this.store).defaultFlags(driverName),
       ...removeDriverPrefix<DriverFlags<DriverName, 'flags'>>(driverName, this.flags),
     }
-    this.#driver = machineDrivers[driverName].factory(driverFlags as never, profile)
-    return this.#driver
+    this.#driver = machineDrivers[driverName].factory(driverFlags as never, profile, this.store)
+    return this.#driver as MachineDriver
   }
 }
 

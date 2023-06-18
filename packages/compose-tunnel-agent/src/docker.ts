@@ -11,6 +11,7 @@ export type RunningService = {
   name: string
   networks: string[]
   ports: number[]
+  access: 'private' | 'public'
 }
 
 const client = ({
@@ -32,6 +33,7 @@ const client = ({
   ).map(x => ({
     project: x.Labels['com.docker.compose.project'],
     name: x.Labels['com.docker.compose.service'],
+    access: (x.Labels['preevy.access'] || 'public') as ('private' | 'public'),
     networks: Object.keys(x.NetworkSettings.Networks),
     // ports may have both IPv6 and IPv4 addresses, ignoring
     ports: [...new Set(x.Ports.filter(p => p.Type === 'tcp').map(p => p.PrivatePort))],

@@ -201,3 +201,4 @@ Access to the data is limited to Livecycle's employees and not shared with 3rd p
 We appreciate the usage data sent to us as - it's the most basic and raw type of feedback we get from our users. However, if you are concerned about sending out data, you may choose to disable telemetry.
 
 Telemetry collection can be disabled by setting the environment variable `PREEVY_DISABLE_TELEMETRY` to `1` or `true`.
+

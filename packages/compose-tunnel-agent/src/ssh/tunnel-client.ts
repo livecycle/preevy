@@ -3,7 +3,7 @@ import net from 'net'
 import plimit from 'p-limit'
 import { inspect } from 'util'
 import { RunningService } from '../docker'
-import * as maps from '../maps'
+import { tunnelSet } from './tunnel-set'
 
 export type Tunnel = {
   project: string
@@ -31,23 +31,18 @@ export const sshClient = async ({
   })
 
   ssh.on('close', () => onError?.(new Error('ssh connection closed')))
+  const existingForwards = tunnelSet()
 
-  type ExistingForward = { service: RunningService; host: string; port: number; sockets: Set<net.Socket> }
-
-  const existingForwards = new Map<string, ExistingForward>()
-  const forwardKey = (socketPath: string) => socketPath.replace(/^\//, '')
-
-  ssh.on('unix connection', ({ socketPath }, accept, reject) => {
-    const key = forwardKey(socketPath)
-    const forward = existingForwards.get(key)
+  ssh.on('unix connection', ({ socketPath: forwardRequestId }, accept, reject) => {
+    const forward = existingForwards.get(forwardRequestId)
     if (!forward) {
-      log.error(`no such unix connection: ${key}`)
+      log.error(`no such unix connection: ${forwardRequestId}`)
       reject()
       return
     }
 
     const { host, port, sockets } = forward
-    log.debug(`forwarding ${socketPath} to ${host}:${port}`)
+    log.debug(`forwarding ${forwardRequestId} to ${host}:${port}`)
 
     const channel = accept()
 
@@ -61,33 +56,33 @@ export const sshClient = async ({
       })
     })
     localServiceSocket.on('error', err => {
-      log.warn(`error forwarding ${socketPath} to ${host}:${port}: %j`, inspect(err))
+      log.warn(`error forwarding ${forwardRequestId} to ${host}:${port}: %j`, inspect(err))
       channel.close()
     })
   })
 
   const createForward = (
     service: RunningService,
-    tunnel: string,
+    forwardRequestId: string,
     host: string,
     port: number,
   ) => new Promise<void>((resolve, reject) => {
-    ssh.openssh_forwardInStreamLocal(`/${tunnel}`, err => {
+    ssh.openssh_forwardInStreamLocal(forwardRequestId, err => {
       if (err) {
-        log.error(`error creating forward ${tunnel}: %j`, inspect(err))
+        log.error(`error creating forward ${forwardRequestId}: %j`, inspect(err))
         reject(err)
       }
-      log.debug('created forward %j', tunnel)
-      existingForwards.set(tunnel, { service, host, port, sockets: new Set() })
+      log.debug('created forward %j', forwardRequestId)
+      existingForwards.add({ forwardRequestId, service, host, port, sockets: new Set() })
       resolve()
     })
   })
 
-  const destroyForward = (tunnel: string) => new Promise<void>((resolve, reject) => {
-    const forward = existingForwards.get(tunnel)
+  const destroyForward = (forwardRequestId: string) => new Promise<void>((resolve, reject) => {
+    const forward = existingForwards.get(forwardRequestId)
     if (!forward) {
-      const message = `no such forward: ${tunnel}`
-      log.error(message)
+      const message = `no such forward: ${forwardRequestId}`
+      log.error('destroyForward2: %j', forwardRequestId)
       reject(new Error(message))
       return
     }
@@ -95,9 +90,9 @@ export const sshClient = async ({
     const { sockets } = forward
     sockets.forEach(socket => socket.end())
 
-    ssh.openssh_unforwardInStreamLocal(`/${tunnel}`, () => {
-      log.debug('destroyed forward %j', tunnel)
-      existingForwards.delete(tunnel)
+    ssh.openssh_unforwardInStreamLocal(forwardRequestId, () => {
+      log.info('destroyed forward %j', forwardRequestId)
+      existingForwards.delete(forwardRequestId)
       resolve()
     })
   })
@@ -108,10 +103,9 @@ export const sshClient = async ({
     const r = Object.entries(helloTunnels).map(([socketPath, url]) => ({ socketPath, url }))
       .reduce(
         (res, { socketPath, url }) => {
-          const key = forwardKey(socketPath)
-          const forward = existingForwards.get(key)
+          const forward = existingForwards.get(socketPath)
           if (!forward) {
-            throw new Error(`no such forward: ${key}`)
+            throw new Error(`no such forward: ${socketPath}`)
           }
           const { service, port } = forward;
           ((res[serviceKey(service)] ||= {
@@ -131,26 +125,35 @@ export const sshClient = async ({
     clientId, tunnels: tunnelsFromHelloResponse(tunnels),
   })
 
+  const getForwardRequestId = (service: {name: string; project: string; port: number; access: 'private' | 'public'}) => {
+    const { tunnel: tunnelName } = tunnelNameResolver({ ...service })
+    const metadata = service.access === 'private' ? '#access=private' : ''
+    return `/${tunnelName}${metadata}`as const
+  }
   let state: SshState
   const limit = plimit(1)
 
   return {
     updateTunnels: async (services: RunningService[]): Promise<SshState> => limit(async () => {
-      const forwards = new Map(
-        services.flatMap(service => service.ports.map(x => tunnelNameResolver({ ...service, port: x }))
-          .map(({ port, tunnel }) => ([tunnel, { host: service.name, port, service }])))
-      )
+      const forwards = tunnelSet()
+      services.flatMap(service =>
+        service.ports.map(x => ({ forwardRequestId: getForwardRequestId({ ...service, port: x }), port: x }))
+          .forEach(({ port, forwardRequestId }) => forwards.add(
+            { host: service.name, port, service, sockets: new Set(), forwardRequestId }
+          )))
 
-      const inserts = maps.difference(forwards, existingForwards)
-      const deletes = maps.difference(existingForwards, forwards)
-
-      const haveChanges = inserts.size > 0 || deletes.size > 0
+      const deletes = existingForwards.difference(forwards)
+      await Promise.all([
+        [...deletes].map(({ forwardRequestId }) => destroyForward(forwardRequestId)),
+      ])
+      const inserts = forwards.difference(existingForwards)
 
       await Promise.all([
-        [...inserts.entries()].map(([tunnel, { host, port, service }]) => createForward(service, tunnel, host, port)),
-        [...deletes.entries()].map(([tunnel]) => destroyForward(tunnel)),
+        [...inserts].map(({ forwardRequestId, host, port, service }) =>
+          createForward(service, forwardRequestId, host, port)),
       ])
 
+      const haveChanges = inserts.size > 0 || deletes.size > 0
       if (haveChanges || !state) {
         state = stateFromHelloResponse(await execHello())
         log.info('tunnel state: %j', state)

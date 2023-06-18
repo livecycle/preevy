@@ -17,6 +17,7 @@
     ]
   },
   "scripts": {
+    "test": "yarn -s run lerna -- run test --",
     "lint": "yarn -s run lerna -- run lint --parallel --",
     "build": "yarn -s run lerna run build --",
     "clean": "yarn -s run lerna -- run clean --parallel --",
@@ -24,5 +25,5 @@
     "fix-mismatches": "syncpack fix-mismatches",
     "prepare": "husky install"
   },
-  "version": "0.0.27"
+  "version": "0.0.33"
 }

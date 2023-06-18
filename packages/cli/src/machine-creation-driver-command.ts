@@ -30,6 +30,7 @@ abstract class MachineCreationDriverCommand<T extends typeof Command> extends Dr
     this.#machineCreationDriver = machineDrivers[driverName].machineCreationFactory(
       driverFlags as never,
       profile,
+      this.store,
     )
     return this.#machineCreationDriver
   }

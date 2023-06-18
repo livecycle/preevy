@@ -2,12 +2,11 @@ import path from 'path'
 import fetch from 'node-fetch'
 import retry from 'p-retry'
 import { ComposeModel, ComposeService } from './compose/model'
-import { SshClient } from './ssh/client'
 import { TunnelOpts } from './ssh/url'
 import { Tunnel } from './tunneling'
-import { remoteProjectDir } from './remote-files'
 
 export const COMPOSE_TUNNEL_AGENT_SERVICE_NAME = 'preevy_proxy'
+export const COMPOSE_TUNNEL_AGENT_SERVICE_PORT = 3000
 const COMPOSE_TUNNEL_AGENT_DIR = path.join(path.dirname(require.resolve('@preevy/compose-tunnel-agent')), '..')
 
 const baseDockerProxyService: ComposeService = {
@@ -34,13 +33,12 @@ export const addBaseComposeTunnelAgentService = (
 })
 
 export const addComposeTunnelAgentService = (
-  { tunnelOpts, sshPrivateKeyPath, knownServerPublicKeyPath, urlSuffix, debug, listenAddress, user }: {
+  { tunnelOpts, sshPrivateKeyPath, knownServerPublicKeyPath, urlSuffix, debug, user }: {
     tunnelOpts: TunnelOpts
     urlSuffix: string
     sshPrivateKeyPath: string
     knownServerPublicKeyPath: string
     debug: boolean
-    listenAddress: string
     user: string
   },
   model: ComposeModel,
@@ -52,6 +50,14 @@ export const addComposeTunnelAgentService = (
       ...baseDockerProxyService,
       restart: 'always',
       networks: Object.keys(model.networks || {}),
+      ports: [
+        {
+          mode: 'ingress',
+          target: 3000,
+          published: '0',
+          protocol: 'tcp',
+        },
+      ],
       volumes: [
         {
           type: 'bind',
@@ -72,18 +78,13 @@ export const addComposeTunnelAgentService = (
           read_only: true,
           bind: { create_host_path: true },
         },
-        {
-          type: 'bind',
-          source: path.dirname(listenAddress),
-          target: '/preevy/socket',
-        },
       ],
       user,
       environment: {
         SSH_URL: tunnelOpts.url,
         TLS_SERVERNAME: tunnelOpts.tlsServerName,
         TUNNEL_URL_SUFFIX: urlSuffix,
-        PORT: path.join('/preevy/socket', path.basename(listenAddress)),
+        PORT: COMPOSE_TUNNEL_AGENT_SERVICE_PORT.toString(),
         ...debug ? { DEBUG: '1' } : {},
         HOME: '/preevy',
       },
@@ -91,35 +92,27 @@ export const addComposeTunnelAgentService = (
   },
 })
 
-export const composeTunnelAgentSocket = (projectName: string) => path.join(remoteProjectDir(projectName), 'compose-tunnel-agent.sock')
-
-export const queryTunnels = async ({ sshClient, projectName, retryOpts = { retries: 0 } }: {
-  sshClient: SshClient
-  projectName: string
+export const queryTunnels = async ({ retryOpts = { retries: 0 }, tunnelUrlForService }: {
+  tunnelUrlForService: (servicePort: { name: string; port: number }) => string
   retryOpts?: retry.Options
 }) => {
-  const forwarding = await sshClient.forwardOutStreamLocal({ host: '0.0.0.0', port: 0 }, composeTunnelAgentSocket(projectName))
-  if (typeof forwarding.localSocket !== 'object') {
-    throw new Error(`Invalid response from ssh forward: ${forwarding.localSocket}`)
-  }
+  const serviceUrl = tunnelUrlForService({
+    name: COMPOSE_TUNNEL_AGENT_SERVICE_NAME,
+    port: COMPOSE_TUNNEL_AGENT_SERVICE_PORT,
+  }).replace(/\/$/, '')
 
-  const { address, port } = forwarding.localSocket
-  const url = `http://${address}:${port}/tunnels`
+  const url = `${serviceUrl}/tunnels`
 
-  try {
-    const { tunnels, clientId: tunnelId } = await retry(async () => {
-      const r = await fetch(url, { timeout: 2500 })
-      if (!r.ok) {
-        throw new Error(`Failed to connect to docker proxy at ${url}: ${r.status}: ${r.statusText}`)
-      }
-      return r.json() as Promise<{ tunnels: Tunnel[]; clientId: string }>
-    }, retryOpts)
-
-    return {
-      tunnels: tunnels.filter(({ service }: Tunnel) => service !== COMPOSE_TUNNEL_AGENT_SERVICE_NAME),
-      tunnelId,
+  const { tunnels, clientId: tunnelId } = await retry(async () => {
+    const r = await fetch(url, { timeout: 2500 })
+    if (!r.ok) {
+      throw new Error(`Failed to connect to docker proxy at ${url}: ${r.status}: ${r.statusText}`)
     }
-  } finally {
-    forwarding.close()
+    return r.json() as Promise<{ tunnels: Tunnel[]; clientId: string }>
+  }, retryOpts)
+
+  return {
+    tunnels: tunnels.filter(({ service }: Tunnel) => service !== COMPOSE_TUNNEL_AGENT_SERVICE_NAME),
+    tunnelId,
   }
 }

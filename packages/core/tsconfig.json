@@ -26,6 +26,7 @@
     "rootDir": "src",
   },
   "include": ["**/*"],
+  "exclude": ["jest.config.js"],
   "references": [
     { "path": "../common" },
   ]

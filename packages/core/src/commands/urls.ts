@@ -1,49 +1,19 @@
-import { sshKeysStore } from '../state'
-import { MachineDriver } from '../driver'
-import { Logger } from '../log'
-import { Store } from '../store'
-import { connectSshClient } from '../ssh'
 import { queryTunnels } from '../compose-tunnel-agent-client'
-import { flattenTunnels } from '../tunneling'
+import { flattenTunnels, tunnelUrlForEnv } from '../tunneling'
 
-export const urls = async ({ log, envId, driver, store, debug, projectName, serviceAndPort }: {
-  log: Logger
+export const urls = async ({ envId, baseUrl, clientId, projectName, serviceAndPort }: {
   envId: string
   projectName: string
-  driver: MachineDriver
-  store: Store
-  debug: boolean
+  baseUrl: string
+  clientId: string
   serviceAndPort?: { service: string; port?: number }
 }) => {
-  const keyAlias = await driver.getKeyPairAlias()
+  const tunnelUrlForService = tunnelUrlForEnv({ projectName, envId, baseUrl: new URL(baseUrl), clientId })
 
-  const keyStore = sshKeysStore(store)
-  const sshKey = await keyStore.getKey(keyAlias)
-  if (!sshKey) {
-    throw new Error(`No key pair found for alias ${keyAlias}`)
-  }
+  const { tunnels } = await queryTunnels({ tunnelUrlForService, retryOpts: { retries: 2 } })
 
-  const machine = await driver.getMachine({ envId })
-  if (!machine) {
-    throw new Error(`No machine found for envId ${envId}`)
-  }
-
-  const sshClient = await connectSshClient({
-    debug,
-    host: machine.publicIPAddress,
-    username: machine.sshUsername,
-    privateKey: sshKey.privateKey.toString('utf-8'),
-    log,
-  })
-
-  try {
-    const { tunnels } = await queryTunnels({ sshClient, projectName, retryOpts: { retries: 2 } })
-
-    return flattenTunnels(tunnels)
-      .filter(tunnel => !serviceAndPort || (
-        tunnel.service === serviceAndPort.service && (!serviceAndPort.port || tunnel.port === serviceAndPort.port)
-      ))
-  } finally {
-    sshClient.dispose()
-  }
+  return flattenTunnels(tunnels)
+    .filter(tunnel => !serviceAndPort || (
+      tunnel.service === serviceAndPort.service && (!serviceAndPort.port || tunnel.port === serviceAndPort.port)
+    ))
 }

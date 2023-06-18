@@ -4,6 +4,7 @@ import { stringOrUndefinedToNumber } from './common'
 // https://docs.gitlab.com/ee/ci/variables/predefined_variables.html
 export const gitlabActionsCiProvider = (): CiProvider => ({
   name: 'GitLab',
+  telemetryId: 'gitlab',
   currentlyRunningInProvider: () => Boolean(process.env.CI && process.env.GITLAB_CI),
   branchName: () => process.env.CI_COMMIT_BRANCH
     || process.env.CI_MERGE_REQUEST_SOURCE_BRANCH_NAME

@@ -5,7 +5,7 @@ import { Logger } from '../../log'
 
 export type ForwardOutStreamLocal = {
   localSocket: string | AddressInfo
-  close: () => void
+  close: () => Promise<void>
 }
 
 export const forwardOutStreamLocal = ({ ssh, log, listenAddress, remoteSocket, onClose }: {
@@ -50,7 +50,7 @@ export const forwardOutStreamLocal = ({ ssh, log, listenAddress, remoteSocket, o
         reject(new Error(message))
         return
       }
-      resolve({ localSocket: address, close: () => socketServer.close() })
+      resolve({ localSocket: address, close: async () => { socketServer.close() } })
     })
     .on('error', (err: unknown) => {
       log.error('socketServer error', err)

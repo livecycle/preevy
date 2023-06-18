@@ -12,7 +12,8 @@
     "pino-pretty": "^9.4.0",
     "prom-client": "^14.2.0",
     "ssh2": "^1.12.0",
-    "ts-node": "^10.9.1"
+    "ts-node": "^10.9.1",
+    "zod": "^3.21.4"
   },
   "devDependencies": {
     "@types/http-proxy": "^1.17.9",

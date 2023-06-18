@@ -24,14 +24,18 @@ export const spinner = (opts: SpinnerOptions = {}): Spinner => {
 
 export const withSpinner = async <T>(
   fn: (spinner: Spinner) => Promise<T>,
-  opts: SpinnerOptions & { successText?: (string) | (() => string) | (() => Promise<string>) } = {},
+  opts: SpinnerOptions & {
+    successText?: (string) | ((result: T) => string) | ((result: T) => Promise<string>)
+  } = {},
 ) => {
   const s = spinner(opts)
   s.start()
   try {
     const result = await fn(s)
     const successText = opts?.successText && (
-      typeof opts.successText === 'string' ? opts.successText : await opts.successText()
+      typeof opts.successText === 'string'
+        ? opts.successText
+        : await opts.successText(result)
     )
     s.succeed(successText)
     return result

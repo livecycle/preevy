@@ -3,13 +3,10 @@ import { ListenOptions } from 'net'
 import { sftpClient } from './sftp'
 import { forwardOutStreamLocal } from './forward-out'
 import { execCommand } from './exec'
-import { mkdir } from './mkdir'
-import { scriptExecuter } from './exec-script'
+import { mkdir } from '../../command-executer'
 import { Logger } from '../../log'
 
-export { ExecResult } from './exec'
 export { FileToCopy } from './files'
-export { ExpandedTransferProgress } from './progress-expanded'
 
 export const connectSshClient = async (
   { log, debug, ...connectConfig }: Omit<ssh2.ConnectConfig, 'debug'> & { log: Logger; debug: boolean },
@@ -35,13 +32,12 @@ export const connectSshClient = async (
   const self = {
     mkdir: mkdir(exec),
     sftp,
-    execCommand: exec,
-    execScript: scriptExecuter({ execCommand: exec, sftp, log }),
+    exec,
     forwardOutStreamLocal: (
       listenAddress: string | number | ListenOptions,
       remoteSocket: string,
     ) => forwardOutStreamLocal({ ssh, log, listenAddress, remoteSocket }),
-    dispose: () => ssh.end(),
+    close: () => { ssh.end() },
   }
 
   return self

@@ -5,6 +5,7 @@ import { StorageManagementClient } from '@azure/arm-storage'
 import { DefaultAzureCredential } from '@azure/identity'
 import { randomBytes } from 'crypto'
 import { asyncFilter, asyncFirst, asyncFlatMap, asyncMap } from 'iter-tools-es'
+import { generateSshKeyPair } from '@preevy/core'
 import {
   AzureCustomTags,
   createNIC,
@@ -66,7 +67,6 @@ export const REGIONS = [
 ]
 
 type VMInstance = {
-  privateIPAddress: string
   vm: VirtualMachine
   publicIPAddress: string
 }
@@ -98,6 +98,12 @@ export const client = ({
   const storageClient = new StorageManagementClient(credentials, subscriptionId)
   const networkClient = new NetworkManagementClient(credentials, subscriptionId)
   return {
+    createKeyPair: async (alias: string) => ({
+      // https://learn.microsoft.com/en-us/rest/api/compute/ssh-public-keys/generate-key-pair?tabs=HTTP
+      keyPair: await generateSshKeyPair(),
+      alias,
+    }),
+
     deleteResourcesResourceGroup: async (resourceGroupName: string, wait: boolean) => {
       if (wait) {
         await resourceClient.resourceGroups.beginDeleteAndWait(resourceGroupName, {
@@ -234,8 +240,8 @@ export const client = ({
       )
       const vmImageInfo = await findVMImage(region, imageRef, computeClient)
 
-      if (!nic.id || !vmImageInfo?.name || !publicIPInfo.name || !nic.ipConfigurations?.[0].privateIPAddress) {
-        throw new Error(`Could not create vm, missing properties, nic id: ${nic.id} , image name: ${vmImageInfo?.name}, public IP name: ${publicIPInfo.name}, private IP: ${nic.ipConfigurations?.[0].privateIPAddress}`)
+      if (!nic.id || !vmImageInfo?.name || !publicIPInfo.name) {
+        throw new Error(`Could not create vm, missing properties, nic id: ${nic.id} , image name: ${vmImageInfo?.name}, public IP name: ${publicIPInfo.name}`)
       }
       const vm = await createVirtualMachine(tags, nic.id, {
         ...imageRef,
@@ -247,7 +253,6 @@ export const client = ({
       }
       return {
         vm,
-        privateIPAddress: nic.ipConfigurations[0].privateIPAddress,
         publicIPAddress: publicIPAddress.ipAddress,
       }
     },
