@@ -39,12 +39,9 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
     const driver = await this.driver()
     const machineCreationDriver = await this.machineCreationDriver()
-
     const pStore = profileStore(this.store)
+
     const tunnelingKey = await pStore.getTunnelingKey()
-    if (!tunnelingKey) {
-      throw new Error('Tunneling key is not configured correctly, please recreate the profile')
-    }
 
     const tunnelOpts = {
       url: flags['tunnel-url'],
@@ -52,20 +49,12 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       insecureSkipVerify: flags['insecure-skip-verify'],
     }
 
-    const helloResponse = await tunnelServerHello({
-      log: this.logger,
-      tunnelOpts,
-      keysState: pStore.knownServerPublicKeys,
+    const { hostKey, clientId, baseUrl } = await tunnelServerHello({
       tunnelingKey,
+      knownServerPublicKeys: pStore.knownServerPublicKeys,
+      tunnelOpts,
+      log: this.logger,
     })
-
-    if (!helloResponse) {
-      this.log('Exiting')
-      this.exit(0)
-      return undefined
-    }
-
-    const { hostKey, clientId, baseUrl } = helloResponse
 
     telemetryEmitter().group({ type: 'profile' }, { proxy_client_id: clientId })
 

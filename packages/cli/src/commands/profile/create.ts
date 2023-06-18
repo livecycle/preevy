@@ -1,6 +1,6 @@
 import { Args } from '@oclif/core'
 import { mapKeys, pickBy } from 'lodash'
-import { ensureTunnelKeyPair } from '@preevy/core'
+import { createTunnelingKey } from '@preevy/core'
 import { DriverName } from '../../drivers'
 import DriverCommand from '../../driver-command'
 
@@ -40,7 +40,8 @@ export default class CreateProfile extends DriverCommand<typeof CreateProfile> {
         driver,
         driverFlags
       )
-      await ensureTunnelKeyPair({ store: pStore, log: this.logger })
+      this.log('Creating new SSH key pair')
+      await pStore.setTunnelingKey(await createTunnelingKey())
     })
     return undefined
   }

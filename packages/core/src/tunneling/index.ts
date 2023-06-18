@@ -51,7 +51,7 @@ export const performTunnelConnectionCheck = async ({
   username: string
   keysState: ProfileStore['knownServerPublicKeys']
   confirmHostFingerprint: HostKeySignatureConfirmer
-}) => {
+}): Promise<false | { clientId: string; baseUrl: string; hostKey: Buffer }> => {
   const parsed = parseSshUrl(tunnelOpts.url)
 
   const connectionConfigBase = {
@@ -108,21 +108,7 @@ export const performTunnelConnectionCheck = async ({
   return check()
 }
 
-export const ensureTunnelKeyPair = async (
-  { store, log }: {
-    store: ProfileStore
-    log: Logger
-  },
-) => {
-  const existingKeyPair = await store.getTunnelingKey()
-  if (existingKeyPair) {
-    return existingKeyPair
-  }
-  log.info('Creating new SSH key pair')
-  const keyPair = await generateSshKeyPair()
-  await store.setTunnelingKey(Buffer.from(keyPair.privateKey))
-  return keyPair
-}
+export const createTunnelingKey = async () => Buffer.from((await generateSshKeyPair()).privateKey)
 
 export const tunnelUrlForEnv = (
   { projectName, envId, baseUrl: { hostname, protocol, port }, clientId }: {

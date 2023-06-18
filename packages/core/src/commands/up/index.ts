@@ -93,7 +93,7 @@ const up = async ({
   systemComposeFiles: string[]
   log: Logger
   dataDir: string
-  sshTunnelPrivateKey: string
+  sshTunnelPrivateKey: string | Buffer
   allowedSshHostKeys: Buffer
   cwd: string
   skipUnchangedFiles: boolean

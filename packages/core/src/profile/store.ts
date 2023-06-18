@@ -34,7 +34,13 @@ export const profileStore = (store: Store) => {
         await write('tunneling-private-key', privateKey)
       })
     },
-    getTunnelingKey: () => ref.read('tunneling-private-key').then(x => x?.toString('utf-8')),
+    getTunnelingKey: async () => {
+      const tunnelingKey = await ref.read('tunneling-private-key')
+      if (!tunnelingKey) {
+        throw new Error('Tunneling key is not configured correctly, please recreate the profile')
+      }
+      return tunnelingKey
+    },
     get knownServerPublicKeys() {
       const filename = (
         hostname: string,

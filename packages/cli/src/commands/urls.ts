@@ -2,11 +2,11 @@ import { Args, ux } from '@oclif/core'
 import { commands, findAmbientEnvId, profileStore } from '@preevy/core'
 import { tunnelServerFlags } from '@preevy/cli-common'
 import { tunnelServerHello } from '../tunnel-server-client'
-import DriverCommand from '../driver-command'
+import ProfileCommand from '../profile-command'
 import { envIdFlags } from '../common-flags'
 
 // eslint-disable-next-line no-use-before-define
-export default class Urls extends DriverCommand<typeof Urls> {
+export default class Urls extends ProfileCommand<typeof Urls> {
   static description = 'Show urls for an existing environment'
 
   static flags = {
@@ -37,10 +37,6 @@ export default class Urls extends DriverCommand<typeof Urls> {
     log.debug(`envId: ${envId}`)
 
     const pStore = profileStore(this.store)
-    const tunnelingKey = await pStore.getTunnelingKey()
-    if (!tunnelingKey) {
-      throw new Error('Tunneling key is not configured correctly, please recreate the profile')
-    }
 
     const tunnelOpts = {
       url: flags['tunnel-url'],
@@ -48,20 +44,12 @@ export default class Urls extends DriverCommand<typeof Urls> {
       insecureSkipVerify: flags['insecure-skip-verify'],
     }
 
-    const helloResponse = await tunnelServerHello({
-      log: this.logger,
+    const { clientId, baseUrl } = await tunnelServerHello({
       tunnelOpts,
-      keysState: pStore.knownServerPublicKeys,
-      tunnelingKey,
+      knownServerPublicKeys: pStore.knownServerPublicKeys,
+      tunnelingKey: await pStore.getTunnelingKey(),
+      log: this.logger,
     })
-
-    if (!helloResponse) {
-      this.log('Exiting')
-      this.exit(0)
-      return undefined
-    }
-
-    const { clientId, baseUrl } = helloResponse
 
     const flatTunnels = await commands.urls({
       baseUrl,

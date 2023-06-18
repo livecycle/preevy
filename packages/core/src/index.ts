@@ -34,7 +34,7 @@ export {
   FlatTunnel,
   flattenTunnels,
   HostKeySignatureConfirmer,
-  ensureTunnelKeyPair,
+  createTunnelingKey,
   performTunnelConnectionCheck,
 } from './tunneling'
 export { ciProviders, detectCiProvider } from './ci-providers'
