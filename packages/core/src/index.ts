@@ -14,7 +14,7 @@ export {
   getStoredKey as getStoredSshKey,
   getStoredKeyOrUndefined as getStoredSshKeyOrUndefined,
 } from './driver'
-export { profileStore, Profile, ProfileStore, link } from './profile'
+export { profileStore, Profile, ProfileStore, link, Org } from './profile'
 export { telemetryEmitter, registerEmitter, wireProcessExit, createTelemetryEmitter } from './telemetry'
 export { fsTypeFromUrl, Store, VirtualFS, localFsFromUrl, localFs } from './store'
 export { localComposeClient, ComposeModel, resolveComposeFiles } from './compose'

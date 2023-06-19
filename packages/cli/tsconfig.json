@@ -15,6 +15,7 @@
   "include": [
     "src/**/*"
   ],
+  "exclude": ["dist"],
   "references": [
     { "path": "../core" },
     { "path": "../compose-tunnel-agent" },
