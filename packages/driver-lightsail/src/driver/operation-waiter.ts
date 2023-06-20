@@ -1,7 +1,7 @@
 import { GetOperationCommand, GetOperationCommandInput, LightsailClient, Operation as SdkOperation } from '@aws-sdk/client-lightsail'
 import { checkExceptions, createWaiter, WaiterConfiguration, WaiterResult, WaiterState } from '@aws-sdk/util-waiter'
+import { extractDefined } from '@preevy/core'
 import { inspect } from 'util'
-import { extractDefined } from '../aws-utils/nulls'
 
 type Operation = Pick<SdkOperation, 'id'>
 

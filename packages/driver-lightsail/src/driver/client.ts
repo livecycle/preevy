@@ -8,7 +8,7 @@ import {
 import { randomBytes } from 'crypto'
 import { asyncFilter, asyncFind, asyncFirst } from 'iter-tools-es'
 
-import { ensureDefined, extractDefined } from '../aws-utils/nulls'
+import { ensureDefined, extractDefined } from '@preevy/core'
 import { paginationIterator } from '../aws-utils/pagination'
 import { waitUntilAllOperationsSucceed } from './operation-waiter'
 import { BundleId, bundleIdEqualOrLarger, bundleIdFromString } from './bundle-id'

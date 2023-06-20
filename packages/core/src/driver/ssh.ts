@@ -72,7 +72,10 @@ export const sshDriver = (
 
       const sshProcess = spawn('ssh', sshArgs, { stdio })
       sshProcess.on('exit', () => rimraf(tempDir))
-      return sshProcess
+      return await new Promise((resolve, reject) => {
+        sshProcess.on('error', reject)
+        sshProcess.on('exit', (code, signal) => resolve(code !== null ? { code } : { signal: signal as string }))
+      })
     },
   }
 }

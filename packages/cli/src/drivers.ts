@@ -1,12 +1,14 @@
 import { map, mapKeys } from 'lodash'
-import { lightsail } from '@preevy/driver-lightsail'
-import { gce } from '@preevy/driver-gce'
-import { azure } from '@preevy/driver-azure'
+import lightsail from '@preevy/driver-lightsail'
+import gce from '@preevy/driver-gce'
+import azure from '@preevy/driver-azure'
+import kubeDocker from '@preevy/driver-kube-docker'
 
 export const machineDrivers = {
   lightsail,
   gce,
   azure,
+  'kube-docker': kubeDocker,
 } as const
 
 type MachineDrivers = typeof machineDrivers
@@ -52,12 +54,14 @@ export const flagsForAllDrivers = {
   ...driverFlags('lightsail'),
   ...driverFlags('gce'),
   ...driverFlags('azure'),
+  ...driverFlags('kube-docker'),
 }
 
 export const machineCreationflagsForAllDrivers = {
   ...machineCreationDriverFlags('lightsail'),
   ...machineCreationDriverFlags('gce'),
   ...machineCreationDriverFlags('azure'),
+  ...machineCreationDriverFlags('kube-docker'),
 }
 
 export const removeDriverPrefix = <T extends {}>(

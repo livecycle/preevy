@@ -1,10 +1,28 @@
 import stream from 'stream'
 import shellEscape from 'shell-escape'
+import { inspect } from 'util'
+import { OrderedOutput } from './child-process'
 
 export type ExecResult = {
   stdout: string
   stderr: string
+  output: string
 } & ({ code: number } | { signal: string })
+
+export const execResultFromOrderedOutput = (
+  oo: OrderedOutput,
+  encoding: BufferEncoding = 'utf-8',
+): Pick<ExecResult, 'output' | 'stderr' | 'stdout'> => ({
+  get stdout() {
+    return oo.stdout().toString(encoding)
+  },
+  get stderr() {
+    return oo.stderr().toString(encoding)
+  },
+  get output() {
+    return oo.output().toString(encoding)
+  },
+})
 
 export type ExecOptions = {
   cwd?: string
@@ -16,16 +34,42 @@ export type ExecOptions = {
 
 export type CommandExecuter = (command: string, options?: ExecOptions) => Promise<ExecResult>
 
-export const commandWithEnv = (command: string, env: ExecOptions['env']) => [
+export class CommandError extends Error {
+  constructor(
+    readonly command: string,
+    field: 'code' | 'signal',
+    value: number | string,
+    message: string,
+  ) {
+    super(`Error ${field} ${inspect(value)} from command ${command}: ${message}`)
+  }
+}
+
+export const checkResult = (command: string, result: ExecResult) => {
+  if ('code' in result && result.code !== 0) {
+    throw new CommandError(command, 'code', result.code, result.output)
+  }
+  if ('signal' in result) {
+    throw new CommandError(command, 'signal', result.signal, result.output)
+  }
+  return result
+}
+
+const commandWithEnv = (command: string, env: ExecOptions['env']) => [
   ...Object.entries(env ?? {}).map(
     ([key, val]) => `export ${shellEscape([key])}=${shellEscape([val ?? ''])}`
   ),
   command,
 ].join('; ')
 
-export const commandWithCd = (command: string, cwd: ExecOptions['cwd']) => (
+const commandWithCd = (command: string, cwd: ExecOptions['cwd']) => (
   cwd ? `cd ${shellEscape([cwd])}; ${command}` : command
 )
+
+export const commandWith = (
+  command: string,
+  { env, cwd }: Pick<ExecOptions, 'env' | 'cwd'>,
+) => commandWithEnv(commandWithCd(command, cwd), env)
 
 export const mkdir = (
   exec: CommandExecuter,

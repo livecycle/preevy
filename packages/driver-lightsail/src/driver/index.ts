@@ -9,9 +9,8 @@ import {
   telemetryEmitter,
   SshMachine, MachineDriver, MachineCreationDriver, MachineCreationDriverFactory, machineResourceType,
   MachineDriverFactory, sshKeysStore, Store,
-  getStoredSshKey, sshDriver,
+  getStoredSshKey, sshDriver, extractDefined,
 } from '@preevy/core'
-import { extractDefined } from '../aws-utils'
 import createClient, { REGIONS } from './client'
 import { BUNDLE_IDS, BundleId, bundleIdFromString } from './bundle-id'
 import { CUSTOMIZE_BARE_MACHINE } from './scripts'
@@ -111,8 +110,6 @@ const flags = {
   }),
 } as const
 
-machineDriver.flags = flags
-
 type FlagTypes = Omit<InferredFlags<typeof flags>, 'json'>
 
 const contextFromFlags = ({ region }: FlagTypes): Omit<DriverContext, 'profileId' | 'store'> => ({
@@ -129,13 +126,9 @@ const questions = async (): Promise<(Question | ListQuestion)[]> => [
   },
 ]
 
-machineDriver.questions = questions
-
 const flagsFromAnswers = async (answers: Record<string, unknown>): Promise<FlagTypes> => ({
   region: answers.region as string,
 })
-
-machineDriver.flagsFromAnswers = flagsFromAnswers
 
 const factory: MachineDriverFactory<FlagTypes, SshMachine, ResourceType> = (
   f,
@@ -146,8 +139,6 @@ const factory: MachineDriverFactory<FlagTypes, SshMachine, ResourceType> = (
   profileId: profile.id,
   store,
 })
-
-machineDriver.factory = factory
 
 type MachineCreationContext = DriverContext & {
   availabilityZone?: string
@@ -231,8 +222,8 @@ const machineCreationDriver = (
   })
 }
 
-machineDriver.machineCreationFlags = {
-  ...machineDriver.flags,
+const machineCreationFlags = {
+  ...flags,
   'availability-zone': Flags.string({
     description: 'AWS availability zone to provision resources in region',
     required: false,
@@ -245,7 +236,7 @@ machineDriver.machineCreationFlags = {
   })(),
 }
 
-type MachineCreationFlagTypes = InferredFlags<typeof machineDriver.machineCreationFlags>
+type MachineCreationFlagTypes = InferredFlags<typeof machineCreationFlags>
 
 const machineCreationContextFromFlags = (
   fl: MachineCreationFlagTypes,
@@ -265,6 +256,11 @@ const machineCreationFactory: MachineCreationDriverFactory<MachineCreationFlagTy
   store,
 })
 
-machineDriver.machineCreationFactory = machineCreationFactory
-
-export default machineDriver
+export default {
+  flags,
+  factory,
+  machineCreationFlags,
+  machineCreationFactory,
+  questions,
+  flagsFromAnswers,
+} as const

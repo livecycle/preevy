@@ -88,9 +88,7 @@ const flags = {
   }),
 } as const
 
-machineDriver.flags = flags
-
-type FlagTypes = Omit<Interfaces.InferredFlags<typeof machineDriver.flags>, 'json'>
+type FlagTypes = Omit<Interfaces.InferredFlags<typeof flags>, 'json'>
 
 const contextFromFlags = ({ 'project-id': projectId, zone }: FlagTypes): Omit<DriverContext, 'profileId' | 'store'> => ({
   projectId,
@@ -118,14 +116,10 @@ const questions = async (): Promise<(InputQuestion | ListQuestion)[]> => [
   },
 ]
 
-machineDriver.questions = questions
-
 const flagsFromAnswers = async (answers: Record<string, unknown>): Promise<FlagTypes> => ({
   'project-id': answers.project as string,
   zone: answers.zone as string,
 })
-
-machineDriver.flagsFromAnswers = flagsFromAnswers
 
 const machineCreationDriver = (
   { zone, projectId, profileId, machineType: specifiedMachineType, store }: MachineCreationDriverContext,
@@ -174,8 +168,8 @@ const machineCreationDriver = (
   })
 }
 
-machineDriver.machineCreationFlags = {
-  ...machineDriver.flags,
+const machineCreationFlags = {
+  ...flags,
   'machine-type': Flags.string({
     description: 'Machine type to be provisioned',
     required: false,
@@ -183,21 +177,21 @@ machineDriver.machineCreationFlags = {
 } as const
 
 const machineCreationContextFromFlags = (
-  fl: Interfaces.InferredFlags<typeof machineDriver.machineCreationFlags>
+  fl: Interfaces.InferredFlags<typeof machineCreationFlags>
 ): Omit<MachineCreationDriverContext, 'profileId' | 'store'> => ({
   ...contextFromFlags(fl),
   machineType: fl['machine-type'],
 })
 
 const factory: MachineDriverFactory<
-  Interfaces.InferredFlags<typeof machineDriver.flags>,
+  Interfaces.InferredFlags<typeof flags>,
   SshMachine,
   ResourceType
 > = (f, profile, store) => machineDriver({ ...contextFromFlags(f), profileId: profile.id, store })
 machineDriver.factory = factory
 
 const machineCreationFactory: MachineCreationDriverFactory<
-  Interfaces.InferredFlags<typeof machineDriver.machineCreationFlags>,
+  Interfaces.InferredFlags<typeof machineCreationFlags>,
   SshMachine
 > = (f, profile, store) => machineCreationDriver({
   ...machineCreationContextFromFlags(f),
@@ -205,8 +199,13 @@ const machineCreationFactory: MachineCreationDriverFactory<
   store,
 })
 
-machineDriver.machineCreationFactory = machineCreationFactory
-
-export default machineDriver
+export default {
+  flags,
+  factory,
+  machineCreationFlags,
+  machineCreationFactory,
+  questions,
+  flagsFromAnswers,
+} as const
 
 export { defaultProjectId } from './client'

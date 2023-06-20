@@ -25,14 +25,18 @@ export default class Shell extends DriverCommand<typeof Shell> {
 
     const restArgs = raw.filter(arg => arg.type === 'arg').slice(1).map(arg => arg.input)
 
-    const { code } = await commands.shell({
+    const result = await commands.shell({
       envId: args.envId,
       args: restArgs,
       machineDriver: driver,
       log: this.logger,
     })
 
-    this.exit(code ?? 0)
+    if ('code' in result) {
+      this.exit(result.code)
+    } else {
+      process.kill(process.pid, result.signal)
+    }
 
     return undefined
   }

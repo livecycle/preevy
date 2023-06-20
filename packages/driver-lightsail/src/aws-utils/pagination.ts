@@ -1,4 +1,4 @@
-import { extractDefined } from './nulls'
+import { paginationIterator as coreIter, extractDefined } from '@preevy/core'
 
 export type HasNextPageToken = {
   nextPageToken?: string
@@ -11,28 +11,10 @@ export const paginationIterator = <
 >(
     fetch: (pageToken?: string) => Promise<P>,
     key: K,
-  ): AsyncIterableIterator<T> => {
-  let currentResponsePromise = fetch()
-  let currentPageIter: Iterator<T> | null = null
-
-  const next = async (): Promise<IteratorResult<T>> => {
-    const currentResponse = await currentResponsePromise
-    if (!currentPageIter) {
-      currentPageIter = extractDefined(currentResponse, key)[Symbol.iterator]()
+  ): AsyncIterableIterator<T> => coreIter(async token => {
+    const r = await fetch(token)
+    return {
+      items: extractDefined(r, key),
+      nextPageToken: r.nextPageToken,
     }
-
-    const currentNext = currentPageIter.next()
-
-    if (!currentNext.done || !currentResponse.nextPageToken) {
-      return currentNext
-    }
-
-    currentPageIter = null
-    currentResponsePromise = fetch(currentResponse.nextPageToken)
-    return await next()
-  }
-
-  const iterator = ({ next, [Symbol.asyncIterator]: () => iterator })
-
-  return iterator
-}
+  })

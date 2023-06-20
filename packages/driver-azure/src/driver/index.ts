@@ -132,6 +132,7 @@ const machineDriver = (
     ...sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) }),
   }
 }
+
 const flags = {
   region: Flags.string({
     description: 'Microsoft Azure region in which resources will be provisioned',
@@ -143,9 +144,7 @@ const flags = {
   }),
 } as const
 
-machineDriver.flags = flags
-
-machineDriver.questions = async (): Promise<(Question | ListQuestion)[]> => [
+const questions = async (): Promise<(Question | ListQuestion)[]> => [
   {
     type: 'list',
     name: 'region',
@@ -165,16 +164,15 @@ machineDriver.questions = async (): Promise<(Question | ListQuestion)[]> => [
   },
 ]
 
-machineDriver.flagsFromAnswers = async (answers: Record<string, unknown>) => ({
+const flagsFromAnswers = async (answers: Record<string, unknown>) => ({
   region: answers.region,
   'subscription-id': answers['subscription-id'],
-
 })
 
 const contextFromFlags = ({
   region,
   'subscription-id': subscriptionId,
-}: Interfaces.InferredFlags<typeof machineDriver.flags>): Omit<DriverContext, 'profileId' | 'store'> => ({
+}: Interfaces.InferredFlags<typeof flags>): Omit<DriverContext, 'profileId' | 'store'> => ({
   region,
   subscriptionId,
 })
@@ -231,8 +229,8 @@ const machineCreationDriver = ({
   }
 }
 
-machineDriver.machineCreationFlags = {
-  ...machineDriver.flags,
+const machineCreationFlags = {
+  ...flags,
   region: Flags.string({
     description: 'Microsoft Azure region in which resources will be provisioned',
     required: true,
@@ -248,7 +246,7 @@ machineDriver.machineCreationFlags = {
   }),
 } as const
 
-type MachineCreationFlagTypes = InferredFlags<typeof machineDriver.machineCreationFlags>
+type MachineCreationFlagTypes = InferredFlags<typeof machineCreationFlags>
 
 const machineCreationContextFromFlags = (f: MachineCreationFlagTypes): Omit<MachineCreationContext, 'profileId' | 'store'> => ({
   ...contextFromFlags(f),
@@ -258,18 +256,21 @@ const machineCreationContextFromFlags = (f: MachineCreationFlagTypes): Omit<Mach
 })
 
 const factory: MachineDriverFactory<
-  Interfaces.InferredFlags<typeof machineDriver.flags>,
+  Interfaces.InferredFlags<typeof flags>,
   SshMachine,
   ResourceType
 > = (f, { id }, store) => machineDriver({ profileId: id, ...contextFromFlags(f), store })
 
-machineDriver.factory = factory
-
 const machineCreationFactory: MachineCreationDriverFactory<
-  Interfaces.InferredFlags<typeof machineDriver.machineCreationFlags>,
+  Interfaces.InferredFlags<typeof machineCreationFlags>,
   SshMachine
 > = (f, { id }, store) => machineCreationDriver({ profileId: id, ...machineCreationContextFromFlags(f), store })
 
-machineDriver.machineCreationFactory = machineCreationFactory
-
-export default machineDriver
+export default {
+  flags,
+  factory,
+  machineCreationFlags,
+  machineCreationFactory,
+  questions,
+  flagsFromAnswers,
+} as const

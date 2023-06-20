@@ -13,6 +13,7 @@ export {
   machineResourceType,
   getStoredKey as getStoredSshKey,
   getStoredKeyOrUndefined as getStoredSshKeyOrUndefined,
+  ForwardSocket,
 } from './driver'
 export { profileStore, Profile, ProfileStore } from './profile'
 export { telemetryEmitter, registerEmitter, wireProcessExit, createTelemetryEmitter } from './telemetry'
@@ -22,7 +23,18 @@ export { withSpinner } from './spinner'
 export { findAmbientEnvId } from './env-id'
 export { sshKeysStore } from './state'
 export { connectSshClient, generateSshKeyPair } from './ssh'
-export { ProcessError } from './child-process'
+export {
+  ProcessError,
+  childProcessPromise,
+  childProcessStdoutPromise,
+  orderedOutput,
+  OrderedOutput,
+  ProcessOutputBuffers,
+  expandStdioOptions,
+} from './child-process'
+export {
+  CommandError, CommandExecuter, checkResult, commandWith, execResultFromOrderedOutput, ExecResult,
+} from './command-executer'
 export {
   COMPOSE_TUNNEL_AGENT_SERVICE_NAME,
   addBaseComposeTunnelAgentService,
@@ -38,5 +50,8 @@ export {
   performTunnelConnectionCheck,
 } from './tunneling'
 export { ciProviders, detectCiProvider } from './ci-providers'
+export { paginationIterator } from './pagination'
+export { ensureDefined, extractDefined, HasRequired } from './nulls'
+export { pSeries } from './p-series'
 export * as git from './git'
 export * as config from './config'
