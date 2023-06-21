@@ -37,22 +37,24 @@ export const link = async (
     { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokens.access_token}` } }
   )
 
-  // TODO error handling
+  if (!orgsResponse.ok) throw new Error(`Could not fetch orgs from Livecycle API. ${orgsResponse.status}: ${orgsResponse.statusText}`)
 
   const orgs = await orgsResponse.json() as Org[]
-  logger.info('orgs', orgs)
+
   let chosenOrg: Org
   if (orgs.length === 0) {
-    throw new Error('Organization not found for user')
+    throw new Error("Couldn't find any organization for current logged in user")
   } else if (orgs.length === 1) {
     [chosenOrg] = orgs
   } else {
     chosenOrg = await promptUserWithChooseOrg(orgs)
   }
 
+  logger.info(`Linking to org ${chosenOrg.name}`)
+
   const tunnelingKey = await profileStore(store).getTunnelingKey()
   if (tunnelingKey === undefined) {
-    throw new Error('could not find key')
+    throw new Error('Could not find tunneling key in profile store')
   }
 
   const parsed = parseKey(tunnelingKey)
@@ -71,15 +73,14 @@ export const link = async (
     .setExpirationTime('5m')
     .sign(prk)
 
-  logger.info(tokenSignedByTunnelingPrivateKey)
-  logger.info('public key', pk.export({ format: 'pem', type: 'pkcs1' }))
-  logger.info('org', chosenOrg)
-  const response = await fetch(
+  const linkResponse = await fetch(
     `${lcUrl}/link`,
     { method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokens.access_token}` },
       body: JSON.stringify({ organization: chosenOrg.id, profileTunnellingPublicKey: pk.export({ format: 'pem', type: 'pkcs1' }), tokenSignedByTunnelingPrivateKey, idToken: tokens.id_token }) }
   )
 
-  logger.info('got response', response.status, await response.text(), response.headers.raw())
+  if (!linkResponse.ok) throw new Error(`Error while requesting to link ${linkResponse.status}: ${linkResponse.statusText}`)
+
+  logger.info(`Linked current profile to org ${chosenOrg.name} successfully! 🤘`)
 }

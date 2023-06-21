@@ -19,14 +19,14 @@ export type TokesFileSchema = {
 }
 
 const deviceFlow = async (dataDir: string, loginUrl: string, logger: Logger) => {
-  const fs = localFs(dataDir) // don't use abstraction
+  const fs = localFs(dataDir)
   const response = await fetch(`${loginUrl}/oauth/device/code`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
     body: new URLSearchParams({
       client_id: 'jEnySAwuAaWaLOdWdALbvXj6dZEqgAJB',
       scope: 'email openid profile',
-      audience: 'https://livecycle-preevy-cli/', // livecycle.run
+      audience: 'https://livecycle-preevy-cli/',
     }),
   })
 
