@@ -21,15 +21,13 @@ export const link = async (
     tokens = await getTokensFromLocalFs(localFs(dataDir))
   } catch (e) {
     if (e instanceof TokenExpiredError) {
-      logger.info('Session is expired, please log in again')
-      return
+      throw new Error('Session is expired, please log in again')
     }
     throw e
   }
 
   if (tokens === undefined) {
-    logger.info('Please log in to link profile')
-    return
+    throw new Error('Please log in to link profile')
   }
 
   const orgsResponse = await fetch(
