@@ -2,9 +2,9 @@ import { parseKey } from '@preevy/common'
 import * as jose from 'jose'
 import crypto from 'crypto'
 import fetch from 'node-fetch'
-import { TokenExpiredError, TokesFileSchema, getTokens } from '../login'
+import { TokenExpiredError, TokesFileSchema, getTokensFromLocalFs } from '../login'
 import { profileStore } from './store'
-import { Store } from '../store'
+import { Store, localFs } from '../store'
 import { Logger } from '../log'
 
 export type Org = {id: string; name: string; role: string}
@@ -18,7 +18,7 @@ export const link = async (
 ) => {
   let tokens: TokesFileSchema | undefined
   try {
-    tokens = await getTokens(dataDir)
+    tokens = await getTokensFromLocalFs(localFs(dataDir))
   } catch (e) {
     if (e instanceof TokenExpiredError) {
       logger.info('Session is expired, please log in again')
@@ -62,7 +62,6 @@ export const link = async (
   const prk = crypto.createPrivateKey({
     key: parsed.getPrivatePEM(),
     format: 'pem',
-    type: 'pkcs1',
   })
 
   const pk = crypto.createPublicKey(prk)
