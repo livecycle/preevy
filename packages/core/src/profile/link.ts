@@ -80,7 +80,7 @@ export const link = async (
     `${lcUrl}/link`,
     { method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokens.access_token}` },
-      body: JSON.stringify({ organization: chosenOrg.id, profileTunnellingPublicKey: pk.export({ format: 'pem', type: 'pkcs1' }), tokenSignedByTunnelingPrivateKey, idToken: tokens.id_token }) }
+      body: JSON.stringify({ organization: chosenOrg.id, profileTunnellingPublicKey: pk.export({ format: 'jwk' }), tokenSignedByTunnelingPrivateKey, idToken: tokens.id_token }) }
   )
 
   if (!linkResponse.ok) throw new Error(`Error while requesting to link ${linkResponse.status}: ${linkResponse.statusText}`)
