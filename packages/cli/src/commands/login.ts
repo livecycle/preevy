@@ -14,6 +14,6 @@ export default class Login extends BaseCommand<typeof Login> {
   }
 
   async run(): Promise<void> {
-    await login(this.config.dataDir, this.flags['lc-auth-url'], this.flags['lc-api-url'], this.logger)
+    await login(this.config.dataDir, this.flags['lc-auth-url'], this.flags['lc-api-url'], this.flags['lc-client-id'], this.logger)
   }
 }

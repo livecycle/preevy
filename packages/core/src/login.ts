@@ -59,12 +59,12 @@ const deviceCodeSchema = z.object({ device_code: z.string(),
   interval: z.number(),
   verification_uri_complete: z.string() })
 
-const deviceFlow = async (loginUrl: string, logger: Logger) => {
+const deviceFlow = async (loginUrl: string, logger: Logger, clientId: string) => {
   const deviceCodeResponse = await fetch(`${loginUrl}/oauth/device/code`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
     body: new URLSearchParams({
-      client_id: 'jEnySAwuAaWaLOdWdALbvXj6dZEqgAJB',
+      client_id: clientId,
       scope: 'email openid profile',
       audience: 'https://livecycle-preevy-cli/',
     }),
@@ -104,7 +104,7 @@ export const getTokensFromLocalFs = async (fs: VirtualFS) : Promise<TokesFileSch
   return tokens
 }
 
-export const login = async (dataDir: string, loginUrl: string, lcUrl: string, logger: Logger) => {
+export const login = async (dataDir: string, loginUrl: string, lcUrl: string, clientId: string, logger: Logger) => {
   const fs = localFs(dataDir)
   let tokens: TokesFileSchema
   try {
@@ -113,13 +113,13 @@ export const login = async (dataDir: string, loginUrl: string, lcUrl: string, lo
       logger.info(`Already logged in as: ${jose.decodeJwt(tokensMaybe.id_token).email} 👌`)
       return
     }
-    tokens = await deviceFlow(loginUrl, logger)
+    tokens = await deviceFlow(loginUrl, logger, clientId)
   } catch (e) {
     if (!(e instanceof TokenExpiredError)) {
       throw e
     }
 
-    tokens = await deviceFlow(loginUrl, logger)
+    tokens = await deviceFlow(loginUrl, logger, clientId)
   }
 
   await fs.write(PERSISTENT_TOKEN_FILE_NAME, JSON.stringify(tokens))
