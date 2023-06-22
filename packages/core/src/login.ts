@@ -1,11 +1,12 @@
 /* eslint-disable no-await-in-loop */
 import fetch from 'node-fetch'
-import { exec } from 'child_process'
 import * as jose from 'jose'
 import { z } from 'zod'
+import open from 'open'
 import { VirtualFS, localFs } from './store'
 import { Logger } from './log'
 import { withSpinner } from './spinner'
+import { childProcessPromise } from './child-process'
 
 export class TokenExpiredError extends Error {
   constructor() {
@@ -71,8 +72,12 @@ const deviceFlow = async (loginUrl: string, logger: Logger) => {
 
   const responseData = deviceCodeSchema.parse(await deviceCodeResponse.json())
 
-  exec(`open ${responseData.verification_uri_complete}`) // TODO - use cross-platform, safer, opener - once we get esm modules working
-  logger.info(`If your browser did not open, here: ${responseData.verification_uri_complete}`)
+  logger.info('Opening browser for authentication')
+  try { await childProcessPromise(await open(responseData.verification_uri_complete)) } catch (e) {
+    logger.info(`Could not open browser at ${responseData.verification_uri_complete}`)
+    logger.info('Please try entering the URL manually')
+  }
+
   logger.info('Make sure code is ', responseData.user_code)
   return withSpinner(
     () => pollTokensFromAuthEndpoint(
