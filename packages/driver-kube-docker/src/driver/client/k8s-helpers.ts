@@ -1,8 +1,14 @@
 import * as k8s from '@kubernetes/client-node'
 import { ensureDefined, extractDefined } from '@preevy/core'
-import { inspect } from 'util'
 import { asyncFilter, asyncFirst, asyncToArray } from 'iter-tools-es'
 import { paginationIterator } from './pagination'
+
+export type DeploymentNotReadyErrorReason = 'NoRevision' | 'NoReplicaSet' | 'NoReadyPod'
+export class DeploymentNotReadyError extends Error {
+  constructor(deployment: Pick<k8s.V1Deployment, 'metadata'>, readonly reason: DeploymentNotReadyErrorReason) {
+    super(`No ready pod found for Deployment "${deployment.metadata?.namespace}/${deployment.metadata?.name}": ${reason}`)
+  }
+}
 
 export default (
   { k8sAppsApi, k8sApi, namespace }: {
@@ -84,17 +90,18 @@ export default (
   )
 
   const findReplicaSetForDeployment = async (deployment: Pick<k8s.V1Deployment, 'metadata'>) => {
-    const { name, annotations, labels } = ensureDefined(extractDefined(deployment, 'metadata'), 'name', 'annotations', 'labels')
-    const revision = extractDefined(annotations, 'deployment.kubernetes.io/revision')
+    const { name, annotations } = ensureDefined(extractDefined(deployment, 'metadata'), 'name', 'annotations', 'labels')
+    const revision = annotations['deployment.kubernetes.io/revision']
+    if (!revision) {
+      throw new DeploymentNotReadyError(deployment, 'NoRevision')
+    }
     const result = await asyncFirst(asyncFilter<k8s.V1ReplicaSet>(
       r => r.metadata?.annotations?.['deployment.kubernetes.io/revision'] === revision
         && Boolean(r.metadata?.ownerReferences?.some(ref => ref.kind === 'Deployment' && ref.name === name)),
-      listReplicaSets({
-        labelSelector: Object.entries(labels).map(([key, value]) => `${key}=${value}`).join(','),
-      }),
+      listReplicaSets(),
     ))
     if (!result) {
-      throw new Error(`No ReplicaSet found for Deployment "${deployment.metadata?.namespace}/${deployment.metadata?.name}"`)
+      throw new DeploymentNotReadyError(deployment, 'NoReplicaSet')
     }
     return result
   }
@@ -116,7 +123,7 @@ export default (
     const allPods = await asyncToArray(await listPodsForDeployment(deployment))
     const pod = allPods.find(p => p.status?.conditions?.some(c => c.type === 'Ready' && c.status === 'True'))
     if (!pod) {
-      throw new Error(`No Ready pod found for Deployment "${deployment.metadata?.namespace}/${deployment.metadata?.name}". Found pods: ${inspect(allPods.map(p => p.metadata))}`)
+      throw new DeploymentNotReadyError(deployment, 'NoReadyPod')
     }
     return pod
   }
@@ -125,7 +132,6 @@ export default (
     listDeployments,
     listReplicaSets,
     listPods,
-    findReplicaSetForDeployment,
     findReadyPodForDeployment,
   }
 }

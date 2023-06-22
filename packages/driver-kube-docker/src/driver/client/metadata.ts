@@ -1,8 +1,6 @@
-import { inspect } from 'util'
 import * as k8s from '@kubernetes/client-node'
 import { extractDefined } from '@preevy/core'
-import { ApplyFilter } from './dynamic-api'
-import { labelWithRandomSuffix } from './labels'
+import { labelWithRandomSuffix, sanitizeLabel } from './labels'
 import { HasMetadata, Package } from './common'
 
 export const LABELS = {
@@ -20,6 +18,9 @@ const TRUE_VALUE = 'true'
 export const ANNOTATIONS = {
   CREATED_AT: 'preevy.dev/created-at',
   TEMPLATE_HASH: 'preevy.dev/template-hash',
+  KUBERNETES_KIND: 'preevy.dev/kubernetes-kind',
+  KUERBETES_API_VERSION: 'preev.dev/kubernetes-api-version',
+  DEPLOYMENT_REVISION: 'deployment.kubernetes.io/revision',
 }
 
 export const markObjectAsDeleted = (
@@ -47,7 +48,7 @@ export const addEnvMetadata = (
     templateHash: string
   },
 ) => (
-  spec: Pick<k8s.KubernetesObject, 'metadata'>,
+  spec: k8s.KubernetesObject,
   index: number,
 ) => {
   spec.metadata ??= {}
@@ -58,7 +59,7 @@ export const addEnvMetadata = (
     [LABELS.ENV_ID]: envId,
     [LABELS.INSTANCE]: instance,
     'app.kubernetes.io/instance': instance,
-    'app.kubernetes.io/managed-by': name,
+    'app.kubernetes.io/managed-by': sanitizeLabel(name),
     'app.kubernetes.io/name': envId,
     'app.kubernetes.io/part-of': profileId,
     'app.kubernetes.io/version': version,
@@ -67,6 +68,8 @@ export const addEnvMetadata = (
   Object.assign(spec.metadata.annotations, {
     [ANNOTATIONS.CREATED_AT]: createdAt.toISOString(),
     [ANNOTATIONS.TEMPLATE_HASH]: templateHash,
+    [ANNOTATIONS.KUBERNETES_KIND]: spec.kind,
+    ...spec.apiVersion ? { [ANNOTATIONS.KUERBETES_API_VERSION]: spec.apiVersion } : undefined,
   })
   return spec
 }
@@ -115,27 +118,8 @@ export const profileSelector = ({ profileId }: { profileId: string }) => ({
   labelSelector: eqSelector(LABELS.PROFILE_ID, profileId),
 })
 
-const isDockerHostDeployment = (s: k8s.KubernetesObject) => s.kind === 'Deployment'
+export const isDockerHostDeployment = (s: k8s.KubernetesObject) => s.kind === 'Deployment'
     && s.metadata?.labels?.[LABELS.DOCKER_HOST] === DOCKER_HOST_VALUE
-
-export class DuplicateDockerHostDeployment extends Error {
-  constructor(readonly dups: [k8s.KubernetesObject, k8s.KubernetesObject]) {
-    super(`Duplicate Docker host Deployments found: ${inspect(dups)}`)
-  }
-}
-
-export const ensureSingleDockerHostDeployment = (): ApplyFilter => {
-  let deployment: k8s.KubernetesObject
-  return s => {
-    if (isDockerHostDeployment(s)) {
-      if (deployment) {
-        throw new DuplicateDockerHostDeployment([deployment, s])
-      }
-      deployment = s
-    }
-    return s
-  }
-}
 
 const RANDOM_ID_SPARE_LENGTH = 10
 

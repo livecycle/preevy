@@ -33,12 +33,14 @@
     "inquirer": "^8.0.0",
     "iter-tools-es": "^7.5.1",
     "lodash": "^4.17.21",
+    "shell-escape": "^0.2.0",
     "yaml": "^2.3.1"
   },
   "devDependencies": {
     "@oclif/test": "^2.3.4",
     "@types/inquirer": "^8.0.0",
     "@types/lodash": "^4.14.192",
+    "@types/shell-escape": "^0.2.1",
     "@types/node": "18",
     "@typescript-eslint/eslint-plugin": "^5.55.0",
     "@typescript-eslint/parser": "^5.55.0",
@@ -81,7 +83,8 @@
     "topicSeparator": " "
   },
   "scripts": {
-    "build": "shx rm -rf dist && tsc -b",
+    "build": "yarn clean && tsc -b",
+    "clean": "shx rm -rf dist",
     "lint": "eslint . --ext .ts --cache",
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "yarn lint",

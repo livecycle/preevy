@@ -9,9 +9,9 @@ import {
   telemetryEmitter,
   SshMachine, MachineDriver, MachineCreationDriver, MachineCreationDriverFactory, machineResourceType,
   MachineDriverFactory, sshKeysStore, Store,
-  getStoredSshKey, sshDriver, extractDefined,
+  getStoredSshKey, sshDriver, extractDefined, Logger,
 } from '@preevy/core'
-import createClient, { REGIONS } from './client'
+import createClient, { Client, REGIONS } from './client'
 import { BUNDLE_IDS, BundleId, bundleIdFromString } from './bundle-id'
 import { CUSTOMIZE_BARE_MACHINE } from './scripts'
 import { CURRENT_MACHINE_VERSION, TAGS, requiredTag } from './tags'
@@ -34,17 +34,18 @@ const machineFromInstance = (
 })
 
 type DriverContext = {
+  log: Logger
+  debug: boolean
+  client: Client
   region: string
-  profileId: string
   store: Store
 }
 
 const machineDriver = ({
+  client,
   region,
-  profileId,
   store,
 }: DriverContext): MachineDriver<SshMachine, ResourceType> => {
-  const client = createClient({ region, profileId })
   const keyAlias = region
 
   return {
@@ -112,7 +113,7 @@ const flags = {
 
 type FlagTypes = Omit<InferredFlags<typeof flags>, 'json'>
 
-const contextFromFlags = ({ region }: FlagTypes): Omit<DriverContext, 'profileId' | 'store'> => ({
+const contextFromFlags = ({ region }: FlagTypes): { region: string } => ({
   region: region as string,
 })
 
@@ -130,15 +131,22 @@ const flagsFromAnswers = async (answers: Record<string, unknown>): Promise<FlagT
   region: answers.region as string,
 })
 
-const factory: MachineDriverFactory<FlagTypes, SshMachine, ResourceType> = (
-  f,
-  profile,
+const factory: MachineDriverFactory<FlagTypes, SshMachine, ResourceType> = ({
+  flags: f,
+  profile: { id: profileId },
   store,
-) => machineDriver({
-  ...contextFromFlags(f),
-  profileId: profile.id,
-  store,
-})
+  log,
+  debug,
+}) => {
+  const c = contextFromFlags(f)
+  return machineDriver({
+    log,
+    debug,
+    client: createClient({ ...c, profileId }),
+    store,
+    ...c,
+  })
+}
 
 type MachineCreationContext = DriverContext & {
   availabilityZone?: string
@@ -148,9 +156,8 @@ type MachineCreationContext = DriverContext & {
 const DEFAULT_BUNDLE_ID: BundleId = 'medium_2_0'
 
 const machineCreationDriver = (
-  { region, profileId, availabilityZone, bundleId: specifiedBundleId, store }: MachineCreationContext
+  { region, client, availabilityZone, bundleId: specifiedBundleId, store, log, debug }: MachineCreationContext
 ): MachineCreationDriver<SshMachine> => {
-  const client = createClient({ region, profileId })
   const bundleId = specifiedBundleId ?? DEFAULT_BUNDLE_ID
   const keyAlias = region
 
@@ -170,6 +177,8 @@ const machineCreationDriver = (
     return newProviderKeyPair.providerId
   }
 
+  const ssh = sshDriver({ getSshKey: () => getStoredSshKey(store, keyAlias) })
+
   return ({
     getMachineAndSpecDiff: async ({ envId }) => {
       const instance = await client.findInstance(envId)
@@ -188,7 +197,7 @@ const machineCreationDriver = (
       telemetryEmitter().capture('aws lightsail create machine start', { region, bundle_id: bundleId, have_snapshot: haveSnapshot })
       return {
         fromSnapshot: haveSnapshot,
-        machine: (async () => {
+        result: (async () => {
           const instance = await client.createInstance({
             bundleId: bundleId ?? DEFAULT_BUNDLE_ID,
             instanceSnapshotName: haveSnapshot ? instanceSnapshot?.name : undefined,
@@ -200,7 +209,14 @@ const machineCreationDriver = (
           })
 
           telemetryEmitter().capture('aws lightsail create machine end', { region, bundle_id: bundleId, have_snapshot: haveSnapshot, elapsed_sec: (new Date().getTime() - startTime) / 1000 })
-          return machineFromInstance(instance)
+          const machine = machineFromInstance(instance)
+          return {
+            machine,
+            connection: await ssh.connect(
+              machine,
+              { log, debug, retryOpts: { minTimeout: 2000, maxTimeout: 5000, retries: 10 } },
+            ),
+          }
         })(),
       }
     },
@@ -240,21 +256,28 @@ type MachineCreationFlagTypes = InferredFlags<typeof machineCreationFlags>
 
 const machineCreationContextFromFlags = (
   fl: MachineCreationFlagTypes,
-): Omit<MachineCreationContext, 'profileId' | 'store'> => ({
+): ReturnType<typeof contextFromFlags> & { availabilityZone: string; bundleId: BundleId } => ({
   ...contextFromFlags(fl),
   availabilityZone: fl['availability-zone'] as string,
   bundleId: fl['bundle-id'] as BundleId,
 })
 
-const machineCreationFactory: MachineCreationDriverFactory<MachineCreationFlagTypes, SshMachine> = (
-  f,
-  profile,
+const machineCreationFactory: MachineCreationDriverFactory<MachineCreationFlagTypes, SshMachine> = ({
+  flags: f,
+  profile: { id: profileId },
   store,
-) => machineCreationDriver({
-  ...machineCreationContextFromFlags(f),
-  profileId: profile.id,
-  store,
-})
+  log,
+  debug,
+}) => {
+  const c = machineCreationContextFromFlags(f)
+  return machineCreationDriver({
+    ...c,
+    client: createClient({ ...c, profileId }),
+    store,
+    log,
+    debug,
+  })
+}
 
 export default {
   flags,

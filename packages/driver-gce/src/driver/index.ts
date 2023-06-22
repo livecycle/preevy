@@ -10,20 +10,20 @@ import {
   sshKeysStore,
   sshDriver,
   machineResourceType,
+  Logger,
 } from '@preevy/core'
-import createClient, { Instance, availableRegions, defaultProjectId, shortResourceName } from './client'
+import createClient, { Client, Instance, availableRegions, defaultProjectId, shortResourceName } from './client'
 import { LABELS } from './labels'
 
 type DriverContext = {
-  profileId: string
+  log: Logger
+  debug: boolean
+  client: Client
   store: Store
-  projectId: string
-  zone: string
 }
 
 type MachineCreationDriverContext = DriverContext & {
   machineType?: string
-  store: Store
 }
 
 type ResourceType = typeof machineResourceType
@@ -50,32 +50,29 @@ const machineFromInstance = (
 }
 
 const machineDriver = (
-  { zone, projectId, profileId, store }: DriverContext,
-): MachineDriver<SshMachine, ResourceType> => {
-  const client = createClient({ zone, project: projectId, profileId })
-  return ({
-    friendlyName: 'Google Cloud',
+  { store, client }: DriverContext,
+): MachineDriver<SshMachine, ResourceType> => ({
+  friendlyName: 'Google Cloud',
 
-    getMachine: async ({ envId }) => {
-      const instance = await client.findInstance(envId)
-      return instance && machineFromInstance(instance)
-    },
+  getMachine: async ({ envId }) => {
+    const instance = await client.findInstance(envId)
+    return instance && machineFromInstance(instance)
+  },
 
-    listDeletableResources: () => asyncMap(machineFromInstance, client.listInstances()),
-    deleteResources: async (wait, ...resources) => {
-      await Promise.all(resources.map(({ type, providerId }) => {
-        if (type === 'machine') {
-          return client.deleteInstance(providerId, wait)
-        }
-        throw new Error(`Unknown resource type: "${type}"`)
-      }))
-    },
+  listDeletableResources: () => asyncMap(machineFromInstance, client.listInstances()),
+  deleteResources: async (wait, ...resources) => {
+    await Promise.all(resources.map(({ type, providerId }) => {
+      if (type === 'machine') {
+        return client.deleteInstance(providerId, wait)
+      }
+      throw new Error(`Unknown resource type: "${type}"`)
+    }))
+  },
 
-    resourcePlurals: {},
+  resourcePlurals: {},
 
-    ...sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) }),
-  })
-}
+  ...sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) }),
+})
 
 const flags = {
   'project-id': Flags.string({
@@ -90,7 +87,10 @@ const flags = {
 
 type FlagTypes = Omit<Interfaces.InferredFlags<typeof flags>, 'json'>
 
-const contextFromFlags = ({ 'project-id': projectId, zone }: FlagTypes): Omit<DriverContext, 'profileId' | 'store'> => ({
+const contextFromFlags = ({
+  'project-id': projectId,
+  zone,
+}: FlagTypes): { projectId: string; zone: string } => ({
   projectId,
   zone,
 })
@@ -122,19 +122,19 @@ const flagsFromAnswers = async (answers: Record<string, unknown>): Promise<FlagT
 })
 
 const machineCreationDriver = (
-  { zone, projectId, profileId, machineType: specifiedMachineType, store }: MachineCreationDriverContext,
+  { machineType: specifiedMachineType, store, client, log, debug }: MachineCreationDriverContext,
 ): MachineCreationDriver<SshMachine> => {
   const machineType = specifiedMachineType || DEFAULT_MACHINE_TYPE
-  const client = createClient({ zone, project: projectId, profileId })
+  const ssh = sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) })
 
   return ({
     createMachine: async ({ envId }) => {
       const startTime = new Date().getTime()
-      telemetryEmitter().capture('google compute engine create machine start', { zone, machine_type: machineType })
+      telemetryEmitter().capture('google compute engine create machine start', { machine_type: machineType })
 
       return ({
         fromSnapshot: true,
-        machine: (
+        result: (
           async () => {
             const instance = await client.createInstance({
               envId,
@@ -142,8 +142,15 @@ const machineCreationDriver = (
               machineType,
               username: SSH_USERNAME,
             })
-            telemetryEmitter().capture('google compute engine create machine end', { zone, machine_type: machineType, elapsed_sec: (new Date().getTime() - startTime) / 1000 })
-            return machineFromInstance(instance)
+            telemetryEmitter().capture('google compute engine create machine end', { machine_type: machineType, elapsed_sec: (new Date().getTime() - startTime) / 1000 })
+            const machine = machineFromInstance(instance)
+            return {
+              machine,
+              connection: await ssh.connect(
+                machine,
+                { log, debug, retryOpts: { minTimeout: 2000, maxTimeout: 5000, retries: 10 } },
+              ),
+            }
           }
         )(),
       })
@@ -178,7 +185,7 @@ const machineCreationFlags = {
 
 const machineCreationContextFromFlags = (
   fl: Interfaces.InferredFlags<typeof machineCreationFlags>
-): Omit<MachineCreationDriverContext, 'profileId' | 'store'> => ({
+): ReturnType<typeof contextFromFlags> & { machineType?: string } => ({
   ...contextFromFlags(fl),
   machineType: fl['machine-type'],
 })
@@ -187,15 +194,22 @@ const factory: MachineDriverFactory<
   Interfaces.InferredFlags<typeof flags>,
   SshMachine,
   ResourceType
-> = (f, profile, store) => machineDriver({ ...contextFromFlags(f), profileId: profile.id, store })
+> = ({ flags: f, profile: { id: profileId }, store, log, debug }) => machineDriver({
+  log,
+  debug,
+  client: createClient({ ...contextFromFlags(f), profileId }),
+  store,
+})
 machineDriver.factory = factory
 
 const machineCreationFactory: MachineCreationDriverFactory<
   Interfaces.InferredFlags<typeof machineCreationFlags>,
   SshMachine
-> = (f, profile, store) => machineCreationDriver({
+> = ({ flags: f, profile: { id: profileId }, store, log, debug }) => machineCreationDriver({
+  log,
+  debug,
   ...machineCreationContextFromFlags(f),
-  profileId: profile.id,
+  client: createClient({ ...contextFromFlags(f), profileId }),
   store,
 })
 

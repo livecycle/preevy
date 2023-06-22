@@ -46,7 +46,7 @@ export type MachineDriver<
 export type MachineCreationDriver<Machine extends MachineBase = MachineBase> = {
   createMachine: (args: {
     envId: string
-  }) => Promise<{ fromSnapshot: boolean; machine: Promise<Machine> }>
+  }) => Promise<{ fromSnapshot: boolean; result: Promise<{ machine: Machine; connection: MachineConnection }> }>
 
   ensureMachineSnapshot: (args: { providerId: string; envId: string; wait: boolean }) => Promise<void>
   getMachineAndSpecDiff: (
@@ -58,14 +58,18 @@ export type MachineDriverFactory<
   Flags,
   Machine extends MachineBase = MachineBase,
   ResourceType extends string = string
-> = (
-  flags: Flags,
-  profile: Profile,
-  store: Store,
-) => MachineDriver<Machine, ResourceType>
+> = ({ flags, profile, store, log, debug }: {
+  flags: Flags
+  profile: Profile
+  store: Store
+  log: Logger
+  debug: boolean
+}) => MachineDriver<Machine, ResourceType>
 
-export type MachineCreationDriverFactory<Flags, Machine extends MachineBase> = (
-  flags: Flags,
-  profile: Profile,
-  store: Store,
-) => MachineCreationDriver<Machine>
+export type MachineCreationDriverFactory<Flags, Machine extends MachineBase> = ({ flags, profile, store, log, debug }: {
+  flags: Flags
+  profile: Profile
+  store: Store
+  log: Logger
+  debug: boolean
+}) => MachineCreationDriver<Machine>

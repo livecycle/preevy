@@ -287,4 +287,6 @@ const client = ({
   }
 }
 
+export type Client = ReturnType<typeof client>
+
 export default client

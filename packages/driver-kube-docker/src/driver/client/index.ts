@@ -4,19 +4,16 @@ import stringify from 'fast-safe-stringify'
 import * as k8s from '@kubernetes/client-node'
 import nunjucks from 'nunjucks'
 import yaml from 'yaml'
-import { ProcessOutputBuffers, ensureDefined, extractDefined } from '@preevy/core'
 import { asyncToArray, asyncFirst } from 'iter-tools-es'
 import { maxBy } from 'lodash'
-import { Writable } from 'stream'
+import { inspect } from 'util'
 import createBaseExec, { BaseExecOpts } from './exec'
-import dynamicApi, { compositeFilter } from './dynamic-api'
+import dynamicApi, { ApplyFilter, applyStrategies, compositeApplyFilter } from './dynamic'
 import basePortForward from './port-forward'
 import k8sHelpers from './k8s-helpers'
-import waitHelpers from './wait'
 import {
   LABELS,
   addEnvMetadata,
-  ensureSingleDockerHostDeployment,
   envRandomId,
   envSelector,
   markObjectAsDeleted,
@@ -25,6 +22,8 @@ import {
   extractTemplateHash,
   extractCreatedAt,
   extractName,
+  isDockerHostDeployment,
+  ANNOTATIONS,
 } from './metadata'
 import { Package } from './common'
 
@@ -44,6 +43,25 @@ export const loadKubeConfig = (kubeconfig?: string) => {
   return kc
 }
 
+export class DuplicateDockerHostDeployment extends Error {
+  constructor(readonly dups: [k8s.KubernetesObject, k8s.KubernetesObject]) {
+    super(`Duplicate Docker host Deployments found: ${inspect(dups)}`)
+  }
+}
+
+const ensureSingleDockerHostDeployment = (): ApplyFilter => {
+  let deployment: k8s.KubernetesObject
+  return s => {
+    if (isDockerHostDeployment(s)) {
+      if (deployment) {
+        throw new DuplicateDockerHostDeployment([deployment, s])
+      }
+      deployment = s
+    }
+    return s
+  }
+}
+
 const kubeClient = ({ namespace, kc, profileId, template, package: packageDetails }: {
   kc: k8s.KubeConfig
   namespace: string
@@ -58,9 +76,7 @@ const kubeClient = ({ namespace, kc, profileId, template, package: packageDetail
 
   const helpers = k8sHelpers({ k8sApi, k8sAppsApi, namespace })
 
-  const { apply, applyStrategies, gatherTypes, list: dynamicList } = dynamicApi({ client: k8sObjApi })
-
-  const deploymentMetadata = (d: Pick<k8s.V1Deployment, 'metadata'>) => ensureDefined(extractDefined(d, 'metadata'), 'name', 'namespace', 'resourceVersion')
+  const { apply, gatherTypes, list: dynamicList, waiter } = dynamicApi({ client: k8sObjApi })
 
   const renderTemplate = async ({ instance }: { instance: string }) => {
     const specsStr = nunjucks.renderString((await template).toString('utf-8'), {
@@ -81,6 +97,14 @@ const kubeClient = ({ namespace, kc, profileId, template, package: packageDetail
     { ...instanceSelector({ instance }) },
   )
 
+  const findInstanceDeployment = async (instance: string) => {
+    const deployment = await asyncFirst(helpers.listDeployments({ ...instanceSelector({ instance }) }))
+    if (!deployment) {
+      throw new Error(`Cannot find deployment with label "${LABELS.INSTANCE}": "${instance}" in namespace "${namespace}"`)
+    }
+    return deployment
+  }
+
   const createEnv = async (
     envId: string,
     { serverSideApply }: { serverSideApply: boolean },
@@ -88,7 +112,7 @@ const kubeClient = ({ namespace, kc, profileId, template, package: packageDetail
     const instance = envRandomId({ envId, profileId })
     const specs = await renderTemplate({ instance })
     await apply(specs, {
-      filter: compositeFilter(
+      filter: compositeApplyFilter(
         ensureSingleDockerHostDeployment(),
         addEnvMetadata({
           profileId,
@@ -99,13 +123,30 @@ const kubeClient = ({ namespace, kc, profileId, template, package: packageDetail
           templateHash: await templateHash(),
         })
       ),
-      strategy: serverSideApply ? applyStrategies.serverSideApply : applyStrategies.clientSideApply,
+      strategy: serverSideApply
+        ? applyStrategies.serverSideApply({ fieldManager: (await packageDetails).name })
+        : applyStrategies.clientSideApply,
     })
-    const deployment = await asyncFirst(helpers.listDeployments({ ...instanceSelector({ instance }) }))
-    if (!deployment) {
-      throw new Error(`Cannot find deployment with label "${LABELS.INSTANCE}": "${instance}" in namespace "${namespace}"`)
-    }
-    return deployment
+
+    const deployment = await findInstanceDeployment(instance)
+
+    // objects returned by the list API missing 'kind' and 'apiVersion' props
+    // https://github.com/kubernetes/kubernetes/issues/3030
+    deployment.kind ??= deployment.metadata?.annotations?.[ANNOTATIONS.KUBERNETES_KIND] ?? 'Deployment'
+    deployment.apiVersion ??= deployment.metadata?.annotations?.[ANNOTATIONS.KUERBETES_API_VERSION] ?? 'apps/v1'
+
+    console.log('createEnv deployment', deployment)
+
+    // wait for deployment revision
+    // deployment = await waiter(watcher).waitForEvent(
+    //   deployment,
+    //   d => Boolean(d.metadata?.annotations?.[ANNOTATIONS.DEPLOYMENT_REVISION] !== undefined),
+    // )
+
+    return await waiter(watcher).waitForEvent(
+      deployment,
+      d => Boolean(d.status?.conditions?.some(({ type, status }) => type === 'Available' && status === 'True')),
+    )
   }
 
   const deleteEnv = async (
@@ -113,6 +154,7 @@ const kubeClient = ({ namespace, kc, profileId, template, package: packageDetail
     { wait }: { wait: boolean },
   ) => {
     const objects = await asyncToArray(await listInstanceObjects(instance))
+    console.log('deleteEnv', objects)
     await apply(objects, {
       filter: markObjectAsDeleted,
       strategy: applyStrategies.patch({ ignoreNonExisting: true }),
@@ -146,36 +188,42 @@ const kubeClient = ({ namespace, kc, profileId, template, package: packageDetail
     return await basePortForward({ namespace, forward })(podName, targetPort, listenAddress)
   }
 
-  const baseExec = createBaseExec({ k8sExec: new k8s.Exec(kc), namespace })
+  // const baseExec = createBaseExec({ k8sExec: new k8s.Exec(kc), namespace })
 
-  async function exec(opts: ExecOpts & { stdout: Writable; stderr: Writable }): Promise<{ code: number }>
-  async function exec(opts: ExecOpts): Promise<{ code: number; output: ProcessOutputBuffers }>
-  async function exec(
-    { deployment, ...opts }: ExecOpts & { stdout?: Writable; stderr?: Writable },
-  ): Promise<{ code: number; output?: ProcessOutputBuffers }> {
-    const pod = await helpers.findReadyPodForDeployment(deployment)
-    return await baseExec({
-      pod: extractName(pod),
-      container: (pod.spec?.containers[0] as k8s.V1Container).name,
-      ...opts,
-    })
-  }
+  // async function exec(opts: ExecOpts & { stdout: Writable; stderr: Writable }): Promise<{ code: number }>
+  // async function exec(opts: ExecOpts): Promise<{ code: number; output: ProcessOutputBuffers }>
+  // async function exec(
+  //   { deployment, ...opts }: ExecOpts & { stdout?: Writable; stderr?: Writable },
+  // ): Promise<{ code: number; output?: ProcessOutputBuffers }> {
+  //   const pod = await helpers.findReadyPodForDeployment(deployment)
+  //   return baseExec({
+  //     pod: extractName(pod),
+  //     container: (pod.spec?.containers[0] as k8s.V1Container).name,
+  //     ...opts,
+  //   })
+  // }
 
   return {
     findMostRecentDeployment,
     listProfileDeployments: () => helpers.listDeployments({ ...profileSelector({ profileId }) }),
-    exec,
+    exec: createBaseExec({ k8sExec: new k8s.Exec(kc), namespace }),
     findReadyPodForDeployment: helpers.findReadyPodForDeployment,
     createEnv,
     waitForDeploymentAvailable: (
-      d: k8s.V1Deployment,
-    ) => waitHelpers(watcher).waitForDeploymentAvailable(deploymentMetadata(d)),
+      deployment: k8s.V1Deployment,
+    ) => waiter(watcher).waitForEvent(
+      deployment,
+      d => Boolean(d.status?.conditions?.some(({ type, status }) => type === 'Available' && status === 'True')),
+    ),
     deleteEnv,
     portForward,
     matchesCurrentTemplate: async (d: k8s.V1Deployment) => extractTemplateHash(d) === await templateHash(),
   }
 }
 
+export type Client = ReturnType<typeof kubeClient>
+
 export { extractInstance, extractEnvId, extractName, extractNamespace, extractTemplateHash } from './metadata'
+export { DeploymentNotReadyError, DeploymentNotReadyErrorReason } from './k8s-helpers'
 
 export default kubeClient

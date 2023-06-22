@@ -11,7 +11,7 @@ export type ResourceType = typeof machineResourceType
 export const machineFromDeployment = (deployment: k8s.V1Deployment): DeploymentMachine & { envId: string } => ({
   type: machineResourceType,
   providerId: extractInstance(deployment),
-  locationDescription: `deployment ${extractNamespace(deployment)}/${extractName(deployment)}`,
+  locationDescription: `deployment/${extractName(deployment)} of namespace ${extractNamespace(deployment)}`,
   envId: extractEnvId(deployment),
   deployment,
 })

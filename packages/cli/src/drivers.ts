@@ -1,8 +1,9 @@
-import { map, mapKeys } from 'lodash'
+import { filter, map, mapKeys } from 'lodash'
 import lightsail from '@preevy/driver-lightsail'
 import gce from '@preevy/driver-gce'
 import azure from '@preevy/driver-azure'
 import kubeDocker from '@preevy/driver-kube-docker'
+import { Flag } from '@oclif/core/lib/interfaces'
 
 export const machineDrivers = {
   lightsail,
@@ -68,3 +69,9 @@ export const removeDriverPrefix = <T extends {}>(
   driverName: string,
   flags: Record<string, unknown>,
 ) => mapKeys(flags, (_, key) => key.replace(`${driverName}-`, '')) as unknown as T
+
+export const excludeDefaultFlags = (
+  driverFlagDefs: Record<string, Flag<unknown>>,
+) => ([key, value]: [string, unknown]) => value !== (
+  (driverFlagDefs as Record<string, Flag<unknown>>)[key]
+).default

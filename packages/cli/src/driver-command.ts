@@ -1,6 +1,7 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
 import { MachineDriver, profileStore } from '@preevy/core'
 import { BaseCommand } from '@preevy/cli-common'
+import { mapValues, pickBy } from 'lodash'
 import ProfileCommand from './profile-command'
 import { DriverFlags, DriverName, flagsForAllDrivers, machineDrivers, removeDriverPrefix } from './drivers'
 
@@ -42,11 +43,22 @@ abstract class DriverCommand<T extends typeof Command> extends ProfileCommand<T>
       return this.#driver
     }
     const { profile, driverName } = this
+    const driverFlagNames = Object.keys(machineDrivers[driverName].flags)
+    const defaultFlags = pickBy(
+      await profileStore(this.store).defaultFlags(driverName),
+      (_v, k) => driverFlagNames.includes(k),
+    )
     const driverFlags = {
-      ...await profileStore(this.store).defaultFlags(driverName),
+      ...defaultFlags,
       ...removeDriverPrefix<DriverFlags<DriverName, 'flags'>>(driverName, this.flags),
     }
-    this.#driver = machineDrivers[driverName].factory(driverFlags as never, profile, this.store)
+    this.#driver = machineDrivers[driverName].factory({
+      flags: driverFlags as never,
+      profile,
+      store: this.store,
+      log: this.logger,
+      debug: this.flags.debug,
+    })
     return this.#driver as MachineDriver
   }
 }

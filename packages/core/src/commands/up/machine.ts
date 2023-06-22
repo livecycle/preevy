@@ -14,11 +14,13 @@ const ensureMachine = async ({
   machineCreationDriver,
   envId,
   log,
+  debug,
 }: {
   machineDriver: MachineDriver
   machineCreationDriver: MachineCreationDriver
   envId: string
   log: Logger
+  debug: boolean
 }) => {
   log.debug('checking for existing machine')
   const existingMachine = await machineCreationDriver.getMachineAndSpecDiff({ envId })
@@ -33,7 +35,11 @@ const ensureMachine = async ({
       if (recreating) {
         log.info(`Recreating machine due to changes:${EOL}${machineDiffText(existingMachine.specDiff)}`)
       } else {
-        return { machine: existingMachine, installed: true }
+        return {
+          machine: existingMachine,
+          installed: true,
+          connection: machineDriver.connect(existingMachine, { log, debug }),
+        }
       }
     }
   }
@@ -52,8 +58,11 @@ const ensureMachine = async ({
 
     telemetryEmitter().capture('create machine', { from_snapshot: machineCreation.fromSnapshot })
 
+    const { machine, connection } = await machineCreation.result
+
     return {
-      machine: await machineCreation.machine,
+      machine,
+      connection: Promise.resolve(connection),
       installed: machineCreation.fromSnapshot,
     }
   }, {
@@ -75,14 +84,13 @@ export const ensureCustomizedMachine = async ({
   log: Logger
   debug: boolean
 }): Promise<{ machine: MachineBase; connection: MachineConnection }> => {
-  const { machine, installed } = await ensureMachine({ machineDriver, machineCreationDriver, envId, log })
+  const { machine, connection: connectionPromise, installed } = await ensureMachine(
+    { machineDriver, machineCreationDriver, envId, log, debug },
+  )
 
   let connection = await withSpinner(
-    () => retry(
-      () => machineDriver.connect(machine, { log, debug }),
-      { minTimeout: 2000, maxTimeout: 5000, retries: 10 }
-    ),
-    { text: `Connecting to ${machineDriver.friendlyName} machine at ${machine.locationDescription}` },
+    () => connectionPromise,
+    { text: 'Connecting to machine' },
   )
 
   if (installed) {

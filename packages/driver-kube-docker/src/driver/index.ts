@@ -1,5 +1,5 @@
-import { flags, factory } from './machine-driver'
-import { flags as machineCreationFlags, factory as machineCreationFactory } from './machine-creation-driver'
+import { flags, factory } from './driver'
+import { flags as machineCreationFlags, factory as machineCreationFactory } from './creation-driver'
 import { flagsFromAnswers, questions } from './questions'
 
 export default {
