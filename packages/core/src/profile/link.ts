@@ -59,7 +59,6 @@ export const link = async (
 
   const prk = crypto.createPrivateKey({
     key: parsed.getPrivatePEM(),
-    format: 'pem',
   })
 
   const pk = crypto.createPublicKey(prk)
