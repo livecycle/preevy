@@ -9,6 +9,11 @@ import { Logger } from '../log'
 
 export type Org = {id: string; name: string; role: string}
 
+const keyTypeToArgs = {
+  rsa: 'RS256',
+  ed25519: 'EdDSA',
+}
+
 export const link = async (
   store: Store,
   dataDir: string,
@@ -62,9 +67,11 @@ export const link = async (
   })
 
   const pk = crypto.createPublicKey(prk)
+  if (pk.asymmetricKeyType === undefined) throw new Error('Error getting type of public ket')
+  if (!(pk.asymmetricKeyType in keyTypeToArgs)) throw new Error(`Unsupported key algorithm: ${pk.asymmetricKeyType}`)
 
   const tokenSignedByTunnelingPrivateKey = await new jose.SignJWT({})
-    .setProtectedHeader({ alg: 'RS256' })
+    .setProtectedHeader({ alg: keyTypeToArgs[pk.asymmetricKeyType as keyof typeof keyTypeToArgs] })
     .setIssuedAt()
     .setExpirationTime('5m')
     .sign(prk)
