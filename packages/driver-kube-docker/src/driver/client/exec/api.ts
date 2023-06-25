@@ -1,8 +1,9 @@
 import * as k8s from '@kubernetes/client-node'
 import { readable as isReadableStream } from 'is-stream'
 import { ProcessOutputBuffers } from '@preevy/core'
-import { Readable, Writable } from 'stream'
+import { Writable } from 'stream'
 import { ReadableStreamBuffer } from 'stream-buffers'
+import { BaseExecOpts } from './common'
 
 const readbleStreamBufferFrom = (source?: string | Buffer) => {
   const result = new ReadableStreamBuffer()
@@ -12,17 +13,12 @@ const readbleStreamBufferFrom = (source?: string | Buffer) => {
   return result
 }
 
-class CallbackWritableStream extends Writable {
-  constructor(readonly onWrite: (chunk: Buffer) => void) {
-    super()
-  }
-
-  // eslint-disable-next-line no-underscore-dangle
-  _write(chunk: unknown, _encoding: BufferEncoding, callback: (error?: Error | null | undefined) => void): void {
-    this.onWrite(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string))
-    callback()
-  }
-}
+const callbackWritable = (onWrite: (chunk: Buffer) => void) => new Writable({
+  write: (chunk: unknown, _encoding: BufferEncoding, callback: (error?: Error | null | undefined) => void) => {
+    onWrite(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string))
+    setImmediate(callback)
+  },
+})
 
 export class ExecError extends Error {
   constructor(
@@ -34,19 +30,14 @@ export class ExecError extends Error {
   }
 }
 
-export type BaseExecOpts = {
-  pod: string
-  container: string
-  command: string[]
-  stdin?: string | Buffer | Readable
-  tty?: boolean
-}
-
 const extractCodeFromStatus = (status: k8s.V1Status) => {
   const n = Number(status.details?.causes?.find(({ reason }) => reason === 'ExitCode')?.message)
   return Number.isNaN(n) ? undefined : n
 }
 
+// DO NOT USE with stdin:
+// https://github.com/kubernetes/kubernetes/issues/89899
+// https://github.com/kubernetes-client/javascript/issues/465
 export default ({ k8sExec, namespace }: { k8sExec: k8s.Exec; namespace: string }) => {
   async function exec(opts: BaseExecOpts & { stdout: Writable; stderr: Writable }): Promise<{ code: number }>
   async function exec(opts: BaseExecOpts): Promise<{ code: number; output: ProcessOutputBuffers }>
@@ -55,8 +46,8 @@ export default ({ k8sExec, namespace }: { k8sExec: k8s.Exec; namespace: string }
   ): Promise<{ code: number; output?: ProcessOutputBuffers }> {
     const { pod, container, command } = opts
     const output: ProcessOutputBuffers = []
-    const stdout = opts.stdout ?? new CallbackWritableStream(data => output.push({ data, stream: 'stdout' }))
-    const stderr = opts.stderr ?? new CallbackWritableStream(data => output.push({ data, stream: 'stderr' }))
+    const stdout = opts.stdout ?? callbackWritable(data => output.push({ data, stream: 'stdout' }))
+    const stderr = opts.stderr ?? callbackWritable(data => output.push({ data, stream: 'stderr' }))
     const stdin = isReadableStream(opts.stdin) ? opts.stdin : readbleStreamBufferFrom(opts.stdin)
 
     return await new Promise((resolve, reject) => {

@@ -39,7 +39,6 @@ export const applyStrategies = {
     await cl.patch(spec)
   }, { concurrent: true }),
   delete: applyStrategy(async (o, spec, cl) => {
-    console.log('delete', o)
     if (!o) {
       return
     }
@@ -86,7 +85,9 @@ const apply = (
 ) => {
   const filteredSpecs = s.map(normalizeSpec).map(filter).filter(booleanFilter)
 
-  const concurrencyFunc = strategy.concurrent ? Promise.all.bind(Promise) : pSeries
+  const concurrencyFunc = strategy.concurrent
+    ? (factories: (() => Promise<T>)[]) => Promise.all(factories.map(f => f()))
+    : pSeries
 
   return await concurrencyFunc(filteredSpecs.map(spec => async () => {
     const o = await bodyOrUndefined<k8s.KubernetesObject>(

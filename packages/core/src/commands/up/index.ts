@@ -163,7 +163,7 @@ const up = async ({
   const withDockerSocket = wrapWithDockerSocket({ connection, log })
 
   try {
-    await exec(`sudo mkdir -p "${remoteDir}" && sudo chown $USER "${remoteDir}"`)
+    await exec(`mkdir -p "${remoteDir}" && chown $USER "${remoteDir}"`, { asRoot: true })
 
     log.debug('Files to copy', filesToCopy)
 

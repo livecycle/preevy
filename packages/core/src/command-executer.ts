@@ -30,6 +30,7 @@ export type ExecOptions = {
   env?: Record<string, string | undefined>
   encoding?: BufferEncoding
   ignoreExitCode?: boolean
+  asRoot?: boolean
 }
 
 export type CommandExecuter = (command: string, options?: ExecOptions) => Promise<ExecResult>
@@ -66,10 +67,14 @@ const commandWithCd = (command: string, cwd: ExecOptions['cwd']) => (
   cwd ? `cd ${shellEscape([cwd])}; ${command}` : command
 )
 
+const commandWithAsRoot = (command: string, asRoot: ExecOptions['asRoot']) => (
+  asRoot ? `su - <<'sueof'\n${command}\nsueof` : command
+)
+
 export const commandWith = (
   command: string,
-  { env, cwd }: Pick<ExecOptions, 'env' | 'cwd'>,
-) => commandWithEnv(commandWithCd(command, cwd), env)
+  { env, cwd, asRoot }: Pick<ExecOptions, 'env' | 'cwd' | 'asRoot'>,
+) => commandWithAsRoot(commandWithEnv(commandWithCd(command, cwd), env), asRoot)
 
 export const mkdir = (
   exec: CommandExecuter,

@@ -30,7 +30,7 @@ export const markObjectAsDeleted = (
   kind: spec.kind,
   metadata: {
     name: spec.metadata?.name,
-    namespace: spec?.metadata?.namespace,
+    namespace: spec.metadata?.namespace,
     labels: {
       ...spec.metadata?.labels,
       [LABELS.DELETED]: TRUE_VALUE,

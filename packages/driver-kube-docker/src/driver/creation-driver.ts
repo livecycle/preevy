@@ -18,7 +18,7 @@ export const flags = {
 export type MachineCreationFlagTypes = Omit<Interfaces.InferredFlags<typeof flags>, 'json'>
 
 const machineCreationDriver = (
-  { client, serverSideApply, log }: MachineCreationDriverContext,
+  { client, serverSideApply }: MachineCreationDriverContext,
 ): MachineCreationDriver<DeploymentMachine> => ({
   createMachine: async ({ envId }) => {
     const startTime = new Date().getTime()
@@ -29,8 +29,6 @@ const machineCreationDriver = (
       result: (async () => {
         const deployment = await client.createEnv(envId, { serverSideApply })
         const machine = machineFromDeployment(deployment)
-        log.debug(`Created machine ${deployment}}`)
-        await client.waitForDeploymentAvailable(deployment)
         telemetryEmitter().capture('kube-docker create machine end', { elapsed_sec: (new Date().getTime() - startTime) / 1000 })
         const connection = await machineConnection(client, machine)
         return { machine, connection }
@@ -40,7 +38,7 @@ const machineCreationDriver = (
 
   ensureMachineSnapshot: async () => undefined,
   getMachineAndSpecDiff: async ({ envId }) => {
-    const deployment = await client.findMostRecentDeployment(envId)
+    const deployment = await client.findMostRecentDeployment({ envId, deleted: false })
     if (!deployment) {
       return undefined
     }
@@ -60,7 +58,7 @@ export const factory: MachineCreationDriverFactory<
 > = ({ flags: f, profile: { id: profileId }, log, debug }) => machineCreationDriver({
   log,
   debug,
-  client: clientFromConfiguration({ flags: f, profileId }),
+  client: clientFromConfiguration({ log, flags: f, profileId }),
   serverSideApply: f['server-side-apply'],
 })
 

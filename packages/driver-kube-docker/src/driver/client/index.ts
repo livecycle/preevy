@@ -7,6 +7,7 @@ import yaml from 'yaml'
 import { asyncToArray, asyncFirst } from 'iter-tools-es'
 import { maxBy } from 'lodash'
 import { inspect } from 'util'
+import { Logger } from '@preevy/core'
 import createBaseExec, { BaseExecOpts } from './exec'
 import dynamicApi, { ApplyFilter, applyStrategies, compositeApplyFilter } from './dynamic'
 import basePortForward from './port-forward'
@@ -24,6 +25,7 @@ import {
   extractName,
   isDockerHostDeployment,
   ANNOTATIONS,
+  extractInstance,
 } from './metadata'
 import { Package } from './common'
 
@@ -62,8 +64,10 @@ const ensureSingleDockerHostDeployment = (): ApplyFilter => {
   }
 }
 
-const kubeClient = ({ namespace, kc, profileId, template, package: packageDetails }: {
+const kubeClient = ({ log, namespace, kc, profileId, template, package: packageDetails, kubeconfig }: {
+  log: Logger
   kc: k8s.KubeConfig
+  kubeconfig?: string
   namespace: string
   profileId: string
   template: Buffer | string | Promise<Buffer | string>
@@ -87,9 +91,8 @@ const kubeClient = ({ namespace, kc, profileId, template, package: packageDetail
     return yaml.parseAllDocuments(specsStr).map(d => d.toJS() as k8s.KubernetesObject)
   }
 
-  const renderCanonicalTemplate = async () => await renderTemplate({ instance: '' })
-  const templateHash = async () => `sha1:${createHash('sha1').update(
-    stringify.stableStringify(await renderCanonicalTemplate())
+  const templateHash = async ({ instance }: { instance: string }) => `sha1:${createHash('sha1').update(
+    stringify.stableStringify(await renderTemplate({ instance }))
   ).digest('base64')}`
 
   const listInstanceObjects = async (instance: string) => dynamicList(
@@ -120,7 +123,7 @@ const kubeClient = ({ namespace, kc, profileId, template, package: packageDetail
           createdAt: new Date(),
           instance,
           package: await packageDetails,
-          templateHash: await templateHash(),
+          templateHash: await templateHash({ instance }),
         })
       ),
       strategy: serverSideApply
@@ -135,17 +138,9 @@ const kubeClient = ({ namespace, kc, profileId, template, package: packageDetail
     deployment.kind ??= deployment.metadata?.annotations?.[ANNOTATIONS.KUBERNETES_KIND] ?? 'Deployment'
     deployment.apiVersion ??= deployment.metadata?.annotations?.[ANNOTATIONS.KUERBETES_API_VERSION] ?? 'apps/v1'
 
-    console.log('createEnv deployment', deployment)
-
-    // wait for deployment revision
-    // deployment = await waiter(watcher).waitForEvent(
-    //   deployment,
-    //   d => Boolean(d.metadata?.annotations?.[ANNOTATIONS.DEPLOYMENT_REVISION] !== undefined),
-    // )
-
     return await waiter(watcher).waitForEvent(
       deployment,
-      d => Boolean(d.status?.conditions?.some(({ type, status }) => type === 'Available' && status === 'True')),
+      (_phase, d) => Boolean(d.status?.conditions?.some(({ type, status }) => type === 'Available' && status === 'True')),
     )
   }
 
@@ -154,7 +149,6 @@ const kubeClient = ({ namespace, kc, profileId, template, package: packageDetail
     { wait }: { wait: boolean },
   ) => {
     const objects = await asyncToArray(await listInstanceObjects(instance))
-    console.log('deleteEnv', objects)
     await apply(objects, {
       filter: markObjectAsDeleted,
       strategy: applyStrategies.patch({ ignoreNonExisting: true }),
@@ -169,10 +163,10 @@ const kubeClient = ({ namespace, kc, profileId, template, package: packageDetail
     ...envSelector({ profileId, envId, deleted, dockerHost: true }),
   })
 
-  const findMostRecentDeployment = async (
-    envId: string,
-    deleted?: boolean,
-  ): Promise<k8s.V1Deployment | undefined> => maxBy(
+  const findMostRecentDeployment = async ({ envId, deleted }: {
+    envId: string
+    deleted?: boolean
+  }): Promise<k8s.V1Deployment | undefined> => maxBy(
     await asyncToArray(listEnvDeployments(envId, deleted)),
     extractCreatedAt,
   )
@@ -185,7 +179,7 @@ const kubeClient = ({ namespace, kc, profileId, template, package: packageDetail
     const forward = new k8s.PortForward(kc)
     const pod = await helpers.findReadyPodForDeployment(deployment)
     const podName = extractName(pod)
-    return await basePortForward({ namespace, forward })(podName, targetPort, listenAddress)
+    return await basePortForward({ namespace, forward, log })(podName, targetPort, listenAddress)
   }
 
   // const baseExec = createBaseExec({ k8sExec: new k8s.Exec(kc), namespace })
@@ -206,18 +200,14 @@ const kubeClient = ({ namespace, kc, profileId, template, package: packageDetail
   return {
     findMostRecentDeployment,
     listProfileDeployments: () => helpers.listDeployments({ ...profileSelector({ profileId }) }),
-    exec: createBaseExec({ k8sExec: new k8s.Exec(kc), namespace }),
+    exec: createBaseExec({ k8sExec: new k8s.Exec(kc), kubeconfig, namespace }),
     findReadyPodForDeployment: helpers.findReadyPodForDeployment,
     createEnv,
-    waitForDeploymentAvailable: (
-      deployment: k8s.V1Deployment,
-    ) => waiter(watcher).waitForEvent(
-      deployment,
-      d => Boolean(d.status?.conditions?.some(({ type, status }) => type === 'Available' && status === 'True')),
-    ),
     deleteEnv,
     portForward,
-    matchesCurrentTemplate: async (d: k8s.V1Deployment) => extractTemplateHash(d) === await templateHash(),
+    matchesCurrentTemplate: async (
+      d: k8s.V1Deployment,
+    ) => extractTemplateHash(d) === await templateHash({ instance: extractInstance(d) }),
   }
 }
 

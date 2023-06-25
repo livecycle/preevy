@@ -67,7 +67,7 @@ const machineDriver = (
   friendlyName: 'Kubernetes Docker-in-Docker',
 
   getMachine: async ({ envId }) => {
-    const deployment = await client.findMostRecentDeployment(envId)
+    const deployment = await client.findMostRecentDeployment({ envId, deleted: false })
     return deployment && machineFromDeployment(deployment)
   },
 
@@ -87,7 +87,7 @@ const machineDriver = (
   spawnRemoteCommand: async (machine, command, stdio) => {
     const pod = await client.findReadyPodForDeployment((machine as DeploymentMachine).deployment)
     const { stdin, stdout, stderr } = expandStdioOptions(stdio)
-    return await client.exec({
+    const opts = {
       pod: extractName(pod),
       container: pod.spec?.containers[0]?.name as string,
       command: command.length > 0 ? command : ['sh'],
@@ -95,7 +95,8 @@ const machineDriver = (
       stdin,
       stdout,
       stderr,
-    })
+    }
+    return await client.exec(opts)
   },
 
   connect: machine => machineConnection(client, machine as DeploymentMachine),
@@ -119,12 +120,15 @@ export const flags = {
 
 type FlagTypes = Omit<Interfaces.InferredFlags<typeof flags>, 'json'>
 
-export const clientFromConfiguration = ({ flags: f, profileId }: {
+export const clientFromConfiguration = ({ flags: f, profileId, log }: {
   flags: Pick<FlagTypes, 'namespace' | 'kubeconfig' | 'template'>
   profileId: string
+  log: Logger
 }) => createClient({
+  log,
   namespace: f.namespace,
   kc: loadKubeConfig(f.kubeconfig),
+  kubeconfig: f.kubeconfig,
   profileId,
   package: fs.promises.readFile(PACKAGE_JSON, 'utf-8').then(JSON.parse),
   template: fs.promises.readFile(f.template || DEFAULT_TEMPLATE, 'utf-8'),
@@ -137,5 +141,5 @@ export const factory: MachineDriverFactory<
 > = ({ flags: f, profile: { id: profileId }, log, debug }) => machineDriver({
   log,
   debug,
-  client: clientFromConfiguration({ flags: f, profileId }),
+  client: clientFromConfiguration({ log, flags: f, profileId }),
 })

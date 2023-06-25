@@ -41,6 +41,5 @@ export const flagsFromAnswers = async (
     ...(answers['server-side-apply'] !== flags['server-side-apply'].default)
       ? { 'server-side-apply': answers['server-side-apply'] as boolean } : undefined,
   }
-  console.log('flagsFromAnswers', answers, flags, result)
   return result
 }

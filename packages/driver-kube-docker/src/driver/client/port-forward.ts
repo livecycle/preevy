@@ -1,45 +1,54 @@
 import net, { AddressInfo, ListenOptions } from 'net'
 import * as k8s from '@kubernetes/client-node'
 import { promisify } from 'util'
+import { Logger } from '@preevy/core'
 
 type ForwardSocket = {
   localSocket: string | AddressInfo
   close: () => Promise<void>
 }
 
+type Closable = { close: () => void }
+
 const portForward = (
-  { namespace, forward }: { namespace: string; forward: k8s.PortForward},
+  { namespace, forward, log }: { namespace: string; forward: k8s.PortForward; log: Logger },
 ) => (
   podName: string,
   targetPort: number,
   listenAddress: number | string | ListenOptions,
 ) => new Promise<ForwardSocket>((resolve, reject) => {
+  const sockets = new Set<Closable>()
   const server = net.createServer(async socket => {
-    const forwardResult = await forward.portForward(
-      namespace,
-      podName,
-      [targetPort],
-      socket,
-      null,
-      socket
-    ).catch(e => {
-      reject(e)
-      throw e
-    })
-    const ws = typeof forwardResult === 'function' ? forwardResult() : forwardResult
-    if (!ws) {
-      reject(new Error('Failed to forward port, no returned WebSocket'))
+    socket.on('error', err => { log.debug('forward socket error', err) }) // prevent unhandled rejection
+    const forwardResult = await forward.portForward(namespace, podName, [targetPort], socket, null, socket, 10)
+      .catch(err => {
+        log.debug('forward api error', err)
+        socket.emit('error', err)
+      })
+
+    if (!forwardResult) {
       return
     }
-    server.on('close', () => { ws.close() })
+
+    const ws = typeof forwardResult === 'function' ? forwardResult() : forwardResult
+    if (!ws) {
+      return
+    }
+    sockets.add(ws)
+    ws.on('close', () => { sockets.delete(ws) })
   })
 
   server.on('error', reject)
 
+  const closeServer = promisify(server.close.bind(server))
+
   server.listen(listenAddress, () => {
     resolve({
       localSocket: server.address() as string | AddressInfo,
-      close: promisify(server.close.bind(server)),
+      close: () => {
+        sockets.forEach(ws => ws.close())
+        return closeServer()
+      },
     })
   })
 })

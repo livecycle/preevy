@@ -30,7 +30,6 @@ export const connectSshClient = async (
   const sftp = sftpClient(ssh)
 
   const self = {
-    mkdir: mkdir(exec),
     sftp,
     exec,
     forwardOutStreamLocal: (

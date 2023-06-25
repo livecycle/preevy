@@ -26,6 +26,7 @@ export { sshKeysStore } from './state'
 export { connectSshClient, generateSshKeyPair } from './ssh'
 export {
   ProcessError,
+  spawnPromise,
   childProcessPromise,
   childProcessStdoutPromise,
   orderedOutput,
