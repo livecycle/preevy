@@ -2,31 +2,17 @@ import * as k8s from '@kubernetes/client-node'
 import { readable as isReadableStream } from 'is-stream'
 import { ProcessOutputBuffers } from '@preevy/core'
 import { Writable } from 'stream'
-import { ReadableStreamBuffer } from 'stream-buffers'
-import { BaseExecOpts } from './common'
+import { BaseExecOpts, ExecError, ReadableBufferStream, callbackWritableStream } from './common'
 
-const readbleStreamBufferFrom = (source?: string | Buffer) => {
-  const result = new ReadableStreamBuffer()
-  if (source !== undefined) {
-    result.put(source)
-  }
-  return result
-}
-
-const callbackWritable = (onWrite: (chunk: Buffer) => void) => new Writable({
-  write: (chunk: unknown, _encoding: BufferEncoding, callback: (error?: Error | null | undefined) => void) => {
-    onWrite(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string))
-    setImmediate(callback)
-  },
-})
-
-export class ExecError extends Error {
+export class WebSocketExecError extends ExecError {
   constructor(
-    readonly status: k8s.V1Status,
     readonly command: string[],
+    readonly status: k8s.V1Status,
     readonly output: ProcessOutputBuffers,
+    readonly code?: number
   ) {
-    super(status.message)
+    const message = status.message ?? code ? `Command ended with code ${code}` : 'WebSocket error'
+    super(command, message, output, code)
   }
 }
 
@@ -35,9 +21,10 @@ const extractCodeFromStatus = (status: k8s.V1Status) => {
   return Number.isNaN(n) ? undefined : n
 }
 
-// DO NOT USE with stdin:
+// DO NOT USE with stdin: WebSocket implementation of exec does not call the status callback when stdin is specified
 // https://github.com/kubernetes/kubernetes/issues/89899
 // https://github.com/kubernetes-client/javascript/issues/465
+// Leaving stdin here, pending for a fix in the API
 export default ({ k8sExec, namespace }: { k8sExec: k8s.Exec; namespace: string }) => {
   async function exec(opts: BaseExecOpts & { stdout: Writable; stderr: Writable }): Promise<{ code: number }>
   async function exec(opts: BaseExecOpts): Promise<{ code: number; output: ProcessOutputBuffers }>
@@ -46,9 +33,9 @@ export default ({ k8sExec, namespace }: { k8sExec: k8s.Exec; namespace: string }
   ): Promise<{ code: number; output?: ProcessOutputBuffers }> {
     const { pod, container, command } = opts
     const output: ProcessOutputBuffers = []
-    const stdout = opts.stdout ?? callbackWritable(data => output.push({ data, stream: 'stdout' }))
-    const stderr = opts.stderr ?? callbackWritable(data => output.push({ data, stream: 'stderr' }))
-    const stdin = isReadableStream(opts.stdin) ? opts.stdin : readbleStreamBufferFrom(opts.stdin)
+    const stdout = opts.stdout ?? callbackWritableStream(data => output.push({ data, stream: 'stdout' }))
+    const stderr = opts.stderr ?? callbackWritableStream(data => output.push({ data, stream: 'stderr' }))
+    const stdin = isReadableStream(opts.stdin) ? opts.stdin : new ReadableBufferStream(opts.stdin)
 
     return await new Promise((resolve, reject) => {
       void k8sExec.exec(
@@ -65,12 +52,7 @@ export default ({ k8sExec, namespace }: { k8sExec: k8s.Exec; namespace: string }
             resolve({ code: 0, output })
             return
           }
-          const code = extractCodeFromStatus(status)
-          if (code !== undefined) {
-            resolve({ code, output })
-            return
-          }
-          reject(new ExecError(status, command, output))
+          reject(new WebSocketExecError(command, status, output, extractCodeFromStatus(status)))
         },
       )
     })

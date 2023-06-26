@@ -143,7 +143,7 @@ const up = async ({
 
   const { exec } = connection
 
-  const composeTunnelAgentUser = (
+  const user = (
     await exec('echo "$(id -u):$(stat -c %g /var/run/docker.sock)"')
   ).stdout.trim()
 
@@ -153,7 +153,7 @@ const up = async ({
     urlSuffix: envId,
     sshPrivateKeyPath: path.join(remoteDir, sshPrivateKeyFile.remote),
     knownServerPublicKeyPath: path.join(remoteDir, knownServerPublicKey.remote),
-    user: composeTunnelAgentUser,
+    user,
   }, fixedModel)
 
   const modelStr = yaml.stringify(remoteModel)
@@ -163,7 +163,7 @@ const up = async ({
   const withDockerSocket = wrapWithDockerSocket({ connection, log })
 
   try {
-    await exec(`mkdir -p "${remoteDir}" && chown $USER "${remoteDir}"`, { asRoot: true })
+    await exec(`mkdir -p "${remoteDir}" && chown "${user}" "${remoteDir}"`, { asRoot: true })
 
     log.debug('Files to copy', filesToCopy)
 

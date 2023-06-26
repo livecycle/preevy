@@ -40,11 +40,19 @@ export class ProcessError extends Error {
     readonly signal: NodeJS.Signals | null,
     readonly output?: ProcessOutputBuffers,
   ) {
-    const message = [
-      `process \`${process.spawnargs.join(' ')}\` exited with code ${code}${signal ? `and signal ${signal}` : ''}`,
+    super(ProcessError.calcMessage(process.spawnargs, code, signal, output))
+  }
+
+  static calcMessage(
+    command: string[],
+    code: number | null,
+    signal: NodeJS.Signals | null,
+    output?: ProcessOutputBuffers,
+  ) {
+    return [
+      `command \`${command.join(' ')}\` exited with code ${code}${signal ? `and signal ${signal}` : ''}`,
       output ? orderedOutput(output).output().toString('utf-8') : undefined,
     ].filter(Boolean).join(': ')
-    super(message)
   }
 }
 

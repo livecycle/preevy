@@ -6,12 +6,13 @@ import { orderedOutput, outputFromStdio } from '../../child-process'
 export const execCommand = (
   ssh: ssh2.Client,
 ): CommandExecuter => async (commandArg, options = {}) => {
-  const commandStr = Array.isArray(commandArg) ? commandArg.join(' ') : commandArg
-  const fullCommandStr = commandWith(commandStr, options)
+  let command = Array.isArray(commandArg) ? commandArg.join(' ') : commandArg
+  command = commandWith(command, options)
+  command = options.asRoot ? `sudo ${command}` : command
   const stdin = options?.stdin
 
   const result = await new Promise<ExecResult>((resolve, reject) => {
-    ssh.exec(fullCommandStr, {}, (err, channel) => {
+    ssh.exec(command, {}, (err, channel) => {
       if (err) {
         reject(err)
         return
@@ -41,5 +42,5 @@ export const execCommand = (
     })
   })
 
-  return options.ignoreExitCode ? result : checkResult(commandStr, result)
+  return options.ignoreExitCode ? result : checkResult(command, result)
 }

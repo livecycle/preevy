@@ -36,6 +36,7 @@ const portForward = (
     }
     sockets.add(ws)
     ws.on('close', () => { sockets.delete(ws) })
+    ws.on('error', err => { log.debug('websocket error', err) }) // prevent unhandled rejection
   })
 
   server.on('error', reject)

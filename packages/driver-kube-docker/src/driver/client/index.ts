@@ -8,7 +8,7 @@ import { asyncToArray, asyncFirst } from 'iter-tools-es'
 import { maxBy } from 'lodash'
 import { inspect } from 'util'
 import { Logger } from '@preevy/core'
-import createBaseExec, { BaseExecOpts } from './exec'
+import baseExec from './exec'
 import dynamicApi, { ApplyFilter, applyStrategies, compositeApplyFilter } from './dynamic'
 import basePortForward from './port-forward'
 import k8sHelpers from './k8s-helpers'
@@ -25,15 +25,10 @@ import {
   extractName,
   isDockerHostDeployment,
   ANNOTATIONS,
-  extractInstance,
 } from './metadata'
 import { Package } from './common'
 
 const DOCKER_IMAGE = 'docker:24-dind'
-
-export type ExecOpts = Omit<BaseExecOpts, 'pod' | 'container'> & {
-  deployment: k8s.V1Deployment
-}
 
 export const loadKubeConfig = (kubeconfig?: string) => {
   const kc = new k8s.KubeConfig()
@@ -91,7 +86,7 @@ const kubeClient = ({ log, namespace, kc, profileId, template, package: packageD
     return yaml.parseAllDocuments(specsStr).map(d => d.toJS() as k8s.KubernetesObject)
   }
 
-  const templateHash = async ({ instance }: { instance: string }) => `sha1:${createHash('sha1').update(
+  const calcTemplateHash = async ({ instance }: { instance: string }) => `sha1:${createHash('sha1').update(
     stringify.stableStringify(await renderTemplate({ instance }))
   ).digest('base64')}`
 
@@ -123,7 +118,7 @@ const kubeClient = ({ log, namespace, kc, profileId, template, package: packageD
           createdAt: new Date(),
           instance,
           package: await packageDetails,
-          templateHash: await templateHash({ instance }),
+          templateHash: await calcTemplateHash({ instance }),
         })
       ),
       strategy: serverSideApply
@@ -182,32 +177,16 @@ const kubeClient = ({ log, namespace, kc, profileId, template, package: packageD
     return await basePortForward({ namespace, forward, log })(podName, targetPort, listenAddress)
   }
 
-  // const baseExec = createBaseExec({ k8sExec: new k8s.Exec(kc), namespace })
-
-  // async function exec(opts: ExecOpts & { stdout: Writable; stderr: Writable }): Promise<{ code: number }>
-  // async function exec(opts: ExecOpts): Promise<{ code: number; output: ProcessOutputBuffers }>
-  // async function exec(
-  //   { deployment, ...opts }: ExecOpts & { stdout?: Writable; stderr?: Writable },
-  // ): Promise<{ code: number; output?: ProcessOutputBuffers }> {
-  //   const pod = await helpers.findReadyPodForDeployment(deployment)
-  //   return baseExec({
-  //     pod: extractName(pod),
-  //     container: (pod.spec?.containers[0] as k8s.V1Container).name,
-  //     ...opts,
-  //   })
-  // }
-
   return {
     findMostRecentDeployment,
     listProfileDeployments: () => helpers.listDeployments({ ...profileSelector({ profileId }) }),
-    exec: createBaseExec({ k8sExec: new k8s.Exec(kc), kubeconfig, namespace }),
+    exec: baseExec({ k8sExec: new k8s.Exec(kc), kubeconfig, namespace }),
     findReadyPodForDeployment: helpers.findReadyPodForDeployment,
     createEnv,
     deleteEnv,
     portForward,
-    matchesCurrentTemplate: async (
-      d: k8s.V1Deployment,
-    ) => extractTemplateHash(d) === await templateHash({ instance: extractInstance(d) }),
+    extractTemplateHash,
+    calcTemplateHash,
   }
 }
 

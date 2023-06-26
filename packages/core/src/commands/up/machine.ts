@@ -90,7 +90,7 @@ export const ensureCustomizedMachine = async ({
 
   let connection = await withSpinner(
     () => connectionPromise,
-    { text: 'Connecting to machine' },
+    { text: `Connecting to machine at ${machine.locationDescription}` },
   )
 
   if (installed) {

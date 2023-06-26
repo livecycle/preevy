@@ -20,7 +20,7 @@ import {
   machineResourceType,
   Logger,
 } from '@preevy/core'
-import { Client, client, REGIONS } from './client'
+import { Client, client as createClient, REGIONS } from './client'
 import { CUSTOMIZE_BARE_MACHINE } from './scripts'
 import { AzureCustomTags, extractResourceGroupNameFromId } from './vm-creation-utils'
 
@@ -257,7 +257,7 @@ const factory: MachineDriverFactory<
   SshMachine,
   ResourceType
 > = ({ flags: f, profile: { id: profileId }, store, log, debug }) => machineDriver({
-  client: client({
+  client: createClient({
     ...contextFromFlags(f),
     profileId,
   }),
@@ -272,7 +272,7 @@ const machineCreationFactory: MachineCreationDriverFactory<
 > = ({ flags: f, profile: { id: profileId }, store, log, debug }) => {
   const c = machineCreationContextFromFlags(f)
   return machineCreationDriver({
-    client: client({
+    client: createClient({
       ...c,
       profileId,
     }),

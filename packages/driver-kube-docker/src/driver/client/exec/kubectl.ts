@@ -1,33 +1,25 @@
 import { readable as isReadableStream } from 'is-stream'
 import { ProcessError, ProcessOutputBuffers } from '@preevy/core'
 import { Readable, Writable } from 'stream'
-import { spawn } from 'child_process'
-import { BaseExecOpts } from './common'
+import { ChildProcess, StdioOptions, spawn } from 'child_process'
+import { BaseExecOpts, ExecError, ReadableBufferStream, callbackWritableStream } from './common'
 
-class ReadableBufferStream extends Readable {
-  constructor(readonly buffer: Buffer | string | undefined) {
-    super()
-  }
+const isStreamWithFileDescriptor = (s: unknown) => typeof (s as { fd: number }).fd === 'number'
 
-  isRead = false
-
-  // eslint-disable-next-line no-underscore-dangle
-  _read(): void {
-    if (this.isRead || !this.buffer) {
-      this.push(null)
-    } else {
-      this.push(Buffer.isBuffer(this.buffer) ? this.buffer : Buffer.from(this.buffer as string))
-    }
-    this.isRead = true
+export class ProcessExecError extends ExecError {
+  constructor(
+    readonly command: string[],
+    readonly process: ChildProcess,
+    readonly output: ProcessOutputBuffers,
+  ) {
+    super(
+      command,
+      ProcessError.calcMessage(command, process.exitCode, process.signalCode, output),
+      output,
+      process.exitCode ?? undefined,
+    )
   }
 }
-
-const callbackWritableStream = (onWrite: (chunk: Buffer) => void) => new Writable({
-  write: (chunk: unknown, _encoding: BufferEncoding, callback: (error?: Error | null | undefined) => void) => {
-    onWrite(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string))
-    setImmediate(callback)
-  },
-})
 
 export default ({ kubeconfig, namespace }: { kubeconfig?: string; namespace: string }) => {
   async function exec(opts: BaseExecOpts & { stdout: Writable; stderr: Writable }): Promise<{ code: number }>
@@ -40,6 +32,12 @@ export default ({ kubeconfig, namespace }: { kubeconfig?: string; namespace: str
     const stdout = opts.stdout ?? callbackWritableStream(data => output.push({ data, stream: 'stdout' }))
     const stderr = opts.stderr ?? callbackWritableStream(data => output.push({ data, stream: 'stderr' }))
     const stdin = isReadableStream(opts.stdin) ? opts.stdin : new ReadableBufferStream(opts.stdin)
+
+    const stdio = [
+      isStreamWithFileDescriptor(stdin) ? stdin : 'pipe',
+      isStreamWithFileDescriptor(stdout) ? stdout : 'pipe',
+      isStreamWithFileDescriptor(stderr) ? stderr : 'pipe',
+    ] as StdioOptions
 
     const kubectlProcess = spawn(
       'kubectl',
@@ -55,21 +53,26 @@ export default ({ kubeconfig, namespace }: { kubeconfig?: string; namespace: str
         '--',
         ...command,
       ].filter(Boolean) as string[],
-      { stdio: 'pipe' },
+      { stdio },
     )
 
-    stdin.pipe(kubectlProcess.stdin)
-    kubectlProcess.stdout.pipe(stdout)
-    kubectlProcess.stderr.pipe(stderr)
-
-    console.log('spawn', kubectlProcess)
+    if (stdio[0] === 'pipe') {
+      stdin.pipe(kubectlProcess.stdin as Writable)
+    }
+    if (stdio[1] === 'pipe') {
+      (kubectlProcess.stdout as Readable).pipe(stdout)
+    }
+    if (stdio[2] === 'pipe') {
+      (kubectlProcess.stderr as Readable).pipe(stderr)
+    }
 
     return await new Promise((resolve, reject) => {
       kubectlProcess.on('exit', (code, signal) => {
         if (code || signal) {
-          throw new ProcessError(kubectlProcess, code, signal, output)
+          reject(new ProcessExecError(command, kubectlProcess, output))
+          return
         }
-        resolve({ code: signal ? 1 : code as number, output })
+        resolve({ code: 0, output })
       })
       kubectlProcess.on('error', reject)
     })

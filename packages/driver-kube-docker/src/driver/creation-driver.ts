@@ -43,10 +43,14 @@ const machineCreationDriver = (
       return undefined
     }
 
+    const deploymentHash = client.extractTemplateHash(deployment)
+    const machine = machineFromDeployment(deployment)
+    const templateHash = await client.calcTemplateHash({ instance: machine.providerId })
+
     return {
       ...machineFromDeployment(deployment),
-      specDiff: await client.matchesCurrentTemplate(deployment)
-        ? [{ name: 'template', old: 'old', new: 'current' }]
+      specDiff: deploymentHash !== templateHash
+        ? [{ name: 'template', old: deploymentHash, new: templateHash }]
         : [],
     }
   },
