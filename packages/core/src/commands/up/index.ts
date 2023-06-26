@@ -61,7 +61,7 @@ const serviceLinkEnvVars = (
 
 const up = async ({
   clientId,
-  baseUrl,
+  rootUrl,
   debug,
   machineDriver,
   machineCreationDriver,
@@ -80,7 +80,7 @@ const up = async ({
   skipUnchangedFiles,
 }: {
   clientId: string
-  baseUrl: string
+  rootUrl: string
   debug: boolean
   machineDriver: MachineDriver
   machineCreationDriver: MachineCreationDriver
@@ -107,7 +107,7 @@ const up = async ({
   // We start by getting the user model without injecting Preevy's environment
   // variables (e.g. `PREEVY_BASE_URI_BACKEND_3000`) so we can have the list of services
   // required to create said variables
-  const tunnelUrlForService = tunnelUrlForEnv({ projectName, envId, baseUrl: new URL(baseUrl), clientId })
+  const tunnelUrlForService = tunnelUrlForEnv({ projectName, envId, rootUrl: new URL(rootUrl), clientId })
   const composeEnv = { ...serviceLinkEnvVars(userModel, tunnelUrlForService) }
 
   const composeFiles = await resolveComposeFiles({

@@ -1,6 +1,6 @@
 import { baseSshClient, HelloResponse, SshClientOpts } from './base-client'
 
-export type ConnectionCheckResult = (Pick<HelloResponse, 'clientId' | 'baseUrl'> & { hostKey: Buffer }) | {
+export type ConnectionCheckResult = (Pick<HelloResponse, 'clientId' | 'rootUrl'> & { hostKey: Buffer }) | {
   error: Error
 } | {
   unverifiedHostKey: Buffer
@@ -23,7 +23,7 @@ export const checkConnection = ({
     ({ ssh, execHello }) => {
       execHello()
         .then(
-          ({ clientId, baseUrl }) => resolve({ clientId, hostKey, baseUrl }),
+          ({ clientId, rootUrl }) => resolve({ clientId, hostKey, rootUrl }),
           err => resolve({ error: err })
         )
         .finally(() => ssh.end())

@@ -44,8 +44,13 @@ export const parseSshUrl = (s: string): Pick<SshConnectionConfig, 'hostname' | '
 export type HelloResponse = {
   clientId: string
   tunnels: Record<string, string>
-  // TODO: baseUrl should be a string in the next deployment of the tunnel service, this is for backwards compat
-  baseUrl: string | { hostname: string; port: string; protocol: string }
+  rootUrl: string
+}
+
+// TODO: temporary, baseUrl should be a replaced with rootUrl after the next deployment of the tunnel service
+type LegacyBaseUrl = { hostname: string; port: string; protocol: string }
+type LegacyHelloResponse = Omit<HelloResponse, 'rootUrl'> & {
+  baseUrl: LegacyBaseUrl
 }
 
 const connectTls = (
@@ -93,10 +98,18 @@ export const baseSshClient = async (
       stream.stdout.on('data', (data: Buffer) => {
         log.debug('got data %j', data?.toString())
         buf = Buffer.concat([buf, data])
-        const obj = tryParseJson(buf.toString()) as HelloResponse | undefined
+        const obj = tryParseJson(buf.toString()) as HelloResponse | LegacyHelloResponse | undefined
         if (obj) {
           log.debug('got hello response %j', obj)
-          resolve(obj)
+          resolve({
+            clientId: obj.clientId,
+            tunnels: obj.tunnels,
+            // TODO: temporary, baseUrl should be a replaced with rootUrl
+            //  after the next deployment of the tunnel service
+            rootUrl: 'rootUrl' in obj
+              ? obj.rootUrl
+              : new URL(`${obj.baseUrl.protocol}//${obj.baseUrl.hostname}:${obj.baseUrl.port}`).toString(),
+          })
           stream.close()
         }
       })

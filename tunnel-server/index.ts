@@ -46,10 +46,10 @@ const tunnelName = (clientId: string, remotePath: string) => {
 }
 
 const tunnelUrl = (
-  baseUrl: URL,
+  rootUrl: URL,
   clientId: string,
   tunnel: string,
-) => replaceHostname(baseUrl, `${tunnelName(clientId, tunnel)}.${baseUrl.hostname}`).toString()
+) => replaceHostname(rootUrl, `${tunnelName(clientId, tunnel)}.${rootUrl.hostname}`).toString()
 
 const sshServer = createSshServer({
   log: sshLogger,
@@ -69,7 +69,9 @@ const sshServer = createSshServer({
   },
   onHello: (clientId, tunnels) => JSON.stringify({
     clientId,
-    baseUrl: BASE_URL.toString(),
+    // TODO: backwards compat, remove when we drop support for CLI v0.0.34
+    baseUrl: { hostname: BASE_URL.hostname, port: BASE_URL.port, protocol: BASE_URL.protocol },
+    rootUrl: BASE_URL.toString(),
     tunnels: Object.fromEntries(tunnels.map(tunnel => [
       tunnel,
       tunnelUrl(BASE_URL, clientId, tunnel),

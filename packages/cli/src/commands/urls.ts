@@ -44,7 +44,7 @@ export default class Urls extends ProfileCommand<typeof Urls> {
       insecureSkipVerify: flags['insecure-skip-verify'],
     }
 
-    const { clientId, baseUrl } = await tunnelServerHello({
+    const { clientId, rootUrl } = await tunnelServerHello({
       tunnelOpts,
       knownServerPublicKeys: pStore.knownServerPublicKeys,
       tunnelingKey: await pStore.getTunnelingKey(),
@@ -52,7 +52,7 @@ export default class Urls extends ProfileCommand<typeof Urls> {
     })
 
     const flatTunnels = await commands.urls({
-      baseUrl,
+      rootUrl,
       clientId,
       envId,
       projectName,

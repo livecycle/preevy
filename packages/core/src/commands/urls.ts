@@ -1,14 +1,14 @@
 import { queryTunnels } from '../compose-tunnel-agent-client'
 import { flattenTunnels, tunnelUrlForEnv } from '../tunneling'
 
-export const urls = async ({ envId, baseUrl, clientId, projectName, serviceAndPort }: {
+export const urls = async ({ envId, rootUrl, clientId, projectName, serviceAndPort }: {
   envId: string
   projectName: string
-  baseUrl: string
+  rootUrl: string
   clientId: string
   serviceAndPort?: { service: string; port?: number }
 }) => {
-  const tunnelUrlForService = tunnelUrlForEnv({ projectName, envId, baseUrl: new URL(baseUrl), clientId })
+  const tunnelUrlForService = tunnelUrlForEnv({ projectName, envId, rootUrl: new URL(rootUrl), clientId })
 
   const { tunnels } = await queryTunnels({ tunnelUrlForService, retryOpts: { retries: 2 } })
 
