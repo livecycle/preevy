@@ -49,7 +49,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       insecureSkipVerify: flags['insecure-skip-verify'],
     }
 
-    const { hostKey, clientId, baseUrl } = await tunnelServerHello({
+    const { hostKey, clientId, rootUrl } = await tunnelServerHello({
       tunnelingKey,
       knownServerPublicKeys: pStore.knownServerPublicKeys,
       tunnelOpts,
@@ -62,7 +62,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
     const { machine, tunnels, envId } = await commands.up({
       clientId,
-      baseUrl,
+      rootUrl,
       userSpecifiedServices: restArgs,
       debug: flags.debug,
       machineDriver: driver,

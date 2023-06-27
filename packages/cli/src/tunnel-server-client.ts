@@ -37,7 +37,7 @@ export const tunnelServerHello = async ({ tunnelOpts, log, tunnelingKey, knownSe
   }
 
   return {
-    ...helloResponse as { baseUrl: string; clientId: string; hostKey: Buffer },
+    ...helloResponse,
     tunnelingKey,
   }
 }

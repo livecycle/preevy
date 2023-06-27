@@ -51,7 +51,7 @@ export const performTunnelConnectionCheck = async ({
   username: string
   keysState: ProfileStore['knownServerPublicKeys']
   confirmHostFingerprint: HostKeySignatureConfirmer
-}): Promise<false | { clientId: string; baseUrl: string; hostKey: Buffer }> => {
+}): Promise<false | { clientId: string; rootUrl: string; hostKey: Buffer }> => {
   const parsed = parseSshUrl(tunnelOpts.url)
 
   const connectionConfigBase = {
@@ -62,15 +62,7 @@ export const performTunnelConnectionCheck = async ({
     insecureSkipVerify: tunnelOpts.insecureSkipVerify,
   }
 
-  // TODO: baseUrl should be a string in the next deployment of the tunnel service, this is for backwards compat
-  const normalizeBaseUrl = (baseUrl: string | { hostname: string; port: string; protocol: string }) => {
-    if (typeof baseUrl === 'string') {
-      return baseUrl
-    }
-    return new URL(`${baseUrl.protocol}//${baseUrl.hostname}:${baseUrl.port}`).toString()
-  }
-
-  const check = async (): Promise<{ hostKey: Buffer; clientId: string; baseUrl: string } | false> => {
+  const check = async (): Promise<{ hostKey: Buffer; clientId: string; rootUrl: string } | false> => {
     const knownServerPublicKeys = await keysState.read(parsed.hostname, parsed.port)
     const connectionConfig = { ...connectionConfigBase, knownServerPublicKeys }
 
@@ -82,7 +74,7 @@ export const performTunnelConnectionCheck = async ({
       if (!knownServerPublicKeys.includes(result.hostKey)) { // TODO: check if this is correct
         await keysState.write(parsed.hostname, parsed.port, result.hostKey)
       }
-      return { hostKey: result.hostKey, clientId: result.clientId, baseUrl: normalizeBaseUrl(result.baseUrl) }
+      return { hostKey: result.hostKey, clientId: result.clientId, rootUrl: result.rootUrl }
     }
 
     if ('error' in result) {
@@ -111,16 +103,16 @@ export const performTunnelConnectionCheck = async ({
 export const createTunnelingKey = async () => Buffer.from((await generateSshKeyPair()).privateKey)
 
 export const tunnelUrlForEnv = (
-  { projectName, envId, baseUrl, clientId }: {
+  { projectName, envId, rootUrl, clientId }: {
     projectName: string
     envId: string
-    baseUrl: URL
+    rootUrl: URL
     clientId: string
   }
 ) => {
   const resolver = tunnelNameResolver({ userDefinedSuffix: envId })
   return ({ name: serviceName, port: servicePort }: { name: string; port: number }) => {
     const { tunnel } = resolver({ name: serviceName, project: projectName, port: servicePort })
-    return replaceHostname(baseUrl, `${tunnel}-${clientId}.${baseUrl.hostname}`).toString()
+    return replaceHostname(rootUrl, `${tunnel}-${clientId}.${rootUrl.hostname}`).toString()
   }
 }
