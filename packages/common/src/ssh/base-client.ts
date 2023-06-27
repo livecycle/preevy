@@ -47,12 +47,6 @@ export type HelloResponse = {
   rootUrl: string
 }
 
-// TODO: temporary, baseUrl should be a replaced with rootUrl after the next deployment of the tunnel service
-type LegacyBaseUrl = { hostname: string; port: string; protocol: string }
-type LegacyHelloResponse = Omit<HelloResponse, 'rootUrl'> & {
-  baseUrl: LegacyBaseUrl
-}
-
 const connectTls = (
   { hostname: host, port, tlsServerName, insecureSkipVerify }: Pick<SshTlsConnectionConfig, 'hostname' | 'port' | 'tlsServerName' | 'insecureSkipVerify'>
 ) => new Promise<TLSSocket>((resolve, reject) => {
@@ -98,18 +92,10 @@ export const baseSshClient = async (
       stream.stdout.on('data', (data: Buffer) => {
         log.debug('got data %j', data?.toString())
         buf = Buffer.concat([buf, data])
-        const obj = tryParseJson(buf.toString()) as HelloResponse | LegacyHelloResponse | undefined
+        const obj = tryParseJson(buf.toString()) as HelloResponse | undefined
         if (obj) {
           log.debug('got hello response %j', obj)
-          resolve({
-            clientId: obj.clientId,
-            tunnels: obj.tunnels,
-            // TODO: temporary, baseUrl should be a replaced with rootUrl
-            //  after the next deployment of the tunnel service
-            rootUrl: 'rootUrl' in obj
-              ? obj.rootUrl
-              : new URL(`${obj.baseUrl.protocol}//${obj.baseUrl.hostname}:${obj.baseUrl.port}`).toString(),
-          })
+          resolve(obj)
           stream.close()
         }
       })

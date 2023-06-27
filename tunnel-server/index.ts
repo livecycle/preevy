@@ -69,7 +69,7 @@ const sshServer = createSshServer({
   },
   onHello: (clientId, tunnels) => JSON.stringify({
     clientId,
-    // TODO: backwards compat, remove when we drop support for CLI v0.0.34
+    // TODO: backwards compat, remove when we drop support for CLI v0.0.35
     baseUrl: { hostname: BASE_URL.hostname, port: BASE_URL.port, protocol: BASE_URL.protocol },
     rootUrl: BASE_URL.toString(),
     tunnels: Object.fromEntries(tunnels.map(tunnel => [
