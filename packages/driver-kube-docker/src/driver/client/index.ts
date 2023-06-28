@@ -28,8 +28,6 @@ import {
 } from './metadata'
 import { Package } from './common'
 
-const DOCKER_IMAGE = 'docker:24-dind'
-
 export const loadKubeConfig = (kubeconfig?: string) => {
   const kc = new k8s.KubeConfig()
   if (kubeconfig) {
@@ -81,7 +79,6 @@ const kubeClient = ({ log, namespace, kc, profileId, template, package: packageD
     const specsStr = nunjucks.renderString((await template).toString('utf-8'), {
       id: instance,
       namespace,
-      dockerImage: DOCKER_IMAGE,
     })
     return yaml.parseAllDocuments(specsStr).map(d => d.toJS() as k8s.KubernetesObject)
   }

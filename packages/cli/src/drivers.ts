@@ -1,4 +1,4 @@
-import { filter, map, mapKeys } from 'lodash'
+import { map, mapKeys } from 'lodash'
 import lightsail from '@preevy/driver-lightsail'
 import gce from '@preevy/driver-gce'
 import azure from '@preevy/driver-azure'

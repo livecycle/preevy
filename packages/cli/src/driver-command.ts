@@ -1,7 +1,7 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
 import { MachineDriver, profileStore } from '@preevy/core'
 import { BaseCommand } from '@preevy/cli-common'
-import { mapValues, pickBy } from 'lodash'
+import { pickBy } from 'lodash'
 import ProfileCommand from './profile-command'
 import { DriverFlags, DriverName, flagsForAllDrivers, machineDrivers, removeDriverPrefix } from './drivers'
 

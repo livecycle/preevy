@@ -72,11 +72,15 @@ You can read more about the story and philosophy behind Preevy [here](https://pr
 
 To start using the Preevy CLI you will need:
 
-- A local Cloud provider configuration context:
-  - In AWS, it could be by using `aws configure`
-  - In GCP, it could be by using `gcloud auth application-default login`
-  - In Azure, it could be by using `az login`
 - A Docker-Compose application (examples can be found [here](https://github.com/docker/awesome-compose))
+- A cloud provider for provisioning VMs (AWS/GCP/Azure), or a Kubernetes cluster (local, remote or managed).
+
+*For provisioning a VM*, configure your provider:
+- In AWS, it could be by using `aws configure`
+- In GCP, it could be by using `gcloud auth application-default login`
+- In Azure, it could be by using `az login`
+
+*For provisioning a Kubernetes Pod*, make sure a kubeconfig file exists and that you can run `kubectl` commands locally (e.g, `kubectl get pod`)
 
 Running Preevy:
 
@@ -126,7 +130,7 @@ In case you find a security issue or have something you would like to discuss re
 
 ### Notice on preview environments exposure
 
-VMs are not exposed directly, rather via a [tunnel](https://livecycle.io/blogs/preevy-proxy-service-2/) created by the tunneling server.
+Services on provisioned environments are not exposed directly, but rather via a [tunnel](https://livecycle.io/blogs/preevy-proxy-service-2/) created by the tunneling server.
 
 Every Compose service is exposed individually with a generated URL in the following format:
 `https://{service}-{[port]}-{env-id}-{client-id}.{tunnel-server-domain}`. If the service exposes a single port, the `port` part is omitted. See [here](https://livecycle.io/blogs/preevy-proxy-service-1/) for a more detailed explanation.

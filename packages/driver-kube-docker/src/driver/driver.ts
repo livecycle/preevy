@@ -111,6 +111,7 @@ export const flags = {
   kubeconfig: Flags.string({
     description: 'Path to kubeconfig file (will load config from defaults if not specified)',
     required: false,
+    env: 'KUBECONFIG',
   }),
   template: Flags.string({
     description: 'Path to custom resources template file (will use default template if not specified)',

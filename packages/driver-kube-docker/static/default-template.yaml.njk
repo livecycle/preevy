@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
       - name: docker
-        image: {{ dockerImage }} # docker:24-dind
+        image: docker:24-dind
         securityContext:
           privileged: true
         command: ["dockerd", "--host=tcp://0.0.0.0:2375", "--host=unix:///var/run/docker.sock"]
