@@ -15,7 +15,7 @@ class LoadComposeFileError extends Error {
 
 class DockerIsNotInstalled extends Error {
   constructor(readonly cause: Error) {
-    super(`Failed to run 'docker compose': ${cause.message}`)
+    super(`Failed to run 'docker compose', is Docker installed? (${cause.message})`)
   }
 }
 

@@ -5,7 +5,7 @@ import { telemetryEmitter } from '@preevy/core'
 const wrappedHook: OclifHook<'init'> = async function wrappedHook(...args) {
   try {
     const { id } = args[0]
-    if (id === 'help' || id === 'version' || id === 'init') {
+    if (id === 'version' || id === 'init') {
       return
     }
     await initHook.call(this, ...args)
