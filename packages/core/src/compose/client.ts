@@ -56,7 +56,8 @@ const composeClient = (
   return {
     getModel,
     getModelOrError: async () => getModel().catch(e => {
-      if (e instanceof ProcessError && (e.code === DOCKER_COMPOSE_NO_CONFIGURATION_FILE_ERROR_CODE)) {
+      if (e instanceof DockerIsNotInstalled
+          || (e instanceof ProcessError && (e.code === DOCKER_COMPOSE_NO_CONFIGURATION_FILE_ERROR_CODE))) {
         return new LoadComposeFileError(e)
       }
       throw e
