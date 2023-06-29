@@ -67,8 +67,8 @@
     "hooks": {
       "init": [
         "./dist/hooks/init/sync-logging",
-        "./dist/hooks/init/load-plugins",
-        "./dist/hooks/init/telemetry"
+        "./dist/hooks/init/telemetry",
+        "./dist/hooks/init/load-plugins"
       ],
       "prerun": [
         "./dist/hooks/prerun/telemetry"

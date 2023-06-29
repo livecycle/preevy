@@ -1,10 +1,11 @@
-import fs from 'fs'
+import fs from 'fs/promises'
 import os from 'os'
 import path from 'path'
 import crypto from 'crypto'
 import { execPromiseStdout } from '../child-process'
+import { localFs } from '../store'
 
-const readFileOrUndefined = (file: string) => fs.promises.readFile(file, 'utf-8').catch(() => undefined)
+const readFileOrUndefined = (file: string) => fs.readFile(file, 'utf-8').catch(() => undefined)
 
 const macosMachineId = async () => {
   const ioregOutput = await execPromiseStdout('ioreg -d2 -c IOPlatformExpertDevice').catch(() => '')
@@ -33,12 +34,13 @@ const calcMachineId = async () => {
 }
 
 export const memoizedMachineId = async (dataDir: string) => {
+  const dir = localFs(dataDir)
   const filename = path.join(dataDir, 'machine-id')
   const storedMachineId = await readFileOrUndefined(filename)
   if (storedMachineId) {
     return storedMachineId
   }
   const machineId = await calcMachineId()
-  await fs.promises.writeFile(filename, machineId, 'utf-8')
+  await dir.write(filename, machineId)
   return machineId
 }

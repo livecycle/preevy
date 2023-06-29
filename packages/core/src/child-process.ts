@@ -54,6 +54,7 @@ export function childProcessPromise(
 export function childProcessPromise(p: ChildProcess, opts?: { captureOutput?: boolean }): Promise<ChildProcess> {
   return new Promise<ChildProcess>((resolve, reject) => {
     const output = opts?.captureOutput ? outputFromProcess(p) : undefined
+    p.on('error', reject)
     p.on('exit', (code, signal) => {
       if (code !== 0) {
         reject(new ProcessError(p, code, signal, output))
@@ -71,7 +72,7 @@ export const childProcessStdoutPromise = async (
   return orderedOutput(output).stdout().toString('utf-8').trim()
 }
 
-export const spawnPromise = (
+export const spawnPromise = async (
   ...args: Parameters<Spawn>
 ) => childProcessPromise(childProcess.spawn(...args))
 

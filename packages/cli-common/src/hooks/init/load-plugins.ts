@@ -18,7 +18,6 @@ export const initHook: OclifHook<'init'> = async function hook({ config, id, arg
     context: undefined,
     argv,
   } as const).parse()
-
   const composeFiles = await resolveComposeFiles({
     userSpecifiedFiles: flags.file,
     systemFiles: flags['system-compose-file'],
