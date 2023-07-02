@@ -12,6 +12,7 @@ import { tunnelsGauge } from './src/metrics'
 import { runMetricsServer } from './src/metrics'
 import { numberFromEnv, requiredEnv } from './src/env'
 import { replaceHostname } from './src/url'
+import { createPublicKey } from 'crypto'
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
@@ -58,7 +59,7 @@ const sshServer = createSshServer({
   onPipeCreated: async ({clientId, remotePath, localSocketPath, publicKey, access}) => {
     const key = tunnelName(clientId, remotePath);
     sshLogger.debug('creating tunnel %s for localSocket %s', key, localSocketPath)
-    await envStore.set(key, { target: localSocketPath, clientId, publicKey, access })
+    await envStore.set(key, { target: localSocketPath, clientId, publicKey: createPublicKey(publicKey.getPublicPEM()), access })
     tunnelsGauge.inc({clientId})
   },
   onPipeDestroyed: async ({clientId, remotePath}) => {

@@ -16,7 +16,7 @@ import { remoteProjectDir } from '../../remote-files'
 import { Logger } from '../../log'
 import { Tunnel, tunnelUrlForEnv } from '../../tunneling'
 import { FileToCopy, uploadWithSpinner } from '../../upload-files'
-import { withUserCredentials } from '../../credentials'
+import { getUserCredentials, jwtGenerator, addBasicAuthCredentials } from '../../credentials'
 
 const createCopiedFileInDataDir = (
   { projectLocalDataDir, filesToCopy } : {
@@ -176,7 +176,7 @@ const up = async ({
     const composeArgs = calcComposeArgs({ userSpecifiedServices, debug, cwd })
     log.debug('Running compose up with args: ', composeArgs)
     await withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit' }))
-
+    const credentials = await getUserCredentials(jwtGenerator(sshTunnelPrivateKey))
     const tunnels = await withSpinner(async () => {
       const queryResult = await queryTunnels({
         tunnelUrlForService,
@@ -195,7 +195,8 @@ const up = async ({
         ...x,
         ports: Object.fromEntries(
           Object.entries(x.ports).map(
-            ([port, urls]) => [port, urls.map(url => withUserCredentials(url, sshTunnelPrivateKey))]
+            ([port, urls]) => [port, urls.map(url =>
+              addBasicAuthCredentials(url, credentials.user, credentials.password))]
           )
         ),
       }))

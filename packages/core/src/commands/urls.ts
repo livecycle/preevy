@@ -1,5 +1,5 @@
-import { withUserCredentials } from '../credentials'
 import { queryTunnels } from '../compose-tunnel-agent-client'
+import { getUserCredentials, jwtGenerator, addBasicAuthCredentials } from '../credentials'
 import { flattenTunnels, tunnelUrlForEnv } from '../tunneling'
 
 export const urls = async ({ envId, includeAccessCredentials,
@@ -16,8 +16,11 @@ export const urls = async ({ envId, includeAccessCredentials,
 
   const { tunnels } = await queryTunnels({ tunnelUrlForService, retryOpts: { retries: 2 } })
 
+  const credentials = includeAccessCredentials ? await getUserCredentials(jwtGenerator(tunnelingKey)) : undefined
   return flattenTunnels(tunnels)
-    .map(x => ({ ...x, url: includeAccessCredentials ? withUserCredentials(x.url, tunnelingKey) : x.url }))
+    .map(x => ({ ...x,
+      url: credentials
+        ? addBasicAuthCredentials(x.url, credentials?.user, credentials?.password) : x.url }))
     .filter(tunnel => !serviceAndPort || (
       tunnel.service === serviceAndPort.service && (!serviceAndPort.port || tunnel.port === serviceAndPort.port)
     ))

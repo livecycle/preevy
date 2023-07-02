@@ -1,9 +1,9 @@
-import { ParsedKey } from 'ssh2'
+import { KeyObject } from 'crypto'
 
 export type PreviewEnv = {
   clientId: string
   target: string
-  publicKey: ParsedKey,
+  publicKey: KeyObject,
   access: 'private' | 'public'
 }
 
