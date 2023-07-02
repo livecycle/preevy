@@ -109,7 +109,7 @@ export const loadGithubConfig = async (
 ): Promise<GithubConfig> => {
   const shouldDetect = config.detect === undefined || config.detect
 
-  return mergeGithubConfig([
+  return await mergeGithubConfig([
     () => fromFlags,
     () => githubConfigFromPluginConfig(config),
     ...shouldDetect ? [() => ambientGithubConfig()] : [],
@@ -135,5 +135,5 @@ export const loadGithubConfigOrSkip = async (
     return false
   }
 
-  return loadGithubConfig(pluginConfig, await githubConfigFromPrefixedFlags(flags))
+  return await loadGithubConfig(pluginConfig, await githubConfigFromPrefixedFlags(flags))
 }

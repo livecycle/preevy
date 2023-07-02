@@ -101,7 +101,7 @@ const machineDriver = (
   return {
     customizationScripts: CUSTOMIZE_BARE_MACHINE,
     friendlyName: 'Microsoft Azure',
-    getMachine: async ({ envId }) => cl.getInstance(envId).then(vm => machineFromVm(vm)),
+    getMachine: async ({ envId }) => await cl.getInstance(envId).then(vm => machineFromVm(vm)),
 
     listDeletableResources: () => asyncMap(
       rg => cl.getInstanceByRg(rg.name as string).then(vm => {

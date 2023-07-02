@@ -85,7 +85,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
     const result = await asyncReduce(
       { urls: flatTunnels },
-      async ({ urls }, envCreated) => envCreated(
+      async ({ urls }, envCreated) => await envCreated(
         { log: this.logger, userModel },
         { envId, urls },
       ),

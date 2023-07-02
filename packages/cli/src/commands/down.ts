@@ -28,11 +28,11 @@ export default class Down extends DriverCommand<typeof Down> {
     const log = this.logger
     const { flags } = await this.parse(Down)
     const driver = await this.driver()
-    const userModel = await this.ensureUserModel()
-    const projectName = userModel.name
-    log.debug(`project: ${projectName}`)
-    const envId = flags.id ?? await findAmbientEnvId(projectName)
-
+    const [envId, userModel] = flags.id ? [flags.id, { name: flags.id }] : await (async () => {
+      const model = await this.ensureUserModel()
+      log.debug(`project: ${model.name}`)
+      return [await findAmbientEnvId(model.name), model]
+    })()
     log.debug(`envId: ${envId}`)
     const machine = await driver.getMachine({ envId })
     if (!machine) {

@@ -32,7 +32,7 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
   let debounceDisabled = false
   const flushLimit = pLimit(1)
   const flush = async () =>
-    flushLimit(async () => {
+    await flushLimit(async () => {
       if (!pendingEvents.length) {
         return
       }

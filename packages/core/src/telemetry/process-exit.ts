@@ -8,7 +8,7 @@ export const wireProcessExit = (process: NodeJS.Process, emitter: TelemetryEmitt
         emitter.capture('exit', { event, code })
         exitCaptured = true
       }
-      return emitter.flush()
+      return await emitter.flush()
     }
   })();
 

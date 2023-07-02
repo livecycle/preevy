@@ -91,7 +91,7 @@ const client = ({
       version?: string
     ) => {
       const tagsPredicate = instanceTagsPredicate({ envId, profileId, version })
-      return asyncFind(
+      return await asyncFind(
         ({ tags }: Instance) => tagsPredicate(tags ?? []),
         paginationIterator(
           pageToken => ls.getInstances({ pageToken }),
@@ -129,7 +129,7 @@ const client = ({
           ls.startInstance({ instanceName: instance.name })
         )
       }
-      return extractDefined(
+      return await extractDefined(
         ls.getInstance({ instanceName: instance.name }),
         'instance'
       )
@@ -207,7 +207,7 @@ const client = ({
         ],
       })
 
-      return extractDefined(ls.getInstance({ instanceName: name }), 'instance')
+      return await extractDefined(ls.getInstance({ instanceName: name }), 'instance')
     },
 
     findInstanceSnapshot: async ({
@@ -219,7 +219,7 @@ const client = ({
     }) => {
       const tagsPredicate = snapshotTagsPredicate({ profileId, version })
 
-      return asyncFind(
+      return await asyncFind(
         ({ tags, fromBundleId: b }: InstanceSnapshot) => {
           const fromBundleId = bundleIdFromString(b as string, { throwOnError: false })
           return fromBundleId !== undefined
@@ -244,7 +244,7 @@ const client = ({
       instanceSnapshotName: string
       version: string
       wait: boolean
-    }) => potentiallyWait(
+    }) => await potentiallyWait(
       wait,
       { client: lsClient, maxWaitTime: 120 },
       await ls.createInstanceSnapshot({
@@ -260,13 +260,13 @@ const client = ({
     }: {
       instanceSnapshotName: string
       wait: boolean
-    }) => potentiallyWait(
+    }) => await potentiallyWait(
       wait,
       { client: lsClient, maxWaitTime: 120 },
       await ls.deleteInstanceSnapshot({ instanceSnapshotName }),
     ),
 
-    deleteInstance: async (name: string, wait: boolean) => potentiallyWait(
+    deleteInstance: async (name: string, wait: boolean) => await potentiallyWait(
       wait,
       { client: lsClient, maxWaitTime: 120 },
       await ls.deleteInstance({ instanceName: name, forceDeleteAddOns: true }),

@@ -16,7 +16,7 @@ export const profileStore = (store: Store) => {
         await write('info.json', JSON.stringify(profile))
       })
     },
-    info: async () => ref.readJsonOrThrow<Profile>('info.json'),
+    info: async () => await ref.readJsonOrThrow<Profile>('info.json'),
     defaultFlags: async<T>(driver: string) => {
       const profile = await ref.readJSON<T>(`${driver}-defaults.json`)
       if (!profile) {

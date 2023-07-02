@@ -31,7 +31,7 @@ const confirmPurge = async (
     'This action is irreversible!',
     'Are you sure you want to continue deleting (yes/no)?',
   ].join(os.EOL)
-  return carefulBooleanPrompt(message)
+  return await carefulBooleanPrompt(message)
 }
 
 // eslint-disable-next-line no-use-before-define

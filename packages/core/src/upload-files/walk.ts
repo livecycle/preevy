@@ -2,7 +2,7 @@ import fs from 'fs'
 import PQueue from 'p-queue'
 import { DirInfo, FileInfo } from './files'
 
-const readDir = async (filename: string) => fs.promises.readdir(filename)
+const readDir = async (filename: string) => await fs.promises.readdir(filename)
 
 const normalizeFile = async (local: string | FileInfo | DirInfo) => {
   const result: FileInfo | DirInfo = typeof local === 'string'

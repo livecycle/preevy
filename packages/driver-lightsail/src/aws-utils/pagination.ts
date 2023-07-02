@@ -29,7 +29,7 @@ export const paginationIterator = <
 
     currentPageIter = null
     currentResponsePromise = fetch(currentResponse.nextPageToken)
-    return next()
+    return await next()
   }
 
   const iterator = ({ next, [Symbol.asyncIterator]: () => iterator })

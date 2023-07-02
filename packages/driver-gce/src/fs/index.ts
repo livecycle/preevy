@@ -66,7 +66,7 @@ export const googleCloudStorageFs = async (url: string): Promise<VirtualFS> => {
         return undefined
       }
     },
-    write: async (filename: string, content: Buffer | string) => stream.promises.pipeline(
+    write: async (filename: string, content: Buffer | string) => await stream.promises.pipeline(
       stream.Readable.from(content),
       bucket.file(path.join(prefix, filename)).createWriteStream(),
     ),

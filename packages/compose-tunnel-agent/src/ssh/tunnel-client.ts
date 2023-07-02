@@ -134,7 +134,7 @@ export const sshClient = async ({
   const limit = plimit(1)
 
   return {
-    updateTunnels: async (services: RunningService[]): Promise<SshState> => limit(async () => {
+    updateTunnels: async (services: RunningService[]): Promise<SshState> => await limit(async () => {
       const forwards = tunnelSet()
       services.flatMap(service =>
         service.ports.map(x => ({ forwardRequestId: getForwardRequestId({ ...service, port: x }), port: x }))

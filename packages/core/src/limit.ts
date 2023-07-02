@@ -9,7 +9,7 @@ type LimitFunc<Arguments extends any[], ReturnType> = (
 const noLimit = async <Arguments extends any[], ReturnType>(
   fn: (...args: Arguments) => PromiseLike<ReturnType> | ReturnType,
   ...args: Arguments
-) => fn(...args)
+) => await fn(...args)
 
 export const pLimit = <Arguments extends any[], ReturnType>(
   concurrency: number,

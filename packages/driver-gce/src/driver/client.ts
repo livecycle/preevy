@@ -66,7 +66,7 @@ const client = ({
 
     findInstance: async (
       envId: string,
-    ) => asyncFirst(
+    ) => await asyncFirst(
       ic.listAsync({ zone, project, filter: filter(envId), maxResults: 1 }, callOpts),
     ),
 

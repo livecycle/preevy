@@ -136,7 +136,7 @@ export const client = ({
           tags?.[AzureCustomTags.PROFILE_ID] === profileId && provisioningState !== 'Deleting', vms)
       )
     },
-    getInstanceByRg: async (resourceGroup: string) => asyncFirst(
+    getInstanceByRg: async (resourceGroup: string) => await asyncFirst(
       asyncFilter(x => x.provisioningState !== 'Deleting', computeClient.virtualMachines.list(resourceGroup))
     )
       .then(async vm => {
