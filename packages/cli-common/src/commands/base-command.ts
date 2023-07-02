@@ -113,7 +113,7 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
     })
     emitter.unref()
     await emitter.flush()
-    return super.catch(error)
+    return await super.catch(error)
   }
 }
 

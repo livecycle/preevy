@@ -41,7 +41,7 @@ const composeClient = (
   executer: Executer,
   composeFiles: string[] | Buffer,
 ) => {
-  const execComposeCommand = async (args: string[]) => executer({
+  const execComposeCommand = async (args: string[]) => await executer({
     args,
     stdin: Buffer.isBuffer(composeFiles) ? composeFiles : undefined,
   }).catch(e => {
@@ -55,7 +55,7 @@ const composeClient = (
 
   return {
     getModel,
-    getModelOrError: async () => getModel().catch(e => {
+    getModelOrError: async () => await getModel().catch(e => {
       if (e instanceof DockerIsNotInstalled
           || (e instanceof ProcessError && (e.code === DOCKER_COMPOSE_NO_CONFIGURATION_FILE_ERROR_CODE))) {
         return new LoadComposeFileError(e)
@@ -129,9 +129,9 @@ export const localComposeClient = (
 
   const spawnComposePromise = async (
     ...args: Parameters<typeof spawnComposeArgs>
-  ) => childProcessPromise(spawnCompose(...args))
+  ) => await childProcessPromise(spawnCompose(...args))
 
-  const executer: Executer = async ({ args }) => childProcessStdoutPromise(spawnCompose(args, {}))
+  const executer: Executer = async ({ args }) => await childProcessStdoutPromise(spawnCompose(args, {}))
 
   return Object.assign(composeClient(executer, composeFiles), {
     getServiceLogsProcess: (

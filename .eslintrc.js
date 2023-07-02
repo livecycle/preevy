@@ -83,7 +83,8 @@ module.exports = {
     ],
     // This rule is already enforced on all functions so no need to enforce it in addition on module boundary
     '@typescript-eslint/explicit-module-boundary-types': ['off'],
-    '@typescript-eslint/return-await': ['error', 'in-try-catch'],
+    '@typescript-eslint/return-await': ['error', 'always'],
+    "no-return-await": "off",
     '@typescript-eslint/no-floating-promises': ['error', { ignoreVoid: true}],
     '@typescript-eslint/no-misused-promises': [
       'error',

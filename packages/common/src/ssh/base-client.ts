@@ -119,7 +119,7 @@ export const baseSshClient = async (
     return isVerified
   }
 
-  return new Promise<typeof result>((resolve, reject) => {
+  return await new Promise<typeof result>((resolve, reject) => {
     ssh.on('ready', () => resolve(result))
     ssh.on('error', err => {
       reject(err)

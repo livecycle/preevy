@@ -74,7 +74,7 @@ export const childProcessStdoutPromise = async (
 
 export const spawnPromise = async (
   ...args: Parameters<Spawn>
-) => childProcessPromise(childProcess.spawn(...args))
+) => await childProcessPromise(childProcess.spawn(...args))
 
 export const execPromise = promisify(childProcess.exec)
 

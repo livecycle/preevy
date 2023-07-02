@@ -19,7 +19,7 @@ export const loadPlugins = async (
     async p => ({ plugin: (await import(p.module) as PluginModule).preevyPlugin, config: p }),
   ))
 
-  return Promise.all(
+  return await Promise.all(
     plugins.map(async p => ({
       initResults: await p.plugin.init({ ...initArgs, preevyConfig, pluginConfig: p.config }),
       config: p.config,

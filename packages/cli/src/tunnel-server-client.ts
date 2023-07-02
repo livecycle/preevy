@@ -13,7 +13,7 @@ const confirmHostFingerprint = async (
     `Key fingerprint is ${hostKeySignature}`,
     'Are you sure you want to continue connecting (yes/no)?',
   ].join(os.EOL)
-  return carefulBooleanPrompt(message)
+  return await carefulBooleanPrompt(message)
 }
 
 export const tunnelServerHello = async ({ tunnelOpts, log, tunnelingKey, knownServerPublicKeys }: {

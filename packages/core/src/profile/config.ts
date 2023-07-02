@@ -24,7 +24,7 @@ export const localProfilesConfig = (
   const localStore = localFs(localDir)
   const tarSnapshotFromUrl = async (
     url: string,
-  ) => store(async dir => tarSnapshot(await fsFromUrl(url, path.join(localDir, 'profiles')), dir))
+  ) => store(async dir => await tarSnapshot(await fsFromUrl(url, path.join(localDir, 'profiles')), dir))
 
   async function readProfileList(): Promise<ProfileList> {
     const data = await localStore.read(profileListFileName)

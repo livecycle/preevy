@@ -38,7 +38,7 @@ const ensureMachine = async ({
     }
   }
 
-  return withSpinner(async spinner => {
+  return await withSpinner(async spinner => {
     if (existingMachine && recreating) {
       spinner.text = 'Deleting machine'
       await machineDriver.deleteResources(false, { type: machineResourceType, providerId: existingMachine.providerId })

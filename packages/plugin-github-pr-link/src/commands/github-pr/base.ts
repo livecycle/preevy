@@ -33,7 +33,7 @@ abstract class BaseGithubPrCommand<T extends typeof Command> extends BaseCommand
   }
 
   protected async loadGithubConfig(flags: ParsedFlags<typeof flagsDef>) {
-    return loadGithubConfig(this.pluginConfig, await githubConfigFromFlags(flags))
+    return await loadGithubConfig(this.pluginConfig, await githubConfigFromFlags(flags))
   }
 }
 

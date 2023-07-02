@@ -27,7 +27,7 @@ const readDir = async (dir: string) => {
 
 const readAllFiles = async (dir: string) => {
   const files = await readDir(dir)
-  return Promise.all(
+  return await Promise.all(
     files.map(file => fs.promises.readFile(path.join(dir, file), { encoding: 'utf8' }))
   )
 }
@@ -123,7 +123,7 @@ const main = async () => {
   const webServer = createWebServer({
     log: log.child({ name: 'web' }),
     currentSshState: async () => (
-      currentTunnels
+      await currentTunnels
     ),
   })
     .listen(listenAddress, () => {

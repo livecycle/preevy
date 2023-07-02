@@ -18,7 +18,7 @@ export type FileToCopy = {
   remote: string
 }
 
-export const readDir = async (local: string) => fs.promises.readdir(local, { withFileTypes: true })
+export const readDir = async (local: string) => await fs.promises.readdir(local, { withFileTypes: true })
 
 export const normalizeFileInfo = async (local: string | FileInfo | DirInfo) => {
   const result = typeof local === 'string'
@@ -65,7 +65,8 @@ export const expandFile = async (
   local: string | DirInfo | FileInfo,
 ): Promise<(FileInfo | DirInfo) & { size: number; numFiles: number }> => {
   const fi = await normalizeFileInfo(local)
-  return fi.stats.isDirectory() ? expandDir(fi) : { ...fi, size: fi.symlinkTarget ? 0 : fi.stats.size, numFiles: 1 }
+  return fi.stats.isDirectory() ? await expandDir(fi)
+    : { ...fi, size: fi.symlinkTarget ? 0 : fi.stats.size, numFiles: 1 }
 }
 
 export const pathFromStringOrFileInfo = (x: string | FileInfo | fs.Dirent) => {

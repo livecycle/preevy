@@ -31,5 +31,5 @@ export const wrapWithDockerSocket = (
 
   process.env.DOCKER_HOST = dockerHost(address)
 
-  return f().finally(close)
+  return await f().finally(close)
 }

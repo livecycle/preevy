@@ -13,7 +13,7 @@ const macosMachineId = async () => {
   return match?.[1]
 }
 
-const linuxMachineId = async () => await readFileOrUndefined('/etc/machine-id') || readFileOrUndefined('/var/lib/dbus/machine-id')
+const linuxMachineId = async () => await (await readFileOrUndefined('/etc/machine-id') || readFileOrUndefined('/var/lib/dbus/machine-id'))
 
 const windowsMachineId = async () => {
   const regOutput = await execPromiseStdout('reg query HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Cryptography /v MachineGuid').catch(() => '')

@@ -94,10 +94,10 @@ export const performTunnelConnectionCheck = async ({
 
     await keysState.write(parsed.hostname, parsed.port, result.unverifiedHostKey)
 
-    return check()
+    return await check()
   }
 
-  return check()
+  return await check()
 }
 
 export const createTunnelingKey = async () => Buffer.from((await generateSshKeyPair()).privateKey)

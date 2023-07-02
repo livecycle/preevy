@@ -108,7 +108,7 @@ export const queryTunnels = async ({ retryOpts = { retries: 0 }, tunnelUrlForSer
     if (!r.ok) {
       throw new Error(`Failed to connect to docker proxy at ${url}: ${r.status}: ${r.statusText}`)
     }
-    return r.json() as Promise<{ tunnels: Tunnel[]; clientId: string }>
+    return await (r.json() as Promise<{ tunnels: Tunnel[]; clientId: string }>)
   }, retryOpts)
 
   return {
