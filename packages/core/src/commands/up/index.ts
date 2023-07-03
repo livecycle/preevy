@@ -4,6 +4,7 @@ import path from 'path'
 import { rimraf } from 'rimraf'
 import yaml from 'yaml'
 import { inspect } from 'util'
+import { mapValues } from 'lodash'
 import { TunnelOpts } from '../../ssh'
 import { ComposeModel, fixModelForRemote, getExposedTcpServices, localComposeClient, resolveComposeFiles } from '../../compose'
 import { ensureCustomizedMachine } from './machine'
@@ -193,12 +194,9 @@ const up = async ({
 
       return queryResult.tunnels.map(x => ({
         ...x,
-        ports: Object.fromEntries(
-          Object.entries(x.ports).map(
-            ([port, urls]) => [port, urls.map(url =>
-              addBasicAuthCredentials(url, credentials.user, credentials.password))]
-          )
-        ),
+        ports: mapValues(x.ports, urls => urls.map(url =>
+          addBasicAuthCredentials(url, credentials.user, credentials.password)))
+        ,
       }))
     }, { opPrefix: 'Waiting for tunnels to be created' })
 
