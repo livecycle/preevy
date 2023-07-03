@@ -14,7 +14,11 @@ function extractBasicAuth(req: IncomingMessage){
     return undefined
   }
   const basicAuth = Buffer.from(data, 'base64').toString('ascii');
-  return basicAuth?.split(':');
+  const sep = basicAuth.indexOf(":")
+  if (sep === -1){
+    return undefined
+  }
+  return [basicAuth.slice(0,sep), basicAuth.slice(sep+1)];
 }
 
 export function tunnelingKeyAuthenticator(publicKey: KeyObject){
