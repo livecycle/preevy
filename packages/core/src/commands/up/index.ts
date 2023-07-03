@@ -4,7 +4,6 @@ import path from 'path'
 import { rimraf } from 'rimraf'
 import yaml from 'yaml'
 import { inspect } from 'util'
-import { mapValues } from 'lodash'
 import { TunnelOpts } from '../../ssh'
 import { ComposeModel, fixModelForRemote, getExposedTcpServices, localComposeClient, resolveComposeFiles } from '../../compose'
 import { ensureCustomizedMachine } from './machine'
@@ -17,7 +16,6 @@ import { remoteProjectDir } from '../../remote-files'
 import { Logger } from '../../log'
 import { Tunnel, tunnelUrlForEnv } from '../../tunneling'
 import { FileToCopy, uploadWithSpinner } from '../../upload-files'
-import { getUserCredentials, jwtGenerator, addBasicAuthCredentials } from '../../credentials'
 
 const createCopiedFileInDataDir = (
   { projectLocalDataDir, filesToCopy } : {
@@ -65,7 +63,6 @@ const up = async ({
   clientId,
   rootUrl,
   debug,
-  includeAccessCredentials,
   machineDriver,
   machineCreationDriver,
   tunnelOpts,
@@ -85,7 +82,6 @@ const up = async ({
   clientId: string
   rootUrl: string
   debug: boolean
-  includeAccessCredentials: boolean
   machineDriver: MachineDriver
   machineCreationDriver: MachineCreationDriver
   tunnelOpts: TunnelOpts
@@ -177,7 +173,6 @@ const up = async ({
     const composeArgs = calcComposeArgs({ userSpecifiedServices, debug, cwd })
     log.debug('Running compose up with args: ', composeArgs)
     await withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit' }))
-    const credentials = await getUserCredentials(jwtGenerator(sshTunnelPrivateKey))
     const tunnels = await withSpinner(async () => {
       const queryResult = await queryTunnels({
         tunnelUrlForService,
@@ -188,16 +183,8 @@ const up = async ({
           onFailedAttempt: e => { log.debug(`Failed to create tunnel: ${inspect(e)}`) },
         },
       })
-      if (!includeAccessCredentials) {
-        return queryResult.tunnels
-      }
 
-      return queryResult.tunnels.map(x => ({
-        ...x,
-        ports: mapValues(x.ports, urls => urls.map(url =>
-          addBasicAuthCredentials(url, credentials.user, credentials.password)))
-        ,
-      }))
+      return queryResult.tunnels
     }, { opPrefix: 'Waiting for tunnels to be created' })
 
     return { envId, machine, tunnels }

@@ -37,6 +37,8 @@ export {
   createTunnelingKey,
   performTunnelConnectionCheck,
 } from './tunneling'
+export { generateBasicAuthCredentials as getUserCredentials, jwtGenerator } from './credentials'
 export { ciProviders, detectCiProvider } from './ci-providers'
 export * as git from './git'
 export * as config from './config'
+export * from './url'

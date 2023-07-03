@@ -1,5 +1,5 @@
 import { Args, Flags, ux } from '@oclif/core'
-import { commands, findAmbientEnvId, profileStore } from '@preevy/core'
+import { commands, findAmbientEnvId, getUserCredentials, jwtGenerator, profileStore, withBasicAuthCredentials } from '@preevy/core'
 import { tunnelServerFlags } from '@preevy/cli-common'
 import { tunnelServerHello } from '../tunnel-server-client'
 import ProfileCommand from '../profile-command'
@@ -56,15 +56,18 @@ export default class Urls extends ProfileCommand<typeof Urls> {
       log: this.logger,
     })
 
-    const flatTunnels = await commands.urls({
+    let flatTunnels = await commands.urls({
       rootUrl,
-      includeAccessCredentials: !!flags['include-access-credentials'],
-      tunnelingKey,
       clientId,
       envId,
       projectName,
       serviceAndPort: args.service ? { service: args.service, port: args.port } : undefined,
     })
+
+    if (flags['include-access-credentials']) {
+      const addCredentials = withBasicAuthCredentials(await getUserCredentials(jwtGenerator(tunnelingKey)))
+      flatTunnels = flatTunnels.map(t => Object.assign(t, { url: addCredentials(t.url) }))
+    }
 
     if (flags.json) {
       return flatTunnels
