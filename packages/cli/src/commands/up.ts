@@ -8,7 +8,7 @@ import { asyncReduce } from 'iter-tools-es'
 import { tunnelServerFlags } from '@preevy/cli-common'
 import { tunnelServerHello } from '../tunnel-server-client'
 import MachineCreationDriverCommand from '../machine-creation-driver-command'
-import { envIdFlags } from '../common-flags'
+import { envIdFlags, urlFlags } from '../common-flags'
 
 // eslint-disable-next-line no-use-before-define
 export default class Up extends MachineCreationDriverCommand<typeof Up> {
@@ -22,10 +22,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       default: true,
       allowNo: true,
     }),
-    'include-access-credentials': Flags.boolean({
-      description: 'Include access credentials for basic auth for each service URL',
-      default: false,
-    }),
+    ...urlFlags,
     ...ux.table.flags(),
   }
 

@@ -1,1 +1,1 @@
-export { composeFlags, envIdFlags } from '@preevy/cli-common'
+export { urlFlags, composeFlags, envIdFlags } from '@preevy/cli-common'

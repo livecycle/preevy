@@ -1,9 +1,9 @@
-import { Args, Flags, ux } from '@oclif/core'
+import { Args, ux } from '@oclif/core'
 import { commands, findAmbientEnvId, getUserCredentials, jwtGenerator, profileStore, withBasicAuthCredentials } from '@preevy/core'
 import { tunnelServerFlags } from '@preevy/cli-common'
 import { tunnelServerHello } from '../tunnel-server-client'
 import ProfileCommand from '../profile-command'
-import { envIdFlags } from '../common-flags'
+import { envIdFlags, urlFlags } from '../common-flags'
 
 // eslint-disable-next-line no-use-before-define
 export default class Urls extends ProfileCommand<typeof Urls> {
@@ -13,10 +13,7 @@ export default class Urls extends ProfileCommand<typeof Urls> {
     ...envIdFlags,
     ...tunnelServerFlags,
     ...ux.table.flags(),
-    'include-access-credentials': Flags.boolean({
-      description: 'Include access credentials for basic auth for each service URL',
-      default: false,
-    }),
+    ...urlFlags,
   }
 
   static enableJsonFlag = true
