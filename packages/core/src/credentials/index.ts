@@ -44,9 +44,8 @@ export const getUserCredentials = async (jwtGen: JwtGenerator) => {
   }
 }
 
-export const addBasicAuthCredentials = (url: string, user: string, password: string) => {
-  const parsed = new URL(url)
-  parsed.username = user
-  parsed.password = password
-  return parsed.toString()
+export const addBasicAuthCredentials = (url: string, user: string, password: string) => Object.assign(new URL(url),  {
+  username: user,
+  password,
+}).toString()
 }
