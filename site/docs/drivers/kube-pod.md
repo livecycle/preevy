@@ -1,11 +1,11 @@
 ---
 sidebar_position: 1
-title: Kubernetes Docker-in-Docker Driver
+title: Kubernetes single Pod driver
 ---
 
-# Kubernetes Docker-in-Docker driver
+# Kubernetes single Pod driver
 
-Preevy can provision environments on a Kubernetes cluster using the bundled [Kubernetes Docker-in-Docker driver](https://github.com/livecycle/preevy/blob/main/packages/driver-kube-docker/).
+Preevy can provision environments on a Kubernetes cluster using the bundled [Kubernetes single Pod driver](https://github.com/livecycle/preevy/blob/main/packages/driver-kube-pod/).
 
 ## Why deploy on Kubernetes?
 
@@ -17,7 +17,7 @@ Deployments are faster on Kubernetes comparing to your regular cloud provider VM
 
 ## How?
 
-The driver creates a Kubernetes Pod running a Docker server for each environment (herby the name "Docker-in-Docker"). Preevy then connects to the Docker server to build and run your services, just like it does on a regular VM.
+The driver creates a Kubernetes Pod running a Docker server for each environment (herby the name "single Pod"). Preevy then connects to the Docker server to build and run your services, just like it does on a regular VM.
 
 Your services are still exposed using the Preevy Tunnel Service - there's no need to configure a specific ingress.
 
@@ -35,12 +35,12 @@ Your services are still exposed using the Preevy Tunnel Service - there's no nee
 
 |flag|default|env var|description|
 |---|--------|-------|-----------|
-|`--kube-docker-namespace`|`default`| |Kubernetes namespace to provision resources in|
-|`--kube-docker-kubeconfig`|`$HOME/.kube`| `KUBECONFIG` | path to a [`kubeconfig`](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/) file|
-|`--kube-docker-template`|[default template](https://github.com/livecycle/preevy/blob/main/packages/driver-kube-docker/static/default-template.yaml.njk)| |path to a [nunjacks template](https://mozilla.github.io/nunjucks/templating.html) used to provision Kubernetes resources per environment. See [below](#customizing-the-provisioned-kubernetes-resources) for details|
-|`--no-kube-docker-server-side-apply`|  | | provision resources using client-side apply (CREATE/PATCH) instead of [server-side apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/). Applies to `preevy up` only|
+|`--kube-pod-namespace`|`default`| |Kubernetes namespace to provision resources in|
+|`--kube-pod-kubeconfig`|`$HOME/.kube`| `KUBECONFIG` | path to a [`kubeconfig`](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/) file|
+|`--kube-pod-template`|[default template](https://github.com/livecycle/preevy/blob/main/packages/driver-kube-pod/static/default-template.yaml.njk)| |path to a [nunjacks template](https://mozilla.github.io/nunjucks/templating.html) used to provision Kubernetes resources per environment. See [below](#customizing-the-provisioned-kubernetes-resources) for details|
+|`--no-kube-pod-server-side-apply`|  | | provision resources using client-side apply (CREATE/PATCH) instead of [server-side apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/). Applies to `preevy up` only|
 
-Similar to other drivers, flags are saved in the Preevy profile to be used as default values for all operations. They can be specified per command if the defaults need to be changed. For example, if a specific environment needs to be provisioned in a different Kubernetes namespace, specify `--kube-docker-namespace=other-namespace` when running the `preevy up` command.
+Similar to other drivers, flags are saved in the Preevy profile to be used as default values for all operations. They can be specified per command if the defaults need to be changed. For example, if a specific environment needs to be provisioned in a different Kubernetes namespace, specify `--kube-pod-namespace=other-namespace` when running the `preevy up` command.
 
 ## Customizing the provisioned Kubernetes resources
 
@@ -52,7 +52,7 @@ It's possible to customize the Kubernetes resources provisioned by the driver pe
 
 The resources are specified as [Kubernetes object specs](https://kubernetes.io/docs/concepts/overview/working-with-objects/#describing-a-kubernetes-object) in a single YAML file rendered from a [nunjucks template](https://mozilla.github.io/nunjucks/templating.html). The template file may contain multiple definitions separated by lines containing `---` (three dashes).
 
-Start by copying the [default template](https://github.com/livecycle/preevy/blob/main/packages/driver-kube-docker/static/default-template.yaml.njk). To use the custom template, enter the path to the custom template file at the `preevy init` or `preevy profile create` command, or specify the `--kube-docker-template` flag for the `preevy up` and `preevy down` commands. The template file at the specified path needs to be accessible at runtime to the CLI[^1].
+Start by copying the [default template](https://github.com/livecycle/preevy/blob/main/packages/driver-kube-pod/static/default-template.yaml.njk). To use the custom template, enter the path to the custom template file at the `preevy init` or `preevy profile create` command, or specify the `--kube-pod-template` flag for the `preevy up` and `preevy down` commands. The template file at the specified path needs to be accessible at runtime to the CLI[^1].
 
 [^1]: Embedding the template in the profile, or specifying its path in the `x-preevy` section of the Docker Compose file is in the roadmap, but not implemented yet.
 
@@ -74,7 +74,7 @@ The lifecycle of all resources is tied to a Preevy environment - they will be cr
 
 The following arguments are specified when rendering the template:
 
-- `namespace`: the Kuberentes namespace saved in the Preevy profile or specified in the `--kube-docker-namespace` flag. All resources must be defined in this namespace.
+- `namespace`: the Kuberentes namespace saved in the Preevy profile or specified in the `--kube-pod-namespace` flag. All resources must be defined in this namespace.
 - `id`: A generated ID for this environment, 53 characters or less, comprised of the Preevy environment ID and a random suffix. `id` can be used as part for of a label value, with up to 10 additional characters as to not exceed the [63 character limit for labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set)
 
 ## Configuring rootless unprivileged Docker-in-Docker

@@ -10,7 +10,7 @@ sidebar_position: 7
 - [x] [AWS lightsail](drivers/aws-lightsail.md)
 - [x] [GCP Compute Engine](drivers/gcp-gce.md)
 - [x] [Azure](https://azure.microsoft.com/)
-- [x] [Kubernetes](drivers/kube-docker.md)
+- [x] [Kubernetes](drivers/kube-pod.md)
 - [ ] [fly.io](https://fly.io/)
 
 ## Build customization

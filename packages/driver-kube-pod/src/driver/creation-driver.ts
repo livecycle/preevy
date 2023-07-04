@@ -22,14 +22,14 @@ const machineCreationDriver = (
 ): MachineCreationDriver<DeploymentMachine> => ({
   createMachine: async ({ envId }) => {
     const startTime = new Date().getTime()
-    telemetryEmitter().capture('kube-docker create machine start', {})
+    telemetryEmitter().capture('kube-pod create machine start', {})
 
     return ({
       fromSnapshot: true,
       result: (async () => {
         const deployment = await client.createEnv(envId, { serverSideApply })
         const machine = machineFromDeployment(deployment)
-        telemetryEmitter().capture('kube-docker create machine end', { elapsed_sec: (new Date().getTime() - startTime) / 1000 })
+        telemetryEmitter().capture('kube-pod create machine end', { elapsed_sec: (new Date().getTime() - startTime) / 1000 })
         const connection = await machineConnection(client, machine)
         return { machine, connection }
       })(),

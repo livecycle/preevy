@@ -1,7 +1,7 @@
 {
-  "name": "@preevy/driver-kube-docker",
+  "name": "@preevy/driver-kube-pod",
   "version": "0.0.36",
-  "description": "Kubernetes Docker-in-Docker driver for Preevy",
+  "description": "Kubernetes single Pod driver for Preevy",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [

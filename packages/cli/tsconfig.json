@@ -23,7 +23,7 @@
     { "path": "../driver-lightsail" },
     { "path": "../driver-gce" },
     { "path": "../driver-azure" },
-    { "path": "../driver-kube-docker" },
+    { "path": "../driver-kube-pod" },
     { "path": "../plugin-github-pr-link" },
   ]
 }

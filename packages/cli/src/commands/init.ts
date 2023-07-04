@@ -64,7 +64,7 @@ export default class Init extends BaseCommand {
               { value: 'lightsail', name: 'AWS Lightsail' },
               { value: 'gce', name: 'Google Compute Engine' },
               { value: 'azure', name: 'Microsoft Azure Virtual Machines' },
-              { value: 'kube-docker', name: 'Kubernetes (Docker-in-Docker)' },
+              { value: 'kube-pod', name: 'Kubernetes' },
             ],
           }])
 

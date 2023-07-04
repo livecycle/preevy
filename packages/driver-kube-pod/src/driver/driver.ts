@@ -64,7 +64,7 @@ export const machineConnection = async (
 const machineDriver = (
   { client }: DriverContext,
 ): MachineDriver<DeploymentMachine, ResourceType> => ({
-  friendlyName: 'Kubernetes Docker-in-Docker',
+  friendlyName: 'Kubernetes single Pod',
 
   getMachine: async ({ envId }) => {
     const deployment = await client.findMostRecentDeployment({ envId, deleted: false })
