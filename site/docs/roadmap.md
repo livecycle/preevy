@@ -8,8 +8,9 @@ sidebar_position: 7
 ## More cloud drivers
 
 - [x] [AWS lightsail](drivers/aws-lightsail.md)
-- [x] [GCP Compute Engine](https://cloud.google.com/)
+- [x] [GCP Compute Engine](drivers/gcp-gce.md)
 - [x] [Azure](https://azure.microsoft.com/)
+- [x] [Kubernetes](drivers/kube-docker.md)
 - [ ] [fly.io](https://fly.io/)
 
 ## Build customization

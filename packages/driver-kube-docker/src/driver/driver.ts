@@ -104,7 +104,7 @@ const machineDriver = (
 
 export const flags = {
   namespace: Flags.string({
-    description: 'Kubernetes namespace in which resources will be provisioned',
+    description: 'Kubernetes namespace in which resources will be provisioned (needs to exist)',
     required: false,
     default: 'default',
   }),

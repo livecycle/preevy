@@ -1,4 +1,3 @@
-import shellEscape from 'shell-escape'
 import { Flags, Args, ux } from '@oclif/core'
 import { Flag } from '@oclif/core/lib/interfaces'
 import inquirer from 'inquirer'
@@ -148,7 +147,7 @@ export default class Init extends BaseCommand {
               return value ? `--${driverKey}` : `--no-${driverKey}`
             }
             if (typeof value === 'string') {
-              return `--${driverKey}=${shellEscape([value])}`
+              return `--${driverKey}=${value}`
             }
             if (typeof value === 'number') {
               return `--${driverKey}=${value}`
