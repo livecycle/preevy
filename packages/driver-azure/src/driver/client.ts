@@ -80,6 +80,7 @@ export const getTags = (profileId: string, envId: string) => ({
   [AzureCustomTags.PROFILE_ID]: profileId,
   [AzureCustomTags.ENV_ID]: envId,
 })
+
 export const client = ({
   region,
   subscriptionId,
@@ -258,3 +259,5 @@ export const client = ({
     },
   }
 }
+
+export type Client = ReturnType<typeof client>

@@ -45,7 +45,7 @@ const createFilter = async (
   remoteDir: string,
   totals: Pick<Totals, 'skipped'>,
 ) => {
-  const filterCommandOutput = (await exec(filterCommand, { cwd: remoteDir })).stdout.trim()
+  const filterCommandOutput = (await exec(filterCommand, { cwd: remoteDir, asRoot: true })).stdout.trim()
   const store = filterStore(filterCommandOutput)
   return (fi: FileInfo, remote: string) => {
     if (fi.stats.isFile() && store.has(fi, remote)) {

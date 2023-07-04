@@ -16,7 +16,7 @@ const re = /^([0-9]+) ([0-9]+) ("([^"]+)") (.*)/
 const parseFindResultLine = (line: string): [string, FilterStoreEntry] => {
   const match = re.exec(line)
   if (!match) {
-    throw new Error(`Invalid line: ${line}`)
+    throw new Error(`Invalid line: "${line}"`)
   }
 
   const [, size, mtimeSecondsSinceEpoch,, ftype, qname] = match
@@ -35,11 +35,11 @@ const parseFindResultLine = (line: string): [string, FilterStoreEntry] => {
 
 const parseFindResult = (findResult: string | Buffer) => {
   const result = Buffer.isBuffer(findResult) ? findResult.toString('utf8') : findResult
-  const lines = result.split('\n')
+  const lines = result.split('\n').filter(Boolean)
   return new Map<string, FilterStoreEntry>(lines.map(parseFindResultLine))
 }
 
-export const filterCommand = 'sudo find . -print0 | sudo xargs -r0 stat -c \'%s %Y "%F" %N\''
+export const filterCommand = 'find . -print0 | xargs -r0 stat -c \'%s %Y "%F" %N\''
 
 const equals = (
   { stats: s, symlinkTarget }: { stats: fs.Stats; symlinkTarget?: string },

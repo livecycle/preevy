@@ -27,11 +27,13 @@ abstract class MachineCreationDriverCommand<T extends typeof Command> extends Dr
     const defaultFlags = await profileStore(this.store).defaultFlags(driverName)
     const specifiedFlags = removeDriverPrefix<DriverFlags<DriverName, 'machineCreationFlags'>>(this.driverName, this.flags)
     const driverFlags = { ...defaultFlags, ...specifiedFlags }
-    this.#machineCreationDriver = machineDrivers[driverName].machineCreationFactory(
-      driverFlags as never,
+    this.#machineCreationDriver = machineDrivers[driverName].machineCreationFactory({
+      flags: driverFlags as never,
       profile,
-      this.store,
-    )
+      store: this.store,
+      log: this.logger,
+      debug: this.flags.debug,
+    })
     return this.#machineCreationDriver
   }
 }

@@ -8,8 +8,9 @@ sidebar_position: 7
 ## More cloud drivers
 
 - [x] [AWS lightsail](drivers/aws-lightsail.md)
-- [x] [GCP Compute Engine](https://cloud.google.com/)
-- [ ] [Azure](https://azure.microsoft.com/)
+- [x] [GCP Compute Engine](drivers/gcp-gce.md)
+- [x] [Azure](https://azure.microsoft.com/)
+- [x] [Kubernetes](drivers/kube-pod.md)
 - [ ] [fly.io](https://fly.io/)
 
 ## Build customization
@@ -18,7 +19,7 @@ We plan to provide customization to the build process of the environment. Instea
 
 ## Plugins
 
-A plugin system is planned for Preevy providing a way to expand the preview environment with more functionality.
+A plugin system exists for Preevy providing a way to expand the preview environment with more functionality.
 Examples:
 * A plugin for providing a web-terminal for the inner containers
 * A plugin for REST API calls (like [Hopscotch](https://hoppscotch.io/) or [Postman](https://www.postman.com/))

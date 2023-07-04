@@ -23,4 +23,4 @@ A clear and concise description of what you expected to happen.
 
 **Additional context**
  - Version: 0.0.24
- - Driver: AWS/GCP
+ - Driver: AWS/GCP/Azure/Kubernetes
