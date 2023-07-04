@@ -1,5 +1,5 @@
 import { AddressInfo } from 'net'
-import { ChildProcess, StdioOptions } from 'child_process'
+import { PartialStdioOptions } from '../child-process'
 import { CommandExecuter } from '../command-executer'
 import { Profile } from '../profile'
 import { MachineBase, PartialMachine, Resource, SpecDiffItem } from './machine'
@@ -11,14 +11,14 @@ export type ForwardOutStreamLocal = {
   close: () => Promise<void>
 }
 
-export type DockerSocket = {
+export type ForwardSocket = {
   address: { host: string; port: number }
   close: () => Promise<void>
 }
 
 export type MachineConnection = {
   exec: CommandExecuter
-  dockerSocket: () => Promise<DockerSocket>
+  dockerSocket: () => Promise<ForwardSocket>
   close: () => Promise<void>
 }
 
@@ -33,7 +33,11 @@ export type MachineDriver<
   getMachine: (args: { envId: string }) => Promise<Machine | PartialMachine | undefined>
 
   connect: (machine: MachineBase, opts: { log: Logger; debug: boolean }) => Promise<MachineConnection>
-  spawnRemoteCommand: (machine: MachineBase, command: string[], stdio: StdioOptions) => Promise<ChildProcess>
+  spawnRemoteCommand: (
+    machine: MachineBase,
+    command: string[],
+    stdio: PartialStdioOptions,
+  ) => Promise<{ code: number } | { signal: string }>
 
   listDeletableResources: () => AsyncIterableIterator<Resource<ResourceType>>
   deleteResources: (wait: boolean, ...resource: Resource<string>[]) => Promise<void>
@@ -42,7 +46,7 @@ export type MachineDriver<
 export type MachineCreationDriver<Machine extends MachineBase = MachineBase> = {
   createMachine: (args: {
     envId: string
-  }) => Promise<{ fromSnapshot: boolean; machine: Promise<Machine> }>
+  }) => Promise<{ fromSnapshot: boolean; result: Promise<{ machine: Machine; connection: MachineConnection }> }>
 
   ensureMachineSnapshot: (args: { providerId: string; envId: string; wait: boolean }) => Promise<void>
   getMachineAndSpecDiff: (
@@ -54,14 +58,18 @@ export type MachineDriverFactory<
   Flags,
   Machine extends MachineBase = MachineBase,
   ResourceType extends string = string
-> = (
-  flags: Flags,
-  profile: Profile,
-  store: Store,
-) => MachineDriver<Machine, ResourceType>
+> = ({ flags, profile, store, log, debug }: {
+  flags: Flags
+  profile: Profile
+  store: Store
+  log: Logger
+  debug: boolean
+}) => MachineDriver<Machine, ResourceType>
 
-export type MachineCreationDriverFactory<Flags, Machine extends MachineBase> = (
-  flags: Flags,
-  profile: Profile,
-  store: Store,
-) => MachineCreationDriver<Machine>
+export type MachineCreationDriverFactory<Flags, Machine extends MachineBase> = ({ flags, profile, store, log, debug }: {
+  flags: Flags
+  profile: Profile
+  store: Store
+  log: Logger
+  debug: boolean
+}) => MachineCreationDriver<Machine>

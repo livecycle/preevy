@@ -18,8 +18,9 @@ import {
   sshDriver,
   getStoredSshKey,
   machineResourceType,
+  Logger,
 } from '@preevy/core'
-import { client, REGIONS } from './client'
+import { Client, client as createClient, REGIONS } from './client'
 import { CUSTOMIZE_BARE_MACHINE } from './scripts'
 import { AzureCustomTags, extractResourceGroupNameFromId } from './vm-creation-utils'
 
@@ -42,16 +43,15 @@ export type AzureErrorResponse = {
 type ResourceType = typeof machineResourceType
 
 type DriverContext = {
-  profileId: string
+  client: Client
+  log: Logger
+  debug: boolean
   store: Store
-  region: string
-  subscriptionId: string
 }
 
 type MachineCreationContext = DriverContext & {
   vmSize?: string
   resourceGroupId: string
-  store: Store
 }
 
 const UBUNTU_IMAGE_DETAILS = {
@@ -90,48 +90,41 @@ const machineFromVm = (
 }
 
 const machineDriver = (
-  { region, subscriptionId, profileId, store }: DriverContext,
-): MachineDriver<SshMachine, ResourceType> => {
-  const cl = client({
-    region,
-    subscriptionId,
-    profileId,
-  })
+  { store, client: cl }: DriverContext,
+): MachineDriver<SshMachine, ResourceType> => ({
+  customizationScripts: CUSTOMIZE_BARE_MACHINE,
+  friendlyName: 'Microsoft Azure',
+  getMachine: async ({ envId }) => await cl.getInstance(envId).then(vm => machineFromVm(vm)),
 
-  return {
-    customizationScripts: CUSTOMIZE_BARE_MACHINE,
-    friendlyName: 'Microsoft Azure',
-    getMachine: async ({ envId }) => await cl.getInstance(envId).then(vm => machineFromVm(vm)),
+  listDeletableResources: () => asyncMap(
+    rg => cl.getInstanceByRg(rg.name as string).then(vm => {
+      if (vm) {
+        return machineFromVm(vm)
+      }
+      return {
+        type: machineResourceType,
+        providerId: rg.name as string,
+        envId: rg.tags?.[AzureCustomTags.ENV_ID] as string,
+        error: 'VM creation is incomplete',
+      }
+    }),
+    cl.listResourceGroups()
+  ),
 
-    listDeletableResources: () => asyncMap(
-      rg => cl.getInstanceByRg(rg.name as string).then(vm => {
-        if (vm) {
-          return machineFromVm(vm)
-        }
-        return {
-          type: machineResourceType,
-          providerId: rg.name as string,
-          envId: rg.tags?.[AzureCustomTags.ENV_ID] as string,
-          error: 'VM creation is incomplete',
-        }
-      }),
-      cl.listResourceGroups()
-    ),
+  deleteResources: async (wait, ...resources) => {
+    await Promise.all(resources.map(({ type, providerId }) => {
+      if (type === machineResourceType) {
+        return cl.deleteResourcesResourceGroup(providerId, wait)
+      }
+      throw new Error(`Unknown resource type "${type}"`)
+    }))
+  },
 
-    deleteResources: async (wait, ...resources) => {
-      await Promise.all(resources.map(({ type, providerId }) => {
-        if (type === machineResourceType) {
-          return cl.deleteResourcesResourceGroup(providerId, wait)
-        }
-        throw new Error(`Unknown resource type "${type}"`)
-      }))
-    },
+  resourcePlurals: {},
 
-    resourcePlurals: {},
+  ...sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) }),
+})
 
-    ...sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) }),
-  }
-}
 const flags = {
   region: Flags.string({
     description: 'Microsoft Azure region in which resources will be provisioned',
@@ -143,9 +136,7 @@ const flags = {
   }),
 } as const
 
-machineDriver.flags = flags
-
-machineDriver.questions = async (): Promise<(Question | ListQuestion)[]> => [
+const questions = async (): Promise<(Question | ListQuestion)[]> => [
   {
     type: 'list',
     name: 'region',
@@ -165,37 +156,32 @@ machineDriver.questions = async (): Promise<(Question | ListQuestion)[]> => [
   },
 ]
 
-machineDriver.flagsFromAnswers = async (answers: Record<string, unknown>) => ({
+const flagsFromAnswers = async (answers: Record<string, unknown>) => ({
   region: answers.region,
   'subscription-id': answers['subscription-id'],
-
 })
 
 const contextFromFlags = ({
   region,
   'subscription-id': subscriptionId,
-}: Interfaces.InferredFlags<typeof machineDriver.flags>): Omit<DriverContext, 'profileId' | 'store'> => ({
+}: Interfaces.InferredFlags<typeof flags>): { region: string; subscriptionId: string } => ({
   region,
   subscriptionId,
 })
 
 const DEFAULT_VM_SIZE = 'Standard_B2s'
 
-const machineCreationDriver = ({
-  region,
-  profileId,
-  subscriptionId,
-  vmSize,
-  store,
-}: MachineCreationContext): MachineCreationDriver<SshMachine> => {
-  const cl = client({ region, subscriptionId, profileId })
+const machineCreationDriver = (
+  { client: cl, vmSize, store, log, debug }: MachineCreationContext,
+): MachineCreationDriver<SshMachine> => {
+  const ssh = sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) })
 
   return {
     createMachine: async ({ envId }) => ({
       fromSnapshot: false,
-      machine: (async () => {
+      result: (async () => {
         const startTime = new Date().getTime()
-        telemetryEmitter().capture('azure create machine start', { region })
+        telemetryEmitter().capture('azure create machine start', { })
 
         const {
           publicIPAddress,
@@ -206,8 +192,16 @@ const machineCreationDriver = ({
           vmSize: vmSize ?? DEFAULT_VM_SIZE,
           envId,
         })
-        telemetryEmitter().capture('azure create machine end', { region, elapsed_sec: (new Date().getTime() - startTime) / 1000 })
-        return machineFromVm({ publicIPAddress, vm })
+        telemetryEmitter().capture('azure create machine end', { elapsed_sec: (new Date().getTime() - startTime) / 1000 })
+
+        const machine = machineFromVm({ publicIPAddress, vm })
+        return {
+          machine,
+          connection: await ssh.connect(
+            machine,
+            { log, debug, retryOpts: { minTimeout: 2000, maxTimeout: 5000, retries: 10 } },
+          ),
+        }
       })(),
     }),
     ensureMachineSnapshot: async () => undefined,
@@ -231,8 +225,8 @@ const machineCreationDriver = ({
   }
 }
 
-machineDriver.machineCreationFlags = {
-  ...machineDriver.flags,
+const machineCreationFlags = {
+  ...flags,
   region: Flags.string({
     description: 'Microsoft Azure region in which resources will be provisioned',
     required: true,
@@ -248,28 +242,52 @@ machineDriver.machineCreationFlags = {
   }),
 } as const
 
-type MachineCreationFlagTypes = InferredFlags<typeof machineDriver.machineCreationFlags>
+type MachineCreationFlagTypes = InferredFlags<typeof machineCreationFlags>
 
-const machineCreationContextFromFlags = (f: MachineCreationFlagTypes): Omit<MachineCreationContext, 'profileId' | 'store'> => ({
+const machineCreationContextFromFlags = (
+  f: MachineCreationFlagTypes,
+): ReturnType<typeof contextFromFlags> & { vmSize: string; resourceGroupId: string } => ({
   ...contextFromFlags(f),
-  region: f.region,
   vmSize: f['vm-size'],
   resourceGroupId: f['resource-group-name'],
 })
 
 const factory: MachineDriverFactory<
-  Interfaces.InferredFlags<typeof machineDriver.flags>,
+  Interfaces.InferredFlags<typeof flags>,
   SshMachine,
   ResourceType
-> = (f, { id }, store) => machineDriver({ profileId: id, ...contextFromFlags(f), store })
-
-machineDriver.factory = factory
+> = ({ flags: f, profile: { id: profileId }, store, log, debug }) => machineDriver({
+  client: createClient({
+    ...contextFromFlags(f),
+    profileId,
+  }),
+  log,
+  debug,
+  store,
+})
 
 const machineCreationFactory: MachineCreationDriverFactory<
-  Interfaces.InferredFlags<typeof machineDriver.machineCreationFlags>,
+  Interfaces.InferredFlags<typeof machineCreationFlags>,
   SshMachine
-> = (f, { id }, store) => machineCreationDriver({ profileId: id, ...machineCreationContextFromFlags(f), store })
+> = ({ flags: f, profile: { id: profileId }, store, log, debug }) => {
+  const c = machineCreationContextFromFlags(f)
+  return machineCreationDriver({
+    client: createClient({
+      ...c,
+      profileId,
+    }),
+    log,
+    debug,
+    ...c,
+    store,
+  })
+}
 
-machineDriver.machineCreationFactory = machineCreationFactory
-
-export default machineDriver
+export default {
+  flags,
+  factory,
+  machineCreationFlags,
+  machineCreationFactory,
+  questions,
+  flagsFromAnswers,
+} as const

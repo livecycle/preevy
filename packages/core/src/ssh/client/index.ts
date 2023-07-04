@@ -3,7 +3,6 @@ import { ListenOptions } from 'net'
 import { sftpClient } from './sftp'
 import { forwardOutStreamLocal } from './forward-out'
 import { execCommand } from './exec'
-import { mkdir } from '../../command-executer'
 import { Logger } from '../../log'
 
 export { FileToCopy } from './files'
@@ -30,7 +29,6 @@ export const connectSshClient = async (
   const sftp = sftpClient(ssh)
 
   const self = {
-    mkdir: mkdir(exec),
     sftp,
     exec,
     forwardOutStreamLocal: (
