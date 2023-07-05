@@ -18,7 +18,7 @@
     "iter-tools-es": "^7.5.1",
     "lodash": "^4.17.21",
     "nunjucks": "^3.2.4",
-    "spdy": "^4.0.2",
+    "p-retry": "^4.6.2",
     "yaml": "^2.3.1"
   },
   "devDependencies": {

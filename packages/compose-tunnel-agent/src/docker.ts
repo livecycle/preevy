@@ -1,6 +1,6 @@
 import Docker from 'dockerode'
-import { throttle } from 'lodash'
 import { tryParseJson, Logger } from '@preevy/common'
+import { throttle } from 'lodash'
 
 const composeFilter = {
   label: ['com.docker.compose.project'],
@@ -42,15 +42,12 @@ const client = ({
   return {
     getRunningServices,
     startListening: async ({ onChange }: { onChange: (services: RunningService[]) => void }) => {
-      const handler = throttle(
-        async (data?: Buffer) => {
-          log.debug('event handler: %j', data && tryParseJson(data.toString()))
+      const handler = throttle(async (data?: Buffer) => {
+        log.debug('event handler: %j', data && tryParseJson(data.toString()))
 
-          const services = await getRunningServices()
-          onChange(services)
-        },
-        debounceWait
-      )
+        const services = await getRunningServices()
+        onChange(services)
+      }, debounceWait, { leading: true, trailing: true })
 
       const stream = await docker.getEvents({
         filters: {

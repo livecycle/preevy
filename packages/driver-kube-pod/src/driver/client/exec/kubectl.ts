@@ -1,5 +1,5 @@
 import { readable as isReadableStream } from 'is-stream'
-import { ProcessError, ProcessOutputBuffers } from '@preevy/core'
+import { ProcessOutputBuffers } from '@preevy/core'
 import { Readable, Writable } from 'stream'
 import { ChildProcess, StdioOptions, spawn } from 'child_process'
 import { BaseExecOpts, ExecError, ReadableBufferStream, callbackWritableStream } from './common'
@@ -14,7 +14,6 @@ export class ProcessExecError extends ExecError {
   ) {
     super(
       command,
-      ProcessError.calcMessage(command, process.exitCode, process.signalCode, output),
       output,
       process.exitCode ?? undefined,
     )

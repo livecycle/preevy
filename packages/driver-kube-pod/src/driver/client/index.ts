@@ -177,7 +177,7 @@ const kubeClient = ({ log, namespace, kc, profileId, template, package: packageD
   return {
     findMostRecentDeployment,
     listProfileDeployments: () => helpers.listDeployments({ ...profileSelector({ profileId }) }),
-    exec: baseExec({ k8sExec: new k8s.Exec(kc), kubeconfig, namespace }),
+    exec: baseExec({ k8sExec: new k8s.Exec(kc), kubeconfig, namespace, log }),
     findReadyPodForDeployment: helpers.findReadyPodForDeployment,
     createEnv,
     deleteEnv,

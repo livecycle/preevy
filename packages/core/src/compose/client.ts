@@ -22,10 +22,13 @@ class DockerIsNotInstalled extends Error {
 const isExposedService = (x: [string, ComposeService]): x is [string, RequiredProperties<ComposeService, 'ports'>] => hasPropertyDefined(x[1], 'ports')
 const getExposedServices = (model: Pick<ComposeModel, 'services'>) => Object.entries(model.services ?? []).filter(isExposedService)
 
-export const getExposedTcpServices = (model: Pick<ComposeModel, 'services'>) => getExposedServices(model)
-  .flatMap(x => x[1].ports.map(k => [x[0], k] as const))
-  .filter(x => x[1].protocol === 'tcp')
-  .map(x => [x[0], x[1].target] as const)
+export const getExposedTcpServicePorts = (model: Pick<ComposeModel, 'services'>) => getExposedServices(model)
+  .map(([name, { ports }]) => ({
+    name,
+    ports: ports
+      .filter(({ protocol }) => protocol === 'tcp')
+      .map(({ target }) => target),
+  }))
 
 const composeFileArgs = (
   composeFiles: string[] | Buffer,

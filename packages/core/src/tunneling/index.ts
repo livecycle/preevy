@@ -104,7 +104,7 @@ export const performTunnelConnectionCheck = async ({
 
 export const createTunnelingKey = async () => Buffer.from((await generateSshKeyPair()).privateKey)
 
-export const tunnelUrlForEnv = (
+export const tunnelUrlsForEnv = (
   { projectName, envId, rootUrl, clientId }: {
     projectName: string
     envId: string
@@ -113,8 +113,8 @@ export const tunnelUrlForEnv = (
   }
 ) => {
   const resolver = tunnelNameResolver({ userDefinedSuffix: envId })
-  return ({ name: serviceName, port: servicePort }: { name: string; port: number }) => {
-    const { tunnel } = resolver({ name: serviceName, project: projectName, port: servicePort })
-    return replaceHostname(rootUrl, `${tunnel}-${clientId}.${rootUrl.hostname}`).toString()
+  return ({ name: serviceName, ports: servicePorts }: { name: string; ports: number[] }) => {
+    const tunnels = resolver({ name: serviceName, project: projectName, ports: servicePorts })
+    return tunnels.map(({ port, tunnel }) => ({ port, url: replaceHostname(rootUrl, `${tunnel}-${clientId}.${rootUrl.hostname}`).toString() }))
   }
 }

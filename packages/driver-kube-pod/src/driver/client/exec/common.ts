@@ -1,4 +1,4 @@
-import { ProcessOutputBuffers } from '@preevy/core'
+import { ProcessError, ProcessOutputBuffers } from '@preevy/core'
 import { Readable, Writable } from 'stream'
 
 export type BaseExecOpts = {
@@ -30,17 +30,16 @@ export class ReadableBufferStream extends Readable {
 export const callbackWritableStream = (onWrite: (chunk: Buffer) => void) => new Writable({
   write: (chunk: unknown, _encoding: BufferEncoding, callback: (error?: Error | null | undefined) => void) => {
     onWrite(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string))
-    setImmediate(callback)
+    callback()
   },
 })
 
 export class ExecError extends Error {
   constructor(
     readonly command: string[],
-    readonly message: string,
     readonly output: ProcessOutputBuffers,
     readonly code?: number,
   ) {
-    super(message)
+    super(ProcessError.calcMessage(command, code ?? null, null, output))
   }
 }

@@ -30,7 +30,7 @@ export const parseRequestedPath = (requestPath: string) => {
   )
   return schema.safeParse({ path, params: paramsObject })
 }
-  
+
 const getRequestedSocketPath = (info: ssh2.SocketBindInfo) => parseRequestedPath(info.socketPath)
 
 export const sshServer = ({
@@ -99,7 +99,7 @@ export const sshServer = ({
         if ((name as string) == 'cancel-streamlocal-forward@openssh.com') {
           const res = getRequestedSocketPath(info as unknown as SocketBindInfo)
           if(!res.success){
-            log.error('invalid socket path %j', res.error)
+            log.error('cancel-streamlocal-forward@openssh.com: invalid socket path %j', res.error)
             reject?.()
             return
           }
@@ -108,6 +108,7 @@ export const sshServer = ({
             log.error('cancel-streamlocal-forward@openssh.com: socketPath %j not found, rejecting', (info as unknown as SocketBindInfo).socketPath)
             reject?.()
           }
+          accept?.()
           return
         }
 
@@ -119,7 +120,7 @@ export const sshServer = ({
 
         const res = getRequestedSocketPath(info as unknown as SocketBindInfo)
         if(res.success === false){
-          log.error('invalid socket path %j', res.error)
+          log.error('streamlocal-forward@openssh.com: invalid socket path %j', res.error)
           reject?.()
           return
         }
@@ -127,11 +128,11 @@ export const sshServer = ({
         const {path: requestedSocketPath, params} = res.data
 
         if (tunnels.has(requestedSocketPath)) {
-          log.error('duplicate socket request %j', requestedSocketPath)
+          log.error('streamlocal-forward@openssh.com: duplicate socket request %j', requestedSocketPath)
           reject?.()
           return
         }
-        
+
         const socketServer = net.createServer((socket) => {
           log.debug('socketServer connected %j', socket)
           client.openssh_forwardOutStreamLocal(
@@ -156,7 +157,7 @@ export const sshServer = ({
 
         socketServer
           .listen(socketPath, () => {
-            log.debug('calling accept: %j', accept)
+            log.debug('streamlocal-forward@openssh.com: calling accept: %j', accept)
             accept?.()
             tunnels.add(requestedSocketPath)
             onPipeCreated?.({clientId, remotePath: requestedSocketPath, localSocketPath: socketPath, publicKey, access: params.access})

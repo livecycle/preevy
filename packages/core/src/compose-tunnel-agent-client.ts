@@ -92,14 +92,14 @@ export const addComposeTunnelAgentService = (
   },
 })
 
-export const queryTunnels = async ({ retryOpts = { retries: 0 }, tunnelUrlForService }: {
-  tunnelUrlForService: (servicePort: { name: string; port: number }) => string
+export const queryTunnels = async ({ retryOpts = { retries: 0 }, tunnelUrlsForService }: {
+  tunnelUrlsForService: (service: { name: string; ports: number[] }) => { port: number; url: string }[]
   retryOpts?: retry.Options
 }) => {
-  const serviceUrl = tunnelUrlForService({
+  const serviceUrl = tunnelUrlsForService({
     name: COMPOSE_TUNNEL_AGENT_SERVICE_NAME,
-    port: COMPOSE_TUNNEL_AGENT_SERVICE_PORT,
-  }).replace(/\/$/, '')
+    ports: [COMPOSE_TUNNEL_AGENT_SERVICE_PORT],
+  })[0].url.replace(/\/$/, '')
 
   const url = `${serviceUrl}/tunnels`
 

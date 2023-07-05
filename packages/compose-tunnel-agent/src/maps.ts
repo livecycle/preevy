@@ -1,7 +1,7 @@
-export const intersection = <K, V>(m1: Map<K, V>, m2: Map<K, V>) => new Map<K, V>(
-  [...m1.entries()].filter(([key]) => m2.has(key))
+export const intersection = <K>(a: Pick<Set<K>, 'keys'>, b: Pick<Set<K>, 'has'>) => new Set<K>(
+  [...a.keys()].filter(key => b.has(key))
 )
 
-export const difference = <K, V1, V2>(m1: Map<K, V1>, m2: Map<K, V2>) => new Map<K, V1>(
-  [...m1.entries()].filter(([key]) => !m2.has(key))
+export const difference = <K>(a: Pick<Set<K>, 'keys'>, b: Pick<Set<K>, 'has'>) => new Set<K>(
+  [...a.keys()].filter(key => !b.has(key))
 )

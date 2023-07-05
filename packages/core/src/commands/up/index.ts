@@ -5,7 +5,7 @@ import { rimraf } from 'rimraf'
 import yaml from 'yaml'
 import { inspect } from 'util'
 import { TunnelOpts } from '../../ssh'
-import { ComposeModel, fixModelForRemote, getExposedTcpServices, localComposeClient, resolveComposeFiles } from '../../compose'
+import { ComposeModel, fixModelForRemote, getExposedTcpServicePorts, localComposeClient, resolveComposeFiles } from '../../compose'
 import { ensureCustomizedMachine } from './machine'
 import { wrapWithDockerSocket } from '../../docker'
 import { findAmbientEnvId } from '../../env-id'
@@ -14,7 +14,7 @@ import { withSpinner } from '../../spinner'
 import { MachineCreationDriver, MachineDriver, MachineBase } from '../../driver'
 import { remoteProjectDir } from '../../remote-files'
 import { Logger } from '../../log'
-import { Tunnel, tunnelUrlForEnv } from '../../tunneling'
+import { Tunnel, tunnelUrlsForEnv } from '../../tunneling'
 import { FileToCopy, uploadWithSpinner } from '../../upload-files'
 
 const createCopiedFileInDataDir = (
@@ -53,11 +53,13 @@ const calcComposeArgs = ({ userSpecifiedServices, debug, cwd } : {
 
 const serviceLinkEnvVars = (
   userModel: Pick<ComposeModel, 'services'>,
-  tunnelUrlForService: (servicePort: { name: string; port: number }) => string,
-) => getExposedTcpServices(userModel).reduce((envMapAgg, [service, port]) => ({
-  ...envMapAgg,
-  [`PREEVY_BASE_URI_${service}_${port}`.toUpperCase()]: tunnelUrlForService({ name: service, port }),
-}), {})
+  tunnelUrlsForService: (servicePorts: { name: string; ports: number[] }) => { port: number; url: string }[],
+) => Object.fromEntries(
+  getExposedTcpServicePorts(userModel)
+    .flatMap(servicePorts => tunnelUrlsForService(servicePorts)
+      .map(({ port, url }) => ({ port, url, name: servicePorts.name })))
+    .map(({ name, port, url }) => [`PREEVY_BASE_URI_${name}_${port}`.toUpperCase(), url])
+)
 
 const up = async ({
   clientId,
@@ -101,14 +103,14 @@ const up = async ({
   const projectName = userSpecifiedProjectName ?? userModel.name
   const remoteDir = remoteProjectDir(projectName)
 
-  const envId = userSpecifiedEnvId || await findAmbientEnvId(projectName)
+  const envId = userSpecifiedEnvId || (await findAmbientEnvId(projectName))
   log.info(`Using environment ID: ${envId}`)
 
   // We start by getting the user model without injecting Preevy's environment
   // variables (e.g. `PREEVY_BASE_URI_BACKEND_3000`) so we can have the list of services
   // required to create said variables
-  const tunnelUrlForService = tunnelUrlForEnv({ projectName, envId, rootUrl: new URL(rootUrl), clientId })
-  const composeEnv = { ...serviceLinkEnvVars(userModel, tunnelUrlForService) }
+  const tunnelUrlsForService = tunnelUrlsForEnv({ projectName, envId, rootUrl: new URL(rootUrl), clientId })
+  const composeEnv = { ...serviceLinkEnvVars(userModel, tunnelUrlsForService) }
 
   const composeFiles = await resolveComposeFiles({
     userSpecifiedFiles: userSpecifiedComposeFiles,
@@ -175,7 +177,7 @@ const up = async ({
     await withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit' }))
     const tunnels = await withSpinner(async () => {
       const queryResult = await queryTunnels({
-        tunnelUrlForService,
+        tunnelUrlsForService,
         retryOpts: {
           minTimeout: 1000,
           maxTimeout: 2000,
