@@ -5,7 +5,7 @@ sidebar_position: 1
 
 ## Problem
 
-There may be instances where you need to expose a service or an environment that shouldn't be accessible to anyone with the preview URL and requires an additional layer of authentication. 
+There may be instances where you need to expose a service or an environment that shouldn't be accessible to anyone with the preview URL and requires an additional layer of authentication.
 
 ## Solution
 
@@ -27,15 +27,16 @@ The password will be valid for 60 days. If needed, you can regenerate the passwo
 
 ### Implementation Details
 
-When Preevy's tunneling service identifies a service marked as private, it adds a layer of HTTP basic authentication to that service.  
-Requests to that service will be required to include a JWT token, which is signed using the profile's tunneling private key.  
-The JWT can be passed as the password when using Basic Authentication.  
-Future implementations will allow the use of bearer tokens, cookie-based sessions, and external authentication providers.  
+When Preevy's tunneling service identifies a service marked as private, it adds a layer of [HTTP basic authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Authentication) to that service.
+Requests to that service will be required to include a JWT token, which is signed using the profile's tunneling private key.
+The JWT can be passed as the password when using Basic Authentication.
+Future implementations will allow the use of bearer tokens, cookie-based sessions, and external authentication providers.
 
 ### Limitations
 
-There are some limitations to our current private services implementation:
-- Requests that use an additional layer of internal authentication will not work.
-- WebSocket for private services is not yet supported. 
+Because the current implementation relies on HTTP basic authentication via the `Authorization` HTTP header, it has a few limitations:
+
+- Backend services that depend on the `Authorization` header may break, because this header is already used for Preevy's authentication.
+- WebSockets do not support the `Authorization` header, so they will not work.
 
 Both of these limitations will be addressed when the tunneling service begins to support cookie-based authentication/sessions.
