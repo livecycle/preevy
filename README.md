@@ -95,7 +95,7 @@ To start using the Preevy CLI you will need:
 - A cloud provider for provisioning VMs (AWS/GCP/Azure), or a Kubernetes cluster (local, remote or managed)
 
 If you don't have an existing cloud account or prefer to try Preevy first locally, you can use the embeded Kuberentes inside Docker for Desktop at:
-Docker Settings -> Kuberentes -> [x] Enable Kubernetes.  
+Docker Settings -> Kuberentes -> Enable Kubernetes.  
 Afterwards just follow the instructions for Kuberentes driver.  
 
 *For provisioning a VM*, configure your provider:
