@@ -89,8 +89,14 @@ You can read more about the story and philosophy behind Preevy [here](https://pr
 
 To start using the Preevy CLI you will need:
 
+- Docker for desktop/Docker cli
+- Node 18 
 - A Docker-Compose application (examples can be found [here](https://github.com/docker/awesome-compose))
-- A cloud provider for provisioning VMs (AWS/GCP/Azure), or a Kubernetes cluster (local, remote or managed).
+- A cloud provider for provisioning VMs (AWS/GCP/Azure), or a Kubernetes cluster (local, remote or managed)
+
+If you don't have an existing cloud account or prefer to try Preevy first locally, you can use the embeded Kuberentes inside Docker for Desktop at:
+Docker Settings -> Kuberentes -> [x] Enable Kubernetes.  
+Afterwards just follow the instructions for Kuberentes driver.  
 
 *For provisioning a VM*, configure your provider:
 - In AWS, it could be by using `aws configure`
