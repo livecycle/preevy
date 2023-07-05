@@ -1,7 +1,6 @@
 ---
 title: "Service discovery using environment variables"
-sidebar_position: 1
-date: "2023-05-07"
+sidebar_position: 2
 ---
 
 ## tl;dr

@@ -1,8 +1,8 @@
+import { formatPublicKey } from '@preevy/common'
 import fs from 'fs'
 import path from 'path'
 import { rimraf } from 'rimraf'
 import yaml from 'yaml'
-import { formatPublicKey } from '@preevy/common'
 import { inspect } from 'util'
 import { TunnelOpts } from '../../ssh'
 import { ComposeModel, fixModelForRemote, getExposedTcpServices, localComposeClient, resolveComposeFiles } from '../../compose'
@@ -173,7 +173,6 @@ const up = async ({
     const composeArgs = calcComposeArgs({ userSpecifiedServices, debug, cwd })
     log.debug('Running compose up with args: ', composeArgs)
     await withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit' }))
-
     const tunnels = await withSpinner(async () => {
       const queryResult = await queryTunnels({
         tunnelUrlForService,

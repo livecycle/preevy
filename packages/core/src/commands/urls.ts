@@ -1,7 +1,8 @@
 import { queryTunnels } from '../compose-tunnel-agent-client'
 import { flattenTunnels, tunnelUrlForEnv } from '../tunneling'
 
-export const urls = async ({ envId, rootUrl, clientId, projectName, serviceAndPort }: {
+export const urls = async ({ envId,
+  rootUrl, clientId, projectName, serviceAndPort }: {
   envId: string
   projectName: string
   rootUrl: string
@@ -11,7 +12,6 @@ export const urls = async ({ envId, rootUrl, clientId, projectName, serviceAndPo
   const tunnelUrlForService = tunnelUrlForEnv({ projectName, envId, rootUrl: new URL(rootUrl), clientId })
 
   const { tunnels } = await queryTunnels({ tunnelUrlForService, retryOpts: { retries: 2 } })
-
   return flattenTunnels(tunnels)
     .filter(tunnel => !serviceAndPort || (
       tunnel.service === serviceAndPort.service && (!serviceAndPort.port || tunnel.port === serviceAndPort.port)

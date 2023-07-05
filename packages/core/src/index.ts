@@ -51,9 +51,11 @@ export {
   createTunnelingKey,
   performTunnelConnectionCheck,
 } from './tunneling'
+export { generateBasicAuthCredentials as getUserCredentials, jwtGenerator } from './credentials'
 export { ciProviders, detectCiProvider } from './ci-providers'
 export { paginationIterator } from './pagination'
 export { ensureDefined, extractDefined, HasRequired } from './nulls'
 export { pSeries } from './p-series'
 export * as git from './git'
 export * as config from './config'
+export * from './url'

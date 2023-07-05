@@ -4,6 +4,7 @@ import { IncomingMessage, ServerResponse } from 'http'
 import internal from 'stream'
 import type { Logger } from 'pino'
 import { requestsCounter } from './metrics'
+import { authenticator, tunnelingKeyAuthenticator } from './auth'
 
 export const isProxyRequest = (
   hostname: string,
@@ -54,20 +55,16 @@ export function proxyHandlers({
       }
 
       if(env.access === 'private'){
-        const authorization = req.headers['authorization'];
-        if (!(authorization && authorization.startsWith('Basic '))) {
-          return unauthorized(res)
-        }
-
-        const basicAuth = Buffer.from(authorization?.split('Basic ')[1] || '', 'base64').toString('ascii');
-        const [username, password] = basicAuth.split(':');
-        if (username !== 'x-preevy-profile-key'){
-          return unauthorized(res)
-        }
-        const signature = Buffer.from(password, 'base64');
-        const isAuthenticated = env.publicKey.verify(username, signature)
-        if (!isAuthenticated) {
-          return unauthorized(res)
+        const authenticate = authenticator([tunnelingKeyAuthenticator(env.publicKey)])
+        try {
+          const claims = await authenticate(req)  
+          if (!claims){
+            return unauthorized(res);
+          }
+        } catch (error) {
+          res.statusCode = 400;
+          res.end();
+          return;
         }
       }
 
@@ -94,6 +91,12 @@ export function proxyHandlers({
     wsHandler: asyncHandler(async (req: IncomingMessage, socket: internal.Duplex, head: Buffer) => {
       const env = await resolveTargetEnv(req)
       if (!env) {
+        socket.end();
+        return;
+      }
+
+      if(env.access === 'private'){
+        // need to support session cookie, native browser Websocket api doesn't forward authorization header
         socket.end();
         return;
       }

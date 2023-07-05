@@ -2,12 +2,13 @@ import { Args, Flags, ux } from '@oclif/core'
 import {
   commands, flattenTunnels, profileStore,
   telemetryEmitter,
+  getUserCredentials, jwtGenerator, withBasicAuthCredentials,
 } from '@preevy/core'
 import { asyncReduce } from 'iter-tools-es'
 import { tunnelServerFlags } from '@preevy/cli-common'
 import { tunnelServerHello } from '../tunnel-server-client'
 import MachineCreationDriverCommand from '../machine-creation-driver-command'
-import { envIdFlags } from '../common-flags'
+import { envIdFlags, urlFlags } from '../common-flags'
 
 // eslint-disable-next-line no-use-before-define
 export default class Up extends MachineCreationDriverCommand<typeof Up> {
@@ -21,6 +22,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       default: true,
       allowNo: true,
     }),
+    ...urlFlags,
     ...ux.table.flags(),
   }
 
@@ -81,7 +83,11 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       skipUnchangedFiles: flags['skip-unchanged-files'],
     })
 
-    const flatTunnels = flattenTunnels(tunnels)
+    let flatTunnels = flattenTunnels(tunnels)
+    if (flags['include-access-credentials']) {
+      const addCredentials = withBasicAuthCredentials(await getUserCredentials(jwtGenerator(tunnelingKey)))
+      flatTunnels = flatTunnels.map(t => Object.assign(t, { url: addCredentials(t.url) }))
+    }
 
     const result = await asyncReduce(
       { urls: flatTunnels },
@@ -96,7 +102,9 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       return result.urls
     }
 
-    this.log(`Preview environment ${envId} provisioned at ${machine.locationDescription}`)
+    this.log(`Preview environment ${envId} provisioned at: ${machine.locationDescription}`)
+
+    // add credentials here
 
     ux.table(
       result.urls,
@@ -105,7 +113,11 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
         port: { header: 'Port' },
         url: { header: 'URL' },
       },
-      this.flags,
+      {
+        ...this.flags,
+        'no-truncate': this.flags['no-truncate'] ?? (!this.flags.output && !this.flags.csv && flags['include-access-credentials']),
+        'no-header': this.flags['no-header'] ?? (!this.flags.output && !this.flags.csv && flags['include-access-credentials']),
+      },
     )
 
     return undefined

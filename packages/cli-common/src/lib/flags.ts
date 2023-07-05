@@ -46,3 +46,10 @@ export const tunnelServerFlags = {
     default: false,
   }),
 } as const
+
+export const urlFlags = {
+  'include-access-credentials': Flags.boolean({
+    description: 'Include access credentials for basic auth for each service URL',
+    default: false,
+  }),
+} as const
