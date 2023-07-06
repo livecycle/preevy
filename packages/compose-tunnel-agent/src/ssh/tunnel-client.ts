@@ -111,10 +111,10 @@ export const sshClient = async ({
 
     const r = Object.entries(helloTunnels)
       .reduce(
-        (res, [forwardRequestId, url]) => {
-          const forward = currentForwards.get(forwardRequestId)
+        (res, [tunnelPrefix, url]) => {
+          const forward = [...currentForwards.entries()].find(([x, _]) => x.split('#')[0] === tunnelPrefix)?.[1]
           if (!forward) {
-            throw new Error(`no such forward: ${forwardRequestId}`)
+            throw new Error(`no such forward: ${tunnelPrefix}`)
           }
           const { service, port } = forward;
           ((res[serviceKey(service)] ||= {
