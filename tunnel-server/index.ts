@@ -13,6 +13,9 @@ import { runMetricsServer } from './src/metrics'
 import { numberFromEnv, requiredEnv } from './src/env'
 import { replaceHostname } from './src/url'
 import { createPublicKey } from 'crypto'
+import { calculateJwkThumbprintUri, exportJWK } from 'jose'
+import { sessionManager } from './src/seesion'
+import { claimsSchema } from './src/auth'
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
@@ -36,7 +39,7 @@ const envStore = inMemoryPreviewEnvStore()
 const logger = pino(appLoggerFromEnv())
 const app = createApp({
   isProxyRequest: isProxyRequest(BASE_URL.hostname),
-  proxyHandlers: proxyHandlers({envStore, logger}),
+  proxyHandlers: proxyHandlers({envStore, logger, sessionManager: sessionManager({domain: BASE_URL.hostname, schema: claimsSchema })}),
   logger,
 })
 const sshLogger = logger.child({ name: 'ssh_server' })
@@ -59,7 +62,9 @@ const sshServer = createSshServer({
   onPipeCreated: async ({clientId, remotePath, localSocketPath, publicKey, access}) => {
     const key = tunnelName(clientId, remotePath);
     sshLogger.debug('creating tunnel %s for localSocket %s', key, localSocketPath)
-    await envStore.set(key, { target: localSocketPath, clientId, publicKey: createPublicKey(publicKey.getPublicPEM()), access })
+    const pKey = createPublicKey(publicKey.getPublicPEM());
+    const thumbprint = await calculateJwkThumbprintUri(await exportJWK(pKey))
+    await envStore.set(key, { target: localSocketPath, clientId, publicKey: pKey, publicKeyThumbprint: thumbprint, access })
     tunnelsGauge.inc({clientId})
   },
   onPipeDestroyed: async ({clientId, remotePath}) => {

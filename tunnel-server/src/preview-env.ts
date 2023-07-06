@@ -4,6 +4,7 @@ export type PreviewEnv = {
   clientId: string
   target: string
   publicKey: KeyObject,
+  publicKeyThumbprint: string,
   access: 'private' | 'public'
 }
 

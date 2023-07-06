@@ -4,7 +4,8 @@ import { IncomingMessage, ServerResponse } from 'http'
 import internal from 'stream'
 import type { Logger } from 'pino'
 import { requestsCounter } from './metrics'
-import { authenticator, tunnelingKeyAuthenticator } from './auth'
+import { Claims, authenticator, JwtAuthenticator } from './auth'
+import { SessionManager } from './seesion'
 
 export const isProxyRequest = (
   hostname: string,
@@ -28,8 +29,10 @@ const unauthorized = (res: ServerResponse<IncomingMessage>) => {
 
 export function proxyHandlers({
   envStore,
+  sessionManager,
   logger
 }: {
+  sessionManager: SessionManager<Claims>
   envStore: PreviewEnvStore
   logger: Logger
 } ){
@@ -54,18 +57,33 @@ export function proxyHandlers({
         return;
       }
 
-      if(env.access === 'private'){
-        const authenticate = authenticator([tunnelingKeyAuthenticator(env.publicKey)])
-        try {
-          const claims = await authenticate(req)  
-          if (!claims){
-            return unauthorized(res);
+      const session = sessionManager(req, res, env.clientId)
+      if (env.access === "private"){
+        if (!session.user){
+          const authenticate = authenticator([JwtAuthenticator(env)])
+          try {
+            const authResult = await authenticate(req)  
+            if (authResult.isAuthenticated){
+              session.set(authResult.claims)
+              if (authResult.login && req.method === 'GET'){
+                session.save()
+                res.writeHead(308, {
+                  location: req.url,
+                })
+                res.end();
+                return;
+              }
+            }
+          } catch (error) {
+            res.statusCode = 400;
+            res.end();
+            return;
           }
-        } catch (error) {
-          res.statusCode = 400;
-          res.end();
-          return;
         }
+      }
+      
+      if (env.access === 'private' && session.user?.role !== 'admin'){
+        return unauthorized(res);
       }
 
       logger.debug('proxying to %j', { target: env.target, url: req.url })
@@ -96,9 +114,11 @@ export function proxyHandlers({
       }
 
       if(env.access === 'private'){
-        // need to support session cookie, native browser Websocket api doesn't forward authorization header
-        socket.end();
-        return;
+        const session = sessionManager(req, undefined as any, env.clientId)
+        if (session.user?.role !== 'admin'){
+          socket.end();
+          return;
+        }
       }
       return proxy.ws(
         req,
