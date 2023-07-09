@@ -4,49 +4,52 @@ import net from 'net'
 import path from 'path'
 import ssh2, { ParsedKey, SocketBindInfo } from 'ssh2'
 import { inspect } from 'util'
-import * as z from 'zod'
+import { ForwardRequest, parseForwardRequest } from './forward-request'
 
 const idFromPublicSsh = (key: Buffer) =>
   crypto.createHash('sha1').update(key).digest('base64url').replace(/[_-]/g, '').slice(0, 8).toLowerCase()
 
-const schema = z.object({
-  path: z.string(),
-  params: z.object({ access: z.enum(['public', 'private']).default('public') }).required(),
-})
-
-export const parseRequestedPath = (requestPath: string) => {
-  const [path, params] = requestPath.split('#')
-
-  if (!params) {
-    return schema.safeParse({ path, params: {} })
+const parseForwardRequestFromSocketBindInfo = (
+  { socketPath: request }: Pick<ssh2.SocketBindInfo, 'socketPath'>
+): { request: string } & ({ parsed: ForwardRequest } | { error: Error }) => {
+  try {
+    return { request, parsed: parseForwardRequest(request) }
+  } catch (error) {
+    return { request, error: error as Error } as const;
   }
-  const paramsArray = params.split(';')
-  const paramsObject = paramsArray.reduce(
-    (acc, param) => {
-      const [key, value] = param.split('=')
-      return { ...acc, [key]: value }
-    },
-    {} as Record<string, string>
-  )
-  return schema.safeParse({ path, params: paramsObject })
 }
 
-const getRequestedSocketPath = (info: ssh2.SocketBindInfo) => parseRequestedPath(info.socketPath)
+export type RemoteClient = {
+  clientId: string
+  publicKey: ParsedKey
+}
+
+export type ForwardRequestWithContext = {
+  request: string
+  parsedRequest: ForwardRequest
+  client: RemoteClient
+}
+
+export type ForwardSocketEvent = ForwardRequestWithContext & {
+  localSocketPath: string
+}
 
 export const sshServer = ({
   log,
   sshPrivateKey,
   socketDir,
-  onPipeCreated,
-  onPipeDestroyed,
+  onForwardSocketCreated: onPipeCreated,
+  onForwardSocketDestroyed: onPipeDestroyed,
+  validateForwardRequest,
   onHello,
 }: {
   log: FastifyBaseLogger
   sshPrivateKey: string
   socketDir: string
-  onPipeCreated?: (props: {clientId: string, remotePath: string, localSocketPath: string, publicKey: ParsedKey, access: 'private' | 'public' }) => void
-  onPipeDestroyed?: (props: {clientId: string, remotePath: string, localSocketPath: string}) => void
-  onHello: (clientId: string, tunnels: string[]) => string
+  validateForwardRequest?: (request: ForwardRequestWithContext) => Promise<void>
+  onForwardSocketCreated?: (event: ForwardSocketEvent) => void
+  onForwardSocketDestroyed?: (event: ForwardSocketEvent) => void
+  onHello: (client: RemoteClient, activeTunnelRequests: Record<string, ForwardRequest>) => Promise<string>
 }) => new ssh2.Server(
   {
     debug: x => log.debug(x),
@@ -55,9 +58,8 @@ export const sshServer = ({
     hostKeys: [sshPrivateKey],
   },
   (client) => {
-    let clientId: string
-    const tunnels = new Set<string>()
-    let publicKey: ParsedKey
+    let remoteClient: RemoteClient
+    const tunnels = new Map<string, ForwardRequest>()
 
     client
       .on('error', (err) => log.error(`client error: %j`, inspect(err)))
@@ -83,12 +85,11 @@ export const sshServer = ({
           return
         }
 
-        publicKey = keyOrError
-        clientId = idFromPublicSsh(keyOrError.getPublicSSH())
-        log.debug('accepting clientId %j', clientId)
+        remoteClient = { publicKey: keyOrError, clientId: idFromPublicSsh(keyOrError.getPublicSSH()) }
+        log.debug('accepting clientId %j', remoteClient.clientId)
         ctx.accept()
       })
-      .on('request', (accept, reject, name, info) => {
+      .on('request', async (accept, reject, name, info) => {
         log.debug('request %j', { accept, reject, name, info })
         if (!client.authenticated) {
           log.error('not authenticated, rejecting')
@@ -97,15 +98,14 @@ export const sshServer = ({
         }
 
         if ((name as string) == 'cancel-streamlocal-forward@openssh.com') {
-          const res = getRequestedSocketPath(info as unknown as SocketBindInfo)
-          if(!res.success){
-            log.error('cancel-streamlocal-forward@openssh.com: invalid socket path %j', res.error)
+          const res = parseForwardRequestFromSocketBindInfo(info as unknown as SocketBindInfo)
+          if('error' in res) {
+            log.error('cancel-streamlocal-forward@openssh.com: invalid socket path %j: %j', res.request, res.error)
             reject?.()
             return
           }
-          const requestedSocketPath = res.data.path
-          if (!tunnels.delete(requestedSocketPath)) {
-            log.error('cancel-streamlocal-forward@openssh.com: socketPath %j not found, rejecting', (info as unknown as SocketBindInfo).socketPath)
+          if (!tunnels.delete(res.request)) {
+            log.error('cancel-streamlocal-forward@openssh.com: request %j not found, rejecting', res.request)
             reject?.()
           }
           accept?.()
@@ -118,17 +118,29 @@ export const sshServer = ({
           return
         }
 
-        const res = getRequestedSocketPath(info as unknown as SocketBindInfo)
-        if(res.success === false){
-          log.error('streamlocal-forward@openssh.com: invalid socket path %j', res.error)
+        const res = parseForwardRequestFromSocketBindInfo(info as unknown as SocketBindInfo)
+        if('error' in res) {
+          log.error('streamlocal-forward@openssh.com: rejecting %j, error parsing: %j', res.request, inspect(res.error))
           reject?.()
           return
         }
 
-        const {path: requestedSocketPath, params} = res.data
+        const { request, parsed } = res
 
-        if (tunnels.has(requestedSocketPath)) {
-          log.error('streamlocal-forward@openssh.com: duplicate socket request %j', requestedSocketPath)
+        if (tunnels.has(request)) {
+          log.error('streamlocal-forward@openssh.com: rejecting %j, duplicate socket request', res.request)
+          reject?.()
+          return
+        }
+
+        try {
+          await validateForwardRequest?.({ client: remoteClient, request, parsedRequest: parsed })
+        } catch (validationError) {
+          log.error(
+            'streamlocal-forward@openssh.com: rejecting %j, validateForwardRequest returned error: %j',
+            res.request,
+            inspect(validationError),
+          )
           reject?.()
           return
         }
@@ -136,13 +148,13 @@ export const sshServer = ({
         const socketServer = net.createServer((socket) => {
           log.debug('socketServer connected %j', socket)
           client.openssh_forwardOutStreamLocal(
-            (info as unknown as SocketBindInfo).socketPath,
+            request,
             (err, upstream) => {
               if (err) {
-                log.error('error forwarding: %j', inspect(err))
+                log.error('error forwarding request %j: %s', request, inspect(err))
                 socket.end()
                 socketServer.close((err) => {
-                  log.error('error closing socket server: %j', err)
+                  log.error('error closing socket server for request %j: %j', request, inspect(err))
                 })
                 return
               }
@@ -151,7 +163,7 @@ export const sshServer = ({
           )
         })
 
-        const socketPath = path.join(socketDir, `s_${clientId}_${randomBytes(16).toString('hex')}`)
+        const socketPath = path.join(socketDir, `s_${remoteClient.clientId}_${randomBytes(16).toString('hex')}`)
 
         const closeSocketServer = () => socketServer.close()
 
@@ -159,8 +171,13 @@ export const sshServer = ({
           .listen(socketPath, () => {
             log.debug('streamlocal-forward@openssh.com: calling accept: %j', accept)
             accept?.()
-            tunnels.add(requestedSocketPath)
-            onPipeCreated?.({clientId, remotePath: requestedSocketPath, localSocketPath: socketPath, publicKey, access: params.access})
+            tunnels.set(request, parsed)
+            onPipeCreated?.({
+              request,
+              parsedRequest: parsed,
+              client: remoteClient,
+              localSocketPath: socketPath,
+            })
           })
           .on('error', (err: unknown) => {
             log.error('socketServer error: %j', err)
@@ -168,8 +185,13 @@ export const sshServer = ({
           })
           .on('close', () => {
             log.debug('socketServer close: %j', socketPath)
-            tunnels.delete(requestedSocketPath)
-            onPipeDestroyed?.({clientId, remotePath: requestedSocketPath, localSocketPath: socketPath})
+            tunnels.delete(request)
+            onPipeDestroyed?.({
+              request,
+              parsedRequest: parsed,
+              client: remoteClient,
+              localSocketPath: socketPath,
+            })
             client.removeListener('close', closeSocketServer)
           })
 
@@ -179,7 +201,7 @@ export const sshServer = ({
         log.debug('session')
         const session = accept()
 
-        session.on('exec', (accept, reject, info) => {
+        session.on('exec', async (accept, reject, info) => {
           log.debug('exec %j', info)
           if (info.command !== 'hello') {
             log.error('invalid exec command %j', info.command)
@@ -187,8 +209,9 @@ export const sshServer = ({
             return
           }
           const channel = accept()
-          log.info({clientId, tunnels: [...tunnels]}, 'client connected')
-          channel.stdout.write(onHello(clientId, [...tunnels]))
+          const tunnelsObj = Object.fromEntries([...tunnels.entries()])
+          log.info({ clientId: remoteClient.clientId, tunnels: tunnelsObj }, 'client hello')
+          channel.stdout.write(await onHello({ ...remoteClient }, tunnelsObj))
           channel.stdout.exit(0)
           if (tunnels.size === 0) {
             channel.close()
