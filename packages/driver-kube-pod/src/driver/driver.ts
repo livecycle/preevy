@@ -133,8 +133,7 @@ export const clientFromConfiguration = ({ flags: f, profileId, log }: {
 }) => createClient({
   log,
   namespace: f.namespace,
-  kc: loadKubeConfig(f.kubeconfig),
-  context: f.context,
+  kc: loadKubeConfig(f.kubeconfig, f.context),
   kubeconfig: f.kubeconfig,
   profileId,
   package: fs.promises.readFile(PACKAGE_JSON, 'utf-8').then(JSON.parse),

@@ -28,12 +28,15 @@ import {
 } from './metadata'
 import { Package } from './common'
 
-export const loadKubeConfig = (kubeconfig?: string) => {
+export const loadKubeConfig = (kubeconfig?: string, context?:string) => {
   const kc = new k8s.KubeConfig()
   if (kubeconfig) {
     kc.loadFromFile(kubeconfig)
   } else {
     kc.loadFromDefault()
+  }
+  if (context) {
+    kc.setCurrentContext(context)
   }
   return kc
 }
@@ -57,19 +60,15 @@ const ensureSingleDockerHostDeployment = (): ApplyFilter => {
   }
 }
 
-const kubeClient = ({ log, namespace, kc, profileId, template, package: packageDetails, kubeconfig, context }: {
+const kubeClient = ({ log, namespace, kc, profileId, template, package: packageDetails, kubeconfig }: {
   log: Logger
   kc: k8s.KubeConfig
   kubeconfig?: string
-  context?: string
   namespace: string
   profileId: string
   template: Buffer | string | Promise<Buffer | string>
   package: Package | Promise<Package>
 }) => {
-  if (context) {
-    kc.setCurrentContext(context)
-  }
   const k8sApi = kc.makeApiClient(k8s.CoreV1Api)
   const k8sAppsApi = kc.makeApiClient(k8s.AppsV1Api)
   const k8sObjApi = kc.makeApiClient(k8s.KubernetesObjectApi)
