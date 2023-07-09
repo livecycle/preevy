@@ -57,15 +57,19 @@ const ensureSingleDockerHostDeployment = (): ApplyFilter => {
   }
 }
 
-const kubeClient = ({ log, namespace, kc, profileId, template, package: packageDetails, kubeconfig }: {
+const kubeClient = ({ log, namespace, kc, profileId, template, package: packageDetails, kubeconfig, context }: {
   log: Logger
   kc: k8s.KubeConfig
   kubeconfig?: string
+  context?: string
   namespace: string
   profileId: string
   template: Buffer | string | Promise<Buffer | string>
   package: Package | Promise<Package>
 }) => {
+  if (context) {
+    kc.setCurrentContext(context)
+  }
   const k8sApi = kc.makeApiClient(k8s.CoreV1Api)
   const k8sAppsApi = kc.makeApiClient(k8s.AppsV1Api)
   const k8sObjApi = kc.makeApiClient(k8s.KubernetesObjectApi)
@@ -177,7 +181,7 @@ const kubeClient = ({ log, namespace, kc, profileId, template, package: packageD
   return {
     findMostRecentDeployment,
     listProfileDeployments: () => helpers.listDeployments({ ...profileSelector({ profileId }) }),
-    exec: baseExec({ k8sExec: new k8s.Exec(kc), kubeconfig, namespace, log }),
+    exec: baseExec({ kubeConfig: kc, kubeconfigLocation: kubeconfig, namespace, log }),
     findReadyPodForDeployment: helpers.findReadyPodForDeployment,
     createEnv,
     deleteEnv,
