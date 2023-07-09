@@ -146,10 +146,7 @@ export default class Init extends BaseCommand {
             if (typeof value === 'boolean') {
               return value ? `--${driverKey}` : `--no-${driverKey}`
             }
-            if (typeof value === 'string') {
-              return `--${driverKey}=${value}`
-            }
-            if (typeof value === 'number') {
+            if (typeof value === 'string' || typeof value === 'number') {
               return `--${driverKey}=${value}`
             }
             throw new Error(`Cannot convert ${value} of type ${typeof value} to a flag, for flag ${driverKey}`)
