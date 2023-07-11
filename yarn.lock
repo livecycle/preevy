@@ -13304,6 +13304,15 @@ tar-fs@~2.0.1:
     pump "^3.0.0"
     tar-stream "^2.0.0"
 
+tar-stream@3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/tar-stream/-/tar-stream-3.0.0.tgz#43de9f0e8d1bccc0036dbe2731260ca7668406b6"
+  integrity sha512-O6OfUKBbQOqAhh6owTWmA730J/yZCYcpmZ1DBj2YX51ZQrt7d7NgzrR+CnO9wP6nt/viWZW2XeXLavX3/ZEbEg==
+  dependencies:
+    b4a "^1.6.1"
+    bl "^6.0.0"
+    streamx "^2.12.5"
+
 tar-stream@^2.0.0, tar-stream@~2.2.0:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/tar-stream/-/tar-stream-2.2.0.tgz#acad84c284136b060dc3faa64474aa9aebd77287"
@@ -13314,15 +13323,6 @@ tar-stream@^2.0.0, tar-stream@~2.2.0:
     fs-constants "^1.0.0"
     inherits "^2.0.3"
     readable-stream "^3.1.1"
-
-tar-stream@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/tar-stream/-/tar-stream-3.0.0.tgz#43de9f0e8d1bccc0036dbe2731260ca7668406b6"
-  integrity sha512-O6OfUKBbQOqAhh6owTWmA730J/yZCYcpmZ1DBj2YX51ZQrt7d7NgzrR+CnO9wP6nt/viWZW2XeXLavX3/ZEbEg==
-  dependencies:
-    b4a "^1.6.1"
-    bl "^6.0.0"
-    streamx "^2.12.5"
 
 tar@6.1.11:
   version "6.1.11"

@@ -52,7 +52,7 @@ export default class CreateProfile extends DriverCommand<typeof CreateProfile> {
       .filter(([k, v]) => defaultFlagsFilter([k as string, v]))
 
     await this.profileConfig.create(alias, this.args.url, { driver }, async pStore => {
-      await pStore.setDefaultFlags(driver, driverFlags)
+      await pStore.setDefaultFlags(driver, Object.fromEntries(driverFlags))
       this.log('Creating new SSH key pair')
       await pStore.setTunnelingKey(await createTunnelingKey())
     })
