@@ -11,9 +11,14 @@ import { Writable } from 'node:stream'
 const idFromPublicSsh = (key: Buffer) =>
   crypto.createHash('sha1').update(key).digest('base64url').replace(/[_-]/g, '').slice(0, 8).toLowerCase()
 
-const parseForwardRequestFromSocketBindInfo = (
+const forwardRequestFromSocketBindInfo = (
   { socketPath: request }: Pick<ssh2.SocketBindInfo, 'socketPath'>
+) => request
+
+const parseForwardRequestFromSocketBindInfo = (
+  socketBindInfo: Pick<ssh2.SocketBindInfo, 'socketPath'>
 ): { request: string } & ({ parsed: ForwardRequest } | { error: Error }) => {
+  const request = forwardRequestFromSocketBindInfo(socketBindInfo)
   try {
     return { request, parsed: parseForwardRequest(request) }
   } catch (error) {
@@ -134,15 +139,10 @@ export const sshServer = (
           }
 
           if ((name as string) == 'cancel-streamlocal-forward@openssh.com') {
-            const res = parseForwardRequestFromSocketBindInfo(info as unknown as SocketBindInfo)
-            if('error' in res) {
-              log.error('cancel-streamlocal-forward@openssh.com: invalid socket path %j: %j', res.request, res.error)
-              reject?.()
-              return
-            }
-            const deleted = tunnels.get(res.request)
+            const request = forwardRequestFromSocketBindInfo(info as unknown as SocketBindInfo)
+            const deleted = tunnels.get(request)
             if (!deleted) {
-              log.error('cancel-streamlocal-forward@openssh.com: request %j not found, rejecting', res.request)
+              log.error('cancel-streamlocal-forward@openssh.com: request %j not found, rejecting', request)
               reject?.()
               return
             }
@@ -158,16 +158,17 @@ export const sshServer = (
           }
 
           const res = parseForwardRequestFromSocketBindInfo(info as unknown as SocketBindInfo)
+          const { request } = res
           if('error' in res) {
-            log.error('streamlocal-forward@openssh.com: rejecting %j, error parsing: %j', res.request, inspect(res.error))
+            log.error('streamlocal-forward@openssh.com: rejecting %j, error parsing: %j', request, inspect(res.error))
             reject?.()
             return
           }
 
-          const { request, parsed } = res
+          const { parsed } = res
 
           if (tunnels.has(request)) {
-            log.error('streamlocal-forward@openssh.com: rejecting %j, duplicate socket request', res.request)
+            log.error('streamlocal-forward@openssh.com: rejecting %j, duplicate socket request', request)
             reject?.()
             return
           }
@@ -176,7 +177,7 @@ export const sshServer = (
             'forward',
             request,
             parsed,
-            () => new Promise<ClientForward>((resolve, reject) => {
+            () => new Promise<ClientForward>((resolveForward, rejectForward) => {
               const socketServer = net.createServer((socket) => {
                 log.debug('socketServer connected %j', socket)
                 client.openssh_forwardOutStreamLocal(
@@ -201,17 +202,15 @@ export const sshServer = (
 
               socketServer
                 .listen(socketPath, () => {
-                  log.debug('streamlocal-forward@openssh.com: calling accept: %j', accept)
+                  log.debug('streamlocal-forward@openssh.com: request %j calling accept: %j', request, accept)
                   accept?.()
                   tunnels.set(request, socketServer)
-                  resolve(Object.assign(socketServer, {
-                    localSocketPath: socketPath,
-                  }))
+                  resolveForward(Object.assign(socketServer, { localSocketPath: socketPath }))
                 })
                 .on('error', (err: unknown) => {
-                  log.error('socketServer error: %j', err)
+                  log.error('socketServer request %j error: %j', request, err)
                   socketServer.close()
-                  reject(err)
+                  rejectForward(err)
                 })
                 .on('close', () => {
                   log.debug('socketServer close: %j', socketPath)
@@ -222,7 +221,7 @@ export const sshServer = (
               client.once('close', closeSocketServer)
             }),
             (reason: Error) => {
-              log.error('streamlocal-forward@openssh.com: rejecting %j, reason: %j', res.request, inspect(reason))
+              log.error('streamlocal-forward@openssh.com: rejecting %j, reason: %j', request, inspect(reason))
               reject?.()
             }
           )
