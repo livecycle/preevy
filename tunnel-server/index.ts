@@ -1,4 +1,4 @@
-import { promisify } from 'util'
+import { inspect, promisify } from 'util'
 import { app as createApp } from './src/app'
 import { inMemoryPreviewEnvStore } from './src/preview-env'
 import { sshServer as createSshServer } from './src/ssh-server'
@@ -56,29 +56,47 @@ const sshServer = createSshServer({
   log: sshLogger,
   sshPrivateKey,
   socketDir: '/tmp', // TODO
-  onPipeCreated: async ({clientId, remotePath, localSocketPath, publicKey, access}) => {
-    const key = tunnelName(clientId, remotePath);
-    sshLogger.debug('creating tunnel %s for localSocket %s', key, localSocketPath)
-    await envStore.set(key, { target: localSocketPath, clientId, publicKey: createPublicKey(publicKey.getPublicPEM()), access })
-    tunnelsGauge.inc({clientId})
-  },
-  onPipeDestroyed: async ({clientId, remotePath}) => {
-    const key = tunnelName(clientId, remotePath);
-    sshLogger.debug('deleting tunnel %s', key)
-    await envStore.delete(key)
-    tunnelsGauge.dec({clientId})
-  },
-  onHello: (clientId, tunnels) => JSON.stringify({
-    clientId,
-    // TODO: backwards compat, remove when we drop support for CLI v0.0.35
-    baseUrl: { hostname: BASE_URL.hostname, port: BASE_URL.port, protocol: BASE_URL.protocol },
-    rootUrl: BASE_URL.toString(),
-    tunnels: Object.fromEntries(tunnels.map(tunnel => [
-      tunnel,
-      tunnelUrl(BASE_URL, clientId, tunnel),
-    ])),
-  }) + '\r\n',
 })
+  .on('client', client => {
+    const { clientId, publicKey } = client
+    const tunnels = new Map<string, string>()
+    client
+      .on('forward', async (requestId, { path: remotePath, access }, accept, reject) => {
+        const key = tunnelName(clientId, remotePath)
+        if (await envStore.has(key)) {
+          reject(new Error(`duplicate path: ${key}`))
+          return
+        }
+        const forward = await accept()
+        sshLogger.debug('creating tunnel %s for localSocket %s', key, forward.localSocketPath)
+        await envStore.set(key, {
+          target: forward.localSocketPath,
+          clientId,
+          publicKey: createPublicKey(publicKey.getPublicPEM()),
+          access,
+        })
+        tunnels.set(requestId, tunnelUrl(BASE_URL, clientId, remotePath))
+        tunnelsGauge.inc({clientId})
+
+        forward.on('close', () => {
+          sshLogger.debug('deleting tunnel %s', key)
+          tunnels.delete(requestId)
+          void envStore.delete(key)
+          tunnelsGauge.dec({clientId})
+        })
+      })
+      .on('error', err => { sshLogger.warn('client error %j: %j', clientId, inspect(err)) })
+      .on('hello', channel => {
+        channel.stdout.write(JSON.stringify({
+          clientId,
+          // TODO: backwards compat, remove when we drop support for CLI v0.0.35
+          baseUrl: { hostname: BASE_URL.hostname, port: BASE_URL.port, protocol: BASE_URL.protocol },
+          rootUrl: BASE_URL.toString(),
+          tunnels: Object.fromEntries(tunnels.entries()),
+        }) + '\r\n')
+        channel.exit(0)
+      })
+  })
   .listen(SSH_PORT, LISTEN_HOST, () => {
     app.log.debug('ssh server listening on port %j', SSH_PORT)
   })
