@@ -1,6 +1,6 @@
 {
   "name": "@preevy/compose-tunnel-agent",
-  "version": "0.0.39",
+  "version": "0.0.40",
   "description": "",
   "main": "out/index.js",
   "files": [
@@ -9,7 +9,7 @@
   ],
   "license": "Apache-2.0",
   "dependencies": {
-    "@preevy/common": "0.0.39",
+    "@preevy/common": "0.0.40",
     "dockerode": "^3.3.4",
     "http-proxy": "^1.18.1",
     "lodash": "^4.17.21",

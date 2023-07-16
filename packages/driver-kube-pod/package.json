@@ -1,6 +1,6 @@
 {
   "name": "@preevy/driver-kube-pod",
-  "version": "0.0.39",
+  "version": "0.0.40",
   "description": "Kubernetes single Pod driver for Preevy",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,7 +12,7 @@
   "dependencies": {
     "@kubernetes/client-node": "^0.18.1",
     "@oclif/core": "^2",
-    "@preevy/core": "0.0.39",
+    "@preevy/core": "0.0.40",
     "fast-safe-stringify": "^2.1.1",
     "inquirer": "^8.0.0",
     "is-stream": "^2.0.1",

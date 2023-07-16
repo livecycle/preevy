@@ -1,6 +1,6 @@
 {
   "name": "@preevy/plugin-github-pr-link",
-  "version": "0.0.39",
+  "version": "0.0.40",
   "description": "",
   "main": "dist/index.js",
   "files": [
@@ -9,8 +9,8 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@oclif/core": "^2",
-    "@preevy/cli-common": "0.0.39",
-    "@preevy/core": "0.0.39",
+    "@preevy/cli-common": "0.0.40",
+    "@preevy/core": "0.0.40",
     "lodash": "^4.17.21",
     "nunjucks": "^3.2.4",
     "octokit": "^2.0.14"

@@ -1,6 +1,6 @@
 {
   "name": "@preevy/core",
-  "version": "0.0.39",
+  "version": "0.0.40",
   "description": "Core functionality for Preevy",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,8 +9,8 @@
   ],
   "license": "Apache-2.0",
   "dependencies": {
-    "@preevy/common": "0.0.39",
-    "@preevy/compose-tunnel-agent": "0.0.39",
+    "@preevy/common": "0.0.40",
+    "@preevy/compose-tunnel-agent": "0.0.40",
     "chalk": "^4.1.2",
     "fast-safe-stringify": "^2.1.1",
     "inquirer": "^8.0.0",

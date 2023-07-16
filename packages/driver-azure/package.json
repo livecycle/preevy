@@ -1,6 +1,6 @@
 {
   "name": "@preevy/driver-azure",
-  "version": "0.0.39",
+  "version": "0.0.40",
   "description": "Microsoft Azure Virtual Machine for Preevy",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -17,7 +17,7 @@
     "@azure/identity": "^3.2.2",
     "@azure/logger": "^1.0.4",
     "@oclif/core": "^2",
-    "@preevy/core": "0.0.39",
+    "@preevy/core": "0.0.40",
     "inquirer": "^8.0.0",
     "iter-tools-es": "^7.5.1",
     "lodash": "^4.17.21"

@@ -19,7 +19,7 @@ $ npm install -g preevy
 $ preevy COMMAND
 running command...
 $ preevy (--version)
-preevy/0.0.39 darwin-arm64 node-v18.12.1
+preevy/0.0.40 darwin-arm64 node-v18.12.1
 $ preevy --help [COMMAND]
 USAGE
   $ preevy COMMAND
@@ -95,7 +95,7 @@ DESCRIPTION
   Delete preview environments
 ```
 
-_See code: [dist/commands/down.ts](https://github.com/livecycle/preevy/blob/v0.0.39/dist/commands/down.ts)_
+_See code: [dist/commands/down.ts](https://github.com/livecycle/preevy/blob/v0.0.40/dist/commands/down.ts)_
 
 ## `preevy help [COMMANDS]`
 
@@ -141,7 +141,7 @@ DESCRIPTION
   Initialize or import a new profile
 ```
 
-_See code: [dist/commands/init.ts](https://github.com/livecycle/preevy/blob/v0.0.39/dist/commands/init.ts)_
+_See code: [dist/commands/init.ts](https://github.com/livecycle/preevy/blob/v0.0.40/dist/commands/init.ts)_
 
 ## `preevy logs [SERVICES]`
 
@@ -203,7 +203,7 @@ DESCRIPTION
   Show logs for an existing environment
 ```
 
-_See code: [dist/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.39/dist/commands/logs.ts)_
+_See code: [dist/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.40/dist/commands/logs.ts)_
 
 ## `preevy ls`
 
@@ -262,7 +262,7 @@ DESCRIPTION
   List preview environments
 ```
 
-_See code: [dist/commands/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.39/dist/commands/ls.ts)_
+_See code: [dist/commands/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.40/dist/commands/ls.ts)_
 
 ## `preevy profile create NAME URL`
 
@@ -486,7 +486,7 @@ DESCRIPTION
   Delete all cloud provider machines, and potentially other resources
 ```
 
-_See code: [dist/commands/purge.ts](https://github.com/livecycle/preevy/blob/v0.0.39/dist/commands/purge.ts)_
+_See code: [dist/commands/purge.ts](https://github.com/livecycle/preevy/blob/v0.0.40/dist/commands/purge.ts)_
 
 ## `preevy up [SERVICE]`
 
@@ -568,7 +568,7 @@ DESCRIPTION
   Bring up a preview environment
 ```
 
-_See code: [dist/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.39/dist/commands/up.ts)_
+_See code: [dist/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.40/dist/commands/up.ts)_
 
 ## `preevy urls [SERVICE] [PORT]`
 
@@ -614,7 +614,7 @@ DESCRIPTION
   Show urls for an existing environment
 ```
 
-_See code: [dist/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.39/dist/commands/urls.ts)_
+_See code: [dist/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.40/dist/commands/urls.ts)_
 
 ## `preevy version`
 
@@ -635,5 +635,5 @@ DESCRIPTION
   Show Preevy version
 ```
 
-_See code: [dist/commands/version.ts](https://github.com/livecycle/preevy/blob/v0.0.39/dist/commands/version.ts)_
+_See code: [dist/commands/version.ts](https://github.com/livecycle/preevy/blob/v0.0.40/dist/commands/version.ts)_
 <!-- commandsstop -->

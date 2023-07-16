@@ -1,6 +1,6 @@
 {
   "name": "@preevy/driver-gce",
-  "version": "0.0.39",
+  "version": "0.0.40",
   "description": "Google Compute Engine driver for Preevy",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,7 +12,7 @@
     "@google-cloud/compute": "^3.9.1",
     "@google-cloud/storage": "^6.9.5",
     "@oclif/core": "^2",
-    "@preevy/core": "0.0.39",
+    "@preevy/core": "0.0.40",
     "google-auth-library": "^8.7.0",
     "google-gax": "^3.6.0",
     "inquirer": "^8.0.0",
