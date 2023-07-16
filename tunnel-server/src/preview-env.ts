@@ -3,6 +3,7 @@ import { KeyObject } from 'crypto'
 export type PreviewEnv = {
   clientId: string
   target: string
+  hostname: string
   publicKey: KeyObject,
   publicKeyThumbprint: string,
   access: 'private' | 'public'

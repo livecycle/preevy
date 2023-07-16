@@ -1,4 +1,4 @@
-import { IncomingMessage } from 'http'
+import { IncomingMessage, ServerResponse } from 'http'
 import { JWTPayload, calculateJwkThumbprintUri, decodeJwt, exportJWK, jwtVerify } from 'jose'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
@@ -8,6 +8,10 @@ import Cookies from 'cookies'
 export type AuthenticationResult = {
   isAuthenticated: true
   login: boolean
+  method: {
+    type: 'header'
+    header: 'authorization'
+  }
   exp?: number
   claims: Claims
 } | { isAuthenticated: false }
@@ -92,6 +96,7 @@ export function JwtAuthenticator(env: PreviewEnv){
       throw new Error("invalid token");
     }
     return {
+      method: {type: 'header', header: 'authorization'},
       isAuthenticated: true,
       login: auth?.scheme !== 'Bearer',
       claims: extractClaims(token.payload)
@@ -109,4 +114,10 @@ export function authenticator(authenticators: ((req: IncomingMessage)=> Promise<
     }
     return {isAuthenticated: false};
   }
+}
+
+export const unauthorized = (res: ServerResponse<IncomingMessage>) => {
+  res.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"');
+  res.statusCode = 401;
+  res.end('Unauthorized');
 }

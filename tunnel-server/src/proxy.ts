@@ -4,7 +4,7 @@ import { IncomingMessage, ServerResponse } from 'http'
 import internal from 'stream'
 import type { Logger } from 'pino'
 import { requestsCounter } from './metrics'
-import { Claims, authenticator, JwtAuthenticator } from './auth'
+import { Claims, authenticator, JwtAuthenticator, unauthorized } from './auth'
 import { SessionManager } from './seesion'
 
 export const isProxyRequest = (
@@ -21,22 +21,34 @@ function asyncHandler<TArgs extends unknown[]>(fn: (...args: TArgs) => Promise<v
   }
 }
 
-const unauthorized = (res: ServerResponse<IncomingMessage>) => {
-  res.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"');
-  res.statusCode = 401;
-  res.end('Unauthorized');
+
+function loginRedirector(loginUrl:string){
+  return (res: ServerResponse<IncomingMessage>, env: string , returnPath?: string)=> {
+    res.statusCode = 307;    
+    const url = new URL(loginUrl);
+    url.searchParams.set("env", env);
+    if (returnPath) {
+      url.searchParams.set("returnPath", returnPath);
+    }
+
+    res.setHeader('location', url.toString() )
+    res.end()
+  }
 }
 
 export function proxyHandlers({
   envStore,
+  loginUrl,
   sessionManager,
   logger
 }: {
   sessionManager: SessionManager<Claims>
   envStore: PreviewEnvStore
+  loginUrl: string
   logger: Logger
 } ){
   const proxy = httpProxy.createProxy({})
+  const redirectToLogin = loginRedirector(loginUrl)
   const resolveTargetEnv = async (req: IncomingMessage)=>{
     const {url} = req
     const host = req.headers['host']?.split(':')?.[0]
@@ -57,22 +69,23 @@ export function proxyHandlers({
         return;
       }
 
-      const session = sessionManager(req, res, env.clientId)
+      const session = sessionManager(req, res, env.publicKeyThumbprint)
       if (env.access === "private"){
         if (!session.user){
           const authenticate = authenticator([JwtAuthenticator(env)])
           try {
-            const authResult = await authenticate(req)  
-            if (authResult.isAuthenticated){
-              session.set(authResult.claims)
-              if (authResult.login && req.method === 'GET'){
-                session.save()
-                res.writeHead(308, {
-                  location: req.url,
-                })
-                res.end();
-                return;
-              }
+            const authResult = await authenticate(req)
+            if (!authResult.isAuthenticated){
+              return unauthorized(res);
+            }
+            session.set(authResult.claims)
+            if (authResult.login && req.method === 'GET'){
+              session.save()
+              redirectToLogin(res, env.hostname, req.url)
+              return;
+            } 
+            if (authResult.method.type === 'header'){
+              delete req.headers[authResult.method.header]
             }
           } catch (error) {
             res.statusCode = 400;
@@ -80,10 +93,10 @@ export function proxyHandlers({
             return;
           }
         }
-      }
-      
-      if (env.access === 'private' && session.user?.role !== 'admin'){
-        return unauthorized(res);
+
+        if (session.user?.role !== 'admin') {
+          return unauthorized(res);
+        }
       }
 
       logger.debug('proxying to %j', { target: env.target, url: req.url })

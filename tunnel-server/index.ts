@@ -35,11 +35,15 @@ const BASE_URL = (() => {
 })()
 
 const envStore = inMemoryPreviewEnvStore()
-
+const appSessionManager = sessionManager({domain: BASE_URL.hostname, schema: claimsSchema, keys: process.env.COOKIE_SECRETS?.split(" ") })
 const logger = pino(appLoggerFromEnv())
+const loginUrl = new URL('/login',replaceHostname(BASE_URL, `auth.${BASE_URL.hostname}`)).toString()
 const app = createApp({
+  sessionManager: appSessionManager,
+  envStore,
+  baseUrl: BASE_URL,
   isProxyRequest: isProxyRequest(BASE_URL.hostname),
-  proxyHandlers: proxyHandlers({envStore, logger, sessionManager: sessionManager({domain: BASE_URL.hostname, schema: claimsSchema })}),
+  proxyHandlers: proxyHandlers({envStore, logger, loginUrl, sessionManager: appSessionManager}),
   logger,
 })
 const sshLogger = logger.child({ name: 'ssh_server' })
@@ -64,7 +68,7 @@ const sshServer = createSshServer({
     sshLogger.debug('creating tunnel %s for localSocket %s', key, localSocketPath)
     const pKey = createPublicKey(publicKey.getPublicPEM());
     const thumbprint = await calculateJwkThumbprintUri(await exportJWK(pKey))
-    await envStore.set(key, { target: localSocketPath, clientId, publicKey: pKey, publicKeyThumbprint: thumbprint, access })
+    await envStore.set(key, { target: localSocketPath, clientId, publicKey: pKey, hostname:key, publicKeyThumbprint: thumbprint, access })
     tunnelsGauge.inc({clientId})
   },
   onPipeDestroyed: async ({clientId, remotePath}) => {
