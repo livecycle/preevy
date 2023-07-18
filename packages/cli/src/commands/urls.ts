@@ -32,10 +32,12 @@ export default class Urls extends ProfileCommand<typeof Urls> {
   async run(): Promise<unknown> {
     const log = this.logger
     const { flags, args } = await this.parse(Urls)
-    const projectName = (await this.ensureUserModel()).name
-    log.debug(`project: ${projectName}`)
-    const envId = flags.id || await findAmbientEnvId(projectName)
+    const [envId, projectName] = flags.id ? [flags.id, flags.id] : await (async () => {
+      const pname = (await this.ensureUserModel()).name
+      return [await findAmbientEnvId(pname), pname]
+    })()
     log.debug(`envId: ${envId}`)
+    log.debug(`project: ${projectName}`)
 
     const pStore = profileStore(this.store)
 
