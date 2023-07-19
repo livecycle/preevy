@@ -28,7 +28,7 @@ Preevy requires the following IAM policy to be able to provision and manage Ligh
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": ["lightsail:*"],
+      "Action": "lightsail:*",
       "Resource": "*"
     }
   ]
@@ -37,7 +37,7 @@ Preevy requires the following IAM policy to be able to provision and manage Ligh
 ```
 
 :::note
-When defining fine grained permissions for Preevy, make sure to add S3 permissions as well when using s3 as profile store.
+When defining fine-grained permissions for Preevy, make sure to add S3 permissions as well when using s3 as profile store.
 We recommend scoping the permissions to a specific bucket and prefix:
 
 ```json
@@ -47,16 +47,12 @@ We recommend scoping the permissions to a specific bucket and prefix:
     {
       "Effect": "Allow",
       "Action": [
-        "s3:HeadBucker",
+        "s3:ListBucket",
         "s3:GetBucketLocation",
-        "s3:ListObjects",
-        "s3:ListObjectsV2",
         "s3:PutObject",
         "s3:GetObject",
-        "s3:PutObjectTagging",
-        "s3:DeleteObjectTagging",
         "s3:DeleteObject",
-        "s3:CreateBucket" //only if bucket doesn't exist
+        "s3:CreateBucket"
       ],
       "Resource": ["arn:aws:s3:::MY_BUCKET", "arn:aws:s3:::MY_BUCKET/*"]
     }

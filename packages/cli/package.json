@@ -88,7 +88,7 @@
     "lint": "eslint . --ext .ts --cache",
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "yarn lint",
-    "prepack": "yarn build && oclif manifest && oclif readme",
+    "prepack": "yarn build && oclif manifest && oclif readme --dir docs --multi     && ./scripts/prepare_and_copy_docs.sh",
     "cli": "./bin/dev",
     "version": "oclif readme && git add README.md",
     "bump-to": "yarn version --no-commit-hooks --no-git-tag-version --new-version"

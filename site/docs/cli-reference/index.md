@@ -31,15 +31,15 @@ USAGE
 <!-- commands -->
 # Command Topics
 
-* [`preevy down`](docs/down.md) - Delete preview environments
-* [`preevy help`](docs/help.md) - Display help for preevy.
-* [`preevy init`](docs/init.md) - Initialize or import a new profile
-* [`preevy logs`](docs/logs.md) - Show logs for an existing environment
-* [`preevy ls`](docs/ls.md) - List preview environments
-* [`preevy profile`](docs/profile.md) - Create a new profile
-* [`preevy purge`](docs/purge.md) - Delete all cloud provider machines, and potentially other resources
-* [`preevy up`](docs/up.md) - Bring up a preview environment
-* [`preevy urls`](docs/urls.md) - Show urls for an existing environment
-* [`preevy version`](docs/version.md) - Show Preevy version
+* [`preevy down`](commands/down.md) - Delete preview environments
+* [`preevy help`](commands/help.md) - Display help for preevy.
+* [`preevy init`](commands/init.md) - Initialize or import a new profile
+* [`preevy logs`](commands/logs.md) - Show logs for an existing environment
+* [`preevy ls`](commands/ls.md) - List preview environments
+* [`preevy profile`](commands/profile.md) - Create a new profile
+* [`preevy purge`](commands/purge.md) - Delete all cloud provider machines, and potentially other resources
+* [`preevy up`](commands/up.md) - Bring up a preview environment
+* [`preevy urls`](commands/urls.md) - Show urls for an existing environment
+* [`preevy version`](commands/version.md) - Show Preevy version
 
 <!-- commandsstop -->

@@ -1,12 +1,12 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 title: GCP Compute Engine Driver
 ---
 
 # GCP Compute Engine Driver
 
 Preevy can provision virtual machines on GCP using the `gce` driver.
-Google compute engine provisioning time for a VM is usually less then a minute, the default machine size in use is e2-small (2GB, 2vCpu) which cost around $12 per month.
+Google compute engine provisioning time for a VM is usually less than a minute, the default machine size in use is e2-small (2GB, 2vCpu) which cost around $12 per month.
 Google compute also offer $300 free credit for new users which is suited for trying out preevy.
 
 ### Supported flags
