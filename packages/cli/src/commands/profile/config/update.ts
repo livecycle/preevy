@@ -9,8 +9,8 @@ import {
   machineCreationflagsForAllDrivers,
   DriverName,
   machineDrivers
-} from '../../drivers'
-import ProfileCommand from '../../profile-command'
+} from '../../../drivers'
+import ProfileCommand from '../../../profile-command'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const removeDefaultFlagsDef = <T extends {[key: string]: Flag<any> } >(flags: T): T =>
@@ -21,7 +21,7 @@ const removeDefaultFlagsDef = <T extends {[key: string]: Flag<any> } >(flags: T)
   }) as T
 
 // eslint-disable-next-line no-use-before-define
-export default class ConfigureProfile extends ProfileCommand<typeof ConfigureProfile> {
+export default class UpdateProfileConfig extends ProfileCommand<typeof UpdateProfileConfig> {
   static description = 'View and update profile configuration'
 
   static flags = {
