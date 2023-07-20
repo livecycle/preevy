@@ -17,7 +17,7 @@ AWS lightsail provisioning time for a VM is usually around 2 minutes, and its co
 Preevy uses the AWS JS SDK which supports multiple ways of configuring credentials, according to the [credentials provider chain](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/setting-credentials-node.html).
 The simplest way is to use `aws configure` command or to set the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables.
 
-In Github Actions, you can also use the [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials) action to setup credentials in a secure way.
+In GitHub Actions, you can also use the [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials) action to setup credentials in a secure way.
 
 ### Required AWS permissions
 

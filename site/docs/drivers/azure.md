@@ -6,7 +6,7 @@ title: Microsoft Azure Driver
 # Microsoft Azure Driver
 
 Preevy can provision virtual machines on Microsoft Azure using the `azure` driver.
-Microsoft Azure also offer free 12 months for new users which is suited for trying out preevy.
+Microsoft Azure also offers free 12 months for new users which is suited for trying out preevy.
 
 ### Supported flags
 - `--azure-region` - Microsoft Azure region in which resources will be provisioned
@@ -15,7 +15,7 @@ Microsoft Azure also offer free 12 months for new users which is suited for tryi
 - `--azure-vm-size` - Machine type to be provisioned, defaults to `Standard_B2s`
 
 ### Credentials Configuration
-Preevy uses the Microsoft Azure SDK which uses the `@azure/identity` package to get the application default credentials (https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/identity/identity#defaultazurecredential).
+Preevy uses the Microsoft Azure SDK which can obtain the application [default credentials](https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/identity/identity#defaultazurecredential).
 The simplest way is to use `az login` command.
 
 ### Required Azure permissions
