@@ -8,10 +8,14 @@ import kubectlExec from './kubectl'
 export { BaseExecOpts } from './common'
 
 export default (
-  { kubeconfig, namespace, k8sExec, log }: { kubeconfig?: string; namespace: string; k8sExec: k8s.Exec; log: Logger },
+  { kubeconfigLocation, kubeConfig, namespace, log }: {
+    kubeconfigLocation?: string
+    namespace: string
+    kubeConfig: k8s.KubeConfig
+    log: Logger },
 ) => {
-  const kExec = kubectlExec({ kubeconfig, namespace })
-  const aExec = apiExec({ namespace, k8sExec, log })
+  const kExec = kubectlExec({ kubeconfigLocation, namespace, context: kubeConfig.getCurrentContext() })
+  const aExec = apiExec({ namespace, k8sExec: new k8s.Exec(kubeConfig), log })
   function exec(opts: BaseExecOpts & { stdout: Writable; stderr: Writable }): Promise<{ code: number }>
   function exec(opts: BaseExecOpts): Promise<{ code: number; output: ProcessOutputBuffers }>
   function exec(

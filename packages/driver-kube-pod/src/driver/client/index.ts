@@ -28,12 +28,15 @@ import {
 } from './metadata'
 import { Package } from './common'
 
-export const loadKubeConfig = (kubeconfig?: string) => {
+export const loadKubeConfig = (kubeconfig?: string, context?:string) => {
   const kc = new k8s.KubeConfig()
   if (kubeconfig) {
     kc.loadFromFile(kubeconfig)
   } else {
     kc.loadFromDefault()
+  }
+  if (context) {
+    kc.setCurrentContext(context)
   }
   return kc
 }
@@ -177,7 +180,7 @@ const kubeClient = ({ log, namespace, kc, profileId, template, package: packageD
   return {
     findMostRecentDeployment,
     listProfileDeployments: () => helpers.listDeployments({ ...profileSelector({ profileId }) }),
-    exec: baseExec({ k8sExec: new k8s.Exec(kc), kubeconfig, namespace, log }),
+    exec: baseExec({ kubeConfig: kc, kubeconfigLocation: kubeconfig, namespace, log }),
     findReadyPodForDeployment: helpers.findReadyPodForDeployment,
     createEnv,
     deleteEnv,

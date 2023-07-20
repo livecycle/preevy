@@ -20,7 +20,11 @@ export class ProcessExecError extends ExecError {
   }
 }
 
-export default ({ kubeconfig, namespace }: { kubeconfig?: string; namespace: string }) => {
+export default ({ kubeconfigLocation, context, namespace }: {
+  kubeconfigLocation?: string
+  context: string
+  namespace: string
+}) => {
   async function exec(opts: BaseExecOpts & { stdout: Writable; stderr: Writable }): Promise<{ code: number }>
   async function exec(opts: BaseExecOpts): Promise<{ code: number; output: ProcessOutputBuffers }>
   async function exec(
@@ -41,7 +45,8 @@ export default ({ kubeconfig, namespace }: { kubeconfig?: string; namespace: str
     const kubectlProcess = spawn(
       'kubectl',
       [
-        kubeconfig && `--kubeconfig=${kubeconfig}`,
+        kubeconfigLocation && `--kubeconfig=${kubeconfigLocation}`,
+        `--context=${context}`,
         `--namespace=${namespace}`,
         'exec',
         '--stdin',
