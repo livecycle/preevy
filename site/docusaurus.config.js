@@ -1,8 +1,8 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
-const lightCodeTheme = require('prism-react-renderer/themes/github');
-const darkCodeTheme = require('prism-react-renderer/themes/dracula');
+const lightCodeTheme = require('prism-react-renderer/themes/github')
+const darkCodeTheme = require('prism-react-renderer/themes/dracula')
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -38,7 +38,7 @@ const config = {
           editUrl:
             'https://github.com/livecycle/preevy/tree/main/site',
           remarkPlugins: [
-            [require('@docusaurus/remark-plugin-npm2yarn'), {sync: true}],
+            [require('@docusaurus/remark-plugin-npm2yarn'), { sync: true }],
           ],
         },
         blog: false,
@@ -50,15 +50,28 @@ const config = {
   ],
 
   themeConfig:
-    /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
+  /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      algolia: {
+        // The application ID provided by Algolia
+        appId: 'IYPBFAAVY7',
+        // Public API key: it is safe to commit it
+        apiKey: '397d04c17bc3b5453a0892c14aa25f5d',
+        indexName: 'preevy',
+        // Optional: see doc section below
+        contextualSearch: true,
+        // Optional: Algolia search parameters
+        searchParameters: {},
+        // Optional: path for search page that enabled by default (`false` to disable it)
+        searchPagePath: 'search',
+      },
       colorMode: {
-        defaultMode: "dark",
+        defaultMode: 'dark',
         respectPrefersColorScheme: true,
       },
       navbar: {
         title: 'Preevy',
-         logo: {
+        logo: {
           alt: '',
           src: 'img/logo-light.svg',
           srcDark: 'img/logo-dark.svg',
@@ -69,7 +82,7 @@ const config = {
           {
             href: 'https://github.com/livecycle/preevy',
             position: 'right',
-            className: 'header-github-link'
+            className: 'header-github-link',
           },
         ],
       },
@@ -82,6 +95,6 @@ const config = {
         darkTheme: darkCodeTheme,
       },
     }),
-};
+}
 
-module.exports = config;
+module.exports = config
