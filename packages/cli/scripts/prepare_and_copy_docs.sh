@@ -3,9 +3,6 @@
 # Get the parent folder of the script
 parent_folder=$(dirname "$(readlink -f "$0")")
 
-# Specify the folder path relative to the parent folder
-folder_path="$parent_folder/../docs"
-
 # Define the relative paths
 docs_source_path="../docs"
 commands_destination_path="../../../site/docs/cli-reference/commands/"
