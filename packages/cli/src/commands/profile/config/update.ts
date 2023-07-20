@@ -8,7 +8,7 @@ import {
   flagsForAllDrivers,
   machineCreationflagsForAllDrivers,
   DriverName,
-  machineDrivers
+  machineDrivers,
 } from '../../../drivers'
 import ProfileCommand from '../../../profile-command'
 
