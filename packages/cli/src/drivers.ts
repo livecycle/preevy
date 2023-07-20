@@ -4,6 +4,7 @@ import gce from '@preevy/driver-gce'
 import azure from '@preevy/driver-azure'
 import kubeDocker from '@preevy/driver-kube-pod'
 import { Flag } from '@oclif/core/lib/interfaces'
+import { Interfaces } from '@oclif/core'
 
 export const machineDrivers = {
   lightsail,
@@ -65,13 +66,38 @@ export const machineCreationflagsForAllDrivers = {
   ...machineCreationDriverFlags('kube-pod'),
 }
 
+export const stripDriverFlagNamePrefix = (driverName:string, flag: string) => flag.replace(`${driverName}-`, '')
+
 export const removeDriverPrefix = <T extends {}>(
   driverName: string,
   flags: Record<string, unknown>,
-) => mapKeys(flags, (_, key) => key.replace(`${driverName}-`, '')) as unknown as T
+) => mapKeys(flags, (_, key) => stripDriverFlagNamePrefix(driverName, key) as unknown as T)
 
 export const excludeDefaultFlags = (
   driverFlagDefs: Record<string, Flag<unknown>>,
 ) => ([key, value]: [string, unknown]) => value !== (
   (driverFlagDefs as Record<string, Flag<unknown>>)[key]
-).default
+)?.default
+
+type AllFlags = typeof flagsForAllDrivers & typeof machineCreationflagsForAllDrivers
+
+export function extractConfigurableFlags<TFlags extends Partial<AllFlags>>(
+  flags: Interfaces.InferredFlags<TFlags>,
+  driver: DriverName,
+  options: {
+    excludeDefaultValues: boolean
+  } = { excludeDefaultValues: true }
+) {
+  const driverStatic = machineDrivers[driver]
+  const allDriverFlags = {
+    ...driverStatic.flags,
+    ...driverStatic.machineCreationFlags,
+  } as Record<string, Flag<unknown>>
+  const defaultFlagsFilter = options.excludeDefaultValues ? excludeDefaultFlags(allDriverFlags) : () => true
+
+  const driverPrefix = `${driver}-`
+  return Object.fromEntries(Object.entries(flags)
+    .filter(([k]) => k.startsWith(driverPrefix))
+    .map(([k, v]) => [k.substring(driverPrefix.length), v])
+    .filter(([k, v]) => defaultFlagsFilter([k as string, v])))
+}
