@@ -34,7 +34,7 @@
     "iter-tools-es": "^7.5.1",
     "lodash": "^4.17.21",
     "shell-escape": "^0.2.0",
-    "yaml": "^2.3.1"
+    "yaml": "^2.2.2"
   },
   "devDependencies": {
     "@oclif/test": "^2.3.4",
