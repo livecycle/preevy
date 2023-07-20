@@ -5,7 +5,7 @@ parent_folder=$(dirname "$(readlink -f "$0")")
 
 # Define the relative paths
 docs_source_path="../docs"
-commands_destination_path="../../../site/docs/cli-reference/commands/"
+commands_destination_path="../../../site/docs/cli-reference/"
 readme_source_path="../README.md"
 index_destination_path="../../../site/docs/cli-reference/index.md"
 
@@ -21,5 +21,5 @@ cp "$parent_folder/$readme_source_path" "$parent_folder/$index_destination_path"
 
 
 # Find and replace URLs containing /docs with /commands/
-sed 's#docs/#commands/#g' "$parent_folder/$index_destination_path" > "$parent_folder/$index_destination_path.tmp"
+sed 's#docs/##g' "$parent_folder/$index_destination_path" > "$parent_folder/$index_destination_path.tmp"
 mv "$parent_folder/$index_destination_path.tmp" "$parent_folder/$index_destination_path"

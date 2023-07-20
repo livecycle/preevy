@@ -24,4 +24,4 @@ DESCRIPTION
   Show Preevy version
 ```
 
-_See code: [dist/commands/version.ts](https://github.com/livecycle/preevy/blob/v0.0.40/packages/cli/src/commands/version.ts)_
+_See code: [dist/commands/version.ts](https://github.com/livecycle/preevy/blob/v0.0.42/packages/cli/src/commands/version.ts)_

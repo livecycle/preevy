@@ -20,7 +20,7 @@ $ npm install -g preevy
 $ preevy COMMAND
 running command...
 $ preevy (--version)
-preevy/0.0.40 darwin-arm64 node-v18.16.0
+preevy/0.0.42 darwin-arm64 node-v18.16.0
 $ preevy --help [COMMAND]
 USAGE
   $ preevy COMMAND
@@ -31,15 +31,15 @@ USAGE
 <!-- commands -->
 # Command Topics
 
-* [`preevy down`](commands/down.md) - Delete preview environments
-* [`preevy help`](commands/help.md) - Display help for preevy.
-* [`preevy init`](commands/init.md) - Initialize or import a new profile
-* [`preevy logs`](commands/logs.md) - Show logs for an existing environment
-* [`preevy ls`](commands/ls.md) - List preview environments
-* [`preevy profile`](commands/profile.md) - Create a new profile
-* [`preevy purge`](commands/purge.md) - Delete all cloud provider machines, and potentially other resources
-* [`preevy up`](commands/up.md) - Bring up a preview environment
-* [`preevy urls`](commands/urls.md) - Show urls for an existing environment
-* [`preevy version`](commands/version.md) - Show Preevy version
+* [`preevy down`](down.md) - Delete preview environments
+* [`preevy help`](help.md) - Display help for preevy.
+* [`preevy init`](init.md) - Initialize or import a new profile
+* [`preevy logs`](logs.md) - Show logs for an existing environment
+* [`preevy ls`](ls.md) - List preview environments
+* [`preevy profile`](profile.md) - View and update profile configuration
+* [`preevy purge`](purge.md) - Delete all cloud provider machines, and potentially other resources
+* [`preevy up`](up.md) - Bring up a preview environment
+* [`preevy urls`](urls.md) - Show urls for an existing environment
+* [`preevy version`](version.md) - Show Preevy version
 
 <!-- commandsstop -->

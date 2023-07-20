@@ -49,4 +49,4 @@ DESCRIPTION
   Show urls for an existing environment
 ```
 
-_See code: [dist/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.40/packages/cli/src/commands/urls.ts)_
+_See code: [dist/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.42/packages/cli/src/commands/urls.ts)_

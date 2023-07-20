@@ -29,4 +29,4 @@ DESCRIPTION
   Initialize or import a new profile
 ```
 
-_See code: [dist/commands/init.ts](https://github.com/livecycle/preevy/blob/v0.0.40/packages/cli/src/commands/init.ts)_
+_See code: [dist/commands/init.ts](https://github.com/livecycle/preevy/blob/v0.0.42/packages/cli/src/commands/init.ts)_
