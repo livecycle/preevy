@@ -34,19 +34,26 @@ export const missingGithubConfigProps = (
   config: Partial<GithubConfig>,
 ): GithubConfigProp[] => githubConfigProps.filter(prop => !config[prop])
 
-const ambientGithubConfig = async (): Promise<Partial<GithubConfig>> => {
+const ambientGithubConfig = async ({ log }: { log: Logger }): Promise<Partial<GithubConfig>> => {
+  log.debug('ambientGithubConfig, have GITHUB_TOKEN: %j', Boolean(process.env.GITHUB_TOKEN))
   const result: Partial<GithubConfig> = {
     token: process.env.GITHUB_TOKEN,
   }
 
   const ciProvider = detectCiProvider()
+  log.debug('ambientGithubConfig, ciProvider: %j', ciProvider?.name)
 
   result.pullRequest = ciProvider?.pullRequestNumber()
 
+  log.debug('ambientGithubConfig, ciProvider: %j', ciProvider?.name)
+
   const repoUrlStr = ciProvider?.repoUrl() ?? await git.gitRemoteTrackingBranchUrl().catch(() => undefined)
+
+  log.debug('ambientGithubConfig, repoUrlStr: %j', repoUrlStr)
 
   if (repoUrlStr) {
     result.repo = tryParseUrlToRepo(repoUrlStr)
+    log.debug('ambientGithubConfig, repoUrl: %j', result.repo)
   }
 
   return result
@@ -86,14 +93,19 @@ export class IncompleteGithubConfig extends Error {
 }
 
 const mergeGithubConfig = async (
-  factories: ((() => Partial<GithubConfig>) | (() => Promise<Partial<GithubConfig>>))[]
+  factories: ((() => Partial<GithubConfig>) | (() => Promise<Partial<GithubConfig>>))[],
+  { log }: { log: Logger }
 ) => {
   let result: Partial<GithubConfig> = {}
   let missingProps: readonly GithubConfigProp[] = githubConfigProps
 
+  let factoryIndex = -1
   for (const factory of factories) {
+    factoryIndex += 1
     // eslint-disable-next-line no-await-in-loop
-    result = defaults(result, await factory())
+    const factoryResult = await factory()
+    log.debug('Merging github config with factory %i: %j', factoryIndex, factoryResult)
+    result = defaults(result, factoryResult)
     missingProps = missingGithubConfigProps(result)
     if (missingProps.length === 0) {
       return result as GithubConfig
@@ -106,15 +118,16 @@ const mergeGithubConfig = async (
 export const loadGithubConfig = async (
   config: PluginConfig,
   fromFlags: Partial<GithubConfig>,
+  { log }: { log: Logger }
 ): Promise<GithubConfig> => {
   const shouldDetect = config.detect === undefined || config.detect
 
   return await mergeGithubConfig([
     () => fromFlags,
     () => githubConfigFromPluginConfig(config),
-    ...shouldDetect ? [() => ambientGithubConfig()] : [],
+    ...shouldDetect ? [() => ambientGithubConfig({ log })] : [],
     () => ({ commentTemplate: defaultCommentTemplate }),
-  ])
+  ], { log })
 }
 
 const SCOPED_ENV_VAR = 'GITHUB_LINK'
@@ -135,5 +148,5 @@ export const loadGithubConfigOrSkip = async (
     return false
   }
 
-  return await loadGithubConfig(pluginConfig, await githubConfigFromPrefixedFlags(flags))
+  return await loadGithubConfig(pluginConfig, await githubConfigFromPrefixedFlags(flags), { log })
 }
