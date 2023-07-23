@@ -3,29 +3,38 @@ on:
   push:
     branches:
     - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
 
 jobs:
   publish-packages:
     runs-on: ubuntu-latest
 
     steps:
+    - uses: actions/checkout@v3
+
     - uses: actions/setup-node@v3
       with:
         node-version: '18.x'
-
-    - uses: actions/checkout@v3
+        cache: yarn
 
     - run: yarn
 
-    - run: npm install -g @jsdevtools/npm-publish
-
     - name: npm publish
+      env:
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       run: |
         set -eou pipefail
         set -x
 
-        yarn lerna run prepack
+        echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > .npmrc
 
-        for packageDir in $(ls packages); do
-          npm-publish --token ${{ secrets.NPM_TOKEN }} --access public packages/${packageDir}/package.json
-        done
+        if [[ "${{ github.ref_name }}" == "main" ]]; then
+          lerna_args=patch
+        else
+          lerna_args=-c
+        fi
+
+        yarn lerna publish --no-private -y --loglevel debug ${lerna_args}
