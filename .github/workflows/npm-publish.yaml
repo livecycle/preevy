@@ -1,31 +1,48 @@
 name: Publish to NPM
 on:
-  push:
-    branches:
-    - main
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git branch or tree-like to publish from
+        default: main
+      bump:
+        description: major, minor, patch, from-package
+        default: patch
+
+  pull_request:
+    types:
+      - opened
+      - synchronize
 
 jobs:
   publish-packages:
     runs-on: ubuntu-latest
 
     steps:
+    - uses: actions/checkout@v3
+      with:
+        ref: ${{ inputs.ref }}
+
     - uses: actions/setup-node@v3
       with:
         node-version: '18.x'
-
-    - uses: actions/checkout@v3
+        cache: yarn
 
     - run: yarn
 
-    - run: npm install -g @jsdevtools/npm-publish
-
     - name: npm publish
+      env:
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       run: |
         set -eou pipefail
         set -x
 
-        yarn lerna run prepack
+        echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > .npmrc
 
-        for packageDir in $(ls packages); do
-          npm-publish --token ${{ secrets.NPM_TOKEN }} --access public packages/${packageDir}/package.json
-        done
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          lerna_args=${{ inputs.bump }}
+        else
+          lerna_args=-c
+        fi
+
+        yarn lerna publish --no-private -y --loglevel debug ${lerna_args}
