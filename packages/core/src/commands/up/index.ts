@@ -109,7 +109,7 @@ const up = async ({
   // We start by getting the user model without injecting Preevy's environment
   // variables (e.g. `PREEVY_BASE_URI_BACKEND_3000`) so we can have the list of services
   // required to create said variables
-  const tunnelUrlsForService = tunnelUrlsForEnv({ projectName, envId, rootUrl: new URL(rootUrl), clientId })
+  const tunnelUrlsForService = tunnelUrlsForEnv({ envId, rootUrl: new URL(rootUrl), clientId })
   const composeEnv = { ...serviceLinkEnvVars(userModel, tunnelUrlsForService) }
 
   const composeFiles = await resolveComposeFiles({
