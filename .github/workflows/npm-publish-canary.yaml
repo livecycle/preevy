@@ -1,0 +1,31 @@
+name: Publish canary to NPM
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+jobs:
+  publish-packages:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+        cache: yarn
+
+    - run: yarn
+
+    - name: npm publish
+      env:
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: |
+        set -eou pipefail
+        set -x
+
+        echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > .npmrc
+
+        yarn lerna publish --no-private -y --loglevel debug -c
