@@ -1,9 +1,39 @@
-import { Args, ux } from '@oclif/core'
-import { commands, findAmbientEnvId, getUserCredentials, jwtGenerator, profileStore, withBasicAuthCredentials } from '@preevy/core'
-import { tunnelServerFlags } from '@preevy/cli-common'
+import { Args, ux, Interfaces } from '@oclif/core'
+import { FlatTunnel, commands, findAmbientEnvId, profileStore } from '@preevy/core'
+import { HooksListeners, PluginContext, tunnelServerFlags } from '@preevy/cli-common'
+import { asyncReduce } from 'iter-tools-es'
 import { tunnelServerHello } from '../tunnel-server-client'
 import ProfileCommand from '../profile-command'
 import { envIdFlags, urlFlags } from '../common-flags'
+
+export const printUrls = (
+  flatTunnels: FlatTunnel[],
+  flags: Interfaces.InferredFlags<typeof ux.table.Flags> & { 'include-access-credentials': boolean },
+) => {
+  ux.table(
+    flatTunnels,
+    {
+      service: { header: 'Service' },
+      port: { header: 'Port' },
+      url: { header: 'URL' },
+    },
+    {
+      ...flags,
+      'no-truncate': flags['no-truncate'] ?? (!flags.output && !flags.csv && flags['include-access-credentials']),
+      'no-header': flags['no-header'] ?? (!flags.output && !flags.csv && flags['include-access-credentials']),
+    },
+  )
+}
+
+export const filterUrls = ({ flatTunnels, context, filters }: {
+  flatTunnels: FlatTunnel[]
+  context: PluginContext
+  filters: HooksListeners['filterUrls']
+}) => asyncReduce(
+  flatTunnels,
+  (urls, f) => f(context, urls),
+  filters,
+)
 
 // eslint-disable-next-line no-use-before-define
 export default class Urls extends ProfileCommand<typeof Urls> {
@@ -32,9 +62,7 @@ export default class Urls extends ProfileCommand<typeof Urls> {
   async run(): Promise<unknown> {
     const log = this.logger
     const { flags, args } = await this.parse(Urls)
-    const projectName = (await this.ensureUserModel()).name
-    log.debug(`project: ${projectName}`)
-    const envId = flags.id || await findAmbientEnvId(projectName)
+    const envId = flags.id || await findAmbientEnvId((await this.ensureUserModel()).name)
     log.debug(`envId: ${envId}`)
 
     const pStore = profileStore(this.store)
@@ -53,36 +81,29 @@ export default class Urls extends ProfileCommand<typeof Urls> {
       log: this.logger,
     })
 
-    let flatTunnels = await commands.urls({
+    const flatTunnels = await commands.urls({
       rootUrl,
       clientId,
       envId,
-      projectName,
       serviceAndPort: args.service ? { service: args.service, port: args.port } : undefined,
+      tunnelingKey,
+      includeAccessCredentials: flags['include-access-credentials'],
     })
 
-    if (flags['include-access-credentials']) {
-      const addCredentials = withBasicAuthCredentials(await getUserCredentials(jwtGenerator(tunnelingKey)))
-      flatTunnels = flatTunnels.map(t => Object.assign(t, { url: addCredentials(t.url) }))
-    }
+    const urls = await filterUrls({
+      flatTunnels,
+      context: {
+        log: this.logger,
+        userModel: { name: '' }, // TODO: don't want to require a compose file for this command
+      },
+      filters: this.config.preevyHooks.filterUrls,
+    })
 
     if (flags.json) {
-      return flatTunnels
+      return urls
     }
 
-    ux.table(
-      flatTunnels,
-      {
-        service: { header: 'Service' },
-        port: { header: 'Port' },
-        url: { header: 'URL' },
-      },
-      {
-        ...this.flags,
-        'no-truncate': this.flags['no-truncate'] ?? (!this.flags.output && !this.flags.csv && flags['include-access-credentials']),
-        'no-header': this.flags['no-header'] ?? (!this.flags.output && !this.flags.csv && flags['include-access-credentials']),
-      },
-    )
+    printUrls(urls, flags)
 
     return undefined
   }

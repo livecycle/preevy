@@ -3,18 +3,16 @@ import fs from 'fs'
 import path from 'path'
 import { rimraf } from 'rimraf'
 import yaml from 'yaml'
-import { inspect } from 'util'
 import { TunnelOpts } from '../../ssh'
 import { ComposeModel, fixModelForRemote, getExposedTcpServicePorts, localComposeClient, resolveComposeFiles } from '../../compose'
 import { ensureCustomizedMachine } from './machine'
 import { wrapWithDockerSocket } from '../../docker'
 import { findAmbientEnvId } from '../../env-id'
-import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addComposeTunnelAgentService, queryTunnels } from '../../compose-tunnel-agent-client'
-import { withSpinner } from '../../spinner'
+import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addComposeTunnelAgentService } from '../../compose-tunnel-agent-client'
 import { MachineCreationDriver, MachineDriver, MachineBase } from '../../driver'
 import { remoteProjectDir } from '../../remote-files'
 import { Logger } from '../../log'
-import { Tunnel, tunnelUrlsForEnv } from '../../tunneling'
+import { tunnelUrlsForEnv } from '../../tunneling'
 import { FileToCopy, uploadWithSpinner } from '../../upload-files'
 
 const createCopiedFileInDataDir = (
@@ -99,7 +97,7 @@ const up = async ({
   allowedSshHostKeys: Buffer
   cwd: string
   skipUnchangedFiles: boolean
-}): Promise<{ machine: MachineBase; tunnels: Tunnel[]; envId: string }> => {
+}): Promise<{ machine: MachineBase; envId: string }> => {
   const projectName = userSpecifiedProjectName ?? userModel.name
   const remoteDir = remoteProjectDir(projectName)
 
@@ -109,7 +107,7 @@ const up = async ({
   // We start by getting the user model without injecting Preevy's environment
   // variables (e.g. `PREEVY_BASE_URI_BACKEND_3000`) so we can have the list of services
   // required to create said variables
-  const tunnelUrlsForService = tunnelUrlsForEnv({ projectName, envId, rootUrl: new URL(rootUrl), clientId })
+  const tunnelUrlsForService = tunnelUrlsForEnv({ envId, rootUrl: new URL(rootUrl), clientId })
   const composeEnv = { ...serviceLinkEnvVars(userModel, tunnelUrlsForService) }
 
   const composeFiles = await resolveComposeFiles({
@@ -143,28 +141,26 @@ const up = async ({
     machineDriver, machineCreationDriver, envId, log, debug,
   })
 
-  const { exec } = connection
-
-  const user = (
-    await exec('echo "$(id -u):$(stat -c %g /var/run/docker.sock)"')
-  ).stdout.trim()
-
-  const remoteModel = addComposeTunnelAgentService({
-    debug,
-    tunnelOpts,
-    urlSuffix: envId,
-    sshPrivateKeyPath: path.join(remoteDir, sshPrivateKeyFile.remote),
-    knownServerPublicKeyPath: path.join(remoteDir, knownServerPublicKey.remote),
-    user,
-  }, fixedModel)
-
-  const modelStr = yaml.stringify(remoteModel)
-  log.debug('model', modelStr)
-  const composeFilePath = (await createCopiedFile('docker-compose.yml', modelStr)).local
-
-  const withDockerSocket = wrapWithDockerSocket({ connection, log })
-
   try {
+    const { exec } = connection
+
+    const user = (
+      await exec('echo "$(id -u):$(stat -c %g /var/run/docker.sock)"')
+    ).stdout.trim()
+
+    const remoteModel = addComposeTunnelAgentService({
+      debug,
+      tunnelOpts,
+      urlSuffix: envId,
+      sshPrivateKeyPath: path.join(remoteDir, sshPrivateKeyFile.remote),
+      knownServerPublicKeyPath: path.join(remoteDir, knownServerPublicKey.remote),
+      user,
+    }, fixedModel)
+
+    const modelStr = yaml.stringify(remoteModel)
+    log.debug('model', modelStr)
+    const composeFilePath = (await createCopiedFile('docker-compose.yml', modelStr)).local
+
     await exec(`mkdir -p "${remoteDir}" && chown "${user}" "${remoteDir}"`, { asRoot: true })
 
     log.debug('Files to copy', filesToCopy)
@@ -173,26 +169,15 @@ const up = async ({
 
     const compose = localComposeClient({ composeFiles: [composeFilePath], projectName })
     const composeArgs = calcComposeArgs({ userSpecifiedServices, debug, cwd })
+
+    const withDockerSocket = wrapWithDockerSocket({ connection, log })
     log.debug('Running compose up with args: ', composeArgs)
     await withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit' }))
-    const tunnels = await withSpinner(async () => {
-      const queryResult = await queryTunnels({
-        tunnelUrlsForService,
-        retryOpts: {
-          minTimeout: 1000,
-          maxTimeout: 2000,
-          retries: 10,
-          onFailedAttempt: e => { log.debug(`Failed to create tunnel: ${inspect(e)}`) },
-        },
-      })
-
-      return queryResult.tunnels
-    }, { opPrefix: 'Waiting for tunnels to be created' })
-
-    return { envId, machine, tunnels }
   } finally {
     await connection.close()
   }
+
+  return { envId, machine }
 }
 
 export default up

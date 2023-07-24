@@ -2,12 +2,16 @@ import { ComposeModel, FlatTunnel } from '@preevy/core'
 import { PluginContext } from './plugins/context'
 
 export type Hooks = {
+  filterUrls: {
+    args: FlatTunnel[]
+    return: FlatTunnel[]
+  }
   envCreated: {
     args: {
       envId: string
       urls: FlatTunnel[]
     }
-    return: { urls: FlatTunnel[] }
+    return: void
   }
   envDeleted: {
     args: {

@@ -2,7 +2,7 @@ import crypto, { randomBytes } from 'crypto'
 import { FastifyBaseLogger } from 'fastify/types/logger'
 import net from 'net'
 import path from 'path'
-import ssh2, { ParsedKey, SocketBindInfo } from 'ssh2'
+import ssh2, { Client, ParsedKey, SocketBindInfo } from 'ssh2'
 import { inspect } from 'util'
 import { ForwardRequest, parseForwardRequest } from './forward-request'
 import EventEmitter from 'node:events'
@@ -96,10 +96,9 @@ export const sshServer = (
     },
     client => {
       let preevySshClient: SshClient
-      const tunnels = new Map<string, { close: () => void }>()
+      const socketServers = new Map<string, net.Server>()
 
       client
-        .on('error', err => log.error(`client error: %j`, inspect(err)))
         .on('authentication', (ctx) => {
           log.debug('authentication: %j', ctx)
           if (ctx.method !== 'publickey') {
@@ -140,14 +139,14 @@ export const sshServer = (
 
           if ((name as string) == 'cancel-streamlocal-forward@openssh.com') {
             const request = forwardRequestFromSocketBindInfo(info as unknown as SocketBindInfo)
-            const deleted = tunnels.get(request)
+            const deleted = socketServers.get(request)
             if (!deleted) {
               log.error('cancel-streamlocal-forward@openssh.com: request %j not found, rejecting', request)
               reject?.()
               return
             }
+            deleted.once('close', () => { accept?.() })
             deleted.close()
-            accept?.()
             return
           }
 
@@ -167,7 +166,7 @@ export const sshServer = (
 
           const { parsed } = res
 
-          if (tunnels.has(request)) {
+          if (socketServers.has(request)) {
             log.error('streamlocal-forward@openssh.com: rejecting %j, duplicate socket request', request)
             reject?.()
             return
@@ -204,7 +203,7 @@ export const sshServer = (
                 .listen(socketPath, () => {
                   log.debug('streamlocal-forward@openssh.com: request %j calling accept: %j', request, accept)
                   accept?.()
-                  tunnels.set(request, socketServer)
+                  socketServers.set(request, socketServer)
                   resolveForward(Object.assign(socketServer, { localSocketPath: socketPath }))
                 })
                 .on('error', (err: unknown) => {
@@ -214,7 +213,7 @@ export const sshServer = (
                 })
                 .on('close', () => {
                   log.debug('socketServer close: %j', socketPath)
-                  tunnels.delete(request)
+                  socketServers.delete(request)
                   client.removeListener('close', closeSocketServer)
                 })
 
@@ -227,7 +226,10 @@ export const sshServer = (
           )
 
         })
-        .on('error', err => { preevySshClient.emit('error', err) })
+        .on('error', err => {
+          log.error(`client error: %j`, inspect(err))
+          preevySshClient?.emit('error', err)
+        })
         .on('session', accept => {
           log.debug('session')
           const session = accept()
@@ -245,17 +247,11 @@ export const sshServer = (
               stdout: channel.stdout,
               exit: (status: number) => {
                 channel.stdout.exit(status)
-                if (tunnels.size === 0) {
+                if (socketServers.size === 0) {
                   channel.close()
                 }
               },
             })
-            // channel.stdout.on('close', () => {
-            //   log.debug('hello close, tunnels: %d', tunnels.size)
-            //   if (tunnels.size === 0) {
-            //     channel.close()
-            //   }
-            // })
           })
         })
     }

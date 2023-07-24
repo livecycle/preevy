@@ -9,7 +9,7 @@ type url = string
 export type Tunnel = {
   project: string
   service: string
-  ports: Record<port, url[]>
+  ports: Record<port, url>
 }
 
 export type FlatTunnel = {
@@ -22,12 +22,12 @@ export type FlatTunnel = {
 export const flattenTunnels = (
   tunnels: Tunnel[],
 ): FlatTunnel[] => tunnels
-  .map(t => Object.entries(t.ports).map(([port, urls]) => urls.map(url => ({
+  .map(t => Object.entries(t.ports).map(([port, url]) => ({
     project: t.project,
     service: t.service,
     port: Number(port),
     url,
-  }))))
+  })))
   .flat(2)
 
 export class UnverifiedHostKeyError extends Error {
@@ -110,8 +110,7 @@ export const performTunnelConnectionCheck = async ({
 export const createTunnelingKey = async () => Buffer.from((await generateSshKeyPair()).privateKey)
 
 export const tunnelUrlsForEnv = (
-  { projectName, envId, rootUrl, clientId }: {
-    projectName: string
+  { envId, rootUrl, clientId }: {
     envId: string
     rootUrl: URL
     clientId: string
@@ -119,7 +118,7 @@ export const tunnelUrlsForEnv = (
 ) => {
   const resolver = tunnelNameResolver({ userDefinedSuffix: envId })
   return ({ name: serviceName, ports: servicePorts }: { name: string; ports: number[] }) => {
-    const tunnels = resolver({ name: serviceName, project: projectName, ports: servicePorts })
+    const tunnels = resolver({ name: serviceName, project: '', ports: servicePorts })
     return tunnels.map(({ port, tunnel }) => ({ port, url: replaceHostname(rootUrl, `${tunnel}-${clientId}.${rootUrl.hostname}`).toString() }))
   }
 }
