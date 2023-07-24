@@ -16,6 +16,7 @@ import { remoteProjectDir } from '../../remote-files'
 import { Logger } from '../../log'
 import { Tunnel, tunnelUrlsForEnv } from '../../tunneling'
 import { FileToCopy, uploadWithSpinner } from '../../upload-files'
+import { generateBasicAuthCredentials, jwtGenerator } from '../../credentials'
 
 const createCopiedFileInDataDir = (
   { projectLocalDataDir, filesToCopy } : {
@@ -80,6 +81,8 @@ const up = async ({
   sshTunnelPrivateKey,
   cwd,
   skipUnchangedFiles,
+  tunnelingKey,
+  includeAccessCredentials,
 }: {
   clientId: string
   rootUrl: string
@@ -99,6 +102,8 @@ const up = async ({
   allowedSshHostKeys: Buffer
   cwd: string
   skipUnchangedFiles: boolean
+  tunnelingKey: string | Buffer
+  includeAccessCredentials: boolean
 }): Promise<{ machine: MachineBase; tunnels: Tunnel[]; envId: string }> => {
   const projectName = userSpecifiedProjectName ?? userModel.name
   const remoteDir = remoteProjectDir(projectName)
@@ -143,28 +148,26 @@ const up = async ({
     machineDriver, machineCreationDriver, envId, log, debug,
   })
 
-  const { exec } = connection
-
-  const user = (
-    await exec('echo "$(id -u):$(stat -c %g /var/run/docker.sock)"')
-  ).stdout.trim()
-
-  const remoteModel = addComposeTunnelAgentService({
-    debug,
-    tunnelOpts,
-    urlSuffix: envId,
-    sshPrivateKeyPath: path.join(remoteDir, sshPrivateKeyFile.remote),
-    knownServerPublicKeyPath: path.join(remoteDir, knownServerPublicKey.remote),
-    user,
-  }, fixedModel)
-
-  const modelStr = yaml.stringify(remoteModel)
-  log.debug('model', modelStr)
-  const composeFilePath = (await createCopiedFile('docker-compose.yml', modelStr)).local
-
-  const withDockerSocket = wrapWithDockerSocket({ connection, log })
-
   try {
+    const { exec } = connection
+
+    const user = (
+      await exec('echo "$(id -u):$(stat -c %g /var/run/docker.sock)"')
+    ).stdout.trim()
+
+    const remoteModel = addComposeTunnelAgentService({
+      debug,
+      tunnelOpts,
+      urlSuffix: envId,
+      sshPrivateKeyPath: path.join(remoteDir, sshPrivateKeyFile.remote),
+      knownServerPublicKeyPath: path.join(remoteDir, knownServerPublicKey.remote),
+      user,
+    }, fixedModel)
+
+    const modelStr = yaml.stringify(remoteModel)
+    log.debug('model', modelStr)
+    const composeFilePath = (await createCopiedFile('docker-compose.yml', modelStr)).local
+
     await exec(`mkdir -p "${remoteDir}" && chown "${user}" "${remoteDir}"`, { asRoot: true })
 
     log.debug('Files to copy', filesToCopy)
@@ -173,26 +176,33 @@ const up = async ({
 
     const compose = localComposeClient({ composeFiles: [composeFilePath], projectName })
     const composeArgs = calcComposeArgs({ userSpecifiedServices, debug, cwd })
+
+    const withDockerSocket = wrapWithDockerSocket({ connection, log })
     log.debug('Running compose up with args: ', composeArgs)
     await withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit' }))
-    const tunnels = await withSpinner(async () => {
-      const queryResult = await queryTunnels({
-        tunnelUrlsForService,
-        retryOpts: {
-          minTimeout: 1000,
-          maxTimeout: 2000,
-          retries: 10,
-          onFailedAttempt: e => { log.debug(`Failed to create tunnel: ${inspect(e)}`) },
-        },
-      })
-
-      return queryResult.tunnels
-    }, { opPrefix: 'Waiting for tunnels to be created' })
-
-    return { envId, machine, tunnels }
   } finally {
     await connection.close()
   }
+
+  const credentials = await generateBasicAuthCredentials(jwtGenerator(tunnelingKey))
+
+  const tunnels = await withSpinner(async () => {
+    const queryResult = await queryTunnels({
+      credentials,
+      tunnelUrlsForService,
+      retryOpts: {
+        minTimeout: 1000,
+        maxTimeout: 2000,
+        retries: 10,
+        onFailedAttempt: e => { log.debug(`Failed to create tunnel: ${inspect(e)}`) },
+      },
+      includeAccessCredentials,
+    })
+
+    return queryResult.tunnels
+  }, { opPrefix: 'Waiting for tunnels to be created' })
+
+  return { envId, machine, tunnels }
 }
 
 export default up

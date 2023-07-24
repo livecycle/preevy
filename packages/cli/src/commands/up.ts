@@ -2,7 +2,6 @@ import { Args, Flags, ux } from '@oclif/core'
 import {
   commands, flattenTunnels, profileStore,
   telemetryEmitter,
-  getUserCredentials, jwtGenerator, withBasicAuthCredentials,
 } from '@preevy/core'
 import { asyncReduce } from 'iter-tools-es'
 import { tunnelServerFlags } from '@preevy/cli-common'
@@ -81,13 +80,11 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       allowedSshHostKeys: hostKey,
       cwd: process.cwd(),
       skipUnchangedFiles: flags['skip-unchanged-files'],
+      tunnelingKey,
+      includeAccessCredentials: flags['include-access-credentials'],
     })
 
-    let flatTunnels = flattenTunnels(tunnels)
-    if (flags['include-access-credentials']) {
-      const addCredentials = withBasicAuthCredentials(await getUserCredentials(jwtGenerator(tunnelingKey)))
-      flatTunnels = flatTunnels.map(t => Object.assign(t, { url: addCredentials(t.url) }))
-    }
+    const flatTunnels = flattenTunnels(tunnels)
 
     const result = await asyncReduce(
       { urls: flatTunnels },
@@ -103,8 +100,6 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
     }
 
     this.log(`Preview environment ${envId} provisioned at: ${machine.locationDescription}`)
-
-    // add credentials here
 
     ux.table(
       result.urls,

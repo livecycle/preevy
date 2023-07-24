@@ -9,7 +9,7 @@ type url = string
 export type Tunnel = {
   project: string
   service: string
-  ports: Record<port, url[]>
+  ports: Record<port, url>
 }
 
 export type FlatTunnel = {
@@ -22,12 +22,12 @@ export type FlatTunnel = {
 export const flattenTunnels = (
   tunnels: Tunnel[],
 ): FlatTunnel[] => tunnels
-  .map(t => Object.entries(t.ports).map(([port, urls]) => urls.map(url => ({
+  .map(t => Object.entries(t.ports).map(([port, url]) => ({
     project: t.project,
     service: t.service,
     port: Number(port),
     url,
-  }))))
+  })))
   .flat(2)
 
 export class UnverifiedHostKeyError extends Error {

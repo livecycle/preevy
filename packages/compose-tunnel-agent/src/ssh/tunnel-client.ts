@@ -15,7 +15,7 @@ type Forward = {
 export type Tunnel = {
   project: string
   service: string
-  ports: Record<number, string[]>
+  ports: Record<number, string>
 }
 
 export type SshState = {
@@ -121,7 +121,7 @@ export const sshClient = async ({
             service: service.name,
             project: service.project,
             ports: {},
-          }).ports[port] ||= []).push(url)
+          }).ports[port] = url)
           return res
         },
         {} as Record<string, Tunnel>,
