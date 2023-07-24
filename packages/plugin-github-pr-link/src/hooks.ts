@@ -39,7 +39,6 @@ export const envCreated = ({ argv, pluginConfig, oclifConfig }: {
   oclifConfig: OclifConfig
 }): HookFunc<'envCreated'> => async ({ log }, { envId, urls }) => {
   await hook({ argv, pluginConfig, oclifConfig, log, envId, content: { urls } })
-  return { urls }
 }
 
 export const envDeleted = ({ argv, pluginConfig, oclifConfig }: {

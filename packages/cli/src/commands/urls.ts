@@ -1,9 +1,39 @@
-import { Args, ux } from '@oclif/core'
-import { commands, findAmbientEnvId, profileStore } from '@preevy/core'
-import { tunnelServerFlags } from '@preevy/cli-common'
+import { Args, ux, Interfaces } from '@oclif/core'
+import { FlatTunnel, commands, findAmbientEnvId, profileStore } from '@preevy/core'
+import { HooksListeners, PluginContext, tunnelServerFlags } from '@preevy/cli-common'
+import { asyncReduce } from 'iter-tools-es'
 import { tunnelServerHello } from '../tunnel-server-client'
 import ProfileCommand from '../profile-command'
 import { envIdFlags, urlFlags } from '../common-flags'
+
+export const printUrls = (
+  flatTunnels: FlatTunnel[],
+  flags: Interfaces.InferredFlags<typeof ux.table.Flags> & { 'include-access-credentials': boolean },
+) => {
+  ux.table(
+    flatTunnels,
+    {
+      service: { header: 'Service' },
+      port: { header: 'Port' },
+      url: { header: 'URL' },
+    },
+    {
+      ...flags,
+      'no-truncate': flags['no-truncate'] ?? (!flags.output && !flags.csv && flags['include-access-credentials']),
+      'no-header': flags['no-header'] ?? (!flags.output && !flags.csv && flags['include-access-credentials']),
+    },
+  )
+}
+
+export const filterUrls = ({ flatTunnels, context, filters }: {
+  flatTunnels: FlatTunnel[]
+  context: PluginContext
+  filters: HooksListeners['filterUrls']
+}) => asyncReduce(
+  flatTunnels,
+  (urls, f) => f(context, urls),
+  filters,
+)
 
 // eslint-disable-next-line no-use-before-define
 export default class Urls extends ProfileCommand<typeof Urls> {
@@ -60,23 +90,20 @@ export default class Urls extends ProfileCommand<typeof Urls> {
       includeAccessCredentials: flags['include-access-credentials'],
     })
 
+    const urls = await filterUrls({
+      flatTunnels,
+      context: {
+        log: this.logger,
+        userModel: { name: '' }, // TODO: don't want to require a compose file for this command
+      },
+      filters: this.config.preevyHooks.filterUrls,
+    })
+
     if (flags.json) {
-      return flatTunnels
+      return urls
     }
 
-    ux.table(
-      flatTunnels,
-      {
-        service: { header: 'Service' },
-        port: { header: 'Port' },
-        url: { header: 'URL' },
-      },
-      {
-        ...this.flags,
-        'no-truncate': this.flags['no-truncate'] ?? (!this.flags.output && !this.flags.csv && flags['include-access-credentials']),
-        'no-header': this.flags['no-header'] ?? (!this.flags.output && !this.flags.csv && flags['include-access-credentials']),
-      },
-    )
+    printUrls(urls, flags)
 
     return undefined
   }

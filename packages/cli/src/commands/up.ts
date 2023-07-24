@@ -1,13 +1,13 @@
 import { Args, Flags, ux } from '@oclif/core'
 import {
-  commands, flattenTunnels, profileStore,
+  commands, profileStore,
   telemetryEmitter,
 } from '@preevy/core'
-import { asyncReduce } from 'iter-tools-es'
 import { tunnelServerFlags } from '@preevy/cli-common'
 import { tunnelServerHello } from '../tunnel-server-client'
 import MachineCreationDriverCommand from '../machine-creation-driver-command'
 import { envIdFlags, urlFlags } from '../common-flags'
+import { filterUrls, printUrls } from './urls'
 
 // eslint-disable-next-line no-use-before-define
 export default class Up extends MachineCreationDriverCommand<typeof Up> {
@@ -61,7 +61,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
     const userModel = await this.ensureUserModel()
 
-    const { machine, tunnels, envId } = await commands.up({
+    const { machine, envId } = await commands.up({
       clientId,
       rootUrl,
       userSpecifiedServices: restArgs,
@@ -80,40 +80,36 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       allowedSshHostKeys: hostKey,
       cwd: process.cwd(),
       skipUnchangedFiles: flags['skip-unchanged-files'],
+    })
+
+    this.log(`Preview environment ${envId} provisioned at: ${machine.locationDescription}`)
+
+    const flatTunnels = await commands.urls({
+      rootUrl,
+      clientId,
+      envId,
       tunnelingKey,
       includeAccessCredentials: flags['include-access-credentials'],
     })
 
-    const flatTunnels = flattenTunnels(tunnels)
+    const urls = await filterUrls({
+      flatTunnels,
+      context: { log: this.logger, userModel },
+      filters: this.config.preevyHooks.filterUrls,
+    })
 
-    const result = await asyncReduce(
-      { urls: flatTunnels },
-      async ({ urls }, envCreated) => await envCreated(
+    await Promise.all(
+      this.config.preevyHooks.envCreated.map(envCreated => envCreated(
         { log: this.logger, userModel },
         { envId, urls },
-      ),
-      this.config.preevyHooks.envCreated,
+      )),
     )
 
     if (flags.json) {
-      return result.urls
+      return urls
     }
 
-    this.log(`Preview environment ${envId} provisioned at: ${machine.locationDescription}`)
-
-    ux.table(
-      result.urls,
-      {
-        service: { header: 'Service' },
-        port: { header: 'Port' },
-        url: { header: 'URL' },
-      },
-      {
-        ...this.flags,
-        'no-truncate': this.flags['no-truncate'] ?? (!this.flags.output && !this.flags.csv && flags['include-access-credentials']),
-        'no-header': this.flags['no-header'] ?? (!this.flags.output && !this.flags.csv && flags['include-access-credentials']),
-      },
-    )
+    printUrls(urls, flags)
 
     return undefined
   }

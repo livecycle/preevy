@@ -3,20 +3,17 @@ import fs from 'fs'
 import path from 'path'
 import { rimraf } from 'rimraf'
 import yaml from 'yaml'
-import { inspect } from 'util'
 import { TunnelOpts } from '../../ssh'
 import { ComposeModel, fixModelForRemote, getExposedTcpServicePorts, localComposeClient, resolveComposeFiles } from '../../compose'
 import { ensureCustomizedMachine } from './machine'
 import { wrapWithDockerSocket } from '../../docker'
 import { findAmbientEnvId } from '../../env-id'
-import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addComposeTunnelAgentService, queryTunnels } from '../../compose-tunnel-agent-client'
-import { withSpinner } from '../../spinner'
+import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addComposeTunnelAgentService } from '../../compose-tunnel-agent-client'
 import { MachineCreationDriver, MachineDriver, MachineBase } from '../../driver'
 import { remoteProjectDir } from '../../remote-files'
 import { Logger } from '../../log'
-import { Tunnel, tunnelUrlsForEnv } from '../../tunneling'
+import { tunnelUrlsForEnv } from '../../tunneling'
 import { FileToCopy, uploadWithSpinner } from '../../upload-files'
-import { generateBasicAuthCredentials, jwtGenerator } from '../../credentials'
 
 const createCopiedFileInDataDir = (
   { projectLocalDataDir, filesToCopy } : {
@@ -81,8 +78,6 @@ const up = async ({
   sshTunnelPrivateKey,
   cwd,
   skipUnchangedFiles,
-  tunnelingKey,
-  includeAccessCredentials,
 }: {
   clientId: string
   rootUrl: string
@@ -102,9 +97,7 @@ const up = async ({
   allowedSshHostKeys: Buffer
   cwd: string
   skipUnchangedFiles: boolean
-  tunnelingKey: string | Buffer
-  includeAccessCredentials: boolean
-}): Promise<{ machine: MachineBase; tunnels: Tunnel[]; envId: string }> => {
+}): Promise<{ machine: MachineBase; envId: string }> => {
   const projectName = userSpecifiedProjectName ?? userModel.name
   const remoteDir = remoteProjectDir(projectName)
 
@@ -184,25 +177,7 @@ const up = async ({
     await connection.close()
   }
 
-  const credentials = await generateBasicAuthCredentials(jwtGenerator(tunnelingKey))
-
-  const tunnels = await withSpinner(async () => {
-    const queryResult = await queryTunnels({
-      credentials,
-      tunnelUrlsForService,
-      retryOpts: {
-        minTimeout: 1000,
-        maxTimeout: 2000,
-        retries: 10,
-        onFailedAttempt: e => { log.debug(`Failed to create tunnel: ${inspect(e)}`) },
-      },
-      includeAccessCredentials,
-    })
-
-    return queryResult.tunnels
-  }, { opPrefix: 'Waiting for tunnels to be created' })
-
-  return { envId, machine, tunnels }
+  return { envId, machine }
 }
 
 export default up
