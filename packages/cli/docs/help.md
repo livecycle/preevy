@@ -19,6 +19,12 @@ ARGUMENTS
 FLAGS
   -n, --nested-commands  Include all nested commands in the output.
 
+GLOBAL FLAGS
+  -D, --debug                       Enable debug logging
+  -f, --file=<value>...             [default: ] Compose configuration file
+  -p, --project=<value>             Project name. Defaults to the Compose project name
+  --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
+
 DESCRIPTION
   Display help for preevy.
 ```
