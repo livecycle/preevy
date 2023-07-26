@@ -4,6 +4,7 @@ import {
   telemetryEmitter,
 } from '@preevy/core'
 import { tunnelServerFlags } from '@preevy/cli-common'
+import { inspect } from 'util'
 import { tunnelServerHello } from '../tunnel-server-client'
 import MachineCreationDriverCommand from '../machine-creation-driver-command'
 import { envIdFlags, urlFlags } from '../common-flags'
@@ -90,6 +91,12 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       envId,
       tunnelingKey,
       includeAccessCredentials: flags['include-access-credentials'],
+      retryOpts: {
+        minTimeout: 1000,
+        maxTimeout: 2000,
+        retries: 10,
+        onFailedAttempt: e => { this.logger.debug(`Failed to query tunnels: ${inspect(e)}`) },
+      },
     })
 
     const urls = await filterUrls({
