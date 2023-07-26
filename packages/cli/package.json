@@ -84,7 +84,8 @@
     "topicSeparator": " "
   },
   "pkg": {
-    "assets": ["../*/static/**/*", "../compose-tunnel-agent/out/**/*", "../compose-tunnel-agent/package.json"]
+    "assets": ["../*/static/**/*", "../compose-tunnel-agent/out/**/*", "../compose-tunnel-agent/package.json", "../compose-tunnel-agent/Dockerfile", "../compose-tunnel-agent/.dockerignore" ],
+    "scripts": ["dist/commands/**/*.js", "dist/hooks/**/*.js"]
   },
   "scripts": {
     "build": "yarn clean && tsc -b",

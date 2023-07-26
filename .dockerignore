@@ -2,9 +2,17 @@
 .git
 .devcontainer
 node_modules
+**/node_modules
 packages/*/dist
 /tunnel-server
 /site
 Dockerfile*
 tsconfig.tsbuildinfo
 packages/*/tsconfig.tsbuildinfo
+dist/**
+out/**
+preevy-bin
+preevy-build.tar
+.dockerignore
+.github
+.devcontainer
