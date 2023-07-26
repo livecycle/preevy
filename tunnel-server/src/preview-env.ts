@@ -3,7 +3,7 @@ import { KeyObject } from 'crypto'
 export type PreviewEnv = {
   clientId: string
   target: string
-  publicKey: KeyObject,
+  publicKey: KeyObject
   access: 'private' | 'public'
 }
 
@@ -17,11 +17,11 @@ export type PreviewEnvStore = {
 export const inMemoryPreviewEnvStore = (initial?: Record<string, PreviewEnv>): PreviewEnvStore => {
   const map = new Map<string, PreviewEnv>(Object.entries(initial ?? {}))
   return {
-    get: async (key) => map.get(key),
+    get: async key => map.get(key),
     set: async (key, value) => {
       map.set(key, value)
     },
-    has: async (key) => map.has(key),
-    delete: async (key) => map.delete(key),
+    has: async key => map.has(key),
+    delete: async key => map.delete(key),
   }
 }

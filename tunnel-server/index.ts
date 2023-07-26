@@ -1,23 +1,25 @@
 import { inspect, promisify } from 'util'
+import url from 'url'
+import path from 'path'
+import pino from 'pino'
+import { createPublicKey } from 'crypto'
 import { app as createApp } from './src/app'
 import { inMemoryPreviewEnvStore } from './src/preview-env'
 import { sshServer as createSshServer } from './src/ssh-server'
 import { getSSHKeys } from './src/ssh-keys'
-import url from 'url'
-import path from 'path'
 import { isProxyRequest, proxyHandlers } from './src/proxy'
 import { appLoggerFromEnv } from './src/logging'
-import pino from 'pino'
-import { tunnelsGauge } from './src/metrics'
-import { runMetricsServer } from './src/metrics'
+import { tunnelsGauge, runMetricsServer } from './src/metrics'
 import { numberFromEnv, requiredEnv } from './src/env'
 import { replaceHostname } from './src/url'
-import { createPublicKey } from 'crypto'
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
+const logger = pino(appLoggerFromEnv())
+
 const { sshPrivateKey } = await getSSHKeys({
-  defaultKeyLocation: path.join(__dirname, "./ssh/ssh_host_key")
+  defaultKeyLocation: path.join(__dirname, './ssh/ssh_host_key'),
+  log: logger,
 })
 
 const PORT = numberFromEnv('PORT') || 3000
@@ -33,10 +35,9 @@ const BASE_URL = (() => {
 
 const envStore = inMemoryPreviewEnvStore()
 
-const logger = pino(appLoggerFromEnv())
 const app = createApp({
   isProxyRequest: isProxyRequest(BASE_URL.hostname),
-  proxyHandlers: proxyHandlers({envStore, logger}),
+  proxyHandlers: proxyHandlers({ envStore, logger }),
   logger,
 })
 const sshLogger = logger.child({ name: 'ssh_server' })
@@ -76,24 +77,24 @@ const sshServer = createSshServer({
           access,
         })
         tunnels.set(requestId, tunnelUrl(BASE_URL, clientId, remotePath))
-        tunnelsGauge.inc({clientId})
+        tunnelsGauge.inc({ clientId })
 
         forward.on('close', () => {
           sshLogger.debug('deleting tunnel %s', key)
           tunnels.delete(requestId)
           void envStore.delete(key)
-          tunnelsGauge.dec({clientId})
+          tunnelsGauge.dec({ clientId })
         })
       })
       .on('error', err => { sshLogger.warn('client error %j: %j', clientId, inspect(err)) })
       .on('hello', channel => {
-        channel.stdout.write(JSON.stringify({
+        channel.stdout.write(`${JSON.stringify({
           clientId,
           // TODO: backwards compat, remove when we drop support for CLI v0.0.35
           baseUrl: { hostname: BASE_URL.hostname, port: BASE_URL.port, protocol: BASE_URL.protocol },
           rootUrl: BASE_URL.toString(),
           tunnels: Object.fromEntries(tunnels.entries()),
-        }) + '\r\n')
+        })}\r\n`)
         channel.exit(0)
       })
   })
@@ -104,20 +105,20 @@ const sshServer = createSshServer({
     app.log.error('ssh server error: %j', err)
   })
 
-app.listen({ host: LISTEN_HOST, port: PORT }).catch((err) => {
+app.listen({ host: LISTEN_HOST, port: PORT }).catch(err => {
   app.log.error(err)
   process.exit(1)
 })
 
-runMetricsServer(8888).catch((err) => {
+runMetricsServer(8888).catch(err => {
   app.log.error(err)
-})
+});
 
-;['SIGTERM', 'SIGINT'].forEach((signal) => {
+['SIGTERM', 'SIGINT'].forEach(signal => {
   process.once(signal, () => {
     app.log.info(`shutting down on ${signal}`)
     Promise.all([promisify(sshServer.close).call(sshServer), app.close()])
-      .catch((err) => {
+      .catch(err => {
         app.log.error(err)
         process.exit(1)
       })

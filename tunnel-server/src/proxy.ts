@@ -1,16 +1,19 @@
-import { PreviewEnvStore } from './preview-env'
 import httpProxy from 'http-proxy'
 import { IncomingMessage, ServerResponse } from 'http'
 import internal from 'stream'
 import type { Logger } from 'pino'
+import { PreviewEnvStore } from './preview-env'
 import { requestsCounter } from './metrics'
 import { authenticator, tunnelingKeyAuthenticator } from './auth'
 
 export const isProxyRequest = (
   hostname: string,
-) => (req: IncomingMessage)=> Boolean(req.headers.host?.split(':')?.[0]?.endsWith(`.${hostname}`))
+) => (req: IncomingMessage) => Boolean(req.headers.host?.split(':')?.[0]?.endsWith(`.${hostname}`))
 
-function asyncHandler<TArgs extends unknown[]>(fn: (...args: TArgs) => Promise<void>, onError: (error: unknown, ...args: TArgs)=> void ) {
+function asyncHandler<TArgs extends unknown[]>(
+  fn: (...args: TArgs) => Promise<void>,
+  onError: (error: unknown, ...args: TArgs)=> void,
+) {
   return async (...args: TArgs) => {
     try {
       await fn(...args)
@@ -21,27 +24,27 @@ function asyncHandler<TArgs extends unknown[]>(fn: (...args: TArgs) => Promise<v
 }
 
 const unauthorized = (res: ServerResponse<IncomingMessage>) => {
-  res.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"');
-  res.statusCode = 401;
-  res.end('Unauthorized');
+  res.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"')
+  res.statusCode = 401
+  res.end('Unauthorized')
 }
 
 export function proxyHandlers({
   envStore,
-  logger
+  logger,
 }: {
   envStore: PreviewEnvStore
   logger: Logger
-} ){
+}) {
   const proxy = httpProxy.createProxy({})
-  const resolveTargetEnv = async (req: IncomingMessage)=>{
-    const {url} = req
-    const host = req.headers['host']?.split(':')?.[0]
+  const resolveTargetEnv = async (req: IncomingMessage) => {
+    const { url } = req
+    const host = req.headers.host?.split(':')?.[0]
     const targetHost = host?.split('.', 1)[0]
     const env = await envStore.get(targetHost as string)
     if (!env) {
       logger.warn('no env for %j', { targetHost, url })
-      return
+      return undefined
     }
     return env
   }
@@ -49,27 +52,27 @@ export function proxyHandlers({
     handler: asyncHandler(async (req: IncomingMessage, res: ServerResponse<IncomingMessage>) => {
       const env = await resolveTargetEnv(req)
       if (!env) {
-        res.statusCode = 502;
-        res.end();
-        return;
+        res.statusCode = 502
+        res.end()
+        return undefined
       }
 
-      if(env.access === 'private'){
+      if (env.access === 'private') {
         const authenticate = authenticator([tunnelingKeyAuthenticator(env.publicKey)])
         try {
-          const claims = await authenticate(req)  
-          if (!claims){
-            return unauthorized(res);
+          const claims = await authenticate(req)
+          if (!claims) {
+            return unauthorized(res)
           }
         } catch (error) {
-          res.statusCode = 400;
-          res.end();
-          return;
+          res.statusCode = 400
+          res.end()
+          return undefined
         }
       }
 
       logger.debug('proxying to %j', { target: env.target, url: req.url })
-      requestsCounter.inc({clientId: env.clientId})
+      requestsCounter.inc({ clientId: env.clientId })
 
       return proxy.web(
         req,
@@ -81,24 +84,24 @@ export function proxyHandlers({
             socketPath: env.target,
           },
         },
-        (err) => {
+        err => {
           logger.warn('error in proxy %j', { error: err, targetHost: env.target, url: req.url })
           res.statusCode = 502
           res.end(`error proxying request: ${(err as unknown as { code: unknown }).code}`)
         }
       )
-    }, (err)=> logger.error('error forwarding traffic %j', {error:err}) ),
+    }, err => logger.error('error forwarding traffic %j', { error: err })),
     wsHandler: asyncHandler(async (req: IncomingMessage, socket: internal.Duplex, head: Buffer) => {
       const env = await resolveTargetEnv(req)
       if (!env) {
-        socket.end();
-        return;
+        socket.end()
+        return undefined
       }
 
-      if(env.access === 'private'){
+      if (env.access === 'private') {
         // need to support session cookie, native browser Websocket api doesn't forward authorization header
-        socket.end();
-        return;
+        socket.end()
+        return undefined
       }
       return proxy.ws(
         req,
@@ -111,11 +114,10 @@ export function proxyHandlers({
             socketPath: env.target,
           },
         },
-        (err) => {
-          logger.warn('error in ws proxy %j', { error:err, targetHost: env.target,  url: req.url })
+        err => {
+          logger.warn('error in ws proxy %j', { error: err, targetHost: env.target, url: req.url })
         }
       )
-
-    }, (err)=> logger.error('error forwarding ws traffic %j', {error: err}))
+    }, err => logger.error('error forwarding ws traffic %j', { error: err })),
   }
 }

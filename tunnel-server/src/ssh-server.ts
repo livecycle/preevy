@@ -2,14 +2,16 @@ import crypto, { randomBytes } from 'crypto'
 import { FastifyBaseLogger } from 'fastify/types/logger'
 import net from 'net'
 import path from 'path'
-import ssh2, { Client, ParsedKey, SocketBindInfo } from 'ssh2'
+import ssh2, { ParsedKey, SocketBindInfo } from 'ssh2'
 import { inspect } from 'util'
-import { ForwardRequest, parseForwardRequest } from './forward-request'
 import EventEmitter from 'node:events'
 import { Writable } from 'node:stream'
+import { ForwardRequest, parseForwardRequest } from './forward-request'
 
 const idFromPublicSsh = (key: Buffer) =>
-  crypto.createHash('sha1').update(key).digest('base64url').replace(/[_-]/g, '').slice(0, 8).toLowerCase()
+  crypto.createHash('sha1').update(key).digest('base64url').replace(/[_-]/g, '')
+    .slice(0, 8)
+    .toLowerCase()
 
 const forwardRequestFromSocketBindInfo = (
   { socketPath: request }: Pick<ssh2.SocketBindInfo, 'socketPath'>
@@ -22,7 +24,7 @@ const parseForwardRequestFromSocketBindInfo = (
   try {
     return { request, parsed: parseForwardRequest(request) }
   } catch (error) {
-    return { request, error: error as Error } as const;
+    return { request, error: error as Error } as const
   }
 }
 
@@ -99,7 +101,7 @@ export const sshServer = (
       const socketServers = new Map<string, net.Server>()
 
       client
-        .on('authentication', (ctx) => {
+        .on('authentication', ctx => {
           log.debug('authentication: %j', ctx)
           if (ctx.method !== 'publickey') {
             ctx.reject(['publickey'])
@@ -137,7 +139,7 @@ export const sshServer = (
             return
           }
 
-          if ((name as string) == 'cancel-streamlocal-forward@openssh.com') {
+          if ((name as string) === 'cancel-streamlocal-forward@openssh.com') {
             const request = forwardRequestFromSocketBindInfo(info as unknown as SocketBindInfo)
             const deleted = socketServers.get(request)
             if (!deleted) {
@@ -158,7 +160,7 @@ export const sshServer = (
 
           const res = parseForwardRequestFromSocketBindInfo(info as unknown as SocketBindInfo)
           const { request } = res
-          if('error' in res) {
+          if ('error' in res) {
             log.error('streamlocal-forward@openssh.com: rejecting %j, error parsing: %j', request, inspect(res.error))
             reject?.()
             return
@@ -177,7 +179,7 @@ export const sshServer = (
             request,
             parsed,
             () => new Promise<ClientForward>((resolveForward, rejectForward) => {
-              const socketServer = net.createServer((socket) => {
+              const socketServer = net.createServer(socket => {
                 log.debug('socketServer connected %j', socket)
                 client.openssh_forwardOutStreamLocal(
                   request,
@@ -185,8 +187,8 @@ export const sshServer = (
                     if (err) {
                       log.error('error forwarding request %j: %s', request, inspect(err))
                       socket.end()
-                      socketServer.close((err) => {
-                        log.error('error closing socket server for request %j: %j', request, inspect(err))
+                      socketServer.close(closeErr => {
+                        log.error('error closing socket server for request %j: %j', request, inspect(closeErr))
                       })
                       return
                     }
@@ -224,25 +226,24 @@ export const sshServer = (
               reject?.()
             }
           )
-
         })
         .on('error', err => {
-          log.error(`client error: %j`, inspect(err))
+          log.error('client error: %j', inspect(err))
           preevySshClient?.emit('error', err)
         })
         .on('session', accept => {
           log.debug('session')
           const session = accept()
 
-          session.on('exec', async (accept, reject, info) => {
+          session.on('exec', async (acceptExec, rejectExec, info) => {
             log.debug('exec %j', info)
             if (info.command !== 'hello') {
               log.error('invalid exec command %j', info.command)
-              reject()
+              rejectExec()
               return
             }
 
-            const channel = accept()
+            const channel = acceptExec()
             preevySshClient.emit('hello', {
               stdout: channel.stdout,
               exit: (status: number) => {
