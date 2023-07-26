@@ -1,6 +1,7 @@
 import path from 'path'
 import fetch from 'node-fetch'
 import retry from 'p-retry'
+import util from 'util'
 import { mapValues } from 'lodash'
 import { ComposeModel, ComposeService } from './compose/model'
 import { TunnelOpts } from './ssh/url'
@@ -8,7 +9,8 @@ import { Tunnel } from './tunneling'
 import { withBasicAuthCredentials } from './url'
 
 export const COMPOSE_TUNNEL_AGENT_SERVICE_NAME = 'preevy_proxy'
-export const COMPOSE_TUNNEL_AGENT_SERVICE_PORT = 3000
+export const COMPOSE_TUNNEL_AGENT_API_PORT = 3000
+export const COMPOSE_TUNNEL_AGENT_DOCKER_PROXY_PORT = 3001
 const COMPOSE_TUNNEL_AGENT_DIR = path.join(path.dirname(require.resolve('@preevy/compose-tunnel-agent')), '..')
 
 const baseDockerProxyService: ComposeService = {
@@ -63,6 +65,12 @@ export const addComposeTunnelAgentService = (
           published: '0',
           protocol: 'tcp',
         },
+        {
+          mode: 'ingress',
+          target: 3001,
+          published: '0',
+          protocol: 'tcp',
+        },
       ],
       volumes: [
         {
@@ -91,7 +99,7 @@ export const addComposeTunnelAgentService = (
         TLS_SERVERNAME: tunnelOpts.tlsServerName,
         TUNNEL_URL_SUFFIX: urlSuffix,
         PREEVY_ENV_ID: envId,
-        PORT: COMPOSE_TUNNEL_AGENT_SERVICE_PORT.toString(),
+        PORT: COMPOSE_TUNNEL_AGENT_API_PORT.toString(),
         ...debug ? { DEBUG: '1' } : {},
         HOME: '/preevy',
       },
@@ -110,10 +118,16 @@ export const queryTunnels = async ({
   retryOpts?: retry.Options
   includeAccessCredentials: boolean
 }) => {
-  const serviceUrl = tunnelUrlsForService({
+  const serviceUrls = tunnelUrlsForService({
     name: COMPOSE_TUNNEL_AGENT_SERVICE_NAME,
-    ports: [COMPOSE_TUNNEL_AGENT_SERVICE_PORT],
-  })[0].url.replace(/\/$/, '')
+    ports: [COMPOSE_TUNNEL_AGENT_API_PORT, COMPOSE_TUNNEL_AGENT_DOCKER_PROXY_PORT],
+  })
+
+  const serviceUrl = serviceUrls.find(({ port }) => port === COMPOSE_TUNNEL_AGENT_API_PORT)?.url.replace(/\/$/, '')
+
+  if (!serviceUrl) {
+    throw new Error(`Cannot find compose tunnel agent API service URL in: ${util.inspect(serviceUrls)}`)
+  }
 
   const addCredentials = withBasicAuthCredentials(credentials)
   const url = addCredentials(`${serviceUrl}/tunnels`)

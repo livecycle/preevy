@@ -10,8 +10,10 @@ import { ConnectionCheckResult, requiredEnv, checkConnection, formatPublicKey, p
 import createDockerClient from './src/docker'
 import createApiServer from './src/api-server'
 import { sshClient as createSshClient } from './src/ssh'
+import { createDockerProxy } from './src/docker-proxy'
 
 const homeDir = process.env.HOME || '/root'
+const dockerSocket = '/var/run/docker.sock'
 
 const readDir = async (dir: string) => {
   try {
@@ -70,11 +72,11 @@ const formatConnectionCheckResult = (
 
 const writeLineToStdout = (s: string) => [s, EOL].forEach(d => process.stdout.write(d))
 
-const main = async () => {
-  const log = pino({
-    level: process.env.DEBUG || process.env.DOCKER_PROXY_DEBUG ? 'debug' : 'info',
-  }, pinoPretty({ destination: pino.destination(process.stderr) }))
+const log = pino({
+  level: process.env.DEBUG || process.env.DOCKER_PROXY_DEBUG ? 'debug' : 'info',
+}, pinoPretty({ destination: pino.destination(process.stderr) }))
 
+const main = async () => {
   const { connectionConfig, sshUrl } = await sshConnectionConfigFromEnv()
 
   log.debug('ssh config: %j', {
@@ -92,20 +94,21 @@ const main = async () => {
     process.exit(0)
   }
 
-  const docker = new Docker({ socketPath: '/var/run/docker.sock' })
+  const docker = new Docker({ socketPath: dockerSocket })
   const dockerClient = createDockerClient({ log: log.child({ name: 'docker' }), docker, debounceWait: 500 })
 
+  const sshLog = log.child({ name: 'ssh' })
   const sshClient = await createSshClient({
     connectionConfig,
     tunnelNameResolver: tunnelNameResolver({ userDefinedSuffix: process.env.TUNNEL_URL_SUFFIX }),
-    log: log.child({ name: 'ssh' }),
+    log: sshLog,
     onError: err => {
       log.error(err)
       process.exit(1)
     },
   })
 
-  log.info('ssh client connected to %j', sshUrl)
+  sshLog.info('ssh client connected to %j', sshUrl)
   let currentTunnels = dockerClient.getRunningServices().then(services => sshClient.updateTunnels(services))
 
   void dockerClient.startListening({
@@ -115,25 +118,51 @@ const main = async () => {
     },
   })
 
-  const listenAddress = process.env.PORT ?? 3000
-  if (typeof listenAddress === 'string' && Number.isNaN(Number(listenAddress))) {
-    await rimraf(listenAddress)
+  const apiListenAddress = process.env.PORT ?? 3000
+  if (typeof apiListenAddress === 'string' && Number.isNaN(Number(apiListenAddress))) {
+    await rimraf(apiListenAddress)
   }
 
+  const apiServerLog = log.child({ name: 'api' })
   const apiServer = createApiServer({
-    log: log.child({ name: 'api' }),
-    currentSshState: async () => (
-      await currentTunnels
-    ),
+    log: apiServerLog,
+    currentSshState: async () => (await currentTunnels),
   })
-    .listen(listenAddress, () => {
-      log.info(`listening on ${inspect(apiServer.address())}`)
+    .listen(apiListenAddress, () => {
+      apiServerLog.info(`API server listening on ${inspect(apiServer.address())}`)
     })
     .on('error', err => {
-      log.error(err)
+      apiServerLog.error(err)
+      process.exit(1)
+    })
+    .unref()
+
+  const dockerProxyListenAddress = process.env.DOCKER_PROXY_PORT ?? 3001
+  if (typeof dockerProxyListenAddress === 'string' && Number.isNaN(Number(dockerProxyListenAddress))) {
+    await rimraf(dockerProxyListenAddress)
+  }
+
+  const dockerProxyLog = log.child({ name: 'docker-proxy' })
+  const dockerProxyServer = createDockerProxy({
+    log: dockerProxyLog,
+    dockerSocket,
+    docker,
+  })
+    .listen(dockerProxyListenAddress, () => {
+      dockerProxyLog.info(`Docker proxy listening on ${inspect(dockerProxyServer.address())}`)
+    })
+    .on('error', err => {
+      dockerProxyLog.error(err)
       process.exit(1)
     })
     .unref()
 }
 
-void main()
+void main();
+
+['SIGTERM', 'SIGINT'].forEach(signal => {
+  process.once(signal, async () => {
+    log.info(`shutting down on ${signal}`)
+    process.exit(0)
+  })
+})

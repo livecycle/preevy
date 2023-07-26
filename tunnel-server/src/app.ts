@@ -3,7 +3,6 @@ import { fastifyRequestContext } from '@fastify/request-context'
 import http from 'http'
 import internal from 'stream'
 import { Logger } from 'pino'
-import { match } from 'ts-pattern'
 import { SessionStore } from './session'
 import { Claims, JwtAuthenticator, authenticator, getIssuerToKeyDataFromEnv, unauthorized } from './auth'
 import { PreviewEnvStore } from './preview-env'
@@ -16,25 +15,32 @@ export const app = ({ isProxyRequest, proxyHandlers, session: sessionManager, ba
   session: SessionStore<Claims>
   envStore: PreviewEnvStore
   proxyHandlers: {
-    wsHandler: (req: http.IncomingMessage, socket: internal.Duplex, head: Buffer) => void
+    upgradeHandler: (req: http.IncomingMessage, socket: internal.Duplex, head: Buffer) => void
     handler: (req: http.IncomingMessage, res: http.ServerResponse) => void
   }
 }) =>
   Fastify({
     serverFactory: handler => {
-      const { wsHandler: proxyWsHandler, handler: proxyHandler } = proxyHandlers
-      const server = http.createServer((req, res) => match(req)
-        .when(r => r.headers.host?.startsWith('auth.'), () => handler(req, res))
-        .when(isProxyRequest, () => proxyHandler(req, res))
-        .otherwise(() => handler(req, res)))
-      server.on('upgrade', (req, socket, head) => {
-        if (isProxyRequest(req)) {
-          proxyWsHandler(req, socket, head)
-        } else {
-          logger.warn('unexpected upgrade request %j', { url: req.url, host: req.headers.host })
-          socket.end()
+      const { upgradeHandler: proxyUpgradeHandler, handler: proxyHandler } = proxyHandlers
+      const server = http.createServer((req, res) => {
+        if (req.url !== '/healthz') {
+          logger.debug('request %j', { method: req.method, url: req.url, headers: req.headers })
         }
+        if (!req.headers.host?.startsWith('auth.') && isProxyRequest(req)) {
+          return proxyHandler(req, res)
+        }
+        return handler(req, res)
       })
+        .on('upgrade', (req, socket, head) => {
+          logger.debug('upgrade', req.url)
+          if (isProxyRequest(req)) {
+            return proxyUpgradeHandler(req, socket, head)
+          }
+
+          logger.warn('upgrade request %j not found', { url: req.url, host: req.headers.host })
+          socket.end('Not found')
+          return undefined
+        })
       return server
     },
     logger,

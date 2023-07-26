@@ -4,15 +4,19 @@ import { randomBytes } from 'crypto'
 import * as z from 'zod'
 
 // for testing, for production workload use the env var COOKIE_SECRETS
-function generateSecret() {
+function generateInsecureSecret() {
   return randomBytes(32)
     .toString('base64')
     .slice(0, 32)
 }
 
 export function sessionStore<T>(opts: {domain: string; schema: z.ZodSchema<T>; keys?: string[] }) {
-  const keys = opts.keys ?? [generateSecret()]
-  return function getSession(req: IncomingMessage, res: ServerResponse<IncomingMessage>, thumbprint: string) {
+  const keys = opts.keys ?? [generateInsecureSecret()]
+  return function getSession(
+    req: IncomingMessage,
+    res: ServerResponse<IncomingMessage> | undefined,
+    thumbprint: string
+  ) {
     const cookies = new Cookies(req, res, {
       secure: true,
       keys,

@@ -1,5 +1,6 @@
 import httpProxy from 'http-proxy'
 import { IncomingMessage, ServerResponse } from 'http'
+import net from 'net'
 import internal from 'stream'
 import type { Logger } from 'pino'
 import { inspect } from 'util'
@@ -126,36 +127,59 @@ export function proxyHandlers({
           res.end(`error proxying request: ${(err as unknown as { code: unknown }).code}`)
         }
       )
-    }, err => { logger.error('error forwarding traffic %j', inspect(err)) }),
-    wsHandler: asyncHandler(async (req: IncomingMessage, socket: internal.Duplex, head: Buffer) => {
+    }, err => logger.error('error forwarding traffic %j', inspect(err))),
+
+    upgradeHandler: asyncHandler(async (req: IncomingMessage, socket: internal.Duplex, head: Buffer) => {
       const env = await resolveTargetEnv(req)
       if (!env) {
+        logger.warn('env not found for upgrade request %j', req.url)
         socket.end()
         return undefined
       }
 
+      logger.debug('upgrade handler %j', { url: req.url, env, headers: req.headers })
+
       if (env.access === 'private') {
-        const session = sessionManager(req, undefined as any, env.clientId)
+        const session = sessionManager(req, undefined, env.clientId)
         if (session.user?.role !== 'admin') {
           socket.end()
           return undefined
         }
       }
-      return proxy.ws(
-        req,
-        socket,
-        head,
-        {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          target: {
-            socketPath: env.target,
+
+      const upgrade = req.headers.upgrade?.toLowerCase()
+
+      if (upgrade === 'websocket') {
+        return proxy.ws(
+          req,
+          socket,
+          head,
+          {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            target: {
+              socketPath: env.target,
+            },
           },
-        },
-        err => {
-          logger.warn('error in ws proxy %j', { error: err, targetHost: env.target, url: req.url })
-        }
-      )
-    }, err => logger.error('error forwarding ws traffic %j', { error: err })),
+          err => {
+            logger.warn('error in ws proxy %j', { error: err, targetHost: env.target, url: req.url })
+          }
+        )
+      }
+
+      if (upgrade === 'tcp') {
+        const targetSocket = net.createConnection({ path: env.target }, () => {
+          const reqBuf = `${req.method} ${req.url} HTTP/${req.httpVersion}\r\n${Object.entries(req.headers).map(([k, v]) => `${k}: ${v}`).join('\r\n')}\r\n\r\n`
+          targetSocket.write(reqBuf)
+          targetSocket.write(head)
+          socket.pipe(targetSocket).pipe(socket)
+        })
+        return undefined
+      }
+
+      logger.warn('unsupported upgrade: %j', { url: req.url, env, headers: req.headers })
+      socket.end()
+      return undefined
+    }, err => logger.error('error forwarding upgrade traffic %j', { error: err })),
   }
 }
