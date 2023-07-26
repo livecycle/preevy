@@ -40,11 +40,11 @@ const app = createApp({
   proxyHandlers: proxyHandlers({ envStore, logger }),
   logger,
 })
-const sshLogger = logger.child({ name: 'ssh_server' })
+const sshLog = logger.child({ name: 'ssh_server' })
 
-const tunnelName = (clientId: string, remotePath: string) => {
+const tunnelName = (hostnameSuffix: string, remotePath: string) => {
   const serviceName = remotePath.replace(/^\//, '')
-  return `${serviceName}-${clientId}`.toLowerCase()
+  return `${serviceName}-${hostnameSuffix}`.toLowerCase()
 }
 
 const tunnelUrl = (
@@ -53,43 +53,72 @@ const tunnelUrl = (
   tunnel: string,
 ) => replaceHostname(rootUrl, `${tunnelName(clientId, tunnel)}.${rootUrl.hostname}`).toString()
 
+const tunnelsPerClientUniqueId = new Map<string, Map<string, { closeForward:() => void }>>()
+
 const sshServer = createSshServer({
-  log: sshLogger,
+  log: sshLog,
   sshPrivateKey,
   socketDir: '/tmp', // TODO
 })
   .on('client', client => {
-    const { clientId, publicKey } = client
-    const tunnels = new Map<string, string>()
+    const { hostnameSuffix, publicKey, uniqueId } = client
+    const clientLog = sshLog.child({ uniqueClientId: uniqueId })
+    const tunnels = new Map<string, { tunnelUrl: string; closeForward:() => void }>()
+    tunnelsPerClientUniqueId.set(uniqueId, tunnels)
     client
       .on('forward', async (requestId, { path: remotePath, access }, accept, reject) => {
-        const key = tunnelName(clientId, remotePath)
-        if (await envStore.has(key)) {
-          reject(new Error(`duplicate path: ${key}`))
-          return
+        const forwardLog = clientLog.child({ forwardId: requestId })
+        const key = tunnelName(hostnameSuffix, remotePath)
+        const existingEntry = await envStore.get(key)
+        if (existingEntry) {
+          if (existingEntry.clientUniqueId === uniqueId) {
+            reject(new Error(`duplicate request ${requestId} for client ${uniqueId} suffix ${hostnameSuffix}`))
+            return
+          }
+          forwardLog.warn('forward: overriding duplicate envStore entry for path %s: %j', key, existingEntry)
+          await envStore.delete(key, existingEntry.clientUniqueId)
+
+          // close tunnel of overridden client
+          tunnelsPerClientUniqueId.get(existingEntry.clientUniqueId)?.get(requestId)?.closeForward()
         }
         const forward = await accept()
-        sshLogger.debug('creating tunnel %s for localSocket %s', key, forward.localSocketPath)
+        forwardLog.debug('creating tunnel %s for localSocket %s', key, forward.localSocketPath)
         await envStore.set(key, {
+          clientUniqueId: uniqueId,
+          hostnameSuffix,
           target: forward.localSocketPath,
-          clientId,
           publicKey: createPublicKey(publicKey.getPublicPEM()),
           access,
         })
-        tunnels.set(requestId, tunnelUrl(BASE_URL, clientId, remotePath))
-        tunnelsGauge.inc({ clientId })
+        tunnels.set(requestId, {
+          tunnelUrl: tunnelUrl(BASE_URL, hostnameSuffix, remotePath),
+          closeForward: () => {
+            forwardLog.debug('calling forward.close')
+            forward.close()
+          },
+        })
+        tunnelsGauge.inc({ clientId: hostnameSuffix })
 
-        forward.on('close', () => {
-          sshLogger.debug('deleting tunnel %s', key)
+        forward.on('close', async () => {
+          forwardLog.debug('forward close event')
           tunnels.delete(requestId)
-          void envStore.delete(key)
-          tunnelsGauge.dec({ clientId })
+          const storedEnv = await envStore.delete(key, uniqueId)
+          if (!storedEnv) {
+            forwardLog.info('forward.close: no stored env')
+            return
+          }
+          tunnelsGauge.dec({ clientId: hostnameSuffix })
         })
       })
-      .on('error', err => { sshLogger.warn('client error %j: %j', clientId, inspect(err)) })
+      .on('close', () => {
+        clientLog.debug('client %s closed', uniqueId)
+        tunnels.forEach(t => t.closeForward())
+        tunnelsPerClientUniqueId.delete(uniqueId)
+      })
+      .on('error', err => { clientLog.warn('client error %j', inspect(err)) })
       .on('hello', channel => {
         channel.stdout.write(`${JSON.stringify({
-          clientId,
+          clientId: hostnameSuffix,
           // TODO: backwards compat, remove when we drop support for CLI v0.0.35
           baseUrl: { hostname: BASE_URL.hostname, port: BASE_URL.port, protocol: BASE_URL.protocol },
           rootUrl: BASE_URL.toString(),

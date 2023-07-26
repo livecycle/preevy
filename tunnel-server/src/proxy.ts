@@ -72,7 +72,7 @@ export function proxyHandlers({
       }
 
       logger.debug('proxying to %j', { target: env.target, url: req.url })
-      requestsCounter.inc({ clientId: env.clientId })
+      requestsCounter.inc({ clientId: env.hostnameSuffix })
 
       return proxy.web(
         req,
