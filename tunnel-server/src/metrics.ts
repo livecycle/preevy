@@ -19,8 +19,9 @@ export function runMetricsServer(port: number) {
   const app = fastify()
 
   app.get('/metrics', async (_request, reply) => {
-    await reply.header('Content-Type', register.contentType)
-    await reply.send(await register.metrics())
+    // TODO: changing the "void" below to await hangs, find out why and fix
+    void reply.header('Content-Type', register.contentType)
+    void reply.send(await register.metrics())
   })
   return app.listen({
     host: '0.0.0.0',
