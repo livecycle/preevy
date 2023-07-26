@@ -9,7 +9,7 @@ import { withBasicAuthCredentials } from './url'
 
 export const COMPOSE_TUNNEL_AGENT_SERVICE_NAME = 'preevy_proxy'
 export const COMPOSE_TUNNEL_AGENT_SERVICE_PORT = 3000
-const COMPOSE_TUNNEL_AGENT_DIR = path.join(path.dirname(require.resolve('@preevy/compose-tunnel-agent')), '..')
+const COMPOSE_TUNNEL_AGENT_DIR = path.join(__dirname, '../../compose-tunnel-agent')
 
 const baseDockerProxyService: ComposeService = {
   build: {

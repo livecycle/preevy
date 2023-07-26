@@ -1,0 +1,10 @@
+.vscode
+.git
+.devcontainer
+node_modules
+packages/*/dist
+/tunnel-server
+/site
+Dockerfile*
+tsconfig.tsbuildinfo
+packages/*/tsconfig.tsbuildinfo

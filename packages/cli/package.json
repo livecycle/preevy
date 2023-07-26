@@ -54,6 +54,7 @@
     "eslint-plugin-react": "^7.32.2",
     "jest": "^29.4.3",
     "oclif": "^3",
+    "pkg": "^5.8.1",
     "shx": "^0.3.3",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
@@ -81,6 +82,9 @@
       ]
     },
     "topicSeparator": " "
+  },
+  "pkg": {
+    "assets": ["../*/static/**/*", "../compose-tunnel-agent/out/**/*", "../compose-tunnel-agent/package.json"]
   },
   "scripts": {
     "build": "yarn clean && tsc -b",

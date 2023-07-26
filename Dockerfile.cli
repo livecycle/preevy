@@ -1,0 +1,18 @@
+FROM node:18-bullseye as builder
+
+WORKDIR /app
+COPY --link . /app/
+RUN --mount=type=cache,id=livecycle/preevy-cli/yarn-cache,target=/yarn/cache \
+  yarn --cache-folder=/yarn/cache
+
+RUN yarn clean && yarn build
+
+FROM builder as pkg
+WORKDIR /app/packages/cli
+ENV PKG_CACHE_PATH=/pkg/cache
+RUN --mount=type=cache,id=livecycle/preevy-cli/pkg-cache,target=/pkg/cache \
+  yarn pkg --public --public-packages tslib --options max_old_space_size=4096 -t node18-alpine-arm64 .
+
+# FROM docker:24-cli
+# COPY --from=pkg /app/packages/cli/preevy /usr/bin/
+# CMD [ "preevy" ]
