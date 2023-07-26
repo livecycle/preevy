@@ -88,6 +88,7 @@ export default class Urls extends ProfileCommand<typeof Urls> {
       serviceAndPort: args.service ? { service: args.service, port: args.port } : undefined,
       tunnelingKey,
       includeAccessCredentials: flags['include-access-credentials'],
+      retryOpts: { retries: 2 },
     })
 
     const urls = await filterUrls({
