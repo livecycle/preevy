@@ -15,7 +15,7 @@ const respondJson = (
 
 const respondNotFound = (res: http.ServerResponse) => respond(res, 'Not found', 'text/plain', 404)
 
-const createWebServer = ({
+const createApiServer = ({
   log, currentSshState,
 }: {
   log: Logger
@@ -42,4 +42,4 @@ const createWebServer = ({
   respondNotFound(res)
 })
 
-export default createWebServer
+export default createApiServer

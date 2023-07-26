@@ -8,7 +8,7 @@ import pinoPretty from 'pino-pretty'
 import { EOL } from 'os'
 import { ConnectionCheckResult, requiredEnv, checkConnection, formatPublicKey, parseSshUrl, SshConnectionConfig, tunnelNameResolver } from '@preevy/common'
 import createDockerClient from './src/docker'
-import createWebServer from './src/web'
+import createApiServer from './src/api-server'
 import { sshClient as createSshClient } from './src/ssh'
 
 const homeDir = process.env.HOME || '/root'
@@ -120,14 +120,14 @@ const main = async () => {
     await rimraf(listenAddress)
   }
 
-  const webServer = createWebServer({
-    log: log.child({ name: 'web' }),
+  const apiServer = createApiServer({
+    log: log.child({ name: 'api' }),
     currentSshState: async () => (
       await currentTunnels
     ),
   })
     .listen(listenAddress, () => {
-      log.info(`listening on ${inspect(webServer.address())}`)
+      log.info(`listening on ${inspect(apiServer.address())}`)
     })
     .on('error', err => {
       log.error(err)
