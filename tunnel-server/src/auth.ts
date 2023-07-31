@@ -1,8 +1,9 @@
 import { IncomingMessage, ServerResponse } from 'http'
-import { JWTPayload, calculateJwkThumbprintUri, decodeJwt, exportJWK, jwtVerify } from 'jose'
+import { JWTPayload, decodeJwt, jwtVerify } from 'jose'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import Cookies from 'cookies'
+import { KeyObject } from 'crypto'
 import { PreviewEnv } from './preview-env'
 
 export const claimsSchema = z.object({
@@ -60,7 +61,12 @@ function extractAuthorizationHeader(req: IncomingMessage): AuthorizationHeader |
   return undefined
 }
 
-export function JwtAuthenticator(env: PreviewEnv) {
+type IssuerToKeyData = (iss?: string) => {
+  pk: KeyObject
+  extractClaims: (token: JWTPayload) => Claims
+}
+
+export function JwtAuthenticator(issuerToKeyData: IssuerToKeyData) {
   return async (req: IncomingMessage):Promise<AuthenticationResult> => {
     const auth = extractAuthorizationHeader(req)
     const jwt = match(auth)
@@ -73,27 +79,30 @@ export function JwtAuthenticator(env: PreviewEnv) {
     }
 
     const { iss } = decodeJwt(jwt)
-    const { issuer, publicKey, extractClaims } = await match(iss).when(() => iss?.startsWith('preevy://'), async () => {
-      const thumbprint = await calculateJwkThumbprintUri(await exportJWK(env.publicKey))
-      return {
-        publicKey: env.publicKey,
-        issuer: `preevy://${thumbprint}`,
-        extractClaims: (token:JWTPayload) => ({
-          role: 'admin',
-          type: 'profile',
-          exp: token.exp,
-          scopes: ['admin'],
-          sub: `preevy-profile:${env.publicKeyThumbprint}`,
-        }),
-      }
-    }).otherwise(async () => {
-      throw new Error('invalid issuer')
-    })
+    // const { issuer, publicKey, extractClaims } = await match(iss).when(() => iss?.startsWith('preevy://'), async () => {
+    //   const thumbprint = await calculateJwkThumbprintUri(await exportJWK(env.publicKey))
+    //   return {
+    //     publicKey: env.publicKey,
+    //     issuer: `preevy://${thumbprint}`,
+    //     extractClaims: (token:JWTPayload) => ({
+    //       role: 'admin',
+    //       type: 'profile',
+    //       exp: token.exp,
+    //       scopes: ['admin'],
+    //       sub: `preevy-profile:${env.publicKeyThumbprint}`,
+    //     }),
+    //   }
+    // }).otherwise(async () => {
+    //   throw new Error('invalid issuer')
+    // })
 
-    const token = await jwtVerify(jwt, publicKey, { issuer })
+    const { pk, extractClaims } = issuerToKeyData(iss)
+
+    const token = await jwtVerify(jwt, pk, { issuer: iss })
     if (!token) {
       throw new Error('invalid token')
     }
+
     return {
       method: { type: 'header', header: 'authorization' },
       isAuthenticated: true,
@@ -116,4 +125,21 @@ export const unauthorized = (res: ServerResponse<IncomingMessage>) => {
   res.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"')
   res.statusCode = 401
   res.end('Unauthorized')
+}
+
+export const envToIssuerToKeyData = (env: PreviewEnv): IssuerToKeyData => iss => {
+  if (iss === `preevy://${env.publicKeyThumbprint}`) {
+    return {
+      pk: env.publicKey,
+      extractClaims: token => ({
+        role: 'admin',
+        type: 'profile',
+        exp: token.exp,
+        scopes: ['admin'],
+        sub: `preevy-profile:${env.publicKeyThumbprint}`,
+      }),
+    }
+  }
+
+  throw new Error('invalid issuer')
 }

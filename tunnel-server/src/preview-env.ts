@@ -14,6 +14,7 @@ export type PreviewEnvStore = {
   set: (key: string, env: PreviewEnv) => Promise<void>
   has: (key: string) => Promise<boolean>
   delete: (key: string) => Promise<boolean>
+  getAll: () => Promise<{[key: string]: PreviewEnv}>
 }
 
 export const inMemoryPreviewEnvStore = (initial?: Record<string, PreviewEnv>): PreviewEnvStore => {
@@ -25,5 +26,6 @@ export const inMemoryPreviewEnvStore = (initial?: Record<string, PreviewEnv>): P
     },
     has: async key => map.has(key),
     delete: async key => map.delete(key),
+    getAll: async () => Object.fromEntries< PreviewEnv>(map),
   }
 }
