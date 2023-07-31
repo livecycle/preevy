@@ -79,7 +79,7 @@ const deviceFlow = async (loginUrl: string, logger: Logger, clientId: string) =>
   }
 
   logger.info('Make sure code is ', responseData.user_code)
-  return withSpinner(
+  return await withSpinner(
     () => pollTokensFromAuthEndpoint(
       loginUrl,
       responseData.device_code,
