@@ -4,8 +4,8 @@ export type PreviewEnv = {
   clientId: string
   target: string
   hostname: string
-  publicKey: KeyObject,
-  publicKeyThumbprint: string,
+  publicKey: KeyObject
+  publicKeyThumbprint: string
   access: 'private' | 'public'
 }
 
@@ -19,11 +19,11 @@ export type PreviewEnvStore = {
 export const inMemoryPreviewEnvStore = (initial?: Record<string, PreviewEnv>): PreviewEnvStore => {
   const map = new Map<string, PreviewEnv>(Object.entries(initial ?? {}))
   return {
-    get: async (key) => map.get(key),
+    get: async key => map.get(key),
     set: async (key, value) => {
       map.set(key, value)
     },
-    has: async (key) => map.has(key),
-    delete: async (key) => map.delete(key),
+    has: async key => map.has(key),
+    delete: async key => map.delete(key),
   }
 }

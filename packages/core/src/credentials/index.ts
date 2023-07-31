@@ -25,8 +25,8 @@ export const jwtGenerator = (privateKey: string | Buffer) => {
   }
   const key = createPrivateKey(sshKey.getPrivatePEM())
   const alg = getAsymmetricKeyAlg(key)
-  const thumbprint = memoize(async () =>
-    await calculateJwkThumbprintUri(await exportJWK(key)))
+  const thumbprint = memoize(async () => await calculateJwkThumbprintUri(await exportJWK(key)))
+
   return async ({ claims = {}, exp = '60d' }: {claims?:JWTPayload; exp?: string} = {}) => await (new SignJWT(claims).setProtectedHeader({ alg })
     .setIssuedAt()
     .setIssuer(`preevy://${await thumbprint()}`)
@@ -36,8 +36,7 @@ export const jwtGenerator = (privateKey: string | Buffer) => {
 
 export type JwtGenerator = ReturnType<typeof jwtGenerator>
 
-export const generateBasicAuthCredentials = async (jwtGen: JwtGenerator) =>
-  ({
-    user: 'x-preevy-profile-key',
-    password: await jwtGen(),
-  })
+export const generateBasicAuthCredentials = async (jwtGen: JwtGenerator) => ({
+  user: 'x-preevy-profile-key',
+  password: await jwtGen(),
+})

@@ -2,75 +2,75 @@ import Fastify from 'fastify'
 import { fastifyRequestContext } from '@fastify/request-context'
 import http from 'http'
 import internal from 'stream'
-import {Logger} from 'pino'
+import { Logger } from 'pino'
+import { match } from 'ts-pattern'
 import { SessionManager } from './seesion'
 import { Claims, JwtAuthenticator, authenticator, unauthorized } from './auth'
 import { PreviewEnvStore } from './preview-env'
-import { match } from 'ts-pattern'
 import { replaceHostname } from './url'
-import { resolve } from 'url'
 
-export const app = ({ isProxyRequest, proxyHandlers,sessionManager, baseUrl, envStore, logger }: {
+export const app = ({ isProxyRequest, proxyHandlers, sessionManager, baseUrl, envStore, logger }: {
   isProxyRequest: (req: http.IncomingMessage) => boolean
   logger: Logger
   baseUrl: URL
   sessionManager: SessionManager<Claims>
   envStore: PreviewEnvStore
-  proxyHandlers: { wsHandler: (req: http.IncomingMessage, socket: internal.Duplex, head: Buffer) => void, handler: (req: http.IncomingMessage, res: http.ServerResponse) => void }
+  proxyHandlers: {
+    wsHandler: (req: http.IncomingMessage, socket: internal.Duplex, head: Buffer) => void
+    handler: (req: http.IncomingMessage, res: http.ServerResponse) => void
+  }
 }) =>
   Fastify({
-    serverFactory: (handler) => {
-      const {wsHandler:proxyWsHandler, handler: proxyHandler } = proxyHandlers
-      const server = http.createServer((req, res) => {
-        return match(req)
-          .when(req=> req.headers.host?.startsWith('auth.'), ()=> handler(req, res))
-          .when(isProxyRequest, ()=> proxyHandler(req, res))
-          .otherwise(()=> handler(req, res))
-      })
+    serverFactory: handler => {
+      const { wsHandler: proxyWsHandler, handler: proxyHandler } = proxyHandlers
+      const server = http.createServer((req, res) => match(req)
+        .when(r => r.headers.host?.startsWith('auth.'), () => handler(req, res))
+        .when(isProxyRequest, () => proxyHandler(req, res))
+        .otherwise(() => handler(req, res)))
       server.on('upgrade', (req, socket, head) => {
-        if (isProxyRequest(req)){
+        if (isProxyRequest(req)) {
           proxyWsHandler(req, socket, head)
         } else {
-          logger.warn('unexpected upgrade request %j', {url: req.url, host: req.headers['host']})
+          logger.warn('unexpected upgrade request %j', { url: req.url, host: req.headers.host })
           socket.end()
         }
       })
-      return server;
+      return server
     },
     logger,
   })
     .register(fastifyRequestContext)
-    .get<{Querystring: {env: string, returnPath?: string}}>('/login', {
+    .get<{Querystring: {env: string; returnPath?: string}}>('/login', {
       schema: {
-        querystring:{
+        querystring: {
           properties: {
             env: { type: 'string' },
-            returnPath: { type: 'string' }
+            returnPath: { type: 'string' },
           },
-          required: ['env']
-        }
-      }
-    }, async function (req, res) {
-      const {env:envId, returnPath = '/'} = req.query
-      if (!returnPath.startsWith('/')){
+          required: ['env'],
+        },
+      },
+    }, async (req, res) => {
+      const { env: envId, returnPath = '/' } = req.query
+      if (!returnPath.startsWith('/')) {
         res.statusCode = 400
-        return {error: 'returnPath must be a relative path' }
+        return { error: 'returnPath must be a relative path' }
       }
       const env = await envStore.get(envId)
-      if (!env){
+      if (!env) {
         res.statusCode = 404
-        return {error: 'unknown envId'}
+        return { error: 'unknown envId' }
       }
       const session = sessionManager(req.raw, res.raw, env.publicKeyThumbprint)
-      if (!session.user){
+      if (!session.user) {
         const auth = authenticator([JwtAuthenticator(env)])
         const result = await auth(req.raw)
-        if (!result.isAuthenticated){
+        if (!result.isAuthenticated) {
           return unauthorized(res.raw)
         }
         session.set(result.claims)
         session.save()
       }
-      return res.redirect(new URL(returnPath, replaceHostname(baseUrl, `${envId}.${baseUrl.hostname}`)).toString())
+      return await res.redirect(new URL(returnPath, replaceHostname(baseUrl, `${envId}.${baseUrl.hostname}`)).toString())
     })
     .get('/healthz', { logLevel: 'warn' }, async () => 'OK')

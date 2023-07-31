@@ -12,7 +12,7 @@ export const githubActionsCiProvider = (): CiProvider => ({
   ),
   repoUrl: () => (
     (process.env.GITHUB_REPOSITORY && process.env.GITHUB_SERVER_URL)
-      ? `https://${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}.git`
+      ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}.git`
       : undefined
   ),
 })

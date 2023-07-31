@@ -113,6 +113,11 @@ export const flags = {
     required: false,
     env: 'KUBECONFIG',
   }),
+  context: Flags.string({
+    description: 'Path to kubeconfig file (will load config from defaults if not specified)',
+    required: false,
+    env: 'KUBE_CONTEXT',
+  }),
   template: Flags.string({
     description: 'Path to custom resources template file (will use default template if not specified)',
     required: false,
@@ -122,13 +127,13 @@ export const flags = {
 type FlagTypes = Omit<Interfaces.InferredFlags<typeof flags>, 'json'>
 
 export const clientFromConfiguration = ({ flags: f, profileId, log }: {
-  flags: Pick<FlagTypes, 'namespace' | 'kubeconfig' | 'template'>
+  flags: Pick<FlagTypes, 'namespace' | 'kubeconfig' | 'template' | 'context'>
   profileId: string
   log: Logger
 }) => createClient({
   log,
   namespace: f.namespace,
-  kc: loadKubeConfig(f.kubeconfig),
+  kc: loadKubeConfig(f.kubeconfig, f.context),
   kubeconfig: f.kubeconfig,
   profileId,
   package: fs.promises.readFile(PACKAGE_JSON, 'utf-8').then(JSON.parse),

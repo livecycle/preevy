@@ -19,7 +19,7 @@ $ npm install -g preevy
 $ preevy COMMAND
 running command...
 $ preevy (--version)
-preevy/0.0.40 darwin-arm64 node-v18.12.1
+preevy/0.0.47 darwin-arm64 node-v18.12.1
 $ preevy --help [COMMAND]
 USAGE
   $ preevy COMMAND
@@ -33,6 +33,8 @@ USAGE
 * [`preevy init [PROFILE-ALIAS]`](#preevy-init-profile-alias)
 * [`preevy logs [SERVICES]`](#preevy-logs-services)
 * [`preevy ls`](#preevy-ls)
+* [`preevy profile config update`](#preevy-profile-config-update)
+* [`preevy profile config view`](#preevy-profile-config-view)
 * [`preevy profile create NAME URL`](#preevy-profile-create-name-url)
 * [`preevy profile current`](#preevy-profile-current)
 * [`preevy profile import LOCATION`](#preevy-profile-import-location)
@@ -54,8 +56,8 @@ USAGE
     lightsail|gce|azure|kube-pod] [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southea
     st-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1]
     [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
-    [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-template <value>] [--id <value>]
-    [--force] [--wait] [--json]
+    [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template
+    <value>] [--id <value>] [--force] [--wait] [--json]
 
 FLAGS
   -d, --driver=<option>  Machine driver to use
@@ -81,6 +83,7 @@ GCE DRIVER FLAGS
   --gce-zone=<value>        Google Cloud zone in which resources will be provisioned
 
 KUBE-POD DRIVER FLAGS
+  --kube-pod-context=<value>     Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-kubeconfig=<value>  Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-namespace=<value>   [default: default] Kubernetes namespace in which resources will be provisioned (needs
                                  to exist)
@@ -95,7 +98,7 @@ DESCRIPTION
   Delete preview environments
 ```
 
-_See code: [dist/commands/down.ts](https://github.com/livecycle/preevy/blob/v0.0.40/dist/commands/down.ts)_
+_See code: [dist/commands/down.ts](https://github.com/livecycle/preevy/blob/v0.0.47/dist/commands/down.ts)_
 
 ## `preevy help [COMMANDS]`
 
@@ -141,7 +144,7 @@ DESCRIPTION
   Initialize or import a new profile
 ```
 
-_See code: [dist/commands/init.ts](https://github.com/livecycle/preevy/blob/v0.0.40/dist/commands/init.ts)_
+_See code: [dist/commands/init.ts](https://github.com/livecycle/preevy/blob/v0.0.47/dist/commands/init.ts)_
 
 ## `preevy logs [SERVICES]`
 
@@ -153,9 +156,9 @@ USAGE
     lightsail|gce|azure|kube-pod] [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southea
     st-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1]
     [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
-    [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-template <value>] [--id <value>]
-    [--columns <value> | -x] [--sort <value>] [--filter <value>] [--output csv|json|yaml |  | [--csv | --no-truncate]]
-    [--no-header | ]
+    [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template
+    <value>] [--id <value>] [--columns <value> | -x] [--sort <value>] [--filter <value>] [--output csv|json|yaml |  |
+    [--csv | --no-truncate]] [--no-header | ]
 
 ARGUMENTS
   SERVICES  Service name(s). If not specified, will show all services
@@ -189,6 +192,7 @@ GCE DRIVER FLAGS
   --gce-zone=<value>        Google Cloud zone in which resources will be provisioned
 
 KUBE-POD DRIVER FLAGS
+  --kube-pod-context=<value>     Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-kubeconfig=<value>  Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-namespace=<value>   [default: default] Kubernetes namespace in which resources will be provisioned (needs
                                  to exist)
@@ -203,7 +207,7 @@ DESCRIPTION
   Show logs for an existing environment
 ```
 
-_See code: [dist/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.40/dist/commands/logs.ts)_
+_See code: [dist/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.47/dist/commands/logs.ts)_
 
 ## `preevy ls`
 
@@ -215,9 +219,9 @@ USAGE
     lightsail|gce|azure|kube-pod] [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southea
     st-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1]
     [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
-    [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-template <value>] [--columns <value> |
-    -x] [--sort <value>] [--filter <value>] [--output csv|json|yaml |  | [--csv | --no-truncate]] [--no-header | ]
-    [--json]
+    [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template
+    <value>] [--columns <value> | -x] [--sort <value>] [--filter <value>] [--output csv|json|yaml |  | [--csv |
+    --no-truncate]] [--no-header | ] [--json]
 
 FLAGS
   -d, --driver=<option>  Machine driver to use
@@ -248,6 +252,7 @@ GCE DRIVER FLAGS
   --gce-zone=<value>        Google Cloud zone in which resources will be provisioned
 
 KUBE-POD DRIVER FLAGS
+  --kube-pod-context=<value>     Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-kubeconfig=<value>  Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-namespace=<value>   [default: default] Kubernetes namespace in which resources will be provisioned (needs
                                  to exist)
@@ -262,7 +267,83 @@ DESCRIPTION
   List preview environments
 ```
 
-_See code: [dist/commands/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.40/dist/commands/ls.ts)_
+_See code: [dist/commands/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.47/dist/commands/ls.ts)_
+
+## `preevy profile config update`
+
+View and update profile configuration
+
+```
+USAGE
+  $ preevy profile config update [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--lightsail-region
+    us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu
+    -central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>] [--gce-zone <value>] [--azure-region
+    <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>]
+    [--kube-pod-context <value>] [--kube-pod-template <value>] [--lightsail-availability-zone <value>]
+    [--lightsail-bundle-id nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0] [--gce-machine-type
+    <value>] [--azure-vm-size <value>] [--azure-resource-group-name <value>] [--kube-pod-server-side-apply] [--unset
+    <value>] [--json]
+
+FLAGS
+  --unset=<value>...  Unset a configuration option
+
+GLOBAL FLAGS
+  -D, --debug                       Enable debug logging
+  -f, --file=<value>...             [default: ] Compose configuration file
+  -p, --project=<value>             Project name. Defaults to the Compose project name
+  --json                            Format output as json.
+  --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
+
+AZURE DRIVER FLAGS
+  --azure-region=<value>               Microsoft Azure region in which resources will be provisioned
+  --azure-resource-group-name=<value>  Microsoft Azure resource group name
+  --azure-subscription-id=<value>      Microsoft Azure subscription id
+  --azure-vm-size=<value>              Machine type to be provisioned
+
+GCE DRIVER FLAGS
+  --gce-machine-type=<value>  Machine type to be provisioned
+  --gce-project-id=<value>    Google Cloud project ID
+  --gce-zone=<value>          Google Cloud zone in which resources will be provisioned
+
+KUBE-POD DRIVER FLAGS
+  --kube-pod-context=<value>         Path to kubeconfig file (will load config from defaults if not specified)
+  --kube-pod-kubeconfig=<value>      Path to kubeconfig file (will load config from defaults if not specified)
+  --kube-pod-namespace=<value>       Kubernetes namespace in which resources will be provisioned (needs to exist)
+  --[no-]kube-pod-server-side-apply  Use server side apply to create Kubernetes resources
+  --kube-pod-template=<value>        Path to custom resources template file (will use default template if not specified)
+
+LIGHTSAIL DRIVER FLAGS
+  --lightsail-availability-zone=<value>  AWS availability zone to provision resources in region
+  --lightsail-bundle-id=<option>         Lightsail bundle ID (size of instance) to provision. Default: medium_2_0
+                                         <options:
+                                         nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0>
+  --lightsail-region=<option>            AWS region in which resources will be provisioned
+                                         <options: us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-
+                                         1|ap-southeast-2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|e
+                                         u-west-3|eu-north-1>
+
+DESCRIPTION
+  View and update profile configuration
+```
+
+## `preevy profile config view`
+
+View profile configuration
+
+```
+USAGE
+  $ preevy profile config view [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--json]
+
+GLOBAL FLAGS
+  -D, --debug                       Enable debug logging
+  -f, --file=<value>...             [default: ] Compose configuration file
+  -p, --project=<value>             Project name. Defaults to the Compose project name
+  --json                            Format output as json.
+  --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
+
+DESCRIPTION
+  View profile configuration
+```
 
 ## `preevy profile create NAME URL`
 
@@ -270,11 +351,11 @@ Create a new profile
 
 ```
 USAGE
-  $ preevy profile create NAME URL [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [-d
-    lightsail|gce|azure|kube-pod] [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southea
-    st-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1]
-    [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
-    [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-template <value>]
+  $ preevy profile create NAME URL -d lightsail|gce|azure|kube-pod [-D] [-f <value>] [--system-compose-file <value>]
+    [-p <value>] [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast
+    -2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>]
+    [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>]
+    [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template <value>]
     [--lightsail-availability-zone <value>] [--lightsail-bundle-id
     nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0] [--gce-machine-type <value>]
     [--azure-vm-size <value>] [--azure-resource-group-name <value>] [--kube-pod-server-side-apply] [--json]
@@ -284,7 +365,7 @@ ARGUMENTS
   URL   url of the new profile store
 
 FLAGS
-  -d, --driver=<option>  Machine driver to use
+  -d, --driver=<option>  (required) Machine driver to use
                          <options: lightsail|gce|azure|kube-pod>
 
 GLOBAL FLAGS
@@ -306,6 +387,7 @@ GCE DRIVER FLAGS
   --gce-zone=<value>          Google Cloud zone in which resources will be provisioned
 
 KUBE-POD DRIVER FLAGS
+  --kube-pod-context=<value>         Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-kubeconfig=<value>      Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-namespace=<value>       [default: default] Kubernetes namespace in which resources will be provisioned
                                      (needs to exist)
@@ -444,8 +526,8 @@ USAGE
     lightsail|gce|azure|kube-pod] [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southea
     st-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1]
     [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
-    [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-template <value>] [--all] [--type
-    <value>] [--force] [--wait] [--json]
+    [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template
+    <value>] [--all] [--type <value>] [--force] [--wait] [--json]
 
 FLAGS
   -d, --driver=<option>  Machine driver to use
@@ -472,6 +554,7 @@ GCE DRIVER FLAGS
   --gce-zone=<value>        Google Cloud zone in which resources will be provisioned
 
 KUBE-POD DRIVER FLAGS
+  --kube-pod-context=<value>     Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-kubeconfig=<value>  Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-namespace=<value>   [default: default] Kubernetes namespace in which resources will be provisioned (needs
                                  to exist)
@@ -486,7 +569,7 @@ DESCRIPTION
   Delete all cloud provider machines, and potentially other resources
 ```
 
-_See code: [dist/commands/purge.ts](https://github.com/livecycle/preevy/blob/v0.0.40/dist/commands/purge.ts)_
+_See code: [dist/commands/purge.ts](https://github.com/livecycle/preevy/blob/v0.0.47/dist/commands/purge.ts)_
 
 ## `preevy up [SERVICE]`
 
@@ -498,8 +581,8 @@ USAGE
     lightsail|gce|azure|kube-pod] [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southea
     st-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1]
     [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
-    [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-template <value>]
-    [--lightsail-availability-zone <value>] [--lightsail-bundle-id
+    [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template
+    <value>] [--lightsail-availability-zone <value>] [--lightsail-bundle-id
     nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0] [--gce-machine-type <value>]
     [--azure-vm-size <value>] [--azure-resource-group-name <value>] [--kube-pod-server-side-apply] [--id <value>] [-t
     <value>] [--tls-hostname <value>] [--insecure-skip-verify] [--skip-unchanged-files] [--include-access-credentials]
@@ -548,6 +631,7 @@ GCE DRIVER FLAGS
   --gce-zone=<value>          Google Cloud zone in which resources will be provisioned
 
 KUBE-POD DRIVER FLAGS
+  --kube-pod-context=<value>         Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-kubeconfig=<value>      Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-namespace=<value>       [default: default] Kubernetes namespace in which resources will be provisioned
                                      (needs to exist)
@@ -568,7 +652,7 @@ DESCRIPTION
   Bring up a preview environment
 ```
 
-_See code: [dist/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.40/dist/commands/up.ts)_
+_See code: [dist/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.47/dist/commands/up.ts)_
 
 ## `preevy urls [SERVICE] [PORT]`
 
@@ -614,7 +698,7 @@ DESCRIPTION
   Show urls for an existing environment
 ```
 
-_See code: [dist/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.40/dist/commands/urls.ts)_
+_See code: [dist/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.47/dist/commands/urls.ts)_
 
 ## `preevy version`
 
@@ -635,5 +719,5 @@ DESCRIPTION
   Show Preevy version
 ```
 
-_See code: [dist/commands/version.ts](https://github.com/livecycle/preevy/blob/v0.0.40/dist/commands/version.ts)_
+_See code: [dist/commands/version.ts](https://github.com/livecycle/preevy/blob/v0.0.47/dist/commands/version.ts)_
 <!-- commandsstop -->

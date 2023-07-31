@@ -1,5 +1,5 @@
 import fastify from 'fastify'
-import { Gauge , Counter,register } from 'prom-client';
+import { Gauge, Counter, register } from 'prom-client'
 
 export const tunnelsGauge = new Gauge({
   name: 'tunnels',
@@ -15,15 +15,16 @@ export const requestsCounter = new Counter({
 
 register.setDefaultLabels({ serviceName: 'preevy-tunnel-server' })
 
-export function runMetricsServer(port: number){
-  const app = fastify();
+export function runMetricsServer(port: number) {
+  const app = fastify()
 
-  app.get("/metrics", async (request, reply) => {
-    reply.header('Content-Type', register.contentType);
-		reply.send(await register.metrics())
-  });
+  app.get('/metrics', async (_request, reply) => {
+    // TODO: changing the "void" below to await hangs, find out why and fix
+    void reply.header('Content-Type', register.contentType)
+    void reply.send(await register.metrics())
+  })
   return app.listen({
-    host: "0.0.0.0",
+    host: '0.0.0.0',
     port,
   })
 }

@@ -1,0 +1,55 @@
+name: 🐞 Bug Report
+description: File a bug report
+title: '[Bug]: '
+labels: ['bug']
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      placeholder: Add clear descriptions about the bug
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Add screenshots
+      placeholder: Add screenshots
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce the behavior
+      placeholder: how to reproduce?
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      placeholder: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+  - type: dropdown
+    id: Desktop
+    attributes:
+      label: What OS are you seeing the problem on?
+      multiple: true
+      options:
+        - Windows
+        - MacOS
+        - Linux
+        - Other
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: Additional context
+      placeholder: [e.g. Version - 0.0.24 , Driver - AWS/GCP/Azure/Kubernetes]
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: 'Record'
+      options:
+        - label: I agree to follow this project's Code of Conduct
+          required: true

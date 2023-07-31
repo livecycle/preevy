@@ -17,7 +17,7 @@ AWS lightsail provisioning time for a VM is usually around 2 minutes, and its co
 Preevy uses the AWS JS SDK which supports multiple ways of configuring credentials, according to the [credentials provider chain](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/setting-credentials-node.html).
 The simplest way is to use `aws configure` command or to set the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables.
 
-In Github Actions, you can also use the [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials) action to setup credentials in a secure way.
+In GitHub Actions, you can also use the [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials) action to setup credentials in a secure way.
 
 ### Required AWS permissions
 
@@ -28,7 +28,7 @@ Preevy requires the following IAM policy to be able to provision and manage Ligh
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": ["lightsail:*"],
+      "Action": "lightsail:*",
       "Resource": "*"
     }
   ]
@@ -37,7 +37,7 @@ Preevy requires the following IAM policy to be able to provision and manage Ligh
 ```
 
 :::note
-When defining fine grained permissions for Preevy, make sure to add S3 permissions as well when using s3 as profile store.
+When defining fine-grained permissions for Preevy, make sure to add S3 permissions as well when using s3 as profile store.
 We recommend scoping the permissions to a specific bucket and prefix:
 
 ```json
@@ -47,16 +47,12 @@ We recommend scoping the permissions to a specific bucket and prefix:
     {
       "Effect": "Allow",
       "Action": [
-        "s3:HeadBucker",
+        "s3:ListBucket",
         "s3:GetBucketLocation",
-        "s3:ListObjects",
-        "s3:ListObjectsV2",
         "s3:PutObject",
         "s3:GetObject",
-        "s3:PutObjectTagging",
-        "s3:DeleteObjectTagging",
         "s3:DeleteObject",
-        "s3:CreateBucket" //only if bucket doesn't exist
+        "s3:CreateBucket"
       ],
       "Resource": ["arn:aws:s3:::MY_BUCKET", "arn:aws:s3:::MY_BUCKET/*"]
     }

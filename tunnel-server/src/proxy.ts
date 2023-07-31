@@ -1,17 +1,20 @@
-import { PreviewEnvStore } from './preview-env'
 import httpProxy from 'http-proxy'
 import { IncomingMessage, ServerResponse } from 'http'
 import internal from 'stream'
 import type { Logger } from 'pino'
+import { PreviewEnvStore } from './preview-env'
 import { requestsCounter } from './metrics'
 import { Claims, authenticator, JwtAuthenticator, unauthorized } from './auth'
 import { SessionManager } from './seesion'
 
 export const isProxyRequest = (
   hostname: string,
-) => (req: IncomingMessage)=> Boolean(req.headers.host?.split(':')?.[0]?.endsWith(`.${hostname}`))
+) => (req: IncomingMessage) => Boolean(req.headers.host?.split(':')?.[0]?.endsWith(`.${hostname}`))
 
-function asyncHandler<TArgs extends unknown[]>(fn: (...args: TArgs) => Promise<void>, onError: (error: unknown, ...args: TArgs)=> void ) {
+function asyncHandler<TArgs extends unknown[]>(
+  fn: (...args: TArgs) => Promise<void>,
+  onError: (error: unknown, ...args: TArgs)=> void,
+) {
   return async (...args: TArgs) => {
     try {
       await fn(...args)
@@ -21,17 +24,16 @@ function asyncHandler<TArgs extends unknown[]>(fn: (...args: TArgs) => Promise<v
   }
 }
 
-
-function loginRedirector(loginUrl:string){
-  return (res: ServerResponse<IncomingMessage>, env: string , returnPath?: string)=> {
-    res.statusCode = 307;    
-    const url = new URL(loginUrl);
-    url.searchParams.set("env", env);
+function loginRedirector(loginUrl:string) {
+  return (res: ServerResponse<IncomingMessage>, env: string, returnPath?: string) => {
+    res.statusCode = 307
+    const url = new URL(loginUrl)
+    url.searchParams.set('env', env)
     if (returnPath) {
-      url.searchParams.set("returnPath", returnPath);
+      url.searchParams.set('returnPath', returnPath)
     }
 
-    res.setHeader('location', url.toString() )
+    res.setHeader('location', url.toString())
     res.end()
   }
 }
@@ -40,23 +42,23 @@ export function proxyHandlers({
   envStore,
   loginUrl,
   sessionManager,
-  logger
+  logger,
 }: {
   sessionManager: SessionManager<Claims>
   envStore: PreviewEnvStore
   loginUrl: string
   logger: Logger
-} ){
+}) {
   const proxy = httpProxy.createProxy({})
   const redirectToLogin = loginRedirector(loginUrl)
-  const resolveTargetEnv = async (req: IncomingMessage)=>{
-    const {url} = req
-    const host = req.headers['host']?.split(':')?.[0]
+  const resolveTargetEnv = async (req: IncomingMessage) => {
+    const { url } = req
+    const host = req.headers.host?.split(':')?.[0]
     const targetHost = host?.split('.', 1)[0]
     const env = await envStore.get(targetHost as string)
     if (!env) {
       logger.warn('no env for %j', { targetHost, url })
-      return
+      return undefined
     }
     return env
   }
@@ -64,43 +66,43 @@ export function proxyHandlers({
     handler: asyncHandler(async (req: IncomingMessage, res: ServerResponse<IncomingMessage>) => {
       const env = await resolveTargetEnv(req)
       if (!env) {
-        res.statusCode = 502;
-        res.end();
-        return;
+        res.statusCode = 502
+        res.end()
+        return undefined
       }
 
       const session = sessionManager(req, res, env.publicKeyThumbprint)
-      if (env.access === "private"){
-        if (!session.user){
+      if (env.access === 'private') {
+        if (!session.user) {
           const authenticate = authenticator([JwtAuthenticator(env)])
           try {
             const authResult = await authenticate(req)
-            if (!authResult.isAuthenticated){
-              return unauthorized(res);
+            if (!authResult.isAuthenticated) {
+              return unauthorized(res)
             }
             session.set(authResult.claims)
-            if (authResult.login && req.method === 'GET'){
+            if (authResult.login && req.method === 'GET') {
               session.save()
               redirectToLogin(res, env.hostname, req.url)
-              return;
-            } 
-            if (authResult.method.type === 'header'){
+              return undefined
+            }
+            if (authResult.method.type === 'header') {
               delete req.headers[authResult.method.header]
             }
           } catch (error) {
-            res.statusCode = 400;
-            res.end();
-            return;
+            res.statusCode = 400
+            res.end()
+            return undefined
           }
         }
 
         if (session.user?.role !== 'admin') {
-          return unauthorized(res);
+          return unauthorized(res)
         }
       }
 
       logger.debug('proxying to %j', { target: env.target, url: req.url })
-      requestsCounter.inc({clientId: env.clientId})
+      requestsCounter.inc({ clientId: env.clientId })
 
       return proxy.web(
         req,
@@ -112,25 +114,25 @@ export function proxyHandlers({
             socketPath: env.target,
           },
         },
-        (err) => {
+        err => {
           logger.warn('error in proxy %j', { error: err, targetHost: env.target, url: req.url })
           res.statusCode = 502
           res.end(`error proxying request: ${(err as unknown as { code: unknown }).code}`)
         }
       )
-    }, (err)=> logger.error('error forwarding traffic %j', {error:err}) ),
+    }, err => logger.error('error forwarding traffic %j', { error: err })),
     wsHandler: asyncHandler(async (req: IncomingMessage, socket: internal.Duplex, head: Buffer) => {
       const env = await resolveTargetEnv(req)
       if (!env) {
-        socket.end();
-        return;
+        socket.end()
+        return undefined
       }
 
-      if(env.access === 'private'){
+      if (env.access === 'private') {
         const session = sessionManager(req, undefined as any, env.clientId)
-        if (session.user?.role !== 'admin'){
-          socket.end();
-          return;
+        if (session.user?.role !== 'admin') {
+          socket.end()
+          return undefined
         }
       }
       return proxy.ws(
@@ -144,11 +146,10 @@ export function proxyHandlers({
             socketPath: env.target,
           },
         },
-        (err) => {
-          logger.warn('error in ws proxy %j', { error:err, targetHost: env.target,  url: req.url })
+        err => {
+          logger.warn('error in ws proxy %j', { error: err, targetHost: env.target, url: req.url })
         }
       )
-
-    }, (err)=> logger.error('error forwarding ws traffic %j', {error: err}))
+    }, err => logger.error('error forwarding ws traffic %j', { error: err })),
   }
 }

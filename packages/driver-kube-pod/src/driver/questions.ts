@@ -1,5 +1,6 @@
 import { InputQuestion, ListQuestion, ConfirmQuestion } from 'inquirer'
 import { MachineCreationFlagTypes, flags } from './creation-driver'
+import { loadKubeConfig } from './client'
 
 export const questions = async (): Promise<(InputQuestion | ListQuestion | ConfirmQuestion)[]> => [
   {
@@ -9,22 +10,17 @@ export const questions = async (): Promise<(InputQuestion | ListQuestion | Confi
     message: flags.namespace.description,
   },
   {
-    type: 'input',
-    name: 'kubeconfig',
-    default: flags.kubeconfig.default,
-    message: flags.kubeconfig.description,
-  },
-  {
-    type: 'input',
-    name: 'template',
-    default: flags.template.default,
-    message: flags.template.description,
-  },
-  {
-    type: 'confirm',
-    name: 'server-side-apply',
-    message: 'Use server-side apply?',
-    default: flags['server-side-apply'].default,
+    type: 'list',
+    name: 'context',
+    choices: () => {
+      const kc = loadKubeConfig() // will read from KUBECONFIG env var as well
+      return kc.getContexts().map(c => c.name)
+    },
+    default: () => {
+      const kc = loadKubeConfig() // will read from KUBECONFIG env var as well
+      return kc.getCurrentContext()
+    },
+    message: flags.context.description,
   },
 ]
 
@@ -34,12 +30,8 @@ export const flagsFromAnswers = async (
   const result = {
     ...(answers.namespace && answers.namespace !== flags.namespace.default)
       ? { namespace: answers.namespace as string } : undefined,
-    ...(answers.kubeconfig && answers.kubeconfig !== flags.kubeconfig.default)
-      ? { kubeconfig: answers.kubeconfig as string } : undefined,
-    ...(answers.template && answers.template !== flags.template.default)
-      ? { template: answers.template as string } : undefined,
-    ...(answers['server-side-apply'] !== flags['server-side-apply'].default)
-      ? { 'server-side-apply': answers['server-side-apply'] as boolean } : undefined,
+    ...(answers.context && answers.context !== flags.context.default)
+      ? { context: answers.context as string } : undefined,
   }
   return result
 }

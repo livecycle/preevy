@@ -107,13 +107,13 @@ const client = ({
           },
           machineType,
           disks: [{
-            diskSizeGb: 10,
+            diskSizeGb: 60,
             type: 'pd-standard',
             boot: true,
             autoDelete: true,
             initializeParams: {
               sourceImage: image.selfLink,
-              diskSizeGb: 10,
+              diskSizeGb: 60,
             },
           }],
           metadata: {

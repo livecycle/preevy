@@ -74,7 +74,7 @@ The CLI is a node.js program responsible for:
 - Syncing Compose source code and local volumes.
 - Running the application and installing daemon for connecting to the tunneling service.
 
-For usage examples, you can go over the [CLI reference](/cli-reference.md)
+For usage examples, you can go over the [CLI reference](/cli-reference)
 
 #### [Tunnel server](https://github.com/livecycle/preevy/tree/main/packages/tunnel-server)
 
