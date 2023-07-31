@@ -3,6 +3,7 @@ import url from 'url'
 import path from 'path'
 import pino from 'pino'
 import { createPublicKey } from 'crypto'
+import { calculateJwkThumbprintUri, exportJWK } from 'jose'
 import { app as createApp } from './src/app'
 import { inMemoryPreviewEnvStore } from './src/preview-env'
 import { sshServer as createSshServer } from './src/ssh-server'
@@ -76,11 +77,15 @@ const sshServer = createSshServer({
         }
         const forward = await accept()
         sshLogger.debug('creating tunnel %s for localSocket %s', key, forward.localSocketPath)
+        const pk = createPublicKey(publicKey.getPublicPEM())
+
         await envStore.set(key, {
           target: forward.localSocketPath,
           clientId,
-          publicKey: createPublicKey(publicKey.getPublicPEM()),
+          publicKey: pk,
           access,
+          hostname: key,
+          publicKeyThumbprint: await calculateJwkThumbprintUri(await exportJWK(pk)),
         })
         tunnels.set(requestId, tunnelUrl(BASE_URL, clientId, remotePath))
         tunnelsGauge.inc({ clientId })
