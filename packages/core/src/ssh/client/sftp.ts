@@ -24,7 +24,7 @@ const retryAfterCreatingParentDir = (
 ): Promise<void> => f().catch(
   handleCodeError([ssh2.utils.sftp.STATUS_CODE.NO_SUCH_FILE, async () => {
     await createParentDir()
-    return f()
+    return await f()
   }])
 )
 
@@ -49,13 +49,13 @@ export const sftpClient = (
 
   const withParentDir: Pick<typeof limited, 'mkdir' | 'putFile'> = {
     putFile: async (local: string, remote: string, transferOptions: ssh2.TransferOptions) =>
-      retryAfterCreatingParentDir(
+      await retryAfterCreatingParentDir(
         () => limited.putFile(local, remote, transferOptions),
         () => withParentDir.mkdir(path.dirname(remote), {}),
       ),
 
     mkdir: async (remote: string, options: ssh2.InputAttributes): Promise<void> =>
-      retryAfterCreatingParentDir(
+      await retryAfterCreatingParentDir(
         () => limited.mkdir(remote, options).catch(mkdirAlreadyExistsHandler),
         () => withParentDir.mkdir(path.dirname(remote), options),
       ),
@@ -70,11 +70,11 @@ export const sftpClient = (
       options.progress?.emit('file', fileInfo.path)
 
       if (fileInfo.symlinkTarget) {
-        return limited.symlink(fileInfo.symlinkTarget, remote)
+        return await limited.symlink(fileInfo.symlinkTarget, remote)
       }
 
       if (fileInfo.stats.isDirectory()) {
-        return self.putDirectory({ local: fileInfo, remote }, options)
+        return await self.putDirectory({ local: fileInfo, remote }, options)
       }
 
       const transferOptions: ssh2.TransferOptions = {
@@ -85,7 +85,7 @@ export const sftpClient = (
           : undefined,
       }
 
-      return withParentDir.putFile(fileInfo.path, remote, transferOptions)
+      return await withParentDir.putFile(fileInfo.path, remote, transferOptions)
     },
 
     putDirectory: async ({ local, remote }: DirToCopy, options: TransferOptions = {}): Promise<void> => {
@@ -107,7 +107,7 @@ export const sftpClient = (
       return undefined
     },
 
-    putFiles: async (files: FileToCopy[], options: TransferOptions = {}): Promise<void> => Promise.all(
+    putFiles: async (files: FileToCopy[], options: TransferOptions = {}): Promise<void> => await Promise.all(
       files.map(f => self.putFile(f, options)),
     ).then(() => undefined),
 

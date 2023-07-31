@@ -16,7 +16,7 @@ export const profileStore = (store: Store) => {
         await write('info.json', JSON.stringify(profile))
       })
     },
-    info: async () => ref.readJsonOrThrow<Profile>('info.json'),
+    info: async () => await ref.readJsonOrThrow<Profile>('info.json'),
     defaultFlags: async<T>(driver: string) => {
       const profile = await ref.readJSON<T>(`${driver}-defaults.json`)
       if (!profile) {
@@ -24,7 +24,7 @@ export const profileStore = (store: Store) => {
       }
       return profile ?? {}
     },
-    setDefaultFlags: async <T extends object>(driver:string, flags:T) => {
+    setDefaultFlags: async (driver: string, flags: Record<string, string>) => {
       await store.transaction(profileDir, async ({ write }) => {
         await write(`${driver}-defaults.json`, JSON.stringify(flags))
       })

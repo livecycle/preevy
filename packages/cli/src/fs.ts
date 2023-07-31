@@ -8,10 +8,10 @@ export const fsFromUrl = async (url: string, localBaseDir: string) => {
     return localFsFromUrl(localBaseDir, url)
   }
   if (fsType === 's3') {
-    return s3fs(url)
+    return await s3fs(url)
   }
   if (fsType === 'gs') {
-    return googleCloudStorageFs(url)
+    return await googleCloudStorageFs(url)
   }
   throw new Error(`Unsupported URL type: ${fsType}`)
 }

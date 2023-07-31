@@ -33,7 +33,7 @@ export const tarSnapshot: FileBackedSnapshotter = async (fs, filename): Promise<
     f: (...args: Args) => Return,
   ) => (...args: Args) => { dirty = true; return f(...args) }
 
-  const save = async () => fs.write(filename, await readStream(
+  const save = async () => await fs.write(filename, await readStream(
     tar.c(
       {
         cwd: transactionDir,

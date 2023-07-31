@@ -1,4 +1,5 @@
 import pino from 'pino'
+
 type PinoParams = Parameters<(typeof pino)>[0]
 const envToLogger: Record<string, PinoParams> = {
   development: {
@@ -13,7 +14,7 @@ const envToLogger: Record<string, PinoParams> = {
   },
   production: {
     level: process.env.DEBUG ? 'debug' : 'info',
-  }
+  },
 }
 
 export const appLoggerFromEnv = () => envToLogger[process.env.NODE_ENV || 'development']

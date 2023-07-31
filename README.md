@@ -23,9 +23,26 @@
 
 # Preevy
 
-Preevy is a powerful CLI tool designed to simplify the process of creating ephemeral preview environments.
-Using Preevy, you can easily provision any Docker-Compose application on AWS using affordable [Lightsail](https://aws.amazon.com/free/compute/lightsail), [Google Cloud](https://cloud.google.com/compute/), or [Microsoft Azure](https://azure.microsoft.com/en-us/products/virtual-machines) VMs (support for more cloud providers is on the way).
+Preevy is a powerful Command Line Interface (CLI) tool designed to simplify the process of creating ephemeral preview environments. With Preevy, you can easily provision a preview environment for any Docker-Compose application in the cloud.  
+It supports various platforms, including affordable VMs from [AWS Lightsail](https://aws.amazon.com/free/compute/lightsail), [Google Cloud](https://cloud.google.com/compute/), and [Microsoft Azure](https://azure.microsoft.com/en-us/products/virtual-machines), or any [Kubernetes cluster](https://preevy.dev/drivers/kube-pod).
 
+Preevy makes it a breeze to create preview environments for your PRs, offering a range of exciting benefits:
+
+- 🌍 **Universal Access**: Just by sharing a URL, you can allow anyone to try your product revision on any device.
+  
+- 📩 **Effortless Asynchronous Updates**: Keep non-technical stakeholders in the loop without coordinating synchronous meetings.
+
+- 🎨 **Hassle-free Design Reviews**: Designers can verify implementation independently, minimizing interruptions.
+
+- 🚀 **Parallel E2E Tests**: Use external test agents against preview environments expedite the testing process.
+
+- 💡 **Streamlined Feedback Cycle**: Preview environments let your team engage with and feedback on new features early in the pipeline.
+
+- 🧪 **Non-production Experimentation**: Develop and share unique versions of your product for presentations, examples, or tests.
+
+- 🔐 **Secure Collaboration**: Generate private sandboxes to share with external stakeholders, ensuring secure collaborative efforts.
+  
+\
 Visit The full documentation here: https://preevy.dev/
 
 <!-- omit from toc -->
@@ -72,11 +89,21 @@ You can read more about the story and philosophy behind Preevy [here](https://pr
 
 To start using the Preevy CLI you will need:
 
-- A local Cloud provider configuration context:
-  - In AWS, it could be by using `aws configure`
-  - In GCP, it could be by using `gcloud auth application-default login`
-  - In Azure, it could be by using `az login`
+- Docker for desktop/Docker cli
+- Node 18 
 - A Docker-Compose application (examples can be found [here](https://github.com/docker/awesome-compose))
+- A cloud provider for provisioning VMs (AWS/GCP/Azure), or a Kubernetes cluster (local, remote or managed)
+
+If you don't have an existing cloud account or prefer to try Preevy first locally, you can use the embeded Kuberentes inside Docker for Desktop at:
+Docker Settings -> Kuberentes -> Enable Kubernetes.  
+Afterwards just follow the instructions for Kuberentes driver.  
+
+*For provisioning a VM*, configure your provider:
+- In AWS, it could be by using `aws configure`
+- In GCP, it could be by using `gcloud auth application-default login`
+- In Azure, it could be by using `az login`
+
+*For provisioning a Kubernetes Pod*, make sure a kubeconfig file exists and that you can run `kubectl` commands locally (e.g, `kubectl get pod`)
 
 Running Preevy:
 
@@ -126,7 +153,7 @@ In case you find a security issue or have something you would like to discuss re
 
 ### Notice on preview environments exposure
 
-VMs are not exposed directly, rather via a [tunnel](https://livecycle.io/blogs/preevy-proxy-service-2/) created by the tunneling server.
+Services on provisioned environments are not exposed directly, but rather via a [tunnel](https://livecycle.io/blogs/preevy-proxy-service-2/) created by the tunneling server.
 
 Every Compose service is exposed individually with a generated URL in the following format:
 `https://{service}-{[port]}-{env-id}-{client-id}.{tunnel-server-domain}`. If the service exposes a single port, the `port` part is omitted. See [here](https://livecycle.io/blogs/preevy-proxy-service-1/) for a more detailed explanation.

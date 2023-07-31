@@ -13,13 +13,22 @@ class LoadComposeFileError extends Error {
   }
 }
 
+class DockerIsNotInstalled extends Error {
+  constructor(readonly cause: Error) {
+    super(`Failed to run 'docker compose', is Docker installed? (${cause.message})`)
+  }
+}
+
 const isExposedService = (x: [string, ComposeService]): x is [string, RequiredProperties<ComposeService, 'ports'>] => hasPropertyDefined(x[1], 'ports')
 const getExposedServices = (model: Pick<ComposeModel, 'services'>) => Object.entries(model.services ?? []).filter(isExposedService)
 
-export const getExposedTcpServices = (model: Pick<ComposeModel, 'services'>) => getExposedServices(model)
-  .flatMap(x => x[1].ports.map(k => [x[0], k] as const))
-  .filter(x => x[1].protocol === 'tcp')
-  .map(x => [x[0], x[1].target] as const)
+export const getExposedTcpServicePorts = (model: Pick<ComposeModel, 'services'>) => getExposedServices(model)
+  .map(([name, { ports }]) => ({
+    name,
+    ports: ports
+      .filter(({ protocol }) => protocol === 'tcp')
+      .map(({ target }) => target),
+  }))
 
 const composeFileArgs = (
   composeFiles: string[] | Buffer,
@@ -35,21 +44,26 @@ const composeClient = (
   executer: Executer,
   composeFiles: string[] | Buffer,
 ) => {
-  const execComposeCommand = (args: string[]) => executer({
+  const execComposeCommand = async (args: string[]) => await executer({
     args,
     stdin: Buffer.isBuffer(composeFiles) ? composeFiles : undefined,
+  }).catch(e => {
+    if (e.code === 'ENOENT') {
+      throw new DockerIsNotInstalled(e)
+    }
+    throw e
   })
 
   const getModel = async () => yaml.parse(await execComposeCommand(['convert'])) as ComposeModel
 
   return {
     getModel,
-    getModelOrError: async () => getModel().catch(e => {
-      const error = new LoadComposeFileError(e)
-      if (e instanceof ProcessError && e.code === DOCKER_COMPOSE_NO_CONFIGURATION_FILE_ERROR_CODE) {
-        return error
+    getModelOrError: async () => await getModel().catch(e => {
+      if (e instanceof DockerIsNotInstalled
+          || (e instanceof ProcessError && (e.code === DOCKER_COMPOSE_NO_CONFIGURATION_FILE_ERROR_CODE))) {
+        return new LoadComposeFileError(e)
       }
-      throw error
+      throw e
     }),
     getModelName: async () => (await getModel()).name,
     getServiceLogs: (service: string) => execComposeCommand(['logs', '--no-color', '--no-log-prefix', service]),
@@ -116,11 +130,11 @@ export const localComposeClient = (
     ...args: Parameters<typeof spawnComposeArgs>
   ) => addStdIn(spawn(...spawnComposeArgs(...args)))
 
-  const spawnComposePromise = (
+  const spawnComposePromise = async (
     ...args: Parameters<typeof spawnComposeArgs>
-  ) => childProcessPromise(spawnCompose(...args))
+  ) => await childProcessPromise(spawnCompose(...args))
 
-  const executer: Executer = ({ args }) => childProcessStdoutPromise(spawnCompose(args, {}))
+  const executer: Executer = async ({ args }) => await childProcessStdoutPromise(spawnCompose(args, {}))
 
   return Object.assign(composeClient(executer, composeFiles), {
     getServiceLogsProcess: (

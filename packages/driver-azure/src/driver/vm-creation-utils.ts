@@ -33,7 +33,7 @@ export const createResourceGroup = async (
     location,
     tags,
   }
-  return resourceClient.resourceGroups.createOrUpdate(
+  return await resourceClient.resourceGroups.createOrUpdate(
     resourceGroupName,
     groupParameters
   )
@@ -55,7 +55,7 @@ export const createStorageAccount = async (
     kind: 'Storage',
     tags,
   }
-  return storageClient.storageAccounts.beginCreateAndWait(
+  return await storageClient.storageAccounts.beginCreateAndWait(
     resourceGroupName,
     storageAccountName,
     createParameters
@@ -81,7 +81,7 @@ export const createVnet = async (
       addressPrefix: '10.0.0.0/24',
     }],
   }
-  return networkClient.virtualNetworks.beginCreateOrUpdateAndWait(
+  return await networkClient.virtualNetworks.beginCreateOrUpdateAndWait(
     resourceGroupName,
     vnetName,
     vnetParameters
@@ -109,7 +109,7 @@ export const createSecurityGroup = async (
     name: securityRuleName,
   }
 
-  return networkClient.networkSecurityGroups.beginCreateOrUpdateAndWait(resourceGroupName, nsgName, {
+  return await networkClient.networkSecurityGroups.beginCreateOrUpdateAndWait(resourceGroupName, nsgName, {
     location,
     tags,
     securityRules: [securityRuleParameters],
@@ -132,7 +132,7 @@ export const createPublicIP = async (
     },
     tags,
   }
-  return networkClient.publicIPAddresses.beginCreateOrUpdateAndWait(
+  return await networkClient.publicIPAddresses.beginCreateOrUpdateAndWait(
     resourceGroupName,
     publicIPName,
     publicIPParameters
@@ -163,7 +163,7 @@ export const createNIC = async (
     tags,
     networkSecurityGroup: nsg,
   }
-  return networkClient.networkInterfaces.beginCreateOrUpdateAndWait(
+  return await networkClient.networkInterfaces.beginCreateOrUpdateAndWait(
     resourceGroupName,
     networkInterfaceName,
     nicParameters
@@ -178,7 +178,7 @@ export const findVMImage = async (
   if (!imageRef.sku || !imageRef.offer || !imageRef.publisher) {
     throw new Error('Missing required image reference parameters')
   }
-  return computeClient.virtualMachineImages.list(
+  return await computeClient.virtualMachineImages.list(
     location,
     imageRef.publisher,
     imageRef.offer,
@@ -191,7 +191,7 @@ export const getNicInfo = async (
   resourceGroupName: string,
   networkInterfaceName: string,
   networkClient: NetworkManagementClient
-) => networkClient.networkInterfaces.get(
+) => await networkClient.networkInterfaces.get(
   resourceGroupName,
   networkInterfaceName
 )
@@ -238,7 +238,7 @@ export const createVirtualMachine = async (tags: Resource['tags'], nicId: string
       ],
     },
   }
-  return computeClient.virtualMachines.beginCreateOrUpdateAndWait(
+  return await computeClient.virtualMachines.beginCreateOrUpdateAndWait(
     resourceGroupName,
     vmName,
     vmParameters

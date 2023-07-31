@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ id }}-dc
+  namespace: {{ namespace }}
+data:
+  daemon.json: |
+    {
+      "tls": false
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ id }}
+  namespace: {{ namespace }}
+  labels:
+    app: preevy-{{ id }}
+    app.kubernetes.io/component: docker-host
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: preevy-{{ id }}
+  template:
+    metadata:
+      labels:
+        app: preevy-{{ id }}
+    spec:
+      containers:
+      - name: docker
+        image: docker:24-dind
+        securityContext:
+          privileged: true
+        command: ["dockerd", "--host=tcp://0.0.0.0:2375", "--host=unix:///var/run/docker.sock"]
+        volumeMounts:
+        - mountPath: /etc/docker
+          name: docker-config
+
+      volumes:
+      - name: docker-config
+        configMap:
+          name: {{ id }}-dc

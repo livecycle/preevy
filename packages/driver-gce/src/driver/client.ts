@@ -19,11 +19,11 @@ const MAX_INSTANCE_NAME_LENGTH = 62
 
 const client = ({
   zone,
-  project,
+  projectId,
   profileId,
 }: {
   zone: string
-  project: string
+  projectId: string
   profileId: string
 }) => {
   const ic = new InstancesClient()
@@ -34,7 +34,7 @@ const client = ({
     let { done } = op
     while (!done) {
       // eslint-disable-next-line no-await-in-loop
-      const [{ status }] = await zoc.wait({ zone, project, operation: op.name }, callOpts)
+      const [{ status }] = await zoc.wait({ zone, project: projectId, operation: op.name }, callOpts)
       done = status === 'DONE'
     }
   }
@@ -57,20 +57,20 @@ const client = ({
   const normalizeMachineType = (machineType: string) => (
     machineType.includes('/')
       ? machineType
-      : `https://www.googleapis.com/compute/v1/projects/${project}/zones/${zone}/machineTypes/${machineType}`
+      : `https://www.googleapis.com/compute/v1/projects/${projectId}/zones/${zone}/machineTypes/${machineType}`
   )
 
   return {
     getInstance: async (instance: string) =>
-      (await ic.get({ instance, zone, project }, callOpts).catch(ignoreNotFound))?.[0],
+      (await ic.get({ instance, zone, project: projectId }, callOpts).catch(ignoreNotFound))?.[0],
 
-    findInstance: async (
+    findInstance: (
       envId: string,
     ) => asyncFirst(
-      ic.listAsync({ zone, project, filter: filter(envId), maxResults: 1 }, callOpts),
+      ic.listAsync({ zone, project: projectId, filter: filter(envId), maxResults: 1 }, callOpts),
     ),
 
-    listInstances: () => ic.listAsync({ zone, project, filter: filter() }, callOpts),
+    listInstances: () => ic.listAsync({ zone, project: projectId, filter: filter() }, callOpts),
 
     createInstance: async ({
       envId,
@@ -97,7 +97,7 @@ const client = ({
       const name = instanceName(envId)
 
       const [{ latestResponse: operation }] = await ic.insert({
-        project,
+        project: projectId,
         zone,
         instanceResource: {
           name,
@@ -107,13 +107,13 @@ const client = ({
           },
           machineType,
           disks: [{
-            diskSizeGb: 10,
+            diskSizeGb: 60,
             type: 'pd-standard',
             boot: true,
             autoDelete: true,
             initializeParams: {
               sourceImage: image.selfLink,
-              diskSizeGb: 10,
+              diskSizeGb: 60,
             },
           }],
           metadata: {
@@ -135,11 +135,11 @@ const client = ({
 
       await waitForOperation(operation)
 
-      return (await ic.get({ zone, project, instance: name }, callOpts))?.[0]
+      return (await ic.get({ zone, project: projectId, instance: name }, callOpts))?.[0]
     },
 
     deleteInstance: async (name: string, wait: boolean) => {
-      const [{ latestResponse: operation }] = await ic.delete({ zone, project, instance: name }, callOpts)
+      const [{ latestResponse: operation }] = await ic.delete({ zone, project: projectId, instance: name }, callOpts)
       if (wait) {
         await waitForOperation(operation)
       }

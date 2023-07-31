@@ -1,11 +1,11 @@
 import { Flags, Args, ux } from '@oclif/core'
+import { Flag } from '@oclif/core/lib/interfaces'
 import inquirer from 'inquirer'
 import { defaultBucketName as gsDefaultBucketName, defaultProjectId as defaultGceProjectId } from '@preevy/driver-gce'
 import { defaultBucketName as s3DefaultBucketName, AWS_REGIONS, awsUtils } from '@preevy/driver-lightsail'
 import { BaseCommand } from '@preevy/cli-common'
-import { DriverName, machineDrivers } from '../drivers'
+import { DriverName, excludeDefaultFlags, machineDrivers } from '../drivers'
 import { loadProfileConfig } from '../profile-command'
-
 import ambientAwsAccountId = awsUtils.ambientAccountId
 
 export default class Init extends BaseCommand {
@@ -64,6 +64,7 @@ export default class Init extends BaseCommand {
               { value: 'lightsail', name: 'AWS Lightsail' },
               { value: 'gce', name: 'Google Compute Engine' },
               { value: 'azure', name: 'Microsoft Azure Virtual Machines' },
+              { value: 'kube-pod', name: 'Kubernetes' },
             ],
           }])
 
@@ -133,7 +134,24 @@ export default class Init extends BaseCommand {
         location = `local://${profileAlias}`
       }
 
-      await this.config.runCommand('profile:create', ['--log-level', this.flags['log-level'] ?? 'info', profileAlias, location, '--driver', driver, ...Object.entries(driverFlags).map(([key, value]) => `--${driver}-${key}=${value}`)])
+      await this.config.runCommand('profile:create', [
+        '--log-level', this.flags['log-level'] ?? 'info',
+        profileAlias,
+        location,
+        '--driver', driver,
+        ...Object.entries(driverFlags)
+          .filter(excludeDefaultFlags(driverStatic.flags as Record<string, Flag<unknown>>))
+          .map(([key, value]) => {
+            const driverKey = `${driver}-${key}`
+            if (typeof value === 'boolean') {
+              return value ? `--${driverKey}` : `--no-${driverKey}`
+            }
+            if (typeof value === 'string' || typeof value === 'number') {
+              return `--${driverKey}=${value}`
+            }
+            throw new Error(`Cannot convert ${value} of type ${typeof value} to a flag, for flag ${driverKey}`)
+          }),
+      ])
     }
     this.log('Initialized profile')
 

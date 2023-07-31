@@ -80,6 +80,7 @@ export const getTags = (profileId: string, envId: string) => ({
   [AzureCustomTags.PROFILE_ID]: profileId,
   [AzureCustomTags.ENV_ID]: envId,
 })
+
 export const client = ({
   region,
   subscriptionId,
@@ -136,7 +137,7 @@ export const client = ({
           tags?.[AzureCustomTags.PROFILE_ID] === profileId && provisioningState !== 'Deleting', vms)
       )
     },
-    getInstanceByRg: async (resourceGroup: string) => asyncFirst(
+    getInstanceByRg: async (resourceGroup: string) => await asyncFirst(
       asyncFilter(x => x.provisioningState !== 'Deleting', computeClient.virtualMachines.list(resourceGroup))
     )
       .then(async vm => {
@@ -258,3 +259,5 @@ export const client = ({
     },
   }
 }
+
+export type Client = ReturnType<typeof client>

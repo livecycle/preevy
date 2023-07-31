@@ -1,5 +1,5 @@
 import { inspect } from 'util'
-import { extractDefined } from '../aws-utils/nulls'
+import { extractDefined } from '@preevy/core'
 
 export const CURRENT_MACHINE_VERSION = 'm-2023-02-16'
 

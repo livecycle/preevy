@@ -1,11 +1,11 @@
 import { Logger } from './log'
-import { MachineConnection, DockerSocket } from './driver'
+import { MachineConnection, ForwardSocket } from './driver'
 
 export type FuncWrapper = <Return>(
   f: () => Promise<Return>,
 ) => Promise<Return>
 
-const dockerHost = (s: string | DockerSocket['address']) => (
+const dockerHost = (s: string | ForwardSocket['address']) => (
   typeof s === 'string'
     ? `unix://${s}`
     : `tcp://${s.host}:${s.port}`
@@ -20,7 +20,6 @@ export const wrapWithDockerSocket = (
   f: () => Promise<Return>,
 ): Promise<Return> => {
   const { address, close } = await connection.dockerSocket()
-  // const { localSocket, close } = await connection.portForward({ port: 0, host: '0.0.0.0' }, '/var/run/docker.sock')
 
   log.debug(`Local socket: ${JSON.stringify(address)}`)
 
@@ -31,5 +30,5 @@ export const wrapWithDockerSocket = (
 
   process.env.DOCKER_HOST = dockerHost(address)
 
-  return f().finally(close)
+  return await f().finally(close)
 }

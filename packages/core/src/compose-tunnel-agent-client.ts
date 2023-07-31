@@ -1,9 +1,11 @@
 import path from 'path'
 import fetch from 'node-fetch'
 import retry from 'p-retry'
+import { mapValues } from 'lodash'
 import { ComposeModel, ComposeService } from './compose/model'
 import { TunnelOpts } from './ssh/url'
 import { Tunnel } from './tunneling'
+import { withBasicAuthCredentials } from './url'
 
 export const COMPOSE_TUNNEL_AGENT_SERVICE_NAME = 'preevy_proxy'
 export const COMPOSE_TUNNEL_AGENT_SERVICE_PORT = 3000
@@ -12,6 +14,9 @@ const COMPOSE_TUNNEL_AGENT_DIR = path.join(path.dirname(require.resolve('@preevy
 const baseDockerProxyService: ComposeService = {
   build: {
     context: COMPOSE_TUNNEL_AGENT_DIR,
+  },
+  labels: {
+    'preevy.access': 'private',
   },
 }
 
@@ -92,27 +97,40 @@ export const addComposeTunnelAgentService = (
   },
 })
 
-export const queryTunnels = async ({ retryOpts = { retries: 0 }, tunnelUrlForService }: {
-  tunnelUrlForService: (servicePort: { name: string; port: number }) => string
+export const queryTunnels = async ({
+  retryOpts = { retries: 0 },
+  tunnelUrlsForService,
+  credentials,
+  includeAccessCredentials,
+}: {
+  tunnelUrlsForService: (service: { name: string; ports: number[] }) => { port: number; url: string }[]
+  credentials: { user: string; password: string }
   retryOpts?: retry.Options
+  includeAccessCredentials: boolean
 }) => {
-  const serviceUrl = tunnelUrlForService({
+  const serviceUrl = tunnelUrlsForService({
     name: COMPOSE_TUNNEL_AGENT_SERVICE_NAME,
-    port: COMPOSE_TUNNEL_AGENT_SERVICE_PORT,
-  }).replace(/\/$/, '')
+    ports: [COMPOSE_TUNNEL_AGENT_SERVICE_PORT],
+  })[0].url.replace(/\/$/, '')
 
-  const url = `${serviceUrl}/tunnels`
+  const addCredentials = withBasicAuthCredentials(credentials)
+  const url = addCredentials(`${serviceUrl}/tunnels`)
 
   const { tunnels, clientId: tunnelId } = await retry(async () => {
     const r = await fetch(url, { timeout: 2500 })
     if (!r.ok) {
       throw new Error(`Failed to connect to docker proxy at ${url}: ${r.status}: ${r.statusText}`)
     }
-    return r.json() as Promise<{ tunnels: Tunnel[]; clientId: string }>
+    return await (r.json() as Promise<{ tunnels: Tunnel[]; clientId: string }>)
   }, retryOpts)
 
   return {
-    tunnels: tunnels.filter(({ service }: Tunnel) => service !== COMPOSE_TUNNEL_AGENT_SERVICE_NAME),
+    tunnels: tunnels
+      .filter(({ service }: Tunnel) => service !== COMPOSE_TUNNEL_AGENT_SERVICE_NAME)
+      .map(tunnel => ({
+        ...tunnel,
+        ports: mapValues(tunnel.ports, includeAccessCredentials ? addCredentials : (x: string) => x),
+      })),
     tunnelId,
   }
 }

@@ -26,12 +26,12 @@ export const snapshotStore = (snapshotter: () => Promise<Snapshot>) => ({
   ref: (): Pick<Snapshot, 'read'> => ({
     read: async (file: string) => {
       const snapshot = await snapshotter()
-      return ensureClose(snapshot, s => s.read(file))
+      return await ensureClose(snapshot, s => s.read(file))
     },
   }),
   transaction: async <T>(op: (s: Pick<Snapshot, 'write' | 'delete' | 'read'>) => Promise<T>) => {
     const snapshot = await snapshotter()
-    return ensureClose(snapshot, async s => {
+    return await ensureClose(snapshot, async s => {
       const result = await op(s)
       await s.save()
       return result

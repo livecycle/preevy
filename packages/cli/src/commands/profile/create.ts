@@ -1,14 +1,28 @@
-import { Args } from '@oclif/core'
-import { mapKeys, pickBy } from 'lodash'
+import { Args, Flags } from '@oclif/core'
 import { createTunnelingKey } from '@preevy/core'
-import { DriverName } from '../../drivers'
-import DriverCommand from '../../driver-command'
+import {
+  DriverName,
+  extractConfigurableFlags,
+  flagsForAllDrivers,
+  machineCreationflagsForAllDrivers,
+  machineDrivers,
+} from '../../drivers'
+import ProfileCommand from '../../profile-command'
 
 // eslint-disable-next-line no-use-before-define
-export default class CreateProfile extends DriverCommand<typeof CreateProfile> {
+export default class CreateProfile extends ProfileCommand<typeof CreateProfile> {
   static description = 'Create a new profile'
 
-  static flags = {}
+  static flags = {
+    ...flagsForAllDrivers,
+    ...machineCreationflagsForAllDrivers,
+    driver: Flags.custom<DriverName>({
+      description: 'Machine driver to use',
+      char: 'd',
+      options: Object.keys(machineDrivers),
+      required: true,
+    })(),
+  }
 
   static args = {
     name: Args.string({
@@ -28,18 +42,10 @@ export default class CreateProfile extends DriverCommand<typeof CreateProfile> {
   async run(): Promise<unknown> {
     const alias = this.args.name
     const driver = this.flags.driver as DriverName
-
-    const driverPrefix = `${driver}-`
-    const driverFlags = mapKeys(
-      pickBy(this.flags, (v, k) => k.startsWith(driverPrefix)),
-      (_v, k) => k.substring(driverPrefix.length),
-    )
+    const configurableFlags = extractConfigurableFlags(this.flags, driver)
 
     await this.profileConfig.create(alias, this.args.url, { driver }, async pStore => {
-      await pStore.setDefaultFlags(
-        driver,
-        driverFlags
-      )
+      await pStore.setDefaultFlags(driver, configurableFlags)
       this.log('Creating new SSH key pair')
       await pStore.setTunnelingKey(await createTunnelingKey())
     })

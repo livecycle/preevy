@@ -44,8 +44,7 @@ export const parseSshUrl = (s: string): Pick<SshConnectionConfig, 'hostname' | '
 export type HelloResponse = {
   clientId: string
   tunnels: Record<string, string>
-  // TODO: baseUrl should be a string in the next deployment of the tunnel service, this is for backwards compat
-  baseUrl: string | { hostname: string; port: string; protocol: string }
+  rootUrl: string
 }
 
 const connectTls = (
@@ -120,7 +119,7 @@ export const baseSshClient = async (
     return isVerified
   }
 
-  return new Promise<typeof result>((resolve, reject) => {
+  return await new Promise<typeof result>((resolve, reject) => {
     ssh.on('ready', () => resolve(result))
     ssh.on('error', err => {
       reject(err)

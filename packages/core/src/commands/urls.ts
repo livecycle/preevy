@@ -1,16 +1,35 @@
+import retry from 'p-retry'
+import { generateBasicAuthCredentials, jwtGenerator } from '../credentials'
 import { queryTunnels } from '../compose-tunnel-agent-client'
-import { flattenTunnels, tunnelUrlForEnv } from '../tunneling'
+import { flattenTunnels, tunnelUrlsForEnv } from '../tunneling'
 
-export const urls = async ({ envId, baseUrl, clientId, projectName, serviceAndPort }: {
+export const urls = async ({
+  envId,
+  rootUrl,
+  clientId,
+  serviceAndPort,
+  tunnelingKey,
+  includeAccessCredentials,
+  retryOpts,
+}: {
   envId: string
-  projectName: string
-  baseUrl: string
+  rootUrl: string
   clientId: string
   serviceAndPort?: { service: string; port?: number }
+  tunnelingKey: string | Buffer
+  includeAccessCredentials: boolean
+  retryOpts: retry.Options
 }) => {
-  const tunnelUrlForService = tunnelUrlForEnv({ projectName, envId, baseUrl: new URL(baseUrl), clientId })
+  const tunnelUrlsForService = tunnelUrlsForEnv({ envId, rootUrl: new URL(rootUrl), clientId })
 
-  const { tunnels } = await queryTunnels({ tunnelUrlForService, retryOpts: { retries: 2 } })
+  const credentials = await generateBasicAuthCredentials(jwtGenerator(tunnelingKey))
+
+  const { tunnels } = await queryTunnels({
+    tunnelUrlsForService,
+    retryOpts,
+    credentials,
+    includeAccessCredentials,
+  })
 
   return flattenTunnels(tunnels)
     .filter(tunnel => !serviceAndPort || (

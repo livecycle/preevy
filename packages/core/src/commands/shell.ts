@@ -16,12 +16,7 @@ const shell = async ({
     throw new Error(`Machine ${envId} not found`)
   }
 
-  const sshProcess = await machineDriver.spawnRemoteCommand(machine, args, 'inherit')
-
-  return new Promise<{ code: number | null; signal: string | null }>((resolve, reject) => {
-    sshProcess.on('error', reject)
-    sshProcess.on('exit', (code, signal) => resolve({ code, signal }))
-  })
+  return await machineDriver.spawnRemoteCommand(machine, args, 'inherit')
 }
 
 export default shell

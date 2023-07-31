@@ -19,8 +19,8 @@ export default class RemoveProfile extends ProfileCommand<typeof RemoveProfile> 
   async run(): Promise<unknown> {
     const alias = this.args.name
     await this.profileConfig.delete(alias)
-    ux.info(`Profile ${alias} removed`)
-    ux.info('the files are still available in the store if you want to restore it')
+    ux.info(`Profile ${alias} removed.`)
+    ux.info('The files are still available in the store if you want to restore it.')
     return undefined
   }
 }

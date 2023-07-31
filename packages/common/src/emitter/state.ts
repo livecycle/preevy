@@ -17,7 +17,7 @@ export const stateEmitter = <T>(initial?: T) => {
     emit: (state: T) => emitter.emit(EVENT, state),
     addListener: (listener: (state: T) => void) => emitter.addListener(EVENT, listener),
     addOneTimeListener: (listener: (state: T) => void) => emitter.addOneTimeListener(EVENT, listener),
-    current: async () => first.then(() => current),
+    current: async () => await first.then(() => current),
     next: () => emitter.toPromise(EVENT),
     filter: async (predicate: (state: T) => boolean) => {
       let state: T = await self.current()

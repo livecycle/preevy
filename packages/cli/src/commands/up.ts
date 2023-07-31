@@ -1,13 +1,14 @@
 import { Args, Flags, ux } from '@oclif/core'
 import {
-  commands, flattenTunnels, profileStore,
+  commands, profileStore,
   telemetryEmitter,
 } from '@preevy/core'
-import { asyncReduce } from 'iter-tools-es'
 import { tunnelServerFlags } from '@preevy/cli-common'
+import { inspect } from 'util'
 import { tunnelServerHello } from '../tunnel-server-client'
 import MachineCreationDriverCommand from '../machine-creation-driver-command'
-import { envIdFlags } from '../common-flags'
+import { envIdFlags, urlFlags } from '../common-flags'
+import { filterUrls, printUrls } from './urls'
 
 // eslint-disable-next-line no-use-before-define
 export default class Up extends MachineCreationDriverCommand<typeof Up> {
@@ -21,6 +22,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       default: true,
       allowNo: true,
     }),
+    ...urlFlags,
     ...ux.table.flags(),
   }
 
@@ -49,7 +51,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       insecureSkipVerify: flags['insecure-skip-verify'],
     }
 
-    const { hostKey, clientId, baseUrl } = await tunnelServerHello({
+    const { hostKey, clientId, rootUrl } = await tunnelServerHello({
       tunnelingKey,
       knownServerPublicKeys: pStore.knownServerPublicKeys,
       tunnelOpts,
@@ -60,9 +62,9 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
     const userModel = await this.ensureUserModel()
 
-    const { machine, tunnels, envId } = await commands.up({
+    const { machine, envId } = await commands.up({
       clientId,
-      baseUrl,
+      rootUrl,
       userSpecifiedServices: restArgs,
       debug: flags.debug,
       machineDriver: driver,
@@ -81,32 +83,40 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       skipUnchangedFiles: flags['skip-unchanged-files'],
     })
 
-    const flatTunnels = flattenTunnels(tunnels)
+    this.log(`Preview environment ${envId} provisioned at: ${machine.locationDescription}`)
 
-    const result = await asyncReduce(
-      { urls: flatTunnels },
-      async ({ urls }, envCreated) => envCreated(
+    const flatTunnels = await commands.urls({
+      rootUrl,
+      clientId,
+      envId,
+      tunnelingKey,
+      includeAccessCredentials: flags['include-access-credentials'],
+      retryOpts: {
+        minTimeout: 1000,
+        maxTimeout: 2000,
+        retries: 10,
+        onFailedAttempt: e => { this.logger.debug(`Failed to query tunnels: ${inspect(e)}`) },
+      },
+    })
+
+    const urls = await filterUrls({
+      flatTunnels,
+      context: { log: this.logger, userModel },
+      filters: this.config.preevyHooks.filterUrls,
+    })
+
+    await Promise.all(
+      this.config.preevyHooks.envCreated.map(envCreated => envCreated(
         { log: this.logger, userModel },
         { envId, urls },
-      ),
-      this.config.preevyHooks.envCreated,
+      )),
     )
 
     if (flags.json) {
-      return result.urls
+      return urls
     }
 
-    this.log(`Preview environment ${envId} provisioned at ${machine.locationDescription}`)
-
-    ux.table(
-      result.urls,
-      {
-        service: { header: 'Service' },
-        port: { header: 'Port' },
-        url: { header: 'URL' },
-      },
-      this.flags,
-    )
+    printUrls(urls, flags)
 
     return undefined
   }

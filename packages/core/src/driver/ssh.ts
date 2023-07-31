@@ -5,11 +5,13 @@ import os from 'os'
 import { rimraf } from 'rimraf'
 import { inspect } from 'util'
 import { AddressInfo } from 'net'
+import retry, { Options as RetryOptions } from 'p-retry'
 import { Store } from '../store'
 import { SshKeyPair, connectSshClient } from '../ssh'
-import { MachineDriver } from './driver'
+import { MachineConnection, MachineDriver } from './driver'
 import { MachineBase } from './machine'
 import { sshKeysStore } from '../state'
+import { Logger } from '../log'
 
 export type SshMachine = MachineBase & {
   version: string
@@ -27,23 +29,32 @@ const ensureSshMachine = (m: MachineBase): SshMachine => {
   return m
 }
 
+type SshDriver = Pick<MachineDriver<SshMachine>, 'spawnRemoteCommand'> & {
+  connect: (
+    machine: MachineBase,
+    opts: { log: Logger; debug: boolean; retryOpts?: RetryOptions }) => Promise<MachineConnection>
+}
+
 export const sshDriver = (
   { getSshKey }: {
     getSshKey: (machine: SshMachine) => Promise<Pick<SshKeyPair, 'privateKey'>>
   },
-): Pick<MachineDriver<SshMachine>, 'connect' | 'spawnRemoteCommand'> => {
+): SshDriver => {
   const getPrivateKey = async (machine: SshMachine) => (await getSshKey(machine)).privateKey.toString('utf-8')
 
   return {
-    connect: async (m, { log, debug }) => {
+    connect: async (m, { log, debug, retryOpts = { retries: 0 } }) => {
       const machine = ensureSshMachine(m)
-      const connection = await connectSshClient({
-        log,
-        debug,
-        host: machine.publicIPAddress,
-        username: machine.sshUsername,
-        privateKey: await getPrivateKey(machine),
-      })
+      const connection = await retry(
+        async () => await connectSshClient({
+          log,
+          debug,
+          host: machine.publicIPAddress,
+          username: machine.sshUsername,
+          privateKey: await getPrivateKey(machine),
+        }),
+        retryOpts,
+      )
 
       return {
         close: async () => connection.close(),
@@ -72,7 +83,10 @@ export const sshDriver = (
 
       const sshProcess = spawn('ssh', sshArgs, { stdio })
       sshProcess.on('exit', () => rimraf(tempDir))
-      return sshProcess
+      return await new Promise((resolve, reject) => {
+        sshProcess.on('error', reject)
+        sshProcess.on('exit', (code, signal) => resolve(code !== null ? { code } : { signal: signal as string }))
+      })
     },
   }
 }

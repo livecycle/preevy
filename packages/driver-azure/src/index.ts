@@ -1,1 +1,3 @@
-export { default as azure } from './driver'
+import azure from './driver'
+
+export default azure

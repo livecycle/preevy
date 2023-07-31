@@ -24,7 +24,7 @@ export const localFs = (baseDir: string): VirtualFS => ({
       return await f()
     } catch (e) {
       if (isNotFoundError(e)) {
-        return fs.mkdir(dirname(filepath), { recursive: true }).then(f)
+        return await fs.mkdir(dirname(filepath), { recursive: true }).then(f)
       }
       throw e
     }

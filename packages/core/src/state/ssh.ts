@@ -38,7 +38,7 @@ export const sshKeysStore = (store: Store) => {
 
       return storedKeyPair.publicKey.toString('utf-8')
     },
-    deleteKey: async (alias: string) => store.transaction(sshKeysDir, async ({ delete: del }) => {
+    deleteKey: async (alias: string) => await store.transaction(sshKeysDir, async ({ delete: del }) => {
       await Promise.all([
         del(privateKeyFile(alias)),
         del(publicKeyFile(alias)),

@@ -4,6 +4,7 @@ import stringify from 'fast-safe-stringify'
 import fetch from 'node-fetch'
 import { debounce } from 'lodash'
 import pLimit from 'p-limit'
+import { inspect } from 'util'
 import { memoizedMachineId } from './machine-id'
 import { TelemetryEvent, TelemetryProperties, serializableEvent } from './events'
 import { detectCiProvider } from '../ci-providers'
@@ -31,24 +32,26 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
   const runId = newRunId()
   let debounceDisabled = false
   const flushLimit = pLimit(1)
-  const flush = async () =>
-    flushLimit(async () => {
-      if (!pendingEvents.length) {
-        return
-      }
-      const body = stringify({ batch: pendingEvents.map(serializableEvent) })
-      pendingEvents.length = 0
-      const req = fetch(TELEMETRY_URL, {
-        headers: { 'Content-Type': 'application/json' },
-        method: 'POST',
-        redirect: 'follow',
-        body,
-      })
-      const response = await req
-      if (!response.ok && debug) {
-        process.stderr.write(`Error sending telemetry: ${response.status} ${response.statusText} ${response.url}${os.EOL}`)
+  const flush = async () => await flushLimit(async () => {
+    if (!pendingEvents.length) {
+      return
+    }
+    const body = stringify({ batch: pendingEvents.map(serializableEvent) })
+    pendingEvents.length = 0
+    const response = await fetch(TELEMETRY_URL, {
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+      redirect: 'follow',
+      body,
+    }).catch(err => {
+      if (debug) {
+        process.stderr.write(`Error sending telemetry: ${inspect(err)}${os.EOL}`)
       }
     })
+    if (response && !response.ok && debug) {
+      process.stderr.write(`Error response from telemetry: ${response.status} ${response.statusText} ${response.url}${os.EOL}`)
+    }
+  })
 
   const debouncedFlush = debounce(flush, 3000, { maxWait: 8000 })
 
@@ -94,7 +97,7 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
       groupIdentities[groupType] = groupId
     }
     const currentGroupId = groupIdentities[groupType]
-    if (groupId) {
+    if (currentGroupId) {
       pushEvent({
         event: '$groupidentify',
         timestamp: new Date(),

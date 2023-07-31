@@ -33,26 +33,34 @@ module.exports = {
   },
   plugins: ['import', 'jest', '@typescript-eslint'],
   rules: {
-    'no-void': ['error', { allowAsStatement: true }],
-    'linebreak-style': ['error', isWindows ? 'windows' : 'unix'],
+    'no-void': ['warn', { allowAsStatement: true }],
+    'linebreak-style': ['warn', isWindows ? 'windows' : 'unix'],
     quotes: [
-      'error',
+      'warn',
       'single',
       { avoidEscape: true, allowTemplateLiterals: false },
     ],
+    'dot-location': 'warn',
+    'no-trailing-spaces': 'warn',
+    'no-multi-spaces': 'warn',
+    'no-multiple-empty-lines': 'warn',
+    'space-infix-ops': 'warn',
+    'object-curly-spacing': 'warn',
+    'key-spacing': 'warn',
     'lines-between-class-members': [1, 'always', { exceptAfterSingleLine: true }],
     '@typescript-eslint/no-parameter-properties': [0],
     '@typescript-eslint/explicit-function-return-type': [0],
     '@typescript-eslint/explicit-member-accessibility': [0],
-    indent: ['error'],
+    indent: ['warn'],
     '@typescript-eslint/indent': 'off',
-    semi: ['error', 'never'],
+    semi: ['warn', 'never'],
     'no-param-reassign': [2, { 'props': false }],
     '@typescript-eslint/no-unused-vars': [1, { argsIgnorePattern: '^_' }],
-    'no-constant-condition': ['error', { checkLoops: false }],
-    'generator-star-spacing': ["error", { "before": true, "after": false }],
-    'arrow-parens': ['error', 'as-needed'],
-    'comma-dangle': ['error', {
+    'no-constant-condition': ['warn', { checkLoops: false }],
+    'generator-star-spacing': ["warn", { "before": true, "after": false }],
+    'arrow-parens': ['warn', 'as-needed'],
+    'comma-spacing': ['warn'],
+    'comma-dangle': ['warn', {
       functions: 'ignore',
       arrays: 'always-multiline',
       objects: 'always-multiline',
@@ -61,8 +69,8 @@ module.exports = {
     }],
     'implicit-arrow-linebreak': ['off'],
     'import/prefer-default-export': ['off'],
-    'object-curly-newline': ['error', { consistent: true }],
-    '@typescript-eslint/member-delimiter-style': ['error', {
+    'object-curly-newline': ['warn', { consistent: true }],
+    '@typescript-eslint/member-delimiter-style': ['warn', {
       multiline: { delimiter: 'none', requireLast: undefined },
       singleline: { delimiter: 'semi', requireLast: undefined },
     }],
@@ -83,7 +91,8 @@ module.exports = {
     ],
     // This rule is already enforced on all functions so no need to enforce it in addition on module boundary
     '@typescript-eslint/explicit-module-boundary-types': ['off'],
-    '@typescript-eslint/return-await': ['error', 'in-try-catch'],
+    '@typescript-eslint/return-await': ['error', 'always'],
+    "no-return-await": "off",
     '@typescript-eslint/no-floating-promises': ['error', { ignoreVoid: true}],
     '@typescript-eslint/no-misused-promises': [
       'error',
@@ -118,7 +127,7 @@ module.exports = {
     '@typescript-eslint/await-thenable': ['error'],
     'max-len':
       [
-        'error',
+        'warn',
         {
           'code': 120,
           'ignoreUrls': true,
@@ -152,4 +161,3 @@ module.exports = {
     }
   },
 }
-
