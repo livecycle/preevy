@@ -1,7 +1,7 @@
 name: Run tests
 on:
   pull_request:
-  push:
+    types: [opened, reopened, synchronize]
 
 jobs:
   run-tests:
@@ -11,6 +11,7 @@ jobs:
     - uses: actions/setup-node@v3
       with:
         node-version: '18.x'
+        cache: yarn
 
     - uses: actions/checkout@v3
 
