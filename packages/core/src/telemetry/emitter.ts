@@ -94,7 +94,7 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
       groupIdentities[groupType] = groupId
     }
     const currentGroupId = groupIdentities[groupType]
-    if (groupId) {
+    if (currentGroupId) {
       pushEvent({
         event: '$groupidentify',
         timestamp: new Date(),

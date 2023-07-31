@@ -58,7 +58,7 @@ const serviceLinkEnvVars = (
   getExposedTcpServicePorts(userModel)
     .flatMap(servicePorts => tunnelUrlsForService(servicePorts)
       .map(({ port, url }) => ({ port, url, name: servicePorts.name })))
-    .map(({ name, port, url }) => [`PREEVY_BASE_URI_${name}_${port}`.toUpperCase(), url])
+    .map(({ name, port, url }) => [`PREEVY_BASE_URI_${name.replace(/[^a-zA-Z0-9_]/g, '_')}_${port}`.toUpperCase(), url])
 )
 
 const up = async ({
