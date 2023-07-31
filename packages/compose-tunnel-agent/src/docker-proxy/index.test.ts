@@ -11,7 +11,73 @@ import waitForExpect from 'wait-for-expect'
 import WebSocket from 'ws'
 import { createDockerProxy } from '.'
 
-const doFetch = async (...args: Parameters<typeof fetch>) => {
+const setupDockerContainer = () => {
+  let dockerProcess: ChildProcess
+  let containerName: string
+  let output: Buffer[]
+  jest.setTimeout(100000)
+
+  beforeAll(() => {
+    containerName = `test-docker-proxy-${Math.random().toString(36).substring(2, 9)}`
+    output = []
+    dockerProcess = spawn(
+      'docker',
+      [
+        ...`run --rm --name ${containerName} busybox sh -c`.split(' '),
+        'while true; do echo "hello stdout"; >&2 echo "hello stderr"; sleep 0.1; done',
+      ]
+    )
+    dockerProcess.stdout?.on('data', data => { output.push(data) })
+    dockerProcess.stderr?.on('data', data => { output.push(data) })
+    return new Promise<void>((resolve, reject) => {
+      dockerProcess.stdout?.once('data', () => { resolve() })
+      dockerProcess.once('error', reject)
+      dockerProcess.once('exit', (code, signal) => {
+        const outStr = Buffer.concat(output).toString('utf-8')
+        reject(new Error(`docker exited with code ${code} and signal ${signal}: ${outStr}`))
+      })
+    })
+  })
+
+  afterAll(async () => {
+    dockerProcess.kill()
+    await promisify(exec)(`docker rm -f ${containerName}`)
+  })
+
+  return {
+    containerName: () => containerName,
+  }
+}
+
+const setupDockerProxy = () => {
+  const log = pino({
+    level: 'debug',
+  }, pinoPretty({ destination: pino.destination(process.stderr) }))
+
+  let server: http.Server
+  let serverBaseUrl: string
+
+  beforeAll(async () => {
+    const docker = new Dockerode()
+    server = createDockerProxy({ log, docker, dockerSocket: '/var/run/docker.sock' })
+    const serverPort = await new Promise<number>(resolve => {
+      server.listen(0, () => {
+        resolve((server.address() as net.AddressInfo).port)
+      })
+    })
+    serverBaseUrl = `localhost:${serverPort}`
+  })
+
+  afterAll(async () => {
+    await promisify(server.close.bind(server))()
+  })
+
+  return {
+    serverBaseUrl: () => serverBaseUrl,
+  }
+}
+
+const fetchJson = async (...args: Parameters<typeof fetch>) => {
   const r = await fetch(...args)
   if (!r.ok) {
     throw new Error(`Fetch ${inspect(args)} failed: ${r.status} ${r.statusText}: ${await r.text()}`)
@@ -53,69 +119,14 @@ const openWebSocket = (url: string) => new Promise<OpenWebSocket>((resolve, reje
 })
 
 describe('docker proxy', () => {
-  let dockerProcess: ChildProcess
-  let containerName: string
-  let output: Buffer[]
-  jest.setTimeout(100000)
-
-  const log = pino({
-    level: 'debug',
-  }, pinoPretty({ destination: pino.destination(process.stderr) }))
-
-  beforeAll(() => {
-    containerName = `test-docker-proxy-${Math.random().toString(36).substring(2, 9)}`
-    output = []
-    dockerProcess = spawn(
-      'docker',
-      [
-        ...`run --rm --name ${containerName} busybox sh -c`.split(' '),
-        'while true; do echo "hello stdout"; >&2 echo "hello stderr"; sleep 0.1; done',
-      ]
-    )
-    dockerProcess.stdout?.on('data', data => { output.push(data) })
-    dockerProcess.stderr?.on('data', data => { output.push(data) })
-    return new Promise<void>((resolve, reject) => {
-      dockerProcess.stdout?.once('data', () => { resolve() })
-      dockerProcess.once('error', reject)
-      dockerProcess.once('exit', (code, signal) => reject(new Error(`docker exited with code ${code} and signal ${signal}: ${Buffer.concat(output).toString('utf-8')}`)))
-    })
-  })
-
-  afterAll(async () => {
-    dockerProcess.kill()
-    await promisify(exec)(`docker rm -f ${containerName}`)
-  })
-
-  let dp: http.Server
-  let dpPort: number
-
-  beforeAll(async () => {
-    const docker = new Dockerode()
-    dp = createDockerProxy({ log, docker, dockerSocket: '/var/run/docker.sock' })
-    dpPort = await new Promise<number>(resolve => {
-      dp.listen(0, () => {
-        resolve((dp.address() as net.AddressInfo).port)
-      })
-    })
-  })
-
-  afterAll(async () => {
-    await new Promise<void>((resolve, reject) => {
-      dp.close(err => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve()
-        }
-      })
-    })
-  })
+  const { containerName } = setupDockerContainer()
+  const { serverBaseUrl } = setupDockerProxy()
 
   const waitForContainerId = async () => {
     let containerId = ''
     await waitForExpect(async () => {
-      const containers = await doFetch(`http://localhost:${dpPort}/containers/json`) as { Id: string; Names: string[] }[]
-      const container = containers.find(({ Names: names }) => names.includes(`/${containerName}`))
+      const containers = await fetchJson(`http://${serverBaseUrl()}/containers/json`) as { Id: string; Names: string[] }[]
+      const container = containers.find(({ Names: names }) => names.includes(`/${containerName()}`))
       expect(container).toBeDefined()
       containerId = container?.Id as string
     }, 3000, 100)
@@ -128,7 +139,7 @@ describe('docker proxy', () => {
 
   describe('exec', () => {
     const createExec = async (containerId: string, tty: boolean) => {
-      const { Id: execId } = await doFetch(`http://localhost:${dpPort}/containers/${containerId}/exec`, {
+      const { Id: execId } = await fetchJson(`http://${serverBaseUrl()}/containers/${containerId}/exec`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -158,7 +169,7 @@ describe('docker proxy', () => {
       })
 
       it('should communicate via websocket', async () => {
-        const { receivedBuffers, send, close } = await openWebSocket(`ws://localhost:${dpPort}/exec/${execId}/start`)
+        const { receivedBuffers, send, close } = await openWebSocket(`ws://${serverBaseUrl()}/exec/${execId}/start`)
         await waitForExpect(() => expect(receivedBuffers.length).toBeGreaterThan(0))
         await send('ls\n')
         await waitForExpect(() => {
@@ -177,7 +188,7 @@ describe('docker proxy', () => {
       })
 
       it('should communicate via websocket', async () => {
-        const { receivedBuffers, send, close } = await openWebSocket(`ws://localhost:${dpPort}/exec/${execId}/start`)
+        const { receivedBuffers, send, close } = await openWebSocket(`ws://${serverBaseUrl()}/exec/${execId}/start`)
         await waitForExpect(async () => {
           await send('ls\n')
           const received = Buffer.concat(receivedBuffers).toString('utf-8')
@@ -200,7 +211,7 @@ describe('docker proxy', () => {
     const testStream = (...s: LogStream[]) => {
       describe(`${s.join(' and ')}`, () => {
         it(`should show the ${s.join(' and ')} logs via websocket`, async () => {
-          const { receivedBuffers, close } = await openWebSocket(`ws://localhost:${dpPort}/containers/${containerId}/logs?${s.map(st => `${st}=true`).join('&')}`)
+          const { receivedBuffers, close } = await openWebSocket(`ws://${serverBaseUrl()}/containers/${containerId}/logs?${s.map(st => `${st}=true`).join('&')}`)
           await waitForExpect(() => expect(receivedBuffers.length).toBeGreaterThan(0))
           const length1 = receivedBuffers.length
           await waitForExpect(() => {
@@ -226,7 +237,7 @@ describe('docker proxy', () => {
 
     describe('timestamps', () => {
       it('should show the logs with a timestamp', async () => {
-        const { receivedBuffers, close } = await openWebSocket(`ws://localhost:${dpPort}/containers/${containerId}/logs?stdout=true&timestamps=true`)
+        const { receivedBuffers, close } = await openWebSocket(`ws://${serverBaseUrl()}/containers/${containerId}/logs?stdout=true&timestamps=true`)
         await waitForExpect(() => expect(receivedBuffers.length).toBeGreaterThan(0))
         const received = Buffer.concat(receivedBuffers).toString('utf-8')
         expect(received).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d*Z/)
