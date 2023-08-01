@@ -79,23 +79,6 @@ export function JwtAuthenticator(issuerToKeyData: IssuerToKeyData) {
     }
 
     const { iss } = decodeJwt(jwt)
-    // const { issuer, publicKey, extractClaims } = await match(iss).when(() => iss?.startsWith('preevy://'), async () => {
-    //   const thumbprint = await calculateJwkThumbprintUri(await exportJWK(env.publicKey))
-    //   return {
-    //     publicKey: env.publicKey,
-    //     issuer: `preevy://${thumbprint}`,
-    //     extractClaims: (token:JWTPayload) => ({
-    //       role: 'admin',
-    //       type: 'profile',
-    //       exp: token.exp,
-    //       scopes: ['admin'],
-    //       sub: `preevy-profile:${env.publicKeyThumbprint}`,
-    //     }),
-    //   }
-    // }).otherwise(async () => {
-    //   throw new Error('invalid issuer')
-    // })
-
     const { pk, extractClaims } = issuerToKeyData(iss)
 
     const token = await jwtVerify(jwt, pk, { issuer: iss })
@@ -127,19 +110,17 @@ export const unauthorized = (res: ServerResponse<IncomingMessage>) => {
   res.end('Unauthorized')
 }
 
-export const envToIssuerToKeyData = (env: PreviewEnv): IssuerToKeyData => iss => {
-  if (iss === `preevy://${env.publicKeyThumbprint}`) {
-    return {
-      pk: env.publicKey,
-      extractClaims: token => ({
-        role: 'admin',
-        type: 'profile',
-        exp: token.exp,
-        scopes: ['admin'],
-        sub: `preevy-profile:${env.publicKeyThumbprint}`,
-      }),
-    }
-  }
+export const getIssuerToKeyDataFromEnv = (env: PreviewEnv): IssuerToKeyData => iss => {
+  if (iss !== `preevy://${env.publicKeyThumbprint}`) throw new Error('invalid issuer')
 
-  throw new Error('invalid issuer')
+  return {
+    pk: env.publicKey,
+    extractClaims: token => ({
+      role: 'admin',
+      type: 'profile',
+      exp: token.exp,
+      scopes: ['admin'],
+      sub: `preevy-profile:${env.publicKeyThumbprint}`,
+    }),
+  }
 }

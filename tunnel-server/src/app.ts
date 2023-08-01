@@ -5,7 +5,7 @@ import internal from 'stream'
 import { Logger } from 'pino'
 import { match } from 'ts-pattern'
 import { SessionManager } from './seesion'
-import { Claims, JwtAuthenticator, authenticator, envToIssuerToKeyData, unauthorized } from './auth'
+import { Claims, JwtAuthenticator, authenticator, getIssuerToKeyDataFromEnv, unauthorized } from './auth'
 import { PreviewEnvStore } from './preview-env'
 import { replaceHostname } from './url'
 
@@ -63,7 +63,7 @@ export const app = ({ isProxyRequest, proxyHandlers, sessionManager, baseUrl, en
       }
       const session = sessionManager(req.raw, res.raw, env.publicKeyThumbprint)
       if (!session.user) {
-        const auth = authenticator([JwtAuthenticator(envToIssuerToKeyData(env))])
+        const auth = authenticator([JwtAuthenticator(getIssuerToKeyDataFromEnv(env))])
         const result = await auth(req.raw)
         if (!result.isAuthenticated) {
           return unauthorized(res.raw)
@@ -72,10 +72,5 @@ export const app = ({ isProxyRequest, proxyHandlers, sessionManager, baseUrl, en
         session.save()
       }
       return await res.redirect(new URL(returnPath, replaceHostname(baseUrl, `${envId}.${baseUrl.hostname}`)).toString())
-    })
-    .get('/tunnels', {}, async (req, res) => {
-      // const auth = authenticator([JwtAuthenticator((iss) => ({pk: }))])
-      const envs = await envStore.getAll()
-      void res.send(envs)
     })
     .get('/healthz', { logLevel: 'warn' }, async () => 'OK')
