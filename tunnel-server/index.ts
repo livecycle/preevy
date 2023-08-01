@@ -66,7 +66,7 @@ const sshServer = createSshServer({
   socketDir: '/tmp', // TODO
 })
   .on('client', client => {
-    const { clientId, publicKey } = client
+    const { clientId, publicKey, envId } = client
     const tunnels = new Map<string, string>()
     client
       .on('forward', async (requestId, { path: remotePath, access }, accept, reject) => {
@@ -80,6 +80,7 @@ const sshServer = createSshServer({
         const pk = createPublicKey(publicKey.getPublicPEM())
 
         await envStore.set(key, {
+          envId,
           target: forward.localSocketPath,
           clientId,
           publicKey: pk,

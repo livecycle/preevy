@@ -38,13 +38,14 @@ export const addBaseComposeTunnelAgentService = (
 })
 
 export const addComposeTunnelAgentService = (
-  { tunnelOpts, sshPrivateKeyPath, knownServerPublicKeyPath, urlSuffix, debug, user }: {
+  { tunnelOpts, sshPrivateKeyPath, knownServerPublicKeyPath, urlSuffix, debug, user, envId }: {
     tunnelOpts: TunnelOpts
     urlSuffix: string
     sshPrivateKeyPath: string
     knownServerPublicKeyPath: string
     debug: boolean
     user: string
+    envId: string
   },
   model: ComposeModel,
 ): ComposeModel => ({
@@ -89,6 +90,7 @@ export const addComposeTunnelAgentService = (
         SSH_URL: tunnelOpts.url,
         TLS_SERVERNAME: tunnelOpts.tlsServerName,
         TUNNEL_URL_SUFFIX: urlSuffix,
+        PREEVY_ENV_ID: envId,
         PORT: COMPOSE_TUNNEL_AGENT_SERVICE_PORT.toString(),
         ...debug ? { DEBUG: '1' } : {},
         HOME: '/preevy',

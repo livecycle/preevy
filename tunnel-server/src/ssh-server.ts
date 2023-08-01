@@ -34,6 +34,7 @@ export interface ClientForward extends EventEmitter {
 }
 
 export interface SshClient extends EventEmitter {
+  envId: string
   clientId: string
   publicKey: ParsedKey
   on: (
@@ -126,8 +127,9 @@ export const sshServer = (
           preevySshClient = Object.assign(new EventEmitter(), {
             publicKey: keyOrError,
             clientId: idFromPublicSsh(keyOrError.getPublicSSH()),
+            envId: ctx.username,
           })
-          log.debug('accepting clientId %j', preevySshClient.clientId)
+          log.debug('accepting clientId %j envId %j', preevySshClient.clientId, preevySshClient.envId)
           ctx.accept()
           serverEmitter.emit('client', preevySshClient)
         })

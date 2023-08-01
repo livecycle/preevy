@@ -48,7 +48,7 @@ const sshConnectionConfigFromEnv = async (): Promise<{ connectionConfig: SshConn
     connectionConfig: {
       ...parsed,
       clientPrivateKey,
-      username: process.env.USER ?? 'foo',
+      username: process.env.PREEVY_ENV_ID ?? 'foo',
       knownServerPublicKeys,
       insecureSkipVerify: Boolean(process.env.INSECURE_SKIP_VERIFY),
       tlsServerName: process.env.TLS_SERVERNAME || undefined,
