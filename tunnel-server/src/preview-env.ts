@@ -1,6 +1,7 @@
 import { KeyObject } from 'crypto'
 
 export type PreviewEnv = {
+  envId: string
   clientId: string
   target: string
   publicKey: KeyObject

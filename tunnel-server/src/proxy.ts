@@ -91,6 +91,7 @@ export function proxyHandlers({
         }
       )
     }, err => logger.error('error forwarding traffic %j', { error: err })),
+
     wsHandler: asyncHandler(async (req: IncomingMessage, socket: internal.Duplex, head: Buffer) => {
       const env = await resolveTargetEnv(req)
       if (!env) {
