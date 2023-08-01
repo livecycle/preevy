@@ -122,7 +122,7 @@ export function proxyHandlers({
       log.debug('upgrade handler %j', { url: req.url, env, headers: req.headers })
 
       if (env.access === 'private') {
-        const session = sessionStore(req, undefined as any, env.clientId)
+        const session = sessionStore(req, undefined as any, env.publicKeyThumbprint)
         if (session.user?.role !== 'admin') {
           log.debug('unauthorized upgrade - not admin %j %j %j', req.url, req.method, req.headers)
           throw new UnauthorizedError('not admin')
