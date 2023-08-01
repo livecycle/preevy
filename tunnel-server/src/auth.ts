@@ -42,7 +42,7 @@ export type BearerAuthorizationHeader = {
 
 export type AuthorizationHeader = BasicAuthorizationHeader | BearerAuthorizationHeader
 
-const cookieName = 'preevy-sass-jwt'
+const cookieName = 'preevy-saas-jwt'
 
 function extractAuthorizationHeader(req: IncomingMessage): AuthorizationHeader | undefined {
   const { authorization } = req.headers
