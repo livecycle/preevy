@@ -27,7 +27,7 @@ RUN --mount=type=cache,id=livecycle/preevy-cli/pkg-cache,target=/pkg/cache \
 
 FROM scratch as cli
 ARG CLI_TARGET=macos-arm64
-COPY --link --from=pkg /app/packages/cli/preevy /preevy-${CLI_TARGET}
+COPY --link --from=pkg /app/packages/cli/preevy /preevy
 # use docker buildx build -f Dockerfile.cli --target=cli . --output=type=local,dest=./dist
 
 FROM docker:24-cli as release
