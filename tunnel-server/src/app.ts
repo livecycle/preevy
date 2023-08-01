@@ -4,7 +4,7 @@ import http from 'http'
 import internal from 'stream'
 import { Logger } from 'pino'
 import { match } from 'ts-pattern'
-import { Session } from './seesion'
+import { SessionStore } from './session'
 import { Claims, JwtAuthenticator, authenticator, getIssuerToKeyDataFromEnv, unauthorized } from './auth'
 import { PreviewEnvStore } from './preview-env'
 import { replaceHostname } from './url'
@@ -13,7 +13,7 @@ export const app = ({ isProxyRequest, proxyHandlers, session: sessionManager, ba
   isProxyRequest: (req: http.IncomingMessage) => boolean
   logger: Logger
   baseUrl: URL
-  session: Session<Claims>
+  session: SessionStore<Claims>
   envStore: PreviewEnvStore
   proxyHandlers: {
     wsHandler: (req: http.IncomingMessage, socket: internal.Duplex, head: Buffer) => void
@@ -63,7 +63,7 @@ export const app = ({ isProxyRequest, proxyHandlers, session: sessionManager, ba
       }
       const session = sessionManager(req.raw, res.raw, env.publicKeyThumbprint)
       if (!session.user) {
-        const auth = authenticator([JwtAuthenticator(getIssuerToKeyDataFromEnv(env))])
+        const auth = authenticator([JwtAuthenticator(getIssuerToKeyDataFromEnv(env, logger))])
         const result = await auth(req.raw)
         if (!result.isAuthenticated) {
           return unauthorized(res.raw)

@@ -10,7 +10,7 @@ function generateSecret() {
     .slice(0, 32)
 }
 
-export function session<T>(opts: {domain: string; schema: z.ZodSchema<T>; keys?: string[] }) {
+export function sessionStore<T>(opts: {domain: string; schema: z.ZodSchema<T>; keys?: string[] }) {
   const keys = opts.keys ?? [generateSecret()]
   return function getSession(req: IncomingMessage, res: ServerResponse<IncomingMessage>, thumbprint: string) {
     const cookies = new Cookies(req, res, {
@@ -32,4 +32,4 @@ export function session<T>(opts: {domain: string; schema: z.ZodSchema<T>; keys?:
   }
 }
 
-export type Session<T> = ReturnType<typeof session<T>>
+export type SessionStore<T> = ReturnType<typeof sessionStore<T>>

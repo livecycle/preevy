@@ -1,10 +1,13 @@
 import { IncomingMessage, ServerResponse } from 'http'
-import { JWTPayload, decodeJwt, jwtVerify } from 'jose'
+import { JWTPayload, JWTVerifyResult, decodeJwt, jwtVerify, errors } from 'jose'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
 import Cookies from 'cookies'
 import { KeyObject } from 'crypto'
+import type { Logger } from 'pino'
 import { PreviewEnv } from './preview-env'
+
+export class AuthError extends Error {}
 
 export const claimsSchema = z.object({
   role: z.string(),
@@ -66,6 +69,11 @@ type IssuerToKeyData = (iss?: string) => {
   extractClaims: (token: JWTPayload) => Claims
 }
 
+const isBrowser = (req: IncomingMessage) => {
+  const userAgent = req.headers['user-agent']?.toLowerCase() ?? ''
+  return /(chrome|firefox|safari|opera|msie|trident)/.test(userAgent)
+}
+
 export function JwtAuthenticator(issuerToKeyData: IssuerToKeyData) {
   return async (req: IncomingMessage):Promise<AuthenticationResult> => {
     const auth = extractAuthorizationHeader(req)
@@ -80,16 +88,19 @@ export function JwtAuthenticator(issuerToKeyData: IssuerToKeyData) {
 
     const { iss } = decodeJwt(jwt)
     const { pk, extractClaims } = issuerToKeyData(iss)
+    let token: JWTVerifyResult
+    try {
+      token = await jwtVerify(jwt, pk, { issuer: iss })
+    } catch (e) {
+      if (e instanceof errors.JOSEError) throw new AuthError(`Could not verify JWT. ${e.message}`, { cause: e })
 
-    const token = await jwtVerify(jwt, pk, { issuer: iss })
-    if (!token) {
-      throw new Error('invalid token')
+      throw e
     }
 
     return {
       method: { type: 'header', header: 'authorization' },
       isAuthenticated: true,
-      login: auth?.scheme !== 'Bearer',
+      login: isBrowser(req) && auth?.scheme !== 'Bearer',
       claims: extractClaims(token.payload),
     }
   }
@@ -110,9 +121,12 @@ export const unauthorized = (res: ServerResponse<IncomingMessage>) => {
   res.end('Unauthorized')
 }
 
-export const getIssuerToKeyDataFromEnv = (env: PreviewEnv): IssuerToKeyData => iss => {
-  if (iss !== `preevy://${env.publicKeyThumbprint}`) throw new Error('invalid issuer')
-
+export const getIssuerToKeyDataFromEnv = (env: PreviewEnv, log: Logger): IssuerToKeyData => iss => {
+  const expectedIssuer = `preevy://${env.publicKeyThumbprint}`
+  if (iss !== expectedIssuer) {
+    log.warn('Invalid issuer %j expected %s', iss, expectedIssuer)
+    throw new AuthError('invalid issuer')
+  }
   return {
     pk: env.publicKey,
     extractClaims: token => ({

@@ -2,10 +2,11 @@ import httpProxy from 'http-proxy'
 import { IncomingMessage, ServerResponse } from 'http'
 import internal from 'stream'
 import type { Logger } from 'pino'
+import { inspect } from 'util'
 import { PreviewEnvStore } from './preview-env'
 import { requestsCounter } from './metrics'
-import { Claims, authenticator, JwtAuthenticator, unauthorized, getIssuerToKeyDataFromEnv } from './auth'
-import { Session } from './seesion'
+import { Claims, authenticator, JwtAuthenticator, unauthorized, getIssuerToKeyDataFromEnv, AuthenticationResult, AuthError } from './auth'
+import { SessionStore } from './session'
 
 export const isProxyRequest = (
   hostname: string,
@@ -44,7 +45,7 @@ export function proxyHandlers({
   sessionManager,
   logger,
 }: {
-  sessionManager: Session<Claims>
+  sessionManager: SessionStore<Claims>
   envStore: PreviewEnvStore
   loginUrl: string
   logger: Logger
@@ -74,25 +75,30 @@ export function proxyHandlers({
       const session = sessionManager(req, res, env.publicKeyThumbprint)
       if (env.access === 'private') {
         if (!session.user) {
-          const authenticate = authenticator([JwtAuthenticator(getIssuerToKeyDataFromEnv(env))])
+          const authenticate = authenticator([JwtAuthenticator(getIssuerToKeyDataFromEnv(env, logger))])
+          let authResult: AuthenticationResult
           try {
-            const authResult = await authenticate(req)
-            if (!authResult.isAuthenticated) {
-              return unauthorized(res)
-            }
-            session.set(authResult.claims)
-            if (authResult.login && req.method === 'GET') {
-              session.save()
-              redirectToLogin(res, env.hostname, req.url)
+            authResult = await authenticate(req)
+          } catch (e) {
+            if (e instanceof AuthError) {
+              res.statusCode = 400
+              logger.warn('Auth error %j', inspect(e))
+              res.end(`Auth error: ${e.message}`)
               return undefined
             }
-            if (authResult.method.type === 'header') {
-              delete req.headers[authResult.method.header]
-            }
-          } catch (error) {
-            res.statusCode = 400
-            res.end()
+            throw e
+          }
+          if (!authResult.isAuthenticated) {
+            return unauthorized(res)
+          }
+          session.set(authResult.claims)
+          if (authResult.login && req.method === 'GET') {
+            session.save()
+            redirectToLogin(res, env.hostname, req.url)
             return undefined
+          }
+          if (authResult.method.type === 'header') {
+            delete req.headers[authResult.method.header]
           }
         }
 
@@ -120,7 +126,7 @@ export function proxyHandlers({
           res.end(`error proxying request: ${(err as unknown as { code: unknown }).code}`)
         }
       )
-    }, err => logger.error('error forwarding traffic %j', { error: err })),
+    }, err => { logger.error('error forwarding traffic %j', inspect(err)) }),
     wsHandler: asyncHandler(async (req: IncomingMessage, socket: internal.Duplex, head: Buffer) => {
       const env = await resolveTargetEnv(req)
       if (!env) {
