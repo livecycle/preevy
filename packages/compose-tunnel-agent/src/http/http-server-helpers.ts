@@ -1,5 +1,6 @@
 import { Logger } from '@preevy/common'
 import http from 'node:http'
+import stream from 'node:stream'
 import { inspect } from 'node:util'
 
 export const respond = (res: http.ServerResponse, content: string, type = 'text/plain', status = 200) => {
@@ -56,5 +57,21 @@ export const tryHandler = (
 
     respondAccordingToAccept(req, res, ...messageAndStatus)
     log.warn('caught error: %j in %s %s', inspect(err), req.method || '', req.url || '')
+  }
+}
+
+export const tryUpgradeHandler = (
+  { log }: { log: Logger },
+  f: (req: http.IncomingMessage, socket: stream.Duplex, head: Buffer) => Promise<void>
+) => async (req: http.IncomingMessage, socket: stream.Duplex, head: Buffer) => {
+  try {
+    await f(req, socket, head)
+  } catch (err) {
+    const message: string = err instanceof HttpError
+      ? err.clientMessage
+      : InternalError.defaultMessage
+
+    socket.end(message)
+    log.warn('caught error: %j in upgrade %s %s', inspect(err), req.method || '', req.url || '')
   }
 }

@@ -1,14 +1,18 @@
 import net from 'node:net'
-import http from 'node:http'
 import HttpProxy from 'http-proxy'
 import { Logger } from 'pino'
 import { inspect } from 'node:util'
 import { WebSocketServer } from 'ws'
 import Dockerode from 'dockerode'
 import { findHandler, handlers as wsHandlers } from './ws'
+import { tryHandler, tryUpgradeHandler } from '../http-server-helpers'
 
-export const createDockerProxy = (
-  { log, dockerSocket, docker }: { log: Logger; dockerSocket: string; docker: Dockerode },
+export const createDockerProxyHandlers = (
+  { log, dockerSocket, docker}: {
+    log: Logger
+    dockerSocket: string
+    docker: Dockerode
+  },
 ) => {
   const proxy = new HttpProxy({
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -31,13 +35,11 @@ export const createDockerProxy = (
     return undefined
   })
 
-  const server = http.createServer((req, res) => {
-    log.debug('request %s %s', req.method, req.url)
+  const handler = tryHandler({ log }, async (req, res) => {
     proxy.web(req, res)
   })
 
-  server.on('upgrade', (req, socket, head) => {
-    log.debug('upgrade %s %s', req.method || '', req.url || '')
+  const upgradeHandler = tryUpgradeHandler({ log }, async (req, socket, head) => {
     const upgrade = req.headers.upgrade?.toLowerCase()
 
     if (upgrade === 'websocket') {
@@ -69,14 +71,7 @@ export const createDockerProxy = (
     return undefined
   })
 
-  return server
+  return { handler, upgradeHandler }
 }
 
-// export const createDockerProxy = ({ log: _log, dockerSocket }: {
-//   log: Logger
-//   dockerSocket: string
-// }) => net.createServer(socket => {
-//   const dockerConnection = net.createConnection({ path: dockerSocket }, () => {
-//     socket.pipe(dockerConnection).pipe(socket)
-//   })
-// })
+export type DockerProxyHandlers = ReturnType<typeof createDockerProxyHandlers>

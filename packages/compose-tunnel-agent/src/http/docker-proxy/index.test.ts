@@ -9,7 +9,7 @@ import fetch from 'node-fetch'
 import { inspect, promisify } from 'node:util'
 import waitForExpect from 'wait-for-expect'
 import WebSocket from 'ws'
-import { createDockerProxy } from '.'
+import { createDockerProxyHandlers } from '.'
 
 const setupDockerContainer = () => {
   let dockerProcess: ChildProcess
@@ -59,7 +59,9 @@ const setupDockerProxy = () => {
 
   beforeAll(async () => {
     const docker = new Dockerode()
-    server = createDockerProxy({ log, docker, dockerSocket: '/var/run/docker.sock' })
+    const handlers = createDockerProxyHandlers({ log, docker, dockerSocket: '/var/run/docker.sock' })
+    server = http.createServer(handlers.handler).on('upgrade', handlers.upgradeHandler)
+
     const serverPort = await new Promise<number>(resolve => {
       server.listen(0, () => {
         resolve((server.address() as net.AddressInfo).port)

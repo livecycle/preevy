@@ -2,15 +2,18 @@ import fs from 'fs'
 import path from 'path'
 import Docker from 'dockerode'
 import { inspect } from 'node:util'
+import http from 'node:http'
 import { rimraf } from 'rimraf'
 import pino from 'pino'
 import pinoPretty from 'pino-pretty'
 import { EOL } from 'os'
 import { ConnectionCheckResult, requiredEnv, checkConnection, formatPublicKey, parseSshUrl, SshConnectionConfig, tunnelNameResolver } from '@preevy/common'
 import createDockerClient from './src/docker'
-import createApiServer from './src/api-server'
+import createApiServerHandler from './src/http/api-server'
 import { sshClient as createSshClient } from './src/ssh'
-import { createDockerProxy } from './src/docker-proxy'
+import { createDockerProxyHandlers } from './src/http/docker-proxy'
+import { tryHandler, tryUpgradeHandler } from './src/http/http-server-helpers'
+import { httpServerHandlers } from './src/http'
 
 const homeDir = process.env.HOME || '/root'
 const dockerSocket = '/var/run/docker.sock'
@@ -123,36 +126,35 @@ const main = async () => {
     await rimraf(apiListenAddress)
   }
 
-  const apiServerLog = log.child({ name: 'api' })
-  const apiServer = createApiServer({
-    log: apiServerLog,
-    currentSshState: async () => (await currentTunnels),
+  const { handler, upgradeHandler } = httpServerHandlers({
+    log: log.child({ name: 'http' }),
+    apiHandler: createApiServerHandler({
+      log: log.child({ name: 'api' }),
+      currentSshState: async () => (await currentTunnels),
+    }),
+    dockerProxyHandlers: createDockerProxyHandlers({
+      log: log.child({ name: 'docker-proxy' }),
+      dockerSocket,
+      docker,
+    }),
+    dockerProxyPrefix: '/docker/',
   })
+
+  const httpLog = log.child({ name: 'http' })
+
+  const httpServer = http.createServer(tryHandler({ log: httpLog }, async (req, res) => {
+    httpLog.debug('request %s %s', req.method, req.url)
+    return await handler(req, res)
+  }))
+    .on('upgrade', tryUpgradeHandler({ log: httpLog }, async (req, socket, head) => {
+      httpLog.debug('upgrade %s %s', req.method, req.url)
+      return await upgradeHandler(req, socket, head)
+    }))
     .listen(apiListenAddress, () => {
-      apiServerLog.info(`API server listening on ${inspect(apiServer.address())}`)
+      httpLog.info(`API server listening on ${inspect(httpServer.address())}`)
     })
     .on('error', err => {
-      apiServerLog.error(err)
-      process.exit(1)
-    })
-    .unref()
-
-  const dockerProxyListenAddress = process.env.DOCKER_PROXY_PORT ?? 3001
-  if (typeof dockerProxyListenAddress === 'string' && Number.isNaN(Number(dockerProxyListenAddress))) {
-    await rimraf(dockerProxyListenAddress)
-  }
-
-  const dockerProxyLog = log.child({ name: 'docker-proxy' })
-  const dockerProxyServer = createDockerProxy({
-    log: dockerProxyLog,
-    dockerSocket,
-    docker,
-  })
-    .listen(dockerProxyListenAddress, () => {
-      dockerProxyLog.info(`Docker proxy listening on ${inspect(dockerProxyServer.address())}`)
-    })
-    .on('error', err => {
-      dockerProxyLog.error(err)
+      httpLog.error(err)
       process.exit(1)
     })
     .unref()
