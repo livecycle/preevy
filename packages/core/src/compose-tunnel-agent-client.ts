@@ -1,6 +1,7 @@
 import path from 'path'
 import fetch from 'node-fetch'
 import retry from 'p-retry'
+import util from 'util'
 import { mapValues } from 'lodash'
 import { ComposeModel, ComposeService } from './compose/model'
 import { TunnelOpts } from './ssh/url'
@@ -8,7 +9,7 @@ import { Tunnel } from './tunneling'
 import { withBasicAuthCredentials } from './url'
 
 export const COMPOSE_TUNNEL_AGENT_SERVICE_NAME = 'preevy_proxy'
-export const COMPOSE_TUNNEL_AGENT_SERVICE_PORT = 3000
+export const COMPOSE_TUNNEL_AGENT_PORT = 3000
 const COMPOSE_TUNNEL_AGENT_DIR = path.join(path.dirname(require.resolve('@preevy/compose-tunnel-agent')), '..')
 
 const baseDockerProxyService: ComposeService = {
@@ -59,7 +60,7 @@ export const addComposeTunnelAgentService = (
       ports: [
         {
           mode: 'ingress',
-          target: 3000,
+          target: COMPOSE_TUNNEL_AGENT_PORT,
           published: '0',
           protocol: 'tcp',
         },
@@ -91,7 +92,7 @@ export const addComposeTunnelAgentService = (
         TLS_SERVERNAME: tunnelOpts.tlsServerName,
         TUNNEL_URL_SUFFIX: urlSuffix,
         PREEVY_ENV_ID: envId,
-        PORT: COMPOSE_TUNNEL_AGENT_SERVICE_PORT.toString(),
+        PORT: COMPOSE_TUNNEL_AGENT_PORT.toString(),
         ...debug ? { DEBUG: '1' } : {},
         HOME: '/preevy',
       },
@@ -104,16 +105,24 @@ export const queryTunnels = async ({
   tunnelUrlsForService,
   credentials,
   includeAccessCredentials,
+  showPreevyService,
 }: {
   tunnelUrlsForService: (service: { name: string; ports: number[] }) => { port: number; url: string }[]
   credentials: { user: string; password: string }
   retryOpts?: retry.Options
   includeAccessCredentials: boolean
+  showPreevyService: boolean
 }) => {
-  const serviceUrl = tunnelUrlsForService({
+  const serviceUrls = tunnelUrlsForService({
     name: COMPOSE_TUNNEL_AGENT_SERVICE_NAME,
-    ports: [COMPOSE_TUNNEL_AGENT_SERVICE_PORT],
-  })[0].url.replace(/\/$/, '')
+    ports: [COMPOSE_TUNNEL_AGENT_PORT],
+  })
+
+  const serviceUrl = serviceUrls.find(({ port }) => port === COMPOSE_TUNNEL_AGENT_PORT)?.url.replace(/\/$/, '')
+
+  if (!serviceUrl) {
+    throw new Error(`Cannot find compose tunnel agent API service URL in: ${util.inspect(serviceUrls)}`)
+  }
 
   const addCredentials = withBasicAuthCredentials(credentials)
   const url = addCredentials(`${serviceUrl}/tunnels`)
@@ -128,7 +137,7 @@ export const queryTunnels = async ({
 
   return {
     tunnels: tunnels
-      .filter(({ service }: Tunnel) => service !== COMPOSE_TUNNEL_AGENT_SERVICE_NAME)
+      .filter(({ service }: Tunnel) => showPreevyService || service !== COMPOSE_TUNNEL_AGENT_SERVICE_NAME)
       .map(tunnel => ({
         ...tunnel,
         ports: mapValues(tunnel.ports, includeAccessCredentials ? addCredentials : (x: string) => x),

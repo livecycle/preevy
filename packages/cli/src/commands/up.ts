@@ -91,6 +91,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       envId,
       tunnelingKey,
       includeAccessCredentials: flags['include-access-credentials'],
+      showPreevyService: flags['show-preevy-service-urls'],
       retryOpts: {
         minTimeout: 1000,
         maxTimeout: 2000,
