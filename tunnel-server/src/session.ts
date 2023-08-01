@@ -10,11 +10,11 @@ function generateInsecureSecret() {
     .slice(0, 32)
 }
 
-export function sessionStore<T>(opts: {domain: string; schema: z.ZodSchema<T>; keys?: string[] }) {
+export function cookieSessionStore<T>(opts: {domain: string; schema: z.ZodSchema<T>; keys?: string[] }) {
   const keys = opts.keys ?? [generateInsecureSecret()]
   return function getSession(
     req: IncomingMessage,
-    res: ServerResponse<IncomingMessage> | undefined,
+    res: ServerResponse<IncomingMessage>,
     thumbprint: string
   ) {
     const cookies = new Cookies(req, res, {
@@ -36,4 +36,4 @@ export function sessionStore<T>(opts: {domain: string; schema: z.ZodSchema<T>; k
   }
 }
 
-export type SessionStore<T> = ReturnType<typeof sessionStore<T>>
+export type SessionStore<T> = ReturnType<typeof cookieSessionStore<T>>

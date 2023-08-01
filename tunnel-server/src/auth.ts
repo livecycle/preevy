@@ -6,6 +6,7 @@ import Cookies from 'cookies'
 import { KeyObject } from 'crypto'
 import type { Logger } from 'pino'
 import { PreviewEnv } from './preview-env'
+import { HttpError } from './http-server-helpers'
 
 export class AuthError extends Error {}
 
@@ -115,10 +116,21 @@ export function authenticator(authenticators: ((req: IncomingMessage)=> Promise<
   }
 }
 
+// TODO: combine with UnauthorizedError
 export const unauthorized = (res: ServerResponse<IncomingMessage>) => {
   res.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"')
   res.statusCode = 401
   res.end('Unauthorized')
+}
+
+export class UnauthorizedError extends HttpError {
+  static status = 401
+  static defaultMessage = 'Unauthorized'
+  constructor(readonly reason: string) {
+    super(UnauthorizedError.status, UnauthorizedError.defaultMessage, undefined, {
+      'WWW-Authenticate': 'Basic realm="Secure Area"',
+    })
+  }
 }
 
 export const getIssuerToKeyDataFromEnv = (env: PreviewEnv, log: Logger): IssuerToKeyData => iss => {

@@ -1,4 +1,4 @@
-import { Logger } from '@preevy/common'
+import { Logger } from 'pino'
 import http from 'node:http'
 import stream from 'node:stream'
 import { inspect } from 'node:util'
@@ -75,8 +75,8 @@ export const errorHandler = (
     ? [err.clientMessage, err.status, err.responseHeaders]
     : [InternalError.defaultMessage, InternalError.status, undefined]
 
-  respondAccordingToAccept(req, res, clientMessage, status)
   Object.entries(responseHeaders || {}).forEach(([k, v]) => res.setHeader(k, v))
+  respondAccordingToAccept(req, res, clientMessage, status)
   log.warn('caught error: %j in %s %s', inspect(err), req.method || '', req.url || '')
 }
 

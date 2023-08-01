@@ -6,25 +6,13 @@ import type { Logger } from 'pino'
 import { inspect } from 'util'
 import { PreviewEnvStore } from './preview-env'
 import { requestsCounter } from './metrics'
-import { Claims, authenticator, JwtAuthenticator, unauthorized, getIssuerToKeyDataFromEnv, AuthenticationResult, AuthError } from './auth'
+import { Claims, authenticator, JwtAuthenticator, getIssuerToKeyDataFromEnv, AuthenticationResult, AuthError, UnauthorizedError } from './auth'
 import { SessionStore } from './session'
+import { BadGatewayError, BadRequestError, errorHandler, errorUpgradeHandler, tryHandler, tryUpgradeHandler } from './http-server-helpers'
 
 export const isProxyRequest = (
   hostname: string,
 ) => (req: IncomingMessage) => Boolean(req.headers.host?.split(':')?.[0]?.endsWith(`.${hostname}`))
-
-function asyncHandler<TArgs extends unknown[]>(
-  fn: (...args: TArgs) => Promise<void>,
-  onError: (error: unknown, ...args: TArgs)=> void,
-) {
-  return async (...args: TArgs) => {
-    try {
-      await fn(...args)
-    } catch (err) {
-      onError(err, ...args)
-    }
-  }
-}
 
 function loginRedirector(loginUrl:string) {
   return (res: ServerResponse<IncomingMessage>, env: string, returnPath?: string) => {
@@ -43,13 +31,13 @@ function loginRedirector(loginUrl:string) {
 export function proxyHandlers({
   envStore,
   loginUrl,
-  sessionManager,
-  logger,
+  sessionStore,
+  log,
 }: {
-  sessionManager: SessionStore<Claims>
+  sessionStore: SessionStore<Claims>
   envStore: PreviewEnvStore
   loginUrl: string
-  logger: Logger
+  log: Logger
 }) {
   const proxy = httpProxy.createProxy({})
   const redirectToLogin = loginRedirector(loginUrl)
@@ -59,38 +47,37 @@ export function proxyHandlers({
     const targetHost = host?.split('.', 1)[0]
     const env = await envStore.get(targetHost as string)
     if (!env) {
-      logger.warn('no env for %j', { targetHost, url })
+      log.warn('no env for %j', { targetHost, url })
       return undefined
     }
     return env
   }
   return {
-    handler: asyncHandler(async (req: IncomingMessage, res: ServerResponse<IncomingMessage>) => {
+    handler: tryHandler({ log }, async (req: IncomingMessage, res: ServerResponse<IncomingMessage>) => {
       const env = await resolveTargetEnv(req)
       if (!env) {
-        res.statusCode = 502
-        res.end()
-        return undefined
+        throw new BadGatewayError()
       }
 
-      const session = sessionManager(req, res, env.publicKeyThumbprint)
+      const session = sessionStore(req, res, env.publicKeyThumbprint)
       if (env.access === 'private') {
         if (!session.user) {
-          const authenticate = authenticator([JwtAuthenticator(getIssuerToKeyDataFromEnv(env, logger))])
+          const authenticate = authenticator([
+            JwtAuthenticator(getIssuerToKeyDataFromEnv(env, log)),
+          ])
           let authResult: AuthenticationResult
           try {
             authResult = await authenticate(req)
           } catch (e) {
             if (e instanceof AuthError) {
-              res.statusCode = 400
-              logger.warn('Auth error %j', inspect(e))
-              res.end(`Auth error: ${e.message}`)
-              return undefined
+              log.warn('Auth error %j', inspect(e))
+              throw new BadRequestError(`Auth error: ${e.message}`)
             }
             throw e
           }
           if (!authResult.isAuthenticated) {
-            return unauthorized(res)
+            log.debug('unauthorized request: %j %j %j', req.url, req.method, req.headers)
+            throw new UnauthorizedError('invalid auth')
           }
           session.set(authResult.claims)
           if (authResult.login && req.method === 'GET') {
@@ -104,11 +91,11 @@ export function proxyHandlers({
         }
 
         if (session.user?.role !== 'admin') {
-          return unauthorized(res)
+          throw new UnauthorizedError('not admin')
         }
       }
 
-      logger.debug('proxying to %j', { target: env.target, url: req.url })
+      log.debug('proxying to %j', { target: env.target, url: req.url })
       requestsCounter.inc({ clientId: env.clientId })
 
       return proxy.web(
@@ -121,29 +108,24 @@ export function proxyHandlers({
             socketPath: env.target,
           },
         },
-        err => {
-          logger.warn('error in proxy %j', { error: err, targetHost: env.target, url: req.url })
-          res.statusCode = 502
-          res.end(`error proxying request: ${(err as unknown as { code: unknown }).code}`)
-        }
+        err => errorHandler(log, err, req, res)
       )
-    }, err => logger.error('error forwarding traffic %j', inspect(err))),
+    }),
 
-    upgradeHandler: asyncHandler(async (req: IncomingMessage, socket: internal.Duplex, head: Buffer) => {
+    upgradeHandler: tryUpgradeHandler({ log }, async (req: IncomingMessage, socket: internal.Duplex, head: Buffer) => {
       const env = await resolveTargetEnv(req)
       if (!env) {
-        logger.warn('env not found for upgrade request %j', req.url)
-        socket.end()
-        return undefined
+        log.warn('env not found for upgrade %j', req.url)
+        throw new BadGatewayError()
       }
 
-      logger.debug('upgrade handler %j', { url: req.url, env, headers: req.headers })
+      log.debug('upgrade handler %j', { url: req.url, env, headers: req.headers })
 
       if (env.access === 'private') {
-        const session = sessionManager(req, undefined, env.clientId)
+        const session = sessionStore(req, undefined as any, env.clientId)
         if (session.user?.role !== 'admin') {
-          socket.end()
-          return undefined
+          log.debug('unauthorized upgrade - not admin %j %j %j', req.url, req.method, req.headers)
+          throw new UnauthorizedError('not admin')
         }
       }
 
@@ -161,9 +143,7 @@ export function proxyHandlers({
               socketPath: env.target,
             },
           },
-          err => {
-            logger.warn('error in ws proxy %j', { error: err, targetHost: env.target, url: req.url })
-          }
+          err => errorUpgradeHandler(log, err, req, socket)
         )
       }
 
@@ -177,9 +157,7 @@ export function proxyHandlers({
         return undefined
       }
 
-      logger.warn('unsupported upgrade: %j', { url: req.url, env, headers: req.headers })
-      socket.end()
-      return undefined
-    }, err => logger.error('error forwarding upgrade traffic %j', { error: err })),
+      throw new BadRequestError('Unsupported upgrade header')
+    }),
   }
 }

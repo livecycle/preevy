@@ -8,11 +8,11 @@ import { Claims, JwtAuthenticator, authenticator, getIssuerToKeyDataFromEnv, una
 import { PreviewEnvStore } from './preview-env'
 import { replaceHostname } from './url'
 
-export const app = ({ isProxyRequest, proxyHandlers, session: sessionManager, baseUrl, envStore, logger }: {
+export const app = ({ isProxyRequest, proxyHandlers, sessionStore, baseUrl, envStore, log }: {
   isProxyRequest: (req: http.IncomingMessage) => boolean
-  logger: Logger
+  log: Logger
   baseUrl: URL
-  session: SessionStore<Claims>
+  sessionStore: SessionStore<Claims>
   envStore: PreviewEnvStore
   proxyHandlers: {
     upgradeHandler: (req: http.IncomingMessage, socket: internal.Duplex, head: Buffer) => void
@@ -24,7 +24,7 @@ export const app = ({ isProxyRequest, proxyHandlers, session: sessionManager, ba
       const { upgradeHandler: proxyUpgradeHandler, handler: proxyHandler } = proxyHandlers
       const server = http.createServer((req, res) => {
         if (req.url !== '/healthz') {
-          logger.debug('request %j', { method: req.method, url: req.url, headers: req.headers })
+          log.debug('request %j', { method: req.method, url: req.url, headers: req.headers })
         }
         if (!req.headers.host?.startsWith('auth.') && isProxyRequest(req)) {
           return proxyHandler(req, res)
@@ -32,18 +32,18 @@ export const app = ({ isProxyRequest, proxyHandlers, session: sessionManager, ba
         return handler(req, res)
       })
         .on('upgrade', (req, socket, head) => {
-          logger.debug('upgrade', req.url)
+          log.debug('upgrade', req.url)
           if (isProxyRequest(req)) {
             return proxyUpgradeHandler(req, socket, head)
           }
 
-          logger.warn('upgrade request %j not found', { url: req.url, host: req.headers.host })
+          log.warn('upgrade request %j not found', { url: req.url, host: req.headers.host })
           socket.end('Not found')
           return undefined
         })
       return server
     },
-    logger,
+    logger: log,
   })
     .register(fastifyRequestContext)
     .get<{Querystring: {env: string; returnPath?: string}}>('/login', {
@@ -67,9 +67,9 @@ export const app = ({ isProxyRequest, proxyHandlers, session: sessionManager, ba
         res.statusCode = 404
         return { error: 'unknown envId' }
       }
-      const session = sessionManager(req.raw, res.raw, env.publicKeyThumbprint)
+      const session = sessionStore(req.raw, res.raw, env.publicKeyThumbprint)
       if (!session.user) {
-        const auth = authenticator([JwtAuthenticator(getIssuerToKeyDataFromEnv(env, logger))])
+        const auth = authenticator([JwtAuthenticator(getIssuerToKeyDataFromEnv(env, log))])
         const result = await auth(req.raw)
         if (!result.isAuthenticated) {
           return unauthorized(res.raw)
