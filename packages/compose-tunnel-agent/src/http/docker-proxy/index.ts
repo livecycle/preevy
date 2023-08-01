@@ -8,7 +8,7 @@ import { findHandler, handlers as wsHandlers } from './ws'
 import { tryHandler, tryUpgradeHandler } from '../http-server-helpers'
 
 export const createDockerProxyHandlers = (
-  { log, dockerSocket, docker}: {
+  { log, dockerSocket, docker }: {
     log: Logger
     dockerSocket: string
     docker: Dockerode
