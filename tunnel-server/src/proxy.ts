@@ -2,9 +2,11 @@ import httpProxy from 'http-proxy'
 import { IncomingMessage, ServerResponse } from 'http'
 import internal from 'stream'
 import type { Logger } from 'pino'
+import { inspect } from 'util'
 import { PreviewEnvStore } from './preview-env'
 import { requestsCounter } from './metrics'
-import { authenticator, tunnelingKeyAuthenticator } from './auth'
+import { Claims, authenticator, JwtAuthenticator, unauthorized, getIssuerToKeyDataFromEnv, AuthenticationResult, AuthError } from './auth'
+import { SessionStore } from './session'
 
 export const isProxyRequest = (
   hostname: string,
@@ -23,20 +25,33 @@ function asyncHandler<TArgs extends unknown[]>(
   }
 }
 
-const unauthorized = (res: ServerResponse<IncomingMessage>) => {
-  res.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"')
-  res.statusCode = 401
-  res.end('Unauthorized')
+function loginRedirector(loginUrl:string) {
+  return (res: ServerResponse<IncomingMessage>, env: string, returnPath?: string) => {
+    res.statusCode = 307
+    const url = new URL(loginUrl)
+    url.searchParams.set('env', env)
+    if (returnPath) {
+      url.searchParams.set('returnPath', returnPath)
+    }
+
+    res.setHeader('location', url.toString())
+    res.end()
+  }
 }
 
 export function proxyHandlers({
   envStore,
+  loginUrl,
+  sessionManager,
   logger,
 }: {
+  sessionManager: SessionStore<Claims>
   envStore: PreviewEnvStore
+  loginUrl: string
   logger: Logger
 }) {
   const proxy = httpProxy.createProxy({})
+  const redirectToLogin = loginRedirector(loginUrl)
   const resolveTargetEnv = async (req: IncomingMessage) => {
     const { url } = req
     const host = req.headers.host?.split(':')?.[0]
@@ -57,17 +72,38 @@ export function proxyHandlers({
         return undefined
       }
 
+      const session = sessionManager(req, res, env.publicKeyThumbprint)
       if (env.access === 'private') {
-        const authenticate = authenticator([tunnelingKeyAuthenticator(env.publicKey)])
-        try {
-          const claims = await authenticate(req)
-          if (!claims) {
+        if (!session.user) {
+          const authenticate = authenticator([JwtAuthenticator(getIssuerToKeyDataFromEnv(env, logger))])
+          let authResult: AuthenticationResult
+          try {
+            authResult = await authenticate(req)
+          } catch (e) {
+            if (e instanceof AuthError) {
+              res.statusCode = 400
+              logger.warn('Auth error %j', inspect(e))
+              res.end(`Auth error: ${e.message}`)
+              return undefined
+            }
+            throw e
+          }
+          if (!authResult.isAuthenticated) {
             return unauthorized(res)
           }
-        } catch (error) {
-          res.statusCode = 400
-          res.end()
-          return undefined
+          session.set(authResult.claims)
+          if (authResult.login && req.method === 'GET') {
+            session.save()
+            redirectToLogin(res, env.hostname, req.url)
+            return undefined
+          }
+          if (authResult.method.type === 'header') {
+            delete req.headers[authResult.method.header]
+          }
+        }
+
+        if (session.user?.role !== 'admin') {
+          return unauthorized(res)
         }
       }
 
@@ -90,8 +126,7 @@ export function proxyHandlers({
           res.end(`error proxying request: ${(err as unknown as { code: unknown }).code}`)
         }
       )
-    }, err => logger.error('error forwarding traffic %j', { error: err })),
-
+    }, err => { logger.error('error forwarding traffic %j', inspect(err)) }),
     wsHandler: asyncHandler(async (req: IncomingMessage, socket: internal.Duplex, head: Buffer) => {
       const env = await resolveTargetEnv(req)
       if (!env) {
@@ -100,9 +135,11 @@ export function proxyHandlers({
       }
 
       if (env.access === 'private') {
-        // need to support session cookie, native browser Websocket api doesn't forward authorization header
-        socket.end()
-        return undefined
+        const session = sessionManager(req, undefined as any, env.clientId)
+        if (session.user?.role !== 'admin') {
+          socket.end()
+          return undefined
+        }
       }
       return proxy.ws(
         req,
