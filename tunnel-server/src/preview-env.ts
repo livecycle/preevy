@@ -11,21 +11,27 @@ export type PreviewEnv = {
 
 export type PreviewEnvStore = {
   get: (key: string) => Promise<PreviewEnv | undefined>
+  getByPkThumbprint: (pkThumbprint: string) => Promise<PreviewEnv[] | undefined>
   set: (key: string, env: PreviewEnv) => Promise<void>
   has: (key: string) => Promise<boolean>
   delete: (key: string) => Promise<boolean>
-  getAll: () => Promise<{[key: string]: PreviewEnv}>
 }
 
-export const inMemoryPreviewEnvStore = (initial?: Record<string, PreviewEnv>): PreviewEnvStore => {
-  const map = new Map<string, PreviewEnv>(Object.entries(initial ?? {}))
+export const inMemoryPreviewEnvStore = (): PreviewEnvStore => {
+  const tunnelNameToEnv = new Map<string, PreviewEnv>()
+  const pkThumbprintToEnv = new Map<string, PreviewEnv[]>()
+
   return {
-    get: async key => map.get(key),
+    get: async key => tunnelNameToEnv.get(key),
+    getByPkThumbprint: async pkThumbprint => pkThumbprintToEnv.get(pkThumbprint),
     set: async (key, value) => {
-      map.set(key, value)
+      tunnelNameToEnv.set(key, value)
+      pkThumbprintToEnv.set(
+        value.publicKeyThumbprint,
+        [...pkThumbprintToEnv.get(value.publicKeyThumbprint) ?? [], value]
+      )
     },
-    has: async key => map.has(key),
-    delete: async key => map.delete(key),
-    getAll: async () => Object.fromEntries< PreviewEnv>(map),
+    has: async key => tunnelNameToEnv.has(key),
+    delete: async key => tunnelNameToEnv.delete(key),
   }
 }

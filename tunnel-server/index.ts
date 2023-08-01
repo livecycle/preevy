@@ -13,7 +13,7 @@ import { appLoggerFromEnv } from './src/logging'
 import { tunnelsGauge, runMetricsServer } from './src/metrics'
 import { numberFromEnv, requiredEnv } from './src/env'
 import { replaceHostname } from './src/url'
-import { sessionManager } from './src/seesion'
+import { session } from './src/seesion'
 import { claimsSchema } from './src/auth'
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
@@ -37,10 +37,10 @@ const BASE_URL = (() => {
 })()
 
 const envStore = inMemoryPreviewEnvStore()
-const appSessionManager = sessionManager({ domain: BASE_URL.hostname, schema: claimsSchema, keys: process.env.COOKIE_SECRETS?.split(' ') })
+const appSessionManager = session({ domain: BASE_URL.hostname, schema: claimsSchema, keys: process.env.COOKIE_SECRETS?.split(' ') })
 const loginUrl = new URL('/login', replaceHostname(BASE_URL, `auth.${BASE_URL.hostname}`)).toString()
 const app = createApp({
-  sessionManager: appSessionManager,
+  session: appSessionManager,
   envStore,
   baseUrl: BASE_URL,
   isProxyRequest: isProxyRequest(BASE_URL.hostname),

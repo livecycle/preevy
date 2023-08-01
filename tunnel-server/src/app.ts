@@ -4,16 +4,16 @@ import http from 'http'
 import internal from 'stream'
 import { Logger } from 'pino'
 import { match } from 'ts-pattern'
-import { SessionManager } from './seesion'
+import { Session } from './seesion'
 import { Claims, JwtAuthenticator, authenticator, getIssuerToKeyDataFromEnv, unauthorized } from './auth'
 import { PreviewEnvStore } from './preview-env'
 import { replaceHostname } from './url'
 
-export const app = ({ isProxyRequest, proxyHandlers, sessionManager, baseUrl, envStore, logger }: {
+export const app = ({ isProxyRequest, proxyHandlers, session: sessionManager, baseUrl, envStore, logger }: {
   isProxyRequest: (req: http.IncomingMessage) => boolean
   logger: Logger
   baseUrl: URL
-  sessionManager: SessionManager<Claims>
+  session: Session<Claims>
   envStore: PreviewEnvStore
   proxyHandlers: {
     wsHandler: (req: http.IncomingMessage, socket: internal.Duplex, head: Buffer) => void

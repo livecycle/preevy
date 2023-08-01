@@ -4,8 +4,8 @@ import internal from 'stream'
 import type { Logger } from 'pino'
 import { PreviewEnvStore } from './preview-env'
 import { requestsCounter } from './metrics'
-import { Claims, authenticator, JwtAuthenticator, unauthorized, envToIssuerToKeyData } from './auth'
-import { SessionManager } from './seesion'
+import { Claims, authenticator, JwtAuthenticator, unauthorized, getIssuerToKeyDataFromEnv } from './auth'
+import { Session } from './seesion'
 
 export const isProxyRequest = (
   hostname: string,
@@ -44,7 +44,7 @@ export function proxyHandlers({
   sessionManager,
   logger,
 }: {
-  sessionManager: SessionManager<Claims>
+  sessionManager: Session<Claims>
   envStore: PreviewEnvStore
   loginUrl: string
   logger: Logger
@@ -74,7 +74,7 @@ export function proxyHandlers({
       const session = sessionManager(req, res, env.publicKeyThumbprint)
       if (env.access === 'private') {
         if (!session.user) {
-          const authenticate = authenticator([JwtAuthenticator(envToIssuerToKeyData(env))])
+          const authenticate = authenticator([JwtAuthenticator(getIssuerToKeyDataFromEnv(env))])
           try {
             const authResult = await authenticate(req)
             if (!authResult.isAuthenticated) {
