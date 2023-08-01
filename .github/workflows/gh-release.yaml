@@ -26,7 +26,7 @@ jobs:
         with:
           oidc: true
       - name: Build using Docker (with depot)
-        run: depot build --project ${{ vars.DEPOT_PROJECT_ID }} --build-arg CLI_TARGET=${{ matrix.platform }}-${{ matrix.arch }}  -f Dockerfile.cli --target=cli --output=type=tar,dest=./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }} --progress=plain  --platform=linux/${{ matrix.arch == 'x64' && 'amd64' || matrix.arch }} .
+        run: mkdir preevy-bin && depot build --project ${{ vars.DEPOT_PROJECT_ID }} --build-arg CLI_TARGET=${{ matrix.platform }}-${{ matrix.arch }}  -f Dockerfile.cli --target=cli --output=type=tar,dest=./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz --progress=plain  --platform=linux/${{ matrix.arch == 'x64' && 'amd64' || matrix.arch }} .
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with: 
