@@ -149,6 +149,7 @@ const up = async ({
     ).stdout.trim()
 
     const remoteModel = addComposeTunnelAgentService({
+      envId,
       debug,
       tunnelOpts,
       urlSuffix: envId,
