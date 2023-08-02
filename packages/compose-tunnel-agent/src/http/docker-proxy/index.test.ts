@@ -176,9 +176,9 @@ describe('docker proxy', () => {
         await send('ls\n')
         await waitForExpect(() => {
           const received = Buffer.concat(receivedBuffers).toString('utf-8')
-          expect(received).toContain('#')
-          expect(received).toContain('ls')
-          expect(received).toContain('bin')
+          expect(received).toMatch(/#/)
+          expect(received).toMatch(/ls/)
+          expect(received).toMatch(/bin/)
         })
         await close()
       })
