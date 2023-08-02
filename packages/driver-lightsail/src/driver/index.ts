@@ -9,7 +9,7 @@ import {
   telemetryEmitter,
   SshMachine, MachineDriver, MachineCreationDriver, MachineCreationDriverFactory, machineResourceType,
   MachineDriverFactory, sshKeysStore, Store,
-  getStoredSshKey, sshDriver, extractDefined, Logger,
+  getStoredSshKey, sshDriver, extractDefined, Logger, machineStatusNodeExporterCommand,
 } from '@preevy/core'
 import createClient, { Client, REGIONS } from './client'
 import { BUNDLE_IDS, BundleId, bundleIdFromString } from './bundle-id'
@@ -99,6 +99,8 @@ const machineDriver = ({
     },
 
     ...sshDriver({ getSshKey: () => getStoredSshKey(store, keyAlias) }),
+
+    machineStatusCommand: machineStatusNodeExporterCommand,
   }
 }
 

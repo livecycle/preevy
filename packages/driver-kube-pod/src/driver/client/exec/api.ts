@@ -2,8 +2,9 @@ import * as k8s from '@kubernetes/client-node'
 import util from 'util'
 import retry from 'p-retry'
 import { readable as isReadableStream } from 'is-stream'
-import { Logger, ProcessOutputBuffers } from '@preevy/core'
+import { Logger } from '@preevy/core'
 import { Writable } from 'stream'
+import { ProcessOutputBuffers } from '@preevy/common'
 import { BaseExecOpts, ExecError, ReadableBufferStream, callbackWritableStream } from './common'
 
 export class WebSocketExecError extends ExecError {

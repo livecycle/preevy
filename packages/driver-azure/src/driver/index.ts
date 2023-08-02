@@ -19,6 +19,7 @@ import {
   getStoredSshKey,
   machineResourceType,
   Logger,
+  machineStatusNodeExporterCommand,
 } from '@preevy/core'
 import { Client, client as createClient, REGIONS } from './client'
 import { CUSTOMIZE_BARE_MACHINE } from './scripts'
@@ -67,7 +68,7 @@ const requireTagValue = (tags: Resource['tags'], key: string) => {
   return tags[key]
 }
 
-const SSH_KEYPAIR_ALIAS = 'default' as const
+const SSH_KEYPAIR_ALIAS = 'azure' as const
 
 const machineFromVm = (
   { publicIPAddress, vm }: {
@@ -123,6 +124,8 @@ const machineDriver = (
   resourcePlurals: {},
 
   ...sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) }),
+
+  machineStatusCommand: machineStatusNodeExporterCommand,
 })
 
 const flags = {
@@ -188,7 +191,7 @@ const machineCreationDriver = (
           vm,
         } = await cl.createVMInstance({
           imageRef: UBUNTU_IMAGE_DETAILS,
-          sshPublicKey: await sshKeysStore(store).upsertKey(SSH_KEYPAIR_ALIAS),
+          sshPublicKey: await sshKeysStore(store).upsertKey(SSH_KEYPAIR_ALIAS, 'rsa'),
           vmSize: vmSize ?? DEFAULT_VM_SIZE,
           envId,
         })

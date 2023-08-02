@@ -13,6 +13,7 @@
     "@kubernetes/client-node": "^0.18.1",
     "@oclif/core": "^2",
     "@preevy/core": "0.0.48",
+    "@preevy/common": "0.0.48",
     "fast-safe-stringify": "^2.1.1",
     "inquirer": "^8.0.0",
     "is-stream": "^2.0.1",

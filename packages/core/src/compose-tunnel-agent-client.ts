@@ -3,6 +3,7 @@ import fetch from 'node-fetch'
 import retry from 'p-retry'
 import util from 'util'
 import { mapValues } from 'lodash'
+import { MachineStatusCommand } from '@preevy/common'
 import { ComposeModel, ComposeService } from './compose/model'
 import { TunnelOpts } from './ssh/url'
 import { Tunnel } from './tunneling'
@@ -39,7 +40,7 @@ export const addBaseComposeTunnelAgentService = (
 })
 
 export const addComposeTunnelAgentService = (
-  { tunnelOpts, sshPrivateKeyPath, knownServerPublicKeyPath, urlSuffix, debug, user, envId }: {
+  { tunnelOpts, sshPrivateKeyPath, knownServerPublicKeyPath, urlSuffix, debug, user, envId, machineStatusCommand }: {
     tunnelOpts: TunnelOpts
     urlSuffix: string
     sshPrivateKeyPath: string
@@ -47,6 +48,7 @@ export const addComposeTunnelAgentService = (
     debug: boolean
     user: string
     envId: string
+    machineStatusCommand?: MachineStatusCommand
   },
   model: ComposeModel,
 ): ComposeModel => ({
@@ -65,6 +67,9 @@ export const addComposeTunnelAgentService = (
           protocol: 'tcp',
         },
       ],
+      // extra_hosts: [
+      //   'host.docker.internal:host-gateway',
+      // ],
       volumes: [
         {
           type: 'bind',
@@ -92,6 +97,7 @@ export const addComposeTunnelAgentService = (
         TLS_SERVERNAME: tunnelOpts.tlsServerName,
         TUNNEL_URL_SUFFIX: urlSuffix,
         PREEVY_ENV_ID: envId,
+        ...machineStatusCommand ? { MACHINE_STATUS_COMMAND: JSON.stringify(machineStatusCommand) } : {},
         PORT: COMPOSE_TUNNEL_AGENT_PORT.toString(),
         ...debug ? { DEBUG: '1' } : {},
         HOME: '/preevy',

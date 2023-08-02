@@ -11,6 +11,7 @@ import {
   sshDriver,
   machineResourceType,
   Logger,
+  machineStatusNodeExporterCommand,
 } from '@preevy/core'
 import createClient, { Client, Instance, availableRegions, defaultProjectId, shortResourceName } from './client'
 import { LABELS } from './labels'
@@ -72,6 +73,8 @@ const machineDriver = (
   resourcePlurals: {},
 
   ...sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) }),
+
+  machineStatusCommand: machineStatusNodeExporterCommand,
 })
 
 const flags = {
