@@ -33,21 +33,23 @@ You can read more about the Preevy [origin story and motivation](/intro/motivati
 
 Preevy is designed to be easy to use, with an API smiliar to [docker-compose](https://docs.docker.com/compose/).
 
-1. Install the CLI globally
+1. Install Preevy CLI globally
 
   ```bash npm2yarn
   npm install -g preevy
   ```
 
-  Or use it directly
+  Or use `npx` to run the CLI without installing it:
 
   ```bash
   npx preevy <command>
   ```
 
-2. Choose the cloud provider you're going to use and configure credentials:
+2. Choose the cloud provider or Kubernetes cluster you want to use, and install the CLI:
    - For AWS: use `aws configure`. See [AWS lightsail credentials configurations](/drivers/aws-lightsail#credentials-configuration).
    - For GCP: use `gcloud auth application-default login`. See [GCP credentials configuration](/drivers/gcp-gce#credentials-configuration)
+   - For Azure: use `az login`. See [Azure credentials configuration](/drivers/azure#credentials-configuration)
+   - For Kubernetes: See [Kubernetes credentials configuration](/drivers/kubernetes#Requirmenets)
 
 3. Set up a profile
 
@@ -55,7 +57,7 @@ Preevy is designed to be easy to use, with an API smiliar to [docker-compose](ht
   preevy init
   ```
 
-4. From the same directory you run `docker compose up` run:
+4. From the same directory your `docker-compose.yml` or `compose.yml` file is located, run:
 
   ```bash
   preevy up
@@ -63,9 +65,9 @@ Preevy is designed to be easy to use, with an API smiliar to [docker-compose](ht
 <br />
 
 :::info Cloud provider credentials
-Managing and provisioning preview environments in Preevy, requires access and credentials to a cloud provider. Currently AWS and GCP are supported, but more providers are [coming soon](/roadmap#more-cloud-drivers).
+Managing and provisioning preview environments in Preevy, requires access and credentials to a cloud provider or Kubernetes cluster. Currently AWS, GCP, Azure and Kubernetes are supported, but more providers are [coming soon](/roadmap#more-cloud-drivers).
 Once you install and initialize your cloud provider CLI, Preevy will recognize and employ your configuration settings.
 
 
-For more info, see [AWS lightsail credentials configurations](/drivers/aws-lightsail#credentials-configuration), or [GCP credentials configuration](/drivers/gcp-gce#credentials-configuration)
+For more info, see [AWS lightsail credentials configurations](/drivers/aws-lightsail#credentials-configuration), [GCP credentials configuration](/drivers/gcp-gce#credentials-configuration), [Azure credentials configuration](/drivers/azure#credentials-configuration) and [Kubernetes credentials configuration](/drivers/kubernetes#Requirmenets).
 :::
