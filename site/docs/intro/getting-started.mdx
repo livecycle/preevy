@@ -19,19 +19,23 @@ import { Logo } from "@site/src/components/Logo";
 
 <span style={{ fontSize: "x-large" }}>
   Provision <span style={{ fontStyle: "italic" }}>preview environments</span>{" "}
-  for docker-compose applications with minimal configuration
+  for Docker Compose applications with minimal configuration
 </span>
 
 ## Introduction
 
-Use Preevy to provision your [docker-compose](https://docs.docker.com/compose/) application with minimal configurations.<br/>
+Use Preevy to provision your [Docker Compose](https://docs.docker.com/compose/) application with minimal configurations.<br/>
 Simply run `preevy up`, and Preevy will return a public URL for every service in your configuration.
 
 You can read more about the Preevy [origin story and motivation](/intro/motivation).
 
+## Prerequisites
+
+-  Docker and Docker Compose V2 installed.
+
 ## Getting Started
 
-Preevy is designed to be easy to use, with an API smiliar to [docker-compose](https://docs.docker.com/compose/).
+Preevy is designed to be easy to use, with an API smiliar to [Docker Compose](https://docs.docker.com/compose/).
 
 1. Install Preevy CLI globally
 
@@ -45,11 +49,11 @@ Preevy is designed to be easy to use, with an API smiliar to [docker-compose](ht
   npx preevy <command>
   ```
 
-2. Choose the cloud provider or Kubernetes cluster you want to use, and install the CLI:
+2. Choose the cloud provider or Kubernetes cluster you're going to use and configure credentials:
    - For AWS: use `aws configure`. See [AWS lightsail credentials configurations](/drivers/aws-lightsail#credentials-configuration).
    - For GCP: use `gcloud auth application-default login`. See [GCP credentials configuration](/drivers/gcp-gce#credentials-configuration)
    - For Azure: use `az login`. See [Azure credentials configuration](/drivers/azure#credentials-configuration)
-   - For Kubernetes: See [Kubernetes credentials configuration](/drivers/kubernetes#Requirements)
+   - For Kubernetes: See [Kubernetes credentials configuration](/drivers/kube-pod#requirements)
 
 3. Set up a profile
 
@@ -57,7 +61,7 @@ Preevy is designed to be easy to use, with an API smiliar to [docker-compose](ht
   preevy init
   ```
 
-4. From the same directory your `docker-compose.yml` or `compose.yml` file is located, run:
+4. From the same directory where your `docker-compose.yml` or `compose.yml` file is located, run the command below, ensuring Docker is running:
 
   ```bash
   preevy up
@@ -69,5 +73,5 @@ Managing and provisioning preview environments in Preevy, requires access and cr
 Once you install and initialize your cloud provider CLI, Preevy will recognize and employ your configuration settings.
 
 
-For more info, see [AWS lightsail credentials configurations](/drivers/aws-lightsail#credentials-configuration), [GCP credentials configuration](/drivers/gcp-gce#credentials-configuration), [Azure credentials configuration](/drivers/azure#credentials-configuration) and [Kubernetes credentials configuration](/drivers/kubernetes#Requirmenets).
+For more info, see [AWS lightsail credentials configurations](/drivers/aws-lightsail#credentials-configuration), [GCP credentials configuration](/drivers/gcp-gce#credentials-configuration), [Azure credentials configuration](/drivers/azure#credentials-configuration) and [Kubernetes credentials configuration](/drivers/kube-pod#requirements).
 :::
