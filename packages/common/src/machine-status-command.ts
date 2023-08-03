@@ -7,6 +7,6 @@ export type DockerMachineStatusCommandRecipe = {
 }
 
 export type MachineStatusCommand = {
-  recipe: DockerMachineStatusCommandRecipe & { type: 'docker'}
+  recipe: DockerMachineStatusCommandRecipe & { type: 'docker' }
   contentType: string
 }
