@@ -29,4 +29,5 @@ jobs:
 
         echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > .npmrc
 
-        yarn lerna publish --no-private -y --loglevel debug -c
+        BRANCH=$(echo "${{ github.head_ref }}" | sed 's/[^a-zA-Z0-9_-]/_/g')
+        yarn lerna publish --no-private -y --loglevel debug --canary --preid="${BRANCH}" --dist-tag="${BRANCH}"
