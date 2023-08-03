@@ -24,7 +24,7 @@
   },
   "scripts": {
     "lint": "eslint . --ext .ts,.tsx --cache",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "build": "tsc -b",
     "prepack": "yarn clean && yarn build",
     "prepare": "cd ../.. && husky install"
