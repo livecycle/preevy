@@ -60,7 +60,7 @@ export function proxyHandlers({
       }
 
       const session = sessionStore(req, res, env.publicKeyThumbprint)
-      if (env.access === 'private') {
+      if (env.access === 'private' && req.method !== 'OPTIONS') {
         if (!session.user) {
           const authenticate = authenticator([
             JwtAuthenticator(getIssuerToKeyDataFromEnv(env, log)),
