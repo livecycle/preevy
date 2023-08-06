@@ -40,7 +40,17 @@ export const addBaseComposeTunnelAgentService = (
 })
 
 export const addComposeTunnelAgentService = (
-  { tunnelOpts, sshPrivateKeyPath, knownServerPublicKeyPath, urlSuffix, debug, user, envId, machineStatusCommand }: {
+  {
+    tunnelOpts,
+    sshPrivateKeyPath,
+    knownServerPublicKeyPath,
+    urlSuffix,
+    debug,
+    user,
+    envId,
+    machineStatusCommand,
+    envMetadata,
+  }: {
     tunnelOpts: TunnelOpts
     urlSuffix: string
     sshPrivateKeyPath: string
@@ -49,6 +59,7 @@ export const addComposeTunnelAgentService = (
     user: string
     envId: string
     machineStatusCommand?: MachineStatusCommand
+    envMetadata?: Record<string, unknown>
   },
   model: ComposeModel,
 ): ComposeModel => ({
@@ -67,9 +78,6 @@ export const addComposeTunnelAgentService = (
           protocol: 'tcp',
         },
       ],
-      // extra_hosts: [
-      //   'host.docker.internal:host-gateway',
-      // ],
       volumes: [
         {
           type: 'bind',
@@ -99,6 +107,7 @@ export const addComposeTunnelAgentService = (
         PREEVY_ENV_ID: envId,
         PORT: COMPOSE_TUNNEL_AGENT_PORT.toString(),
         ...machineStatusCommand ? { MACHINE_STATUS_COMMAND: JSON.stringify(machineStatusCommand) } : {},
+        ...envMetadata ? { ENV_METADATA: JSON.stringify(envMetadata) } : {},
         ...debug ? { DEBUG: '1' } : {},
         HOME: '/preevy',
       },

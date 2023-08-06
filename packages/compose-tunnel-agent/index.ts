@@ -80,6 +80,10 @@ const machineStatusCommand = process.env.MACHINE_STATUS_COMMAND
   ? JSON.parse(process.env.MACHINE_STATUS_COMMAND) as MachineStatusCommand
   : undefined
 
+const envMetadata = process.env.ENV_METADATA
+  ? JSON.parse(process.env.ENV_METADATA) as Record<string, unknown>
+  : undefined
+
 const log = pino({
   level: process.env.DEBUG || process.env.DOCKER_PROXY_DEBUG ? 'debug' : 'info',
 }, pinoPretty({ destination: pino.destination(process.stderr) }))
@@ -139,6 +143,7 @@ const main = async () => {
       machineStatus: machineStatusCommand
         ? async () => await runMachineStatusCommand({ log, docker })(machineStatusCommand)
         : undefined,
+      envMetadata,
     }),
     dockerProxyHandlers: createDockerProxyHandlers({
       log: log.child({ name: 'docker-proxy' }),

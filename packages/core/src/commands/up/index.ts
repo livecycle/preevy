@@ -14,6 +14,7 @@ import { remoteProjectDir } from '../../remote-files'
 import { Logger } from '../../log'
 import { tunnelUrlsForEnv } from '../../tunneling'
 import { FileToCopy, uploadWithSpinner } from '../../upload-files'
+import { detectEnvMetadata } from '../../env-metadata'
 
 const createCopiedFileInDataDir = (
   { projectLocalDataDir, filesToCopy } : {
@@ -157,6 +158,7 @@ const up = async ({
       knownServerPublicKeyPath: path.join(remoteDir, knownServerPublicKey.remote),
       user,
       machineStatusCommand: await machineDriver.machineStatusCommand(machine),
+      envMetadata: await detectEnvMetadata(),
     }, fixedModel)
 
     const modelStr = yaml.stringify(remoteModel)
