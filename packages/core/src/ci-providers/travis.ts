@@ -7,6 +7,7 @@ export const travisCiProvider = (): CiProvider => ({
   telemetryId: 'travis',
   currentlyRunningInProvider: () => Boolean(process.env.CI && process.env.TRAVIS),
   branchName: () => (process.env.TRAVIS_TAG ? undefined : process.env.TRAVIS_BRANCH),
+  gitCommit: () => process.env.TRAVIS_COMMIT as string,
   pullRequestNumber: () => (process.env.TRAVIS_PULL_REQUEST && process.env.TRAVIS_PULL_REQUEST !== 'false'
     ? nanToUndefined(Number(process.env.TRAVIS_PULL_REQUEST))
     : undefined),
