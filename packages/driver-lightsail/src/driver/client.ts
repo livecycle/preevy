@@ -129,10 +129,8 @@ const client = ({
           ls.startInstance({ instanceName: instance.name })
         )
       }
-      return await extractDefined(
-        ls.getInstance({ instanceName: instance.name }),
-        'instance'
-      )
+      const updatedInstance = await ls.getInstance({ instanceName: instance.name })
+      return extractDefined(updatedInstance, 'instance')
     },
 
     createKeyPair: async ({ alias }: { alias: string }) => {
@@ -207,7 +205,8 @@ const client = ({
         ],
       })
 
-      return await extractDefined(ls.getInstance({ instanceName: name }), 'instance')
+      const instance = await ls.getInstance({ instanceName: name })
+      return extractDefined(instance, 'instance')
     },
 
     findInstanceSnapshot: async ({

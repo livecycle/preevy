@@ -85,8 +85,8 @@ const apply = (
 ) => {
   const filteredSpecs = s.map(normalizeSpec).map(filter).filter(booleanFilter)
 
-  const concurrencyFunc = strategy.concurrent
-    ? (factories: (() => Promise<T>)[]) => Promise.all(factories.map(f => f()))
+  const concurrencyFunc: (factories: (() => Promise<T>)[]) => Promise<T[]> = strategy.concurrent
+    ? factories => Promise.all(factories.map(f => f()))
     : pSeries
 
   return await concurrencyFunc(filteredSpecs.map(spec => async () => {

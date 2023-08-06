@@ -8,10 +8,14 @@ export const fsFromUrl = async (url: string, localBaseDir: string) => {
     return localFsFromUrl(localBaseDir, url)
   }
   if (fsType === 's3') {
-    return await s3fs(url)
+    // workaround for false positive eslint error on rule @typescript-eslint/return-await on Windows only
+    const result = await s3fs(url)
+    return result
   }
   if (fsType === 'gs') {
-    return await googleCloudStorageFs(url)
+    // workaround for false positive eslint error on rule @typescript-eslint/return-await on Windows only
+    const result = await googleCloudStorageFs(url)
+    return result
   }
   throw new Error(`Unsupported URL type: ${fsType}`)
 }

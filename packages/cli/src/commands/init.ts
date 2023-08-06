@@ -53,27 +53,26 @@ export default class Init extends BaseCommand {
           }])
       }
 
-      const { driver } = await inquirer.prompt<{
-          driver: DriverName
-        }>([
-          {
-            type: 'list',
-            name: 'driver',
-            message: 'Which cloud provider do you want to use?',
-            choices: [
-              { value: 'lightsail', name: 'AWS Lightsail' },
-              { value: 'gce', name: 'Google Compute Engine' },
-              { value: 'azure', name: 'Microsoft Azure Virtual Machines' },
-              { value: 'kube-pod', name: 'Kubernetes' },
-            ],
-          }])
+      const { driver } = await inquirer.prompt([
+        {
+          type: 'list',
+          name: 'driver',
+          message: 'Which cloud provider do you want to use?',
+          choices: [
+            { value: 'lightsail', name: 'AWS Lightsail' },
+            { value: 'gce', name: 'Google Compute Engine' },
+            { value: 'azure', name: 'Microsoft Azure Virtual Machines' },
+            { value: 'kube-pod', name: 'Kubernetes' },
+          ],
+        },
+      ]) as { driver: DriverName }
 
       const driverStatic = machineDrivers[driver]
 
       const driverAnswers = await inquirer.prompt<Record<string, unknown>>(await driverStatic.questions())
       const driverFlags = await driverStatic.flagsFromAnswers(driverAnswers) as Record<string, unknown>
 
-      const { locationType } = await inquirer.prompt<{ locationType: string }>([
+      const { locationType } = await inquirer.prompt([
         {
           type: 'list',
           name: 'locationType',
@@ -89,7 +88,7 @@ export default class Init extends BaseCommand {
 
       let location: string
       if (locationType === 's3') {
-        const { region, bucket } = await inquirer.prompt<{ region: string; bucket: string }>([
+        const { region, bucket } = await inquirer.prompt([
           {
             type: 'list',
             name: 'region',
@@ -112,7 +111,7 @@ export default class Init extends BaseCommand {
 
         location = `s3://${bucket}?region=${region}`
       } else if (locationType === 'gs') {
-        const { project, bucket } = await inquirer.prompt<{ project: string; bucket: string }>([
+        const { project, bucket } = await inquirer.prompt([
           {
             type: 'input',
             name: 'project',
