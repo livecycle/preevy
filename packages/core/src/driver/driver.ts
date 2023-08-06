@@ -40,6 +40,7 @@ export type MachineDriver<
     stdio: PartialStdioOptions,
   ) => Promise<{ code: number } | { signal: string }>
 
+  listMachines: () => AsyncIterableIterator<Machine | PartialMachine>
   listDeletableResources: () => AsyncIterableIterator<Resource<ResourceType>>
   deleteResources: (wait: boolean, ...resource: Resource<string>[]) => Promise<void>
   machineStatusCommand: (machine: MachineBase) => Promise<MachineStatusCommand | undefined>
