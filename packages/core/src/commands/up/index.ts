@@ -156,6 +156,7 @@ const up = async ({
       sshPrivateKeyPath: path.join(remoteDir, sshPrivateKeyFile.remote),
       knownServerPublicKeyPath: path.join(remoteDir, knownServerPublicKey.remote),
       user,
+      machineStatusCommand: await machineDriver.machineStatusCommand(machine),
     }, fixedModel)
 
     const modelStr = yaml.stringify(remoteModel)

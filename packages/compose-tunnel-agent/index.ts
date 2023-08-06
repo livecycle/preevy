@@ -7,13 +7,14 @@ import { rimraf } from 'rimraf'
 import pino from 'pino'
 import pinoPretty from 'pino-pretty'
 import { EOL } from 'os'
-import { ConnectionCheckResult, requiredEnv, checkConnection, formatPublicKey, parseSshUrl, SshConnectionConfig, tunnelNameResolver } from '@preevy/common'
+import { ConnectionCheckResult, requiredEnv, checkConnection, formatPublicKey, parseSshUrl, SshConnectionConfig, tunnelNameResolver, MachineStatusCommand } from '@preevy/common'
 import createDockerClient from './src/docker'
 import createApiServerHandler from './src/http/api-server'
 import { sshClient as createSshClient } from './src/ssh'
 import { createDockerProxyHandlers } from './src/http/docker-proxy'
 import { tryHandler, tryUpgradeHandler } from './src/http/http-server-helpers'
 import { httpServerHandlers } from './src/http'
+import { runMachineStatusCommand } from './src/machine-status'
 
 const homeDir = process.env.HOME || '/root'
 const dockerSocket = '/var/run/docker.sock'
@@ -75,6 +76,10 @@ const formatConnectionCheckResult = (
 
 const writeLineToStdout = (s: string) => [s, EOL].forEach(d => process.stdout.write(d))
 
+const machineStatusCommand = process.env.MACHINE_STATUS_COMMAND
+  ? JSON.parse(process.env.MACHINE_STATUS_COMMAND) as MachineStatusCommand
+  : undefined
+
 const log = pino({
   level: process.env.DEBUG || process.env.DOCKER_PROXY_DEBUG ? 'debug' : 'info',
 }, pinoPretty({ destination: pino.destination(process.stderr) }))
@@ -131,6 +136,9 @@ const main = async () => {
     apiHandler: createApiServerHandler({
       log: log.child({ name: 'api' }),
       currentSshState: async () => (await currentTunnels),
+      machineStatus: machineStatusCommand
+        ? async () => await runMachineStatusCommand({ log, docker })(machineStatusCommand)
+        : undefined,
     }),
     dockerProxyHandlers: createDockerProxyHandlers({
       log: log.child({ name: 'docker-proxy' }),

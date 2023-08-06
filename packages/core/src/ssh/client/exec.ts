@@ -1,7 +1,8 @@
 import ssh2 from 'ssh2'
 import { readable as isReadableStream } from 'is-stream'
+import { orderedOutput } from '@preevy/common'
 import { ExecResult, CommandExecuter, commandWith, checkResult, execResultFromOrderedOutput } from '../../command-executer'
-import { orderedOutput, outputFromStdio } from '../../child-process'
+import { outputFromStdio } from '../../child-process'
 
 export const execCommand = (
   ssh: ssh2.Client,
