@@ -15,16 +15,31 @@ const callbackWritableStream = (onWrite: (chunk: Buffer) => void) => new Writabl
   },
 })
 
+const resolveInterpolation = ({ env, log }: { env: NodeJS.ProcessEnv; log: Logger }) => (
+  s: string,
+) => s.replaceAll(
+  /\$\{([a-zA-Z][a-zA-Z0-9_]+)\}/g,
+  (_, varName) => {
+    const varValue = env[varName]
+    if (varValue === undefined) {
+      log.warn('Missing environment variable "%s", replacing with empty string', varName)
+    }
+    return varValue ?? ''
+  },
+)
+
 const runDockerMachineStatusCommand = (
-  { log, docker }: {
+  { log, docker, env: processEnv }: {
     log: Logger
     docker: Dockerode
+    env: NodeJS.ProcessEnv
   },
 ) => {
   const isNotFoundError = (err: unknown) => (err as { statusCode?: unknown }).statusCode === 404
+  const envResolve = resolveInterpolation({ log, env: processEnv })
 
   return async (
-    { image, command, tty, entrypoint, network }: DockerMachineStatusCommandRecipe
+    { image, command, tty, entrypoint, network, env, bindMounts }: DockerMachineStatusCommandRecipe
   ) => {
     const output: ProcessOutputBuffers = []
     const stdoutStream = callbackWritableStream(data => output.push({ stream: 'stdout', data }))
@@ -33,8 +48,10 @@ const runDockerMachineStatusCommand = (
     const run = async () => await docker.run(image, command as string[], [stdoutStream, stderrStream], {
       ...(tty !== undefined ? { Tty: false } : {}),
       ...(entrypoint !== undefined ? { Entrypoint: entrypoint } : {}),
+      ...(env !== undefined) ? { Env: Object.entries(env).map(([k, v]) => `${k}=${envResolve(v)}`) } : {},
       HostConfig: {
         AutoRemove: true,
+        Binds: bindMounts,
         ...(network !== undefined ? { NetworkMode: network } : {}),
       },
     })
@@ -57,12 +74,13 @@ const runDockerMachineStatusCommand = (
 }
 
 export const runMachineStatusCommand = (
-  { log, docker }: {
+  { log, docker, env }: {
     log: Logger
     docker: Dockerode
+    env: NodeJS.ProcessEnv
   }
 ) => {
-  const runDocker = runDockerMachineStatusCommand({ log, docker })
+  const runDocker = runDockerMachineStatusCommand({ log, docker, env })
   return async (
     { recipe: run, contentType }: MachineStatusCommand,
   ) => {

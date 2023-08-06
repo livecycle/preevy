@@ -29,9 +29,12 @@ const isTTY = (s: Readable | Writable) => (s as unknown as { isTTY: boolean }).i
 export const machineConnection = async (
   client: Client,
   machine: DeploymentMachine,
+  log: Logger,
 ): Promise<MachineConnection> => {
   const { deployment } = machine as DeploymentMachine
+  log.debug(`Connecting to deployment "${deployment.metadata?.namespace}/${deployment.metadata?.name}"`)
   const pod = await client.findReadyPodForDeployment(deployment)
+  log.debug(`Found pod "${pod.metadata?.name}"`)
 
   return ({
     close: async () => undefined,
@@ -62,7 +65,7 @@ export const machineConnection = async (
 }
 
 const machineDriver = (
-  { client }: DriverContext,
+  { client, log }: DriverContext,
 ): MachineDriver<DeploymentMachine, ResourceType> => ({
   friendlyName: 'Kubernetes single Pod',
 
@@ -99,7 +102,35 @@ const machineDriver = (
     return await client.exec(opts)
   },
 
-  connect: machine => machineConnection(client, machine as DeploymentMachine),
+  connect: machine => machineConnection(client, machine as DeploymentMachine, log),
+
+  machineStatusCommand: async machine => {
+    const pod = await client.findReadyPodForDeployment((machine as DeploymentMachine).deployment)
+    const apiServiceAddress = await client.apiServiceClusterAddress()
+    if (!apiServiceAddress) {
+      log.warn('API service not found for cluster')
+      return undefined
+    }
+    const [apiServiceHost, apiServicePort] = apiServiceAddress
+
+    return ({
+      contentType: 'application/vnd.kubectl-top-pod-containers',
+      recipe: {
+        type: 'docker',
+        command: ['top', 'pod', '--containers', '--no-headers', extractName(pod)],
+        image: 'rancher/kubectl:v1.26.7',
+        network: 'host',
+        tty: false,
+        env: {
+          KUBERNETES_SERVICE_HOST: apiServiceHost,
+          KUBERNETES_SERVICE_PORT: apiServicePort.toString(),
+        },
+        bindMounts: [
+          '/var/run/secrets/kubernetes.io/serviceaccount:/var/run/secrets/kubernetes.io/serviceaccount',
+        ],
+      },
+    })
+  },
 })
 
 export const flags = {
@@ -114,7 +145,7 @@ export const flags = {
     env: 'KUBECONFIG',
   }),
   context: Flags.string({
-    description: 'Path to kubeconfig file (will load config from defaults if not specified)',
+    description: 'Path to kubeconfig context (will load config from defaults if not specified)',
     required: false,
     env: 'KUBE_CONTEXT',
   }),

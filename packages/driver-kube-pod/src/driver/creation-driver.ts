@@ -18,7 +18,7 @@ export const flags = {
 export type MachineCreationFlagTypes = Omit<Interfaces.InferredFlags<typeof flags>, 'json'>
 
 const machineCreationDriver = (
-  { client, serverSideApply }: MachineCreationDriverContext,
+  { client, serverSideApply, log }: MachineCreationDriverContext,
 ): MachineCreationDriver<DeploymentMachine> => ({
   createMachine: async ({ envId }) => {
     const startTime = new Date().getTime()
@@ -27,10 +27,11 @@ const machineCreationDriver = (
     return ({
       fromSnapshot: true,
       result: (async () => {
+        log.debug('create machine', { envId, serverSideApply })
         const deployment = await client.createEnv(envId, { serverSideApply })
         const machine = machineFromDeployment(deployment)
         telemetryEmitter().capture('kube-pod create machine end', { elapsed_sec: (new Date().getTime() - startTime) / 1000 })
-        const connection = await machineConnection(client, machine)
+        const connection = await machineConnection(client, machine, log)
         return { machine, connection }
       })(),
     })

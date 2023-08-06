@@ -137,7 +137,7 @@ const main = async () => {
       log: log.child({ name: 'api' }),
       currentSshState: async () => (await currentTunnels),
       machineStatus: machineStatusCommand
-        ? async () => await runMachineStatusCommand({ log, docker })(machineStatusCommand)
+        ? async () => await runMachineStatusCommand({ log, docker, env: process.env })(machineStatusCommand)
         : undefined,
     }),
     dockerProxyHandlers: createDockerProxyHandlers({

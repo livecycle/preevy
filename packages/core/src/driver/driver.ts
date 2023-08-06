@@ -42,7 +42,7 @@ export type MachineDriver<
 
   listDeletableResources: () => AsyncIterableIterator<Resource<ResourceType>>
   deleteResources: (wait: boolean, ...resource: Resource<string>[]) => Promise<void>
-  machineStatusCommand?: MachineStatusCommand
+  machineStatusCommand: (machine: MachineBase) => Promise<MachineStatusCommand | undefined>
 }
 
 export type MachineCreationDriver<Machine extends MachineBase = MachineBase> = {

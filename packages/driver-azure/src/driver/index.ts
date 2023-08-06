@@ -125,7 +125,7 @@ const machineDriver = (
 
   ...sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) }),
 
-  machineStatusCommand: machineStatusNodeExporterCommand,
+  machineStatusCommand: async () => machineStatusNodeExporterCommand,
 })
 
 const flags = {

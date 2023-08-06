@@ -148,7 +148,6 @@ const up = async ({
       await exec('echo "$(id -u):$(stat -c %g /var/run/docker.sock)"')
     ).stdout.trim()
 
-    log.debug('machineStatusCommand: %j', machineDriver.machineStatusCommand)
     const remoteModel = addComposeTunnelAgentService({
       envId,
       debug,
@@ -157,7 +156,7 @@ const up = async ({
       sshPrivateKeyPath: path.join(remoteDir, sshPrivateKeyFile.remote),
       knownServerPublicKeyPath: path.join(remoteDir, knownServerPublicKey.remote),
       user,
-      machineStatusCommand: machineDriver.machineStatusCommand,
+      machineStatusCommand: await machineDriver.machineStatusCommand(machine),
     }, fixedModel)
 
     const modelStr = yaml.stringify(remoteModel)

@@ -100,7 +100,7 @@ const machineDriver = ({
 
     ...sshDriver({ getSshKey: () => getStoredSshKey(store, keyAlias) }),
 
-    machineStatusCommand: machineStatusNodeExporterCommand,
+    machineStatusCommand: async () => machineStatusNodeExporterCommand,
   }
 }
 
