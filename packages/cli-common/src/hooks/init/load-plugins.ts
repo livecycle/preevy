@@ -1,7 +1,7 @@
-import { Hook as OclifHook, Command } from '@oclif/core'
+import { Hook as OclifHook, Command, Flags } from '@oclif/core'
 import { Parser } from '@oclif/core/lib/parser/parse'
 import { Config, Topic } from '@oclif/core/lib/interfaces'
-import { localComposeClient, ComposeModel, resolveComposeFiles } from '@preevy/core'
+import { localComposeClient, ComposeModel, resolveComposeFiles, withSpinner } from '@preevy/core'
 import { composeFlags } from '../../lib/flags'
 import { addPluginFlags, loadPlugins, hooksFromPlugins, addPluginCommands } from '../../lib/plugins'
 
@@ -10,9 +10,15 @@ type InternalConfig = Config & {
   loadTopics: (plugin: { topics: Topic[]; commands: Command.Loadable[] }) => void
 }
 
+const excludedCommandIds = ['init', 'version', /^profile:/, 'ls']
+
 export const initHook: OclifHook<'init'> = async function hook({ config, id, argv }) {
+  if (id && excludedCommandIds.some(excluded => (typeof excluded === 'string' ? excluded === id : excluded.test(id)))) {
+    return
+  }
+
   const { flags, raw } = await new Parser({
-    flags: { ...composeFlags },
+    flags: { ...composeFlags, json: Flags.boolean() },
     strict: false,
     args: {},
     context: undefined,
@@ -23,10 +29,15 @@ export const initHook: OclifHook<'init'> = async function hook({ config, id, arg
     systemFiles: flags['system-compose-file'],
   })
 
-  const userModelOrError = await localComposeClient({
-    composeFiles,
-    projectName: flags.project,
-  }).getModelOrError()
+  const userModelOrError = await withSpinner(
+    async () => await localComposeClient({
+      composeFiles,
+      projectName: flags.project,
+    }).getModelOrError(),
+    {
+      text: `Loading compose file${composeFiles.length > 1 ? 's' : ''}: ${composeFiles.join(', ')}`,
+    },
+  )
 
   const userModel = userModelOrError instanceof Error ? {} as ComposeModel : userModelOrError
   const preevyConfig = userModel['x-preevy'] ?? {}

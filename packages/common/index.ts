@@ -1,12 +1,11 @@
 export {
-  checkConnection,
   formatPublicKey,
   parseKey,
   parseSshUrl,
   keyFingerprint,
   formatSshConnectionConfig,
-  ConnectionCheckResult, SshConnectionConfig, HelloResponse,
-  baseSshClient, SshClientOpts,
+  SshConnectionConfig, HelloResponse,
+  baseSshClient, BaseSshClient, SshClientOpts,
 } from './src/ssh'
 
 export {

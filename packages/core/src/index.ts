@@ -21,9 +21,9 @@ export {
 export { profileStore, Profile, ProfileStore } from './profile'
 export { telemetryEmitter, registerEmitter, wireProcessExit, createTelemetryEmitter } from './telemetry'
 export { fsTypeFromUrl, Store, VirtualFS, localFsFromUrl } from './store'
-export { localComposeClient, ComposeModel, resolveComposeFiles } from './compose'
+export { localComposeClient, ComposeModel, resolveComposeFiles, getExposedTcpServicePorts } from './compose'
 export { withSpinner } from './spinner'
-export { findAmbientEnvId } from './env-id'
+export { findEnvId } from './env-id'
 export { sshKeysStore } from './state'
 export { connectSshClient, generateSshKeyPair, SshKeyPairType } from './ssh'
 export {
@@ -48,8 +48,12 @@ export {
   flattenTunnels,
   HostKeySignatureConfirmer,
   createTunnelingKey,
-  performTunnelConnectionCheck,
+  connectToTunnelServerSsh,
+  getTunnelNamesToServicePorts,
 } from './tunneling'
+export { TunnelOpts } from './ssh'
+export { Spinner } from './spinner'
+export { withClosable } from './closable'
 export { generateBasicAuthCredentials as getUserCredentials, jwtGenerator } from './credentials'
 export { ciProviders, detectCiProvider } from './ci-providers'
 export { paginationIterator } from './pagination'

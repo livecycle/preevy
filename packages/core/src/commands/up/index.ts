@@ -4,15 +4,13 @@ import path from 'path'
 import { rimraf } from 'rimraf'
 import yaml from 'yaml'
 import { TunnelOpts } from '../../ssh'
-import { ComposeModel, fixModelForRemote, getExposedTcpServicePorts, localComposeClient, resolveComposeFiles } from '../../compose'
+import { fixModelForRemote, localComposeClient, resolveComposeFiles } from '../../compose'
 import { ensureCustomizedMachine } from './machine'
 import { wrapWithDockerSocket } from '../../docker'
-import { findAmbientEnvId } from '../../env-id'
 import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addComposeTunnelAgentService } from '../../compose-tunnel-agent-client'
 import { MachineCreationDriver, MachineDriver, MachineBase } from '../../driver'
 import { remoteProjectDir } from '../../remote-files'
 import { Logger } from '../../log'
-import { tunnelUrlsForEnv } from '../../tunneling'
 import { FileToCopy, uploadWithSpinner } from '../../upload-files'
 import { envMetadata } from '../../env-metadata'
 
@@ -51,26 +49,19 @@ const calcComposeArgs = ({ userSpecifiedServices, debug, cwd } : {
 }
 
 const serviceLinkEnvVars = (
-  userModel: Pick<ComposeModel, 'services'>,
-  tunnelUrlsForService: (servicePorts: { name: string; ports: number[] }) => { port: number; url: string }[],
+  expectedServiceUrls: { name: string; port: number; url: string }[],
 ) => Object.fromEntries(
-  getExposedTcpServicePorts(userModel)
-    .flatMap(servicePorts => tunnelUrlsForService(servicePorts)
-      .map(({ port, url }) => ({ port, url, name: servicePorts.name })))
+  expectedServiceUrls
     .map(({ name, port, url }) => [`PREEVY_BASE_URI_${name.replace(/[^a-zA-Z0-9_]/g, '_')}_${port}`.toUpperCase(), url])
 )
 
 const up = async ({
-  clientId,
-  rootUrl,
   debug,
   machineDriver,
   machineDriverName,
   machineCreationDriver,
   tunnelOpts,
-  userModel,
   userSpecifiedProjectName,
-  userSpecifiedEnvId,
   userSpecifiedServices,
   userSpecifiedComposeFiles,
   systemComposeFiles,
@@ -81,17 +72,16 @@ const up = async ({
   cwd,
   skipUnchangedFiles,
   version,
+  envId,
+  expectedServiceUrls,
+  normalizedProjectName,
 }: {
-  clientId: string
-  rootUrl: string
   debug: boolean
   machineDriver: MachineDriver
   machineDriverName: string
   machineCreationDriver: MachineCreationDriver
   tunnelOpts: TunnelOpts
-  userModel: ComposeModel
   userSpecifiedProjectName: string | undefined
-  userSpecifiedEnvId: string | undefined
   userSpecifiedServices: string[]
   userSpecifiedComposeFiles: string[]
   systemComposeFiles: string[]
@@ -102,18 +92,11 @@ const up = async ({
   cwd: string
   skipUnchangedFiles: boolean
   version: string
-}): Promise<{ machine: MachineBase; envId: string }> => {
-  const projectName = userSpecifiedProjectName ?? userModel.name
-  const remoteDir = remoteProjectDir(projectName)
-
-  const envId = userSpecifiedEnvId || (await findAmbientEnvId(projectName))
-  log.info(`Using environment ID: ${envId}`)
-
-  // We start by getting the user model without injecting Preevy's environment
-  // variables (e.g. `PREEVY_BASE_URI_BACKEND_3000`) so we can have the list of services
-  // required to create said variables
-  const tunnelUrlsForService = tunnelUrlsForEnv({ envId, rootUrl: new URL(rootUrl), clientId })
-  const composeEnv = { ...serviceLinkEnvVars(userModel, tunnelUrlsForService) }
+  envId: string
+  expectedServiceUrls: { name: string; port: number; url: string }[]
+  normalizedProjectName: string
+}): Promise<{ machine: MachineBase }> => {
+  const remoteDir = remoteProjectDir(normalizedProjectName)
 
   const composeFiles = await resolveComposeFiles({
     userSpecifiedFiles: userSpecifiedComposeFiles,
@@ -122,18 +105,18 @@ const up = async ({
 
   log.debug(`Using compose files: ${composeFiles.join(', ')}`)
 
-  // Now that we have the generated variables, we can create a new client and inject
-  // them into it, to create the actual compose configurations
-  const composeClientWithInjectedArgs = localComposeClient(
-    { composeFiles, env: composeEnv, projectName: userSpecifiedProjectName }
-  )
+  const composeClientWithInjectedArgs = localComposeClient({
+    composeFiles,
+    env: serviceLinkEnvVars(expectedServiceUrls),
+    projectName: userSpecifiedProjectName,
+  })
 
   const { model: fixedModel, filesToCopy } = await fixModelForRemote(
     { cwd, remoteBaseDir: remoteDir },
     await composeClientWithInjectedArgs.getModel()
   )
 
-  const projectLocalDataDir = path.join(dataDir, projectName)
+  const projectLocalDataDir = path.join(dataDir, normalizedProjectName)
   await rimraf(projectLocalDataDir)
 
   const createCopiedFile = createCopiedFileInDataDir({ projectLocalDataDir, filesToCopy })
@@ -153,7 +136,6 @@ const up = async ({
       envId,
       debug,
       tunnelOpts,
-      urlSuffix: envId,
       sshPrivateKeyPath: path.join(remoteDir, sshPrivateKeyFile.remote),
       knownServerPublicKeyPath: path.join(remoteDir, knownServerPublicKey.remote),
       user: userAndGroup.join(':'),
@@ -171,17 +153,21 @@ const up = async ({
 
     await uploadWithSpinner(exec, remoteDir, filesToCopy, skipUnchangedFiles)
 
-    const compose = localComposeClient({ composeFiles: [composeFilePath], projectName })
+    const compose = localComposeClient({
+      composeFiles: [composeFilePath],
+      projectName: userSpecifiedProjectName,
+    })
     const composeArgs = calcComposeArgs({ userSpecifiedServices, debug, cwd })
 
     const withDockerSocket = wrapWithDockerSocket({ connection, log })
-    log.debug('Running compose up with args: ', composeArgs)
+
+    log.info(`Running: docker compose up ${composeArgs.join(' ')}`)
     await withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit' }))
   } finally {
     await connection.close()
   }
 
-  return { envId, machine }
+  return { machine }
 }
 
 export default up

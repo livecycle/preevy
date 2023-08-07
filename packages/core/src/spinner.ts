@@ -26,6 +26,7 @@ export const withSpinner = async <T>(
   fn: (spinner: Spinner) => Promise<T>,
   opts: SpinnerOptions & {
     successText?: (string) | ((result: T) => string) | ((result: T) => Promise<string>)
+    disable?: boolean
   } = {},
 ) => {
   const s = spinner(opts)

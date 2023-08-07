@@ -180,7 +180,6 @@ export const ensureCustomizedMachine = async ({
   const { machine, connection: connectionPromise, origin } = await ensureMachine(
     { machineDriver, machineCreationDriver, envId, log, debug },
   )
-
   return await withSpinner(async spinner => {
     spinner.text = `Connecting to machine at ${machine.locationDescription}`
     const connection = await connectionPromise

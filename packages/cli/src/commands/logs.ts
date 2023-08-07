@@ -3,7 +3,7 @@ import { Args, ux } from '@oclif/core'
 import {
   isPartialMachine,
   COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addBaseComposeTunnelAgentService,
-  findAmbientEnvId, localComposeClient, wrapWithDockerSocket,
+  localComposeClient, wrapWithDockerSocket, findEnvId,
 } from '@preevy/core'
 import DriverCommand from '../driver-command'
 import { envIdFlags } from '../common-flags'
@@ -32,16 +32,17 @@ export default class Logs extends DriverCommand<typeof Logs> {
     const { flags, raw } = await this.parse(Logs)
     const restArgs = raw.filter(arg => arg.type === 'arg').map(arg => arg.input)
     const driver = await this.driver()
+    const userModel = await this.ensureUserModel()
 
-    const projectName = (await this.ensureUserModel()).name
-    log.debug(`project: ${projectName}`)
-    const envId = flags.id || await findAmbientEnvId(projectName)
-    log.debug(`envId: ${envId}`)
-
-    const model = await this.ensureUserModel()
+    const { envId } = await findEnvId({
+      userSpecifiedEnvId: flags.id,
+      userSpecifiedProjectName: flags.project,
+      userModel,
+      log: log.debug,
+    })
 
     // exclude docker proxy service unless explicitly specified
-    const modelServices = Object.keys(model.services ?? {})
+    const modelServices = Object.keys(userModel.services ?? {})
 
     const services = restArgs.length ? restArgs : modelServices
 
@@ -59,12 +60,12 @@ export default class Logs extends DriverCommand<typeof Logs> {
     const connection = await driver.connect(machine, { log, debug: flags.debug })
 
     try {
+      const compose = localComposeClient({
+        composeFiles: Buffer.from(yaml.stringify(addBaseComposeTunnelAgentService(userModel))),
+        projectName: flags.project,
+      })
+
       const withDockerSocket = wrapWithDockerSocket({ connection, log })
-
-      const compose = localComposeClient(
-        { composeFiles: Buffer.from(yaml.stringify(addBaseComposeTunnelAgentService(model))), projectName }
-      )
-
       await withDockerSocket(() => compose.spawnPromise(['logs', ...services], { stdio: 'inherit' }))
     } finally {
       await connection.close()
