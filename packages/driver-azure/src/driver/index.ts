@@ -92,12 +92,8 @@ const machineFromVm = (
 
 const machineDriver = (
   { store, client: cl }: DriverContext,
-): MachineDriver<SshMachine, ResourceType> => ({
-  customizationScripts: CUSTOMIZE_BARE_MACHINE,
-  friendlyName: 'Microsoft Azure',
-  getMachine: async ({ envId }) => await cl.getInstance(envId).then(vm => machineFromVm(vm)),
-
-  listDeletableResources: () => asyncMap(
+): MachineDriver<SshMachine, ResourceType> => {
+  const listMachines = () => asyncMap(
     rg => cl.getInstanceByRg(rg.name as string).then(vm => {
       if (vm) {
         return machineFromVm(vm)
@@ -110,23 +106,32 @@ const machineDriver = (
       }
     }),
     cl.listResourceGroups()
-  ),
+  )
 
-  deleteResources: async (wait, ...resources) => {
-    await Promise.all(resources.map(({ type, providerId }) => {
-      if (type === machineResourceType) {
-        return cl.deleteResourcesResourceGroup(providerId, wait)
-      }
-      throw new Error(`Unknown resource type "${type}"`)
-    }))
-  },
+  return ({
+    customizationScripts: CUSTOMIZE_BARE_MACHINE,
+    friendlyName: 'Microsoft Azure',
+    getMachine: async ({ envId }) => await cl.getInstance(envId).then(vm => machineFromVm(vm)),
 
-  resourcePlurals: {},
+    listMachines,
+    listDeletableResources: listMachines,
 
-  ...sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) }),
+    deleteResources: async (wait, ...resources) => {
+      await Promise.all(resources.map(({ type, providerId }) => {
+        if (type === machineResourceType) {
+          return cl.deleteResourcesResourceGroup(providerId, wait)
+        }
+        throw new Error(`Unknown resource type "${type}"`)
+      }))
+    },
 
-  machineStatusCommand: async () => machineStatusNodeExporterCommand,
-})
+    resourcePlurals: {},
+
+    ...sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) }),
+
+    machineStatusCommand: async () => machineStatusNodeExporterCommand,
+  })
+}
 
 const flags = {
   region: Flags.string({

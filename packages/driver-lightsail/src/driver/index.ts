@@ -48,6 +48,8 @@ const machineDriver = ({
 }: DriverContext): MachineDriver<SshMachine, ResourceType> => {
   const keyAlias = region
 
+  const listMachines = () => asyncMap(machineFromInstance, client.listInstances())
+
   return {
     friendlyName: 'AWS Lightsail',
     customizationScripts: CUSTOMIZE_BARE_MACHINE,
@@ -57,11 +59,9 @@ const machineDriver = ({
       return instance && machineFromInstance(instance)
     },
 
+    listMachines,
     listDeletableResources: () => {
-      const machines = asyncMap(
-        machineFromInstance,
-        client.listInstances(),
-      )
+      const machines = listMachines()
 
       const snapshots = asyncMap(
         ({ name }) => ({ type: 'snapshot' as ResourceType, providerId: name as string }),
