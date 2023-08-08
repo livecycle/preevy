@@ -5,6 +5,7 @@ import {
 } from '@preevy/core'
 import { tunnelServerFlags } from '@preevy/cli-common'
 import { inspect } from 'util'
+import { withSpinner } from '@preevy/core/src/spinner'
 import { tunnelServerHello } from '../tunnel-server-client'
 import MachineCreationDriverCommand from '../machine-creation-driver-command'
 import { envIdFlags, urlFlags } from '../common-flags'
@@ -51,11 +52,14 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       insecureSkipVerify: flags['insecure-skip-verify'],
     }
 
-    const { hostKey, clientId, rootUrl } = await tunnelServerHello({
-      tunnelingKey,
-      knownServerPublicKeys: pStore.knownServerPublicKeys,
-      tunnelOpts,
-      log: this.logger,
+    const { clientId, rootUrl, hostKey } = await withSpinner(async spinner => {
+      spinner.text = 'Getting tunnel server details...'
+      return await tunnelServerHello({
+        tunnelingKey,
+        knownServerPublicKeys: pStore.knownServerPublicKeys,
+        tunnelOpts,
+        log: this.logger,
+      })
     })
 
     telemetryEmitter().group({ type: 'profile' }, { proxy_client_id: clientId })
@@ -85,19 +89,22 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
     this.log(`Preview environment ${envId} provisioned at: ${machine.locationDescription}`)
 
-    const flatTunnels = await commands.urls({
-      rootUrl,
-      clientId,
-      envId,
-      tunnelingKey,
-      includeAccessCredentials: flags['include-access-credentials'],
-      showPreevyService: flags['show-preevy-service-urls'],
-      retryOpts: {
-        minTimeout: 1000,
-        maxTimeout: 2000,
-        retries: 10,
-        onFailedAttempt: e => { this.logger.debug(`Failed to query tunnels: ${inspect(e)}`) },
-      },
+    const flatTunnels = await withSpinner(async spinner => {
+      spinner.text = 'Getting tunnel URLs...'
+      return await commands.urls({
+        rootUrl,
+        clientId,
+        envId,
+        tunnelingKey,
+        includeAccessCredentials: flags['include-access-credentials'],
+        showPreevyService: flags['show-preevy-service-urls'],
+        retryOpts: {
+          minTimeout: 1000,
+          maxTimeout: 2000,
+          retries: 10,
+          onFailedAttempt: e => { this.logger.debug(`Failed to query tunnels: ${inspect(e)}`) },
+        },
+      })
     })
 
     const urls = await filterUrls({
