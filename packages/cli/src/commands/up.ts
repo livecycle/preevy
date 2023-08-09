@@ -2,10 +2,10 @@ import { Args, Flags, ux } from '@oclif/core'
 import {
   commands, profileStore,
   telemetryEmitter,
+  withSpinner,
 } from '@preevy/core'
 import { tunnelServerFlags } from '@preevy/cli-common'
 import { inspect } from 'util'
-import { withSpinner } from '@preevy/core/src/spinner'
 import { tunnelServerHello } from '../tunnel-server-client'
 import MachineCreationDriverCommand from '../machine-creation-driver-command'
 import { envIdFlags, urlFlags } from '../common-flags'
