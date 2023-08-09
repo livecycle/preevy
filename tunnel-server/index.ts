@@ -3,6 +3,7 @@ import url from 'url'
 import path from 'path'
 import pino from 'pino'
 import { createPublicKey } from 'crypto'
+import { calculateJwkThumbprintUri, exportJWK } from 'jose'
 import { app as createApp } from './src/app'
 import { inMemoryPreviewEnvStore } from './src/preview-env'
 import { sshServer as createSshServer } from './src/ssh-server'
@@ -12,6 +13,8 @@ import { appLoggerFromEnv } from './src/logging'
 import { tunnelsGauge, runMetricsServer } from './src/metrics'
 import { numberFromEnv, requiredEnv } from './src/env'
 import { replaceHostname } from './src/url'
+import { cookieSessionStore } from './src/session'
+import { claimsSchema } from './src/auth'
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
@@ -34,11 +37,15 @@ const BASE_URL = (() => {
 })()
 
 const envStore = inMemoryPreviewEnvStore()
-
+const appSessionStore = cookieSessionStore({ domain: BASE_URL.hostname, schema: claimsSchema, keys: process.env.COOKIE_SECRETS?.split(' ') })
+const loginUrl = new URL('/login', replaceHostname(BASE_URL, `auth.${BASE_URL.hostname}`)).toString()
 const app = createApp({
+  sessionStore: appSessionStore,
+  envStore,
+  baseUrl: BASE_URL,
   isProxyRequest: isProxyRequest(BASE_URL.hostname),
-  proxyHandlers: proxyHandlers({ envStore, logger }),
-  logger,
+  proxyHandlers: proxyHandlers({ envStore, log: logger, loginUrl, sessionStore: appSessionStore }),
+  log: logger,
 })
 const sshLogger = logger.child({ name: 'ssh_server' })
 
@@ -59,7 +66,7 @@ const sshServer = createSshServer({
   socketDir: '/tmp', // TODO
 })
   .on('client', client => {
-    const { clientId, publicKey } = client
+    const { clientId, publicKey, envId } = client
     const tunnels = new Map<string, string>()
     client
       .on('forward', async (requestId, { path: remotePath, access }, accept, reject) => {
@@ -70,11 +77,16 @@ const sshServer = createSshServer({
         }
         const forward = await accept()
         sshLogger.debug('creating tunnel %s for localSocket %s', key, forward.localSocketPath)
+        const pk = createPublicKey(publicKey.getPublicPEM())
+
         await envStore.set(key, {
+          envId,
           target: forward.localSocketPath,
           clientId,
-          publicKey: createPublicKey(publicKey.getPublicPEM()),
+          publicKey: pk,
           access,
+          hostname: key,
+          publicKeyThumbprint: await calculateJwkThumbprintUri(await exportJWK(pk)),
         })
         tunnels.set(requestId, tunnelUrl(BASE_URL, clientId, remotePath))
         tunnelsGauge.inc({ clientId })

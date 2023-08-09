@@ -1,4 +1,5 @@
 import { AddressInfo } from 'net'
+import { MachineStatusCommand } from '@preevy/common'
 import { PartialStdioOptions } from '../child-process'
 import { CommandExecuter } from '../command-executer'
 import { Profile } from '../profile'
@@ -39,8 +40,10 @@ export type MachineDriver<
     stdio: PartialStdioOptions,
   ) => Promise<{ code: number } | { signal: string }>
 
+  listMachines: () => AsyncIterableIterator<Machine | PartialMachine>
   listDeletableResources: () => AsyncIterableIterator<Resource<ResourceType>>
   deleteResources: (wait: boolean, ...resource: Resource<string>[]) => Promise<void>
+  machineStatusCommand: (machine: MachineBase) => Promise<MachineStatusCommand | undefined>
 }
 
 export type MachineCreationDriver<Machine extends MachineBase = MachineBase> = {

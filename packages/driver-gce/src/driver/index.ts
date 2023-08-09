@@ -11,6 +11,7 @@ import {
   sshDriver,
   machineResourceType,
   Logger,
+  machineStatusNodeExporterCommand,
 } from '@preevy/core'
 import createClient, { Client, Instance, availableRegions, defaultProjectId, shortResourceName } from './client'
 import { LABELS } from './labels'
@@ -49,30 +50,34 @@ const machineFromInstance = (
   }
 }
 
-const machineDriver = (
-  { store, client }: DriverContext,
-): MachineDriver<SshMachine, ResourceType> => ({
-  friendlyName: 'Google Cloud',
+const machineDriver = ({ store, client }: DriverContext): MachineDriver<SshMachine, ResourceType> => {
+  const listMachines = () => asyncMap(machineFromInstance, client.listInstances())
 
-  getMachine: async ({ envId }) => {
-    const instance = await client.findInstance(envId)
-    return instance && machineFromInstance(instance)
-  },
+  return ({
+    friendlyName: 'Google Cloud',
 
-  listDeletableResources: () => asyncMap(machineFromInstance, client.listInstances()),
-  deleteResources: async (wait, ...resources) => {
-    await Promise.all(resources.map(({ type, providerId }) => {
-      if (type === 'machine') {
-        return client.deleteInstance(providerId, wait)
-      }
-      throw new Error(`Unknown resource type: "${type}"`)
-    }))
-  },
+    getMachine: async ({ envId }) => {
+      const instance = await client.findInstance(envId)
+      return instance && machineFromInstance(instance)
+    },
 
-  resourcePlurals: {},
+    listMachines,
+    listDeletableResources: listMachines,
 
-  ...sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) }),
-})
+    deleteResources: async (wait, ...resources) => {
+      await Promise.all(resources.map(({ type, providerId }) => {
+        if (type === 'machine') {
+          return client.deleteInstance(providerId, wait)
+        }
+        throw new Error(`Unknown resource type: "${type}"`)
+      }))
+    },
+
+    resourcePlurals: {},
+    ...sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) }),
+    machineStatusCommand: async () => machineStatusNodeExporterCommand,
+  })
+}
 
 const flags = {
   'project-id': Flags.string({

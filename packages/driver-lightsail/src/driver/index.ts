@@ -9,7 +9,7 @@ import {
   telemetryEmitter,
   SshMachine, MachineDriver, MachineCreationDriver, MachineCreationDriverFactory, machineResourceType,
   MachineDriverFactory, sshKeysStore, Store,
-  getStoredSshKey, sshDriver, extractDefined, Logger,
+  getStoredSshKey, sshDriver, extractDefined, Logger, machineStatusNodeExporterCommand,
 } from '@preevy/core'
 import createClient, { Client, REGIONS } from './client'
 import { BUNDLE_IDS, BundleId, bundleIdFromString } from './bundle-id'
@@ -48,6 +48,8 @@ const machineDriver = ({
 }: DriverContext): MachineDriver<SshMachine, ResourceType> => {
   const keyAlias = region
 
+  const listMachines = () => asyncMap(machineFromInstance, client.listInstances())
+
   return {
     friendlyName: 'AWS Lightsail',
     customizationScripts: CUSTOMIZE_BARE_MACHINE,
@@ -57,11 +59,9 @@ const machineDriver = ({
       return instance && machineFromInstance(instance)
     },
 
+    listMachines,
     listDeletableResources: () => {
-      const machines = asyncMap(
-        machineFromInstance,
-        client.listInstances(),
-      )
+      const machines = listMachines()
 
       const snapshots = asyncMap(
         ({ name }) => ({ type: 'snapshot' as ResourceType, providerId: name as string }),
@@ -99,6 +99,8 @@ const machineDriver = ({
     },
 
     ...sshDriver({ getSshKey: () => getStoredSshKey(store, keyAlias) }),
+
+    machineStatusCommand: async () => machineStatusNodeExporterCommand,
   }
 }
 

@@ -7,6 +7,7 @@ export const azurePipelinesCiProvider = (): CiProvider => ({
   telemetryId: 'azurepipelines',
   currentlyRunningInProvider: () => Boolean(process.env.BUILD_DEFINITIONNAME),
   branchName: () => process.env.BUILD_SOURCEBRANCHNAME,
+  gitCommit: () => process.env.BUILD_SOURCEVERSION as string,
   pullRequestNumber: () => stringOrUndefinedToNumber(
     process.env.SYSTEM_PULLREQUEST_PULLREQUESTNUMBER || process.env.SYSTEM_PULLREQUEST_PULLREQUESTID,
   ),

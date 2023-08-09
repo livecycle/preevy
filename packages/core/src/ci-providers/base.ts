@@ -3,6 +3,7 @@ export type CiProvider = {
   telemetryId: string
   currentlyRunningInProvider: () => boolean
   branchName: () => string | undefined
+  gitCommit: () => string
   pullRequestNumber: () => number | undefined
   repoUrl: () => string | undefined
 }
