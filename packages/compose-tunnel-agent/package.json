@@ -37,6 +37,7 @@
     "jest": "^29.4.3",
     "lint-staged": "^13.1.2",
     "node-fetch": "2.6.9",
+    "shx": "^0.3.3",
     "tsx": "^3.12.3",
     "typescript": "^5.0.4",
     "wait-for-expect": "^3.0.2"
@@ -45,7 +46,7 @@
     "start": "node out/index.js",
     "dev": "tsx watch ./index.ts",
     "lint": "eslint . --ext .ts,.tsx --cache",
-    "clean": "rm -rf dist out",
+    "clean": "shx rm -rf dist out",
     "build": "yarn tsc --noEmit && node build.mjs",
     "prepack": "yarn build",
     "prepare": "cd ../.. && husky install",
