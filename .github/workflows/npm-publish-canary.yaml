@@ -20,15 +20,22 @@ jobs:
 
     - run: yarn
 
-    - name: npm publish
+    - name: Set NPM token
       env:
         NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       run: |
+        echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> .npmrc
+
+    - name: Set git identity
+      run: |
+        # version git commit is not pushed, so this just needs to be configured
+        git config user.email "$(git log -1 --format='%ae')"
+        git config user.name "$(git log -1 --format='%an')"
+
+    - name: npm publish
+      run: |
         set -eou pipefail
         set -x
-
-        # npm auth
-        echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > .npmrc
 
         # this will be the NPM dist-tag
         GIT_ID=$(echo "${{ github.head_ref }}" | sed 's/[^a-zA-Z0-9_-]/_/g')
