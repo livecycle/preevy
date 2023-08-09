@@ -133,6 +133,7 @@ const machineCreationDriver = (
   const ssh = sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) })
 
   return ({
+    metadata: { machineType },
     createMachine: async ({ envId }) => {
       const startTime = new Date().getTime()
       telemetryEmitter().capture('google compute engine create machine start', { machine_type: machineType })

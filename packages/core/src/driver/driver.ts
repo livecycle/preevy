@@ -6,6 +6,7 @@ import { Profile } from '../profile'
 import { MachineBase, PartialMachine, Resource, SpecDiffItem } from './machine'
 import { Store } from '../store'
 import { Logger } from '../log'
+import { EnvDriverMetadata } from '../env-metadata'
 
 export type ForwardOutStreamLocal = {
   localSocket: string | AddressInfo
@@ -22,6 +23,8 @@ export type MachineConnection = {
   dockerSocket: () => Promise<ForwardSocket>
   close: () => Promise<void>
 }
+
+export type MachineMetadata = Omit<EnvDriverMetadata, 'machineLocationDescription' | 'driver'>
 
 export type MachineDriver<
   Machine extends MachineBase = MachineBase,
@@ -47,6 +50,7 @@ export type MachineDriver<
 }
 
 export type MachineCreationDriver<Machine extends MachineBase = MachineBase> = {
+  metadata: Record<string, unknown>
   createMachine: (args: {
     envId: string
   }) => Promise<{ fromSnapshot: boolean; result: Promise<{ machine: Machine; connection: MachineConnection }> }>

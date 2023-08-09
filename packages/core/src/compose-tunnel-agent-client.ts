@@ -3,11 +3,13 @@ import fetch from 'node-fetch'
 import retry from 'p-retry'
 import util from 'util'
 import { mapValues } from 'lodash'
-import { MachineStatusCommand } from '@preevy/common'
+import { MachineStatusCommand, dateReplacer } from '@preevy/common'
 import { ComposeModel, ComposeService } from './compose/model'
 import { TunnelOpts } from './ssh/url'
 import { Tunnel } from './tunneling'
 import { withBasicAuthCredentials } from './url'
+import { driverMetadataFilename } from './env-metadata'
+import { REMOTE_DIR_BASE } from './remote-files'
 
 export const COMPOSE_TUNNEL_AGENT_SERVICE_NAME = 'preevy_proxy'
 export const COMPOSE_TUNNEL_AGENT_PORT = 3000
@@ -39,6 +41,8 @@ export const addBaseComposeTunnelAgentService = (
   },
 })
 
+const metadataDirectory = '/preevy/metadata'
+
 export const addComposeTunnelAgentService = (
   {
     tunnelOpts,
@@ -59,7 +63,7 @@ export const addComposeTunnelAgentService = (
     user: string
     envId: string
     machineStatusCommand?: MachineStatusCommand
-    envMetadata?: Record<string, unknown>
+    envMetadata: Record<string, unknown>
   },
   model: ComposeModel,
 ): ComposeModel => ({
@@ -98,6 +102,13 @@ export const addComposeTunnelAgentService = (
           read_only: true,
           bind: { create_host_path: true },
         },
+        {
+          type: 'bind',
+          source: `${REMOTE_DIR_BASE}/${driverMetadataFilename}`,
+          target: `${metadataDirectory}/${driverMetadataFilename}`,
+          read_only: true,
+          bind: { create_host_path: true },
+        },
       ],
       user,
       environment: {
@@ -107,7 +118,8 @@ export const addComposeTunnelAgentService = (
         PREEVY_ENV_ID: envId,
         PORT: COMPOSE_TUNNEL_AGENT_PORT.toString(),
         ...machineStatusCommand ? { MACHINE_STATUS_COMMAND: JSON.stringify(machineStatusCommand) } : {},
-        ...envMetadata ? { ENV_METADATA: JSON.stringify(envMetadata) } : {},
+        ENV_METADATA: JSON.stringify(envMetadata, dateReplacer),
+        ENV_METADATA_FILES: `${metadataDirectory}/${driverMetadataFilename}`,
         ...debug ? { DEBUG: '1' } : {},
         HOME: '/preevy',
       },

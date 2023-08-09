@@ -20,6 +20,7 @@ export type MachineCreationFlagTypes = Omit<Interfaces.InferredFlags<typeof flag
 const machineCreationDriver = (
   { client, serverSideApply, log }: MachineCreationDriverContext,
 ): MachineCreationDriver<DeploymentMachine> => ({
+  metadata: { serverSideApply },
   createMachine: async ({ envId }) => {
     const startTime = new Date().getTime()
     telemetryEmitter().capture('kube-pod create machine start', {})

@@ -180,11 +180,12 @@ const contextFromFlags = ({
 const DEFAULT_VM_SIZE = 'Standard_B2s'
 
 const machineCreationDriver = (
-  { client: cl, vmSize, store, log, debug }: MachineCreationContext,
+  { client: cl, vmSize, store, log, debug, resourceGroupId }: MachineCreationContext,
 ): MachineCreationDriver<SshMachine> => {
   const ssh = sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) })
 
   return {
+    metadata: { vmSize, resourceGroupId },
     createMachine: async ({ envId }) => ({
       fromSnapshot: false,
       result: (async () => {

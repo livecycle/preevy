@@ -1,13 +1,18 @@
 import { EOL } from 'os'
 import retry from 'p-retry'
+import { dateReplacer } from '@preevy/common'
 import { withSpinner } from '../../spinner'
 import { MachineCreationDriver, SpecDiffItem, MachineDriver, MachineConnection, MachineBase, isPartialMachine, machineResourceType } from '../../driver'
 import { telemetryEmitter } from '../../telemetry'
 import { Logger } from '../../log'
 import { scriptExecuter } from '../../remote-script-executer'
+import { EnvMetadata, driverMetadataFilename } from '../../env-metadata'
+import { REMOTE_DIR_BASE } from '../../remote-files'
 
 const machineDiffText = (diff: SpecDiffItem[]) => diff
   .map(({ name, old, new: n }) => `* ${name}: ${old} -> ${n}`).join(EOL)
+
+type Origin = 'existing' | 'new-from-snapshot' | 'new-from-scratch'
 
 const ensureMachine = async ({
   machineDriver,
@@ -21,7 +26,7 @@ const ensureMachine = async ({
   envId: string
   log: Logger
   debug: boolean
-}) => {
+}): Promise<{ machine: MachineBase; origin: Origin; connection: Promise<MachineConnection> }> => {
   log.debug('checking for existing machine')
   const existingMachine = await machineCreationDriver.getMachineAndSpecDiff({ envId })
 
@@ -37,7 +42,7 @@ const ensureMachine = async ({
       } else {
         return {
           machine: existingMachine,
-          installed: true,
+          origin: 'existing',
           connection: machineDriver.connect(existingMachine, { log, debug }),
         }
       }
@@ -63,7 +68,7 @@ const ensureMachine = async ({
     return {
       machine,
       connection: Promise.resolve(connection),
-      installed: machineCreation.fromSnapshot,
+      origin: machineCreation.fromSnapshot ? 'new-from-snapshot' : 'new-from-scratch',
     }
   }, {
     opPrefix: `${recreating ? 'Recreating' : 'Creating'} ${machineDriver.friendlyName} machine`,
@@ -71,20 +76,41 @@ const ensureMachine = async ({
   })
 }
 
+const writeMetadata = async (
+  machine: MachineBase,
+  machineDriverName: string,
+  driverOpts: Record<string, unknown>,
+  connection: MachineConnection
+) => {
+  const metadata: Pick<EnvMetadata, 'driver'> = {
+    driver: {
+      creationTime: new Date(),
+      machineLocationDescription: machine.locationDescription,
+      driver: machineDriverName,
+      opts: driverOpts,
+    },
+  }
+  await connection.exec(`mkdir -p "${REMOTE_DIR_BASE}" && cat > "${REMOTE_DIR_BASE}/${driverMetadataFilename}"`, {
+    stdin: Buffer.from(JSON.stringify(metadata, dateReplacer)),
+  })
+}
+
 export const ensureCustomizedMachine = async ({
   machineDriver,
   machineCreationDriver,
+  machineDriverName,
   envId,
   log,
   debug,
 }: {
   machineDriver: MachineDriver
   machineCreationDriver: MachineCreationDriver
+  machineDriverName: string
   envId: string
   log: Logger
   debug: boolean
 }): Promise<{ machine: MachineBase; connection: MachineConnection }> => {
-  const { machine, connection: connectionPromise, installed } = await ensureMachine(
+  const { machine, connection: connectionPromise, origin } = await ensureMachine(
     { machineDriver, machineCreationDriver, envId, log, debug },
   )
 
@@ -93,7 +119,7 @@ export const ensureCustomizedMachine = async ({
     { text: `Connecting to machine at ${machine.locationDescription}` },
   )
 
-  if (installed) {
+  if (origin === 'existing') {
     return { machine, connection }
   }
 
@@ -123,11 +149,14 @@ export const ensureCustomizedMachine = async ({
         }
       )
 
-      await machineCreationDriver.ensureMachineSnapshot({
-        providerId: machine.providerId,
-        envId,
-        wait: false,
-      })
+      await Promise.all([
+        writeMetadata(machine, machineDriverName, machineCreationDriver.metadata, connection),
+        machineCreationDriver.ensureMachineSnapshot({
+          providerId: machine.providerId,
+          envId,
+          wait: false,
+        }),
+      ])
     }, { opPrefix: 'Configuring machine', successText: 'Machine configured' })
   } catch (e) {
     await connection.close()

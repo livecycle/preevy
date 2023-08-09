@@ -3,7 +3,7 @@ import { detectCiProvider } from './ci-providers'
 
 export type GitAuthor = { name: string; email: string }
 
-export type GitMetadata = {
+export type EnvGitMetadata = {
   branch?: string
   commit: string
   author: GitAuthor
@@ -11,11 +11,23 @@ export type GitMetadata = {
   pullRequestNumber?: number
 }
 
-export type EnvMetadata = {
-  git?: GitMetadata
+export const driverMetadataFilename = 'driver-metadata.json'
+
+export type EnvDriverMetadata = {
+  driver: string
+  opts: Record<string, unknown>
+  machineLocationDescription: string
+  creationTime: Date
 }
 
-const detectGitMetadata = async (): Promise<GitMetadata | undefined> => {
+export type EnvMetadata = {
+  git?: EnvGitMetadata
+  driver: EnvDriverMetadata
+  lastDeployTime: Date
+  version: string
+}
+
+const detectGitMetadata = async (): Promise<EnvGitMetadata | undefined> => {
   const ciProvider = detectCiProvider()
   const branch = await git.gitBranchName()
   if (!branch) {
@@ -32,6 +44,8 @@ const detectGitMetadata = async (): Promise<GitMetadata | undefined> => {
   }
 }
 
-export const detectEnvMetadata = async (): Promise<EnvMetadata> => ({
+export const envMetadata = async ({ version }: { version: string }): Promise<Omit<EnvMetadata, 'driver'>> => ({
   git: await detectGitMetadata(),
+  lastDeployTime: new Date(),
+  version,
 })

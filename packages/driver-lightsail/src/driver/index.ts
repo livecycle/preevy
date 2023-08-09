@@ -182,6 +182,7 @@ const machineCreationDriver = (
   const ssh = sshDriver({ getSshKey: () => getStoredSshKey(store, keyAlias) })
 
   return ({
+    metadata: { region, availabilityZone, bundleId, keyPairAlias: keyAlias, machineVersion: CURRENT_MACHINE_VERSION },
     getMachineAndSpecDiff: async ({ envId }) => {
       const instance = await client.findInstance(envId)
       return instance && {

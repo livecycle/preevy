@@ -14,7 +14,7 @@ import { remoteProjectDir } from '../../remote-files'
 import { Logger } from '../../log'
 import { tunnelUrlsForEnv } from '../../tunneling'
 import { FileToCopy, uploadWithSpinner } from '../../upload-files'
-import { detectEnvMetadata } from '../../env-metadata'
+import { envMetadata } from '../../env-metadata'
 
 const createCopiedFileInDataDir = (
   { projectLocalDataDir, filesToCopy } : {
@@ -65,6 +65,7 @@ const up = async ({
   rootUrl,
   debug,
   machineDriver,
+  machineDriverName,
   machineCreationDriver,
   tunnelOpts,
   userModel,
@@ -79,11 +80,13 @@ const up = async ({
   sshTunnelPrivateKey,
   cwd,
   skipUnchangedFiles,
+  version,
 }: {
   clientId: string
   rootUrl: string
   debug: boolean
   machineDriver: MachineDriver
+  machineDriverName: string
   machineCreationDriver: MachineCreationDriver
   tunnelOpts: TunnelOpts
   userModel: ComposeModel
@@ -98,6 +101,7 @@ const up = async ({
   allowedSshHostKeys: Buffer
   cwd: string
   skipUnchangedFiles: boolean
+  version: string
 }): Promise<{ machine: MachineBase; envId: string }> => {
   const projectName = userSpecifiedProjectName ?? userModel.name
   const remoteDir = remoteProjectDir(projectName)
@@ -139,7 +143,7 @@ const up = async ({
   ])
 
   const { machine, connection } = await ensureCustomizedMachine({
-    machineDriver, machineCreationDriver, envId, log, debug,
+    machineDriver, machineCreationDriver, machineDriverName, envId, log, debug,
   })
 
   try {
@@ -158,7 +162,7 @@ const up = async ({
       knownServerPublicKeyPath: path.join(remoteDir, knownServerPublicKey.remote),
       user,
       machineStatusCommand: await machineDriver.machineStatusCommand(machine),
-      envMetadata: await detectEnvMetadata(),
+      envMetadata: await envMetadata({ version }),
     }, fixedModel)
 
     const modelStr = yaml.stringify(remoteModel)
