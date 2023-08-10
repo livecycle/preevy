@@ -21,6 +21,7 @@ import {
   Logger,
   machineStatusNodeExporterCommand,
 } from '@preevy/core'
+import { pick } from 'lodash'
 import { Client, client as createClient, REGIONS } from './client'
 import { CUSTOMIZE_BARE_MACHINE } from './scripts'
 import { AzureCustomTags, extractResourceGroupNameFromId } from './vm-creation-utils'
@@ -48,11 +49,6 @@ type DriverContext = {
   log: Logger
   debug: boolean
   store: Store
-}
-
-type MachineCreationContext = DriverContext & {
-  vmSize?: string
-  resourceGroupId: string
 }
 
 const UBUNTU_IMAGE_DETAILS = {
@@ -144,6 +140,8 @@ const flags = {
   }),
 } as const
 
+type FlagTypes = Omit<Interfaces.InferredFlags<typeof flags>, 'json'>
+
 const questions = async (): Promise<(Question | ListQuestion)[]> => [
   {
     type: 'list',
@@ -172,20 +170,45 @@ const flagsFromAnswers = async (answers: Record<string, unknown>) => ({
 const contextFromFlags = ({
   region,
   'subscription-id': subscriptionId,
-}: Interfaces.InferredFlags<typeof flags>): { region: string; subscriptionId: string } => ({
+}: FlagTypes): { region: string; subscriptionId: string } => ({
   region,
   subscriptionId,
 })
 
 const DEFAULT_VM_SIZE = 'Standard_B2s'
 
+const machineCreationFlags = {
+  ...flags,
+  region: Flags.string({
+    description: 'Microsoft Azure region in which resources will be provisioned',
+    required: true,
+  }),
+  'vm-size': Flags.string({
+    description: 'Machine type to be provisioned',
+    default: DEFAULT_VM_SIZE,
+    required: false,
+  }),
+  'resource-group-name': Flags.string({
+    description: 'Microsoft Azure resource group name',
+    required: true,
+  }),
+} as const
+
+type MachineCreationFlagTypes = Omit<InferredFlags<typeof machineCreationFlags>, 'json'>
+
+type MachineCreationContext = DriverContext & {
+  vmSize?: string
+  resourceGroupId: string
+  metadata: MachineCreationFlagTypes
+}
+
 const machineCreationDriver = (
-  { client: cl, vmSize, store, log, debug, resourceGroupId }: MachineCreationContext,
+  { client: cl, vmSize, store, log, debug, metadata }: MachineCreationContext,
 ): MachineCreationDriver<SshMachine> => {
   const ssh = sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) })
 
   return {
-    metadata: { vmSize, resourceGroupId },
+    metadata,
     createMachine: async ({ envId }) => ({
       fromSnapshot: false,
       result: (async () => {
@@ -234,33 +257,6 @@ const machineCreationDriver = (
   }
 }
 
-const machineCreationFlags = {
-  ...flags,
-  region: Flags.string({
-    description: 'Microsoft Azure region in which resources will be provisioned',
-    required: true,
-  }),
-  'vm-size': Flags.string({
-    description: 'Machine type to be provisioned',
-    default: DEFAULT_VM_SIZE,
-    required: false,
-  }),
-  'resource-group-name': Flags.string({
-    description: 'Microsoft Azure resource group name',
-    required: true,
-  }),
-} as const
-
-type MachineCreationFlagTypes = InferredFlags<typeof machineCreationFlags>
-
-const machineCreationContextFromFlags = (
-  f: MachineCreationFlagTypes,
-): ReturnType<typeof contextFromFlags> & { vmSize: string; resourceGroupId: string } => ({
-  ...contextFromFlags(f),
-  vmSize: f['vm-size'],
-  resourceGroupId: f['resource-group-name'],
-})
-
 const factory: MachineDriverFactory<
   Interfaces.InferredFlags<typeof flags>,
   SshMachine,
@@ -275,12 +271,21 @@ const factory: MachineDriverFactory<
   store,
 })
 
+const machineCreationContextFromFlags = (
+  f: MachineCreationFlagTypes,
+): ReturnType<typeof contextFromFlags> & { vmSize: string; resourceGroupId: string } => ({
+  ...contextFromFlags(f),
+  vmSize: f['vm-size'],
+  resourceGroupId: f['resource-group-name'],
+})
+
 const machineCreationFactory: MachineCreationDriverFactory<
-  Interfaces.InferredFlags<typeof machineCreationFlags>,
+  MachineCreationFlagTypes,
   SshMachine
 > = ({ flags: f, profile: { id: profileId }, store, log, debug }) => {
   const c = machineCreationContextFromFlags(f)
   return machineCreationDriver({
+    metadata: pick(f, Object.keys(machineCreationFlags)) as MachineCreationFlagTypes, // filter out non-driver flags
     client: createClient({
       ...c,
       profileId,

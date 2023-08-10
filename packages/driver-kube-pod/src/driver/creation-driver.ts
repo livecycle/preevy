@@ -1,5 +1,6 @@
 import { Flags, Interfaces } from '@oclif/core'
 import { MachineCreationDriver, MachineCreationDriverFactory, telemetryEmitter } from '@preevy/core'
+import { pick } from 'lodash'
 import { DeploymentMachine, machineFromDeployment } from './common'
 import { DriverContext, clientFromConfiguration, machineConnection, flags as machineDriverFlags } from './driver'
 
@@ -65,7 +66,7 @@ export const factory: MachineCreationDriverFactory<
   Interfaces.InferredFlags<typeof flags>,
   DeploymentMachine
 > = ({ flags: f, profile: { id: profileId }, log, debug }) => machineCreationDriver({
-  metadata: f,
+  metadata: pick(f, Object.keys(machineDriverFlags)) as MachineCreationFlagTypes, // filter out non-driver flags
   log,
   debug,
   client: clientFromConfiguration({ log, flags: f, profileId }),
