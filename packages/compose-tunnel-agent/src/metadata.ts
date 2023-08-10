@@ -3,11 +3,23 @@ import { Logger } from '@preevy/common'
 import { merge } from 'lodash'
 import { inspect } from 'util'
 
+const parseMetadataFileLis = (s?: string): string[] => {
+  if (!s) return []
+  try {
+    const result = JSON.parse(s)
+    if (!Array.isArray(result) || !result.every(v => typeof v === 'string')) {
+      throw new Error(`invalid metadata file list, expected a comma-separated string, or a JSON array of strings: ${s}`)
+    }
+    return result
+  } catch (e) {
+    return s.split(' ')
+  }
+}
+
 export const envMetadata = async ({ env, log }: { env: NodeJS.ProcessEnv; log: Logger }) => {
   const jsons = [
     ...await Promise.all(
-      (env.ENV_METADATA_FILES || '')
-        .split(' ')
+      parseMetadataFileLis(env.ENV_METADATA_FILES)
         .map(async f => {
           try {
             return await fs.promises.readFile(f, { encoding: 'utf8' })
