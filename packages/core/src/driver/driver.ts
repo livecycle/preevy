@@ -49,11 +49,17 @@ export type MachineDriver<
   machineStatusCommand: (machine: MachineBase) => Promise<MachineStatusCommand | undefined>
 }
 
+export type MachineCreationResult<Machine extends MachineBase = MachineBase> = {
+  fromSnapshot: boolean
+  result: Promise<{ machine: Machine; connection: MachineConnection }>
+}
+
 export type MachineCreationDriver<Machine extends MachineBase = MachineBase> = {
   metadata: Record<string, unknown>
+
   createMachine: (args: {
     envId: string
-  }) => Promise<{ fromSnapshot: boolean; result: Promise<{ machine: Machine; connection: MachineConnection }> }>
+  }) => Promise<MachineCreationResult<Machine>>
 
   ensureMachineSnapshot: (args: { providerId: string; envId: string; wait: boolean }) => Promise<void>
   getMachineAndSpecDiff: (

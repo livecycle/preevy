@@ -142,16 +142,12 @@ const up = async ({
     createCopiedFile('tunnel_server_public_key', formatPublicKey(hostKey)),
   ])
 
-  const { machine, connection } = await ensureCustomizedMachine({
+  const { machine, connection, userAndGroup } = await ensureCustomizedMachine({
     machineDriver, machineCreationDriver, machineDriverName, envId, log, debug,
   })
 
   try {
     const { exec } = connection
-
-    const user = (
-      await exec('echo "$(id -u):$(stat -c %g /var/run/docker.sock)"')
-    ).stdout.trim()
 
     const remoteModel = addComposeTunnelAgentService({
       envId,
@@ -160,7 +156,7 @@ const up = async ({
       urlSuffix: envId,
       sshPrivateKeyPath: path.join(remoteDir, sshPrivateKeyFile.remote),
       knownServerPublicKeyPath: path.join(remoteDir, knownServerPublicKey.remote),
-      user,
+      user: userAndGroup.join(':'),
       machineStatusCommand: await machineDriver.machineStatusCommand(machine),
       envMetadata: await envMetadata({ version }),
     }, fixedModel)
@@ -169,7 +165,7 @@ const up = async ({
     log.debug('model', modelStr)
     const composeFilePath = (await createCopiedFile('docker-compose.yml', modelStr)).local
 
-    await exec(`mkdir -p "${remoteDir}" && chown "${user}" "${remoteDir}"`, { asRoot: true })
+    await exec(`mkdir -p "${remoteDir}"`)
 
     log.debug('Files to copy', filesToCopy)
 

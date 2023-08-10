@@ -4,6 +4,7 @@ export {
   SshMachine,
   MachineBase,
   MachineResource,
+  MachineCreationResult,
   MachineDriver,
   MachineCreationDriver,
   MachineCreationDriverFactory,
