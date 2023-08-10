@@ -72,6 +72,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       userSpecifiedServices: restArgs,
       debug: flags.debug,
       machineDriver: driver,
+      machineDriverName: this.driverName,
       machineCreationDriver,
       userModel,
       userSpecifiedProjectName: flags.project,
@@ -85,6 +86,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       allowedSshHostKeys: hostKey,
       cwd: process.cwd(),
       skipUnchangedFiles: flags['skip-unchanged-files'],
+      version: this.config.version,
     })
 
     this.log(`Preview environment ${envId} provisioned at: ${machine.locationDescription}`)

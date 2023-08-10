@@ -11,6 +11,7 @@ export { SshMachine, sshDriver, getStoredKey, getStoredKeyOrUndefined } from './
 export { machineStatusNodeExporterCommand } from './machine-status-node-exporter'
 export {
   MachineDriver,
+  MachineCreationResult,
   MachineCreationDriver,
   MachineCreationDriverFactory,
   MachineDriverFactory,

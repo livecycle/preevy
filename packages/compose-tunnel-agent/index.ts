@@ -7,7 +7,16 @@ import { rimraf } from 'rimraf'
 import pino from 'pino'
 import pinoPretty from 'pino-pretty'
 import { EOL } from 'os'
-import { ConnectionCheckResult, requiredEnv, checkConnection, formatPublicKey, parseSshUrl, SshConnectionConfig, tunnelNameResolver, MachineStatusCommand } from '@preevy/common'
+import {
+  ConnectionCheckResult,
+  requiredEnv,
+  checkConnection,
+  formatPublicKey,
+  parseSshUrl,
+  SshConnectionConfig,
+  tunnelNameResolver,
+  MachineStatusCommand,
+} from '@preevy/common'
 import createDockerClient from './src/docker'
 import createApiServerHandler from './src/http/api-server'
 import { sshClient as createSshClient } from './src/ssh'
@@ -15,28 +24,11 @@ import { createDockerProxyHandlers } from './src/http/docker-proxy'
 import { tryHandler, tryUpgradeHandler } from './src/http/http-server-helpers'
 import { httpServerHandlers } from './src/http'
 import { runMachineStatusCommand } from './src/machine-status'
+import { envMetadata } from './src/metadata'
+import { readAllFiles } from './src/files'
 
 const homeDir = process.env.HOME || '/root'
 const dockerSocket = '/var/run/docker.sock'
-
-const readDir = async (dir: string) => {
-  try {
-    return ((await fs.promises.readdir(dir, { withFileTypes: true })) ?? [])
-      .filter(d => d.isFile()).map(f => f.name)
-  } catch (e) {
-    if ((e as { code: string }).code === 'ENOENT') {
-      return []
-    }
-    throw e
-  }
-}
-
-const readAllFiles = async (dir: string) => {
-  const files = await readDir(dir)
-  return await Promise.all(
-    files.map(file => fs.promises.readFile(path.join(dir, file), { encoding: 'utf8' }))
-  )
-}
 
 const sshConnectionConfigFromEnv = async (): Promise<{ connectionConfig: SshConnectionConfig; sshUrl: string }> => {
   const sshUrl = requiredEnv('SSH_URL')
@@ -78,10 +70,6 @@ const writeLineToStdout = (s: string) => [s, EOL].forEach(d => process.stdout.wr
 
 const machineStatusCommand = process.env.MACHINE_STATUS_COMMAND
   ? JSON.parse(process.env.MACHINE_STATUS_COMMAND) as MachineStatusCommand
-  : undefined
-
-const envMetadata = process.env.ENV_METADATA
-  ? JSON.parse(process.env.ENV_METADATA) as Record<string, unknown>
   : undefined
 
 const log = pino({
@@ -143,7 +131,7 @@ const main = async () => {
       machineStatus: machineStatusCommand
         ? async () => await runMachineStatusCommand({ log, docker })(machineStatusCommand)
         : undefined,
-      envMetadata,
+      envMetadata: await envMetadata({ env: process.env, log }),
     }),
     dockerProxyHandlers: createDockerProxyHandlers({
       log: log.child({ name: 'docker-proxy' }),
