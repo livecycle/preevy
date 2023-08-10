@@ -3,8 +3,6 @@ import { MachineCreationDriver, MachineCreationDriverFactory, telemetryEmitter }
 import { DeploymentMachine, machineFromDeployment } from './common'
 import { DriverContext, clientFromConfiguration, machineConnection, flags as machineDriverFlags } from './driver'
 
-type MachineCreationDriverContext = DriverContext & { serverSideApply: boolean }
-
 export const flags = {
   ...machineDriverFlags,
   'server-side-apply': Flags.boolean({
@@ -17,10 +15,15 @@ export const flags = {
 
 export type MachineCreationFlagTypes = Omit<Interfaces.InferredFlags<typeof flags>, 'json'>
 
+type MachineCreationDriverContext = DriverContext & {
+  serverSideApply: boolean
+  metadata: MachineCreationFlagTypes
+}
+
 const machineCreationDriver = (
-  { client, serverSideApply, log }: MachineCreationDriverContext,
+  { client, serverSideApply, log, metadata }: MachineCreationDriverContext,
 ): MachineCreationDriver<DeploymentMachine> => ({
-  metadata: { serverSideApply },
+  metadata,
   createMachine: async ({ envId }) => {
     const startTime = new Date().getTime()
     telemetryEmitter().capture('kube-pod create machine start', {})
@@ -62,6 +65,7 @@ export const factory: MachineCreationDriverFactory<
   Interfaces.InferredFlags<typeof flags>,
   DeploymentMachine
 > = ({ flags: f, profile: { id: profileId }, log, debug }) => machineCreationDriver({
+  metadata: f,
   log,
   debug,
   client: clientFromConfiguration({ log, flags: f, profileId }),
