@@ -29,7 +29,7 @@ export default class Down extends DriverCommand<typeof Down> {
     const { flags } = await this.parse(Down)
     const driver = await this.driver()
 
-    const { envId } = await findEnvId({
+    const envId = await findEnvId({
       log,
       userSpecifiedEnvId: flags.id,
       userSpecifiedProjectName: flags.project,

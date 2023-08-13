@@ -68,46 +68,36 @@ export const findProjectName = async ({ userSpecifiedProjectName, userModel }: {
   }
 }
 
-export async function findEnvId(args: {
+export const findEnvIdByProjectName = async ({ log, projectName, projectNameBasedOn }: {
   log: Logger
-  userSpecifiedEnvId: string | undefined
   projectName: string
   projectNameBasedOn?: string
-}): Promise<{ envId: string }>
-export async function findEnvId(args: {
-  log: Logger
-  userSpecifiedEnvId: string | undefined
-  userSpecifiedProjectName: string | undefined
-  userModel: ComposeModel | (() => Promise<ComposeModel>)
-}): Promise<{ envId: string; projectName: string }>
-export async function findEnvId({ log, userSpecifiedEnvId, ...args }: {
-  log: Logger
-  userSpecifiedEnvId: string | undefined
-} & (
-  { projectName: string; projectNameBasedOn?: string }
-  | { userSpecifiedProjectName: string | undefined; userModel: ComposeModel | (() => Promise<ComposeModel>) }
-)) {
-  if (userSpecifiedEnvId) {
-    log.info(`Using user specified environment ID ${userSpecifiedEnvId}`)
-    return {
-      envId: validateUserSpecifiedValue({ value: userSpecifiedEnvId, fieldDescription: 'environment ID' }),
-    }
-  }
-
-  const { projectName, projectNameBasedOn } = 'projectName' in args
-    ? args
-    : await findProjectName(args)
-
+}) => {
   const { value: envId, basedOn } = await findAmbientEnvId(projectName)
 
   const envIdBaseOn = [
-    projectNameBasedOn ? 'user specified project name' : 'project name from Docker Compose',
+    projectNameBasedOn ? `project name from ${projectNameBasedOn}` : 'user specified project name',
     basedOn,
   ].join(' and ')
 
   log.info(`Using environment ID ${envId}, based on ${envIdBaseOn}`)
-  return {
-    envId,
-    ...'projectName' in args ? {} : { projectName },
+  return envId
+}
+
+export async function findEnvId({ log, userSpecifiedEnvId, userSpecifiedProjectName, userModel }: {
+  log: Logger
+  userSpecifiedEnvId: string | undefined
+  userSpecifiedProjectName: string | undefined
+  userModel: ComposeModel | (() => Promise<ComposeModel>)
+}): Promise<string> {
+  if (userSpecifiedEnvId) {
+    log.debug(`Using user specified environment ID ${userSpecifiedEnvId}`)
+    return validateUserSpecifiedValue({ value: userSpecifiedEnvId, fieldDescription: 'environment ID' })
   }
+
+  const { projectName, projectNameBasedOn } = userSpecifiedProjectName
+    ? { projectName: userSpecifiedProjectName, projectNameBasedOn: undefined }
+    : await findProjectName({ userSpecifiedProjectName, userModel })
+
+  return await findEnvIdByProjectName({ log, projectName, projectNameBasedOn })
 }

@@ -91,7 +91,7 @@ export default class Urls extends ProfileCommand<typeof Urls> {
     const log = this.logger
     const { flags, args } = await this.parse(Urls)
 
-    const { envId } = await findEnvId({
+    const envId = await findEnvId({
       userSpecifiedEnvId: flags.id,
       userSpecifiedProjectName: flags.project,
       userModel: () => this.ensureUserModel(),

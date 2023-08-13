@@ -24,7 +24,7 @@ abstract class BaseGithubPrCommand<T extends typeof Command> extends BaseCommand
   }
 
   protected async getEnvId() {
-    const { envId } = await findEnvId({
+    const envId = await findEnvId({
       userSpecifiedEnvId: this.flags.id,
       userSpecifiedProjectName: this.flags.project,
       userModel: await this.ensureUserModel(),

@@ -88,7 +88,7 @@ export default class Logs extends DriverCommand<typeof Logs> {
       userModel = await remoteUserModel(connection)
     } else {
       userModel = await this.ensureUserModel()
-      const { envId } = await findEnvId({
+      const envId = await findEnvId({
         log,
         userSpecifiedEnvId: undefined,
         userSpecifiedProjectName: flags.project,
