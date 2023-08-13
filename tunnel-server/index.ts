@@ -13,16 +13,16 @@ import { appLoggerFromEnv } from './src/logging'
 import { tunnelsGauge, runMetricsServer } from './src/metrics'
 import { numberFromEnv, requiredEnv } from './src/env'
 import { replaceHostname } from './src/url'
-import { sessionStore } from './src/session'
+import { cookieSessionStore } from './src/session'
 import { claimsSchema } from './src/auth'
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
-const logger = pino(appLoggerFromEnv())
+const log = pino(appLoggerFromEnv())
 
 const { sshPrivateKey } = await getSSHKeys({
   defaultKeyLocation: path.join(__dirname, './ssh/ssh_host_key'),
-  log: logger,
+  log,
 })
 
 const PORT = numberFromEnv('PORT') || 3000
@@ -37,18 +37,18 @@ const BASE_URL = (() => {
 })()
 
 const envStore = inMemoryPreviewEnvStore()
-const appSessionManager = sessionStore({ domain: BASE_URL.hostname, schema: claimsSchema, keys: process.env.COOKIE_SECRETS?.split(' ') })
+const appSessionStore = cookieSessionStore({ domain: BASE_URL.hostname, schema: claimsSchema, keys: process.env.COOKIE_SECRETS?.split(' ') })
 const loginUrl = new URL('/login', replaceHostname(BASE_URL, `auth.${BASE_URL.hostname}`)).toString()
 const app = createApp({
-  session: appSessionManager,
+  sessionStore: appSessionStore,
   envStore,
   baseUrl: BASE_URL,
   isProxyRequest: isProxyRequest(BASE_URL.hostname),
-  proxyHandlers: proxyHandlers({ envStore, logger, loginUrl, sessionManager: appSessionManager }),
-  logger,
+  proxyHandlers: proxyHandlers({ envStore, log, loginUrl, sessionStore: appSessionStore }),
+  log,
   loginUrl,
 })
-const sshLogger = logger.child({ name: 'ssh_server' })
+const sshLogger = log.child({ name: 'ssh_server' })
 
 const tunnelName = (clientId: string, remotePath: string) => {
   const serviceName = remotePath.replace(/^\//, '')

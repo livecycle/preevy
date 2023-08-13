@@ -3,6 +3,7 @@ import { GoogleError, Status, operationsProtos, CallOptions } from 'google-gax'
 import { asyncFirst } from 'iter-tools-es'
 import { randomBytes } from 'crypto'
 import { LABELS } from './labels'
+import { readCloudConfig } from '../static'
 
 type Operation = operationsProtos.google.longrunning.IOperation
 
@@ -117,7 +118,11 @@ const client = ({
             },
           }],
           metadata: {
-            items: [{ key: 'ssh-keys', value: `${username}:${sshPublicKey}` }],
+            items: [
+              { key: 'ssh-keys', value: `${username}:${sshPublicKey}` },
+              // { key: 'startup-script', value: await readStartupScript() },
+              { key: 'user-data', value: await readCloudConfig() },
+            ],
           },
           networkInterfaces: [
             {

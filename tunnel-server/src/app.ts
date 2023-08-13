@@ -3,7 +3,6 @@ import { fastifyRequestContext } from '@fastify/request-context'
 import http from 'http'
 import internal from 'stream'
 import { Logger } from 'pino'
-import { match } from 'ts-pattern'
 import { SessionStore } from './session'
 import { Claims, JwtAuthenticator, getCombinedCLIAndSAASVerificationData } from './auth'
 import { PreviewEnvStore } from './preview-env'
@@ -12,36 +11,43 @@ import { replaceHostname } from './url'
 const { SAAS_BASE_URL } = process.env
 if (SAAS_BASE_URL === undefined) { throw new Error('Env var SAAS_BASE_URL is missing') }
 
-export const app = ({ isProxyRequest, proxyHandlers, session: sessionManager, baseUrl, envStore, logger, loginUrl }: {
+export const app = ({ isProxyRequest, proxyHandlers, sessionStore, baseUrl, envStore, log, loginUrl }: {
   isProxyRequest: (req: http.IncomingMessage) => boolean
-  logger: Logger
+  log: Logger
   baseUrl: URL
   loginUrl: string
-  session: SessionStore<Claims>
+  sessionStore: SessionStore<Claims>
   envStore: PreviewEnvStore
   proxyHandlers: {
-    wsHandler: (req: http.IncomingMessage, socket: internal.Duplex, head: Buffer) => void
+    upgradeHandler: (req: http.IncomingMessage, socket: internal.Duplex, head: Buffer) => void
     handler: (req: http.IncomingMessage, res: http.ServerResponse) => void
   }
 }) =>
   Fastify({
     serverFactory: handler => {
-      const { wsHandler: proxyWsHandler, handler: proxyHandler } = proxyHandlers
-      const server = http.createServer((req, res) => match(req)
-        .when(r => r.headers.host?.startsWith('auth.'), () => handler(req, res))
-        .when(isProxyRequest, () => proxyHandler(req, res))
-        .otherwise(() => handler(req, res)))
-      server.on('upgrade', (req, socket, head) => {
-        if (isProxyRequest(req)) {
-          proxyWsHandler(req, socket, head)
-        } else {
-          logger.warn('unexpected upgrade request %j', { url: req.url, host: req.headers.host })
-          socket.end()
+      const { upgradeHandler: proxyUpgradeHandler, handler: proxyHandler } = proxyHandlers
+      const server = http.createServer((req, res) => {
+        if (req.url !== '/healthz') {
+          log.debug('request %j', { method: req.method, url: req.url, headers: req.headers })
         }
+        if (!req.headers.host?.startsWith('auth.') && isProxyRequest(req)) {
+          return proxyHandler(req, res)
+        }
+        return handler(req, res)
       })
+        .on('upgrade', (req, socket, head) => {
+          log.debug('upgrade', req.url)
+          if (isProxyRequest(req)) {
+            return proxyUpgradeHandler(req, socket, head)
+          }
+
+          log.warn('upgrade request %j not found', { url: req.url, host: req.headers.host })
+          socket.end('Not found')
+          return undefined
+        })
       return server
     },
-    logger,
+    logger: log,
   })
     .register(fastifyRequestContext)
     .get<{Querystring: {env: string; returnPath?: string}}>('/login', {
@@ -65,7 +71,7 @@ export const app = ({ isProxyRequest, proxyHandlers, session: sessionManager, ba
         res.statusCode = 404
         return { error: 'unknown envId' }
       }
-      const session = sessionManager(req.raw, res.raw, env.publicKeyThumbprint)
+      const session = sessionStore(req.raw, res.raw, env.publicKeyThumbprint)
       if (!session.user) {
         const auth = JwtAuthenticator(env.publicKeyThumbprint, getCombinedCLIAndSAASVerificationData(env))
         const result = await auth(req.raw)

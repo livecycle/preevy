@@ -107,7 +107,7 @@ export const performTunnelConnectionCheck = async ({
   return await check()
 }
 
-export const createTunnelingKey = async () => Buffer.from((await generateSshKeyPair()).privateKey)
+export const createTunnelingKey = async () => Buffer.from((await generateSshKeyPair('ed25519')).privateKey)
 
 export const tunnelUrlsForEnv = (
   { envId, rootUrl, clientId }: {

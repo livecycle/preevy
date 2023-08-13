@@ -5,3 +5,5 @@ export const tryParseJson = (...args: Parameters<typeof JSON.parse>) => {
     return undefined
   }
 }
+
+export const dateReplacer = (_key: string, value: unknown) => (value instanceof Date ? value.toISOString() : value)

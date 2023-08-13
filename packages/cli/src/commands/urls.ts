@@ -88,6 +88,7 @@ export default class Urls extends ProfileCommand<typeof Urls> {
       serviceAndPort: args.service ? { service: args.service, port: args.port } : undefined,
       tunnelingKey,
       includeAccessCredentials: flags['include-access-credentials'],
+      showPreevyService: flags['show-preevy-service-urls'],
       retryOpts: { retries: 2 },
     })
 

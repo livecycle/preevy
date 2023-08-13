@@ -11,6 +11,7 @@ export const urls = async ({
   tunnelingKey,
   includeAccessCredentials,
   retryOpts,
+  showPreevyService,
 }: {
   envId: string
   rootUrl: string
@@ -19,6 +20,7 @@ export const urls = async ({
   tunnelingKey: string | Buffer
   includeAccessCredentials: boolean
   retryOpts: retry.Options
+  showPreevyService: boolean
 }) => {
   const tunnelUrlsForService = tunnelUrlsForEnv({ envId, rootUrl: new URL(rootUrl), clientId })
 
@@ -29,6 +31,7 @@ export const urls = async ({
     retryOpts,
     credentials,
     includeAccessCredentials,
+    showPreevyService,
   })
 
   return flattenTunnels(tunnels)

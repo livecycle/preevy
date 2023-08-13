@@ -9,8 +9,9 @@ import {
   telemetryEmitter,
   SshMachine, MachineDriver, MachineCreationDriver, MachineCreationDriverFactory, machineResourceType,
   MachineDriverFactory, sshKeysStore, Store,
-  getStoredSshKey, sshDriver, extractDefined, Logger,
+  getStoredSshKey, sshDriver, extractDefined, Logger, machineStatusNodeExporterCommand,
 } from '@preevy/core'
+import { pick } from 'lodash'
 import createClient, { Client, REGIONS } from './client'
 import { BUNDLE_IDS, BundleId, bundleIdFromString } from './bundle-id'
 import { CUSTOMIZE_BARE_MACHINE } from './scripts'
@@ -48,6 +49,8 @@ const machineDriver = ({
 }: DriverContext): MachineDriver<SshMachine, ResourceType> => {
   const keyAlias = region
 
+  const listMachines = () => asyncMap(machineFromInstance, client.listInstances())
+
   return {
     friendlyName: 'AWS Lightsail',
     customizationScripts: CUSTOMIZE_BARE_MACHINE,
@@ -57,11 +60,9 @@ const machineDriver = ({
       return instance && machineFromInstance(instance)
     },
 
+    listMachines,
     listDeletableResources: () => {
-      const machines = asyncMap(
-        machineFromInstance,
-        client.listInstances(),
-      )
+      const machines = listMachines()
 
       const snapshots = asyncMap(
         ({ name }) => ({ type: 'snapshot' as ResourceType, providerId: name as string }),
@@ -99,6 +100,8 @@ const machineDriver = ({
     },
 
     ...sshDriver({ getSshKey: () => getStoredSshKey(store, keyAlias) }),
+
+    machineStatusCommand: async () => machineStatusNodeExporterCommand,
   }
 }
 
@@ -148,15 +151,32 @@ const factory: MachineDriverFactory<FlagTypes, SshMachine, ResourceType> = ({
   })
 }
 
+const DEFAULT_BUNDLE_ID: BundleId = 'medium_2_0'
+
+const machineCreationFlags = {
+  ...flags,
+  'availability-zone': Flags.string({
+    description: 'AWS availability zone to provision resources in region',
+    required: false,
+    env: 'AWS_AVAILABILITY_ZONE',
+  }),
+  'bundle-id': Flags.custom<BundleId>({
+    description: `Lightsail bundle ID (size of instance) to provision. Default: ${DEFAULT_BUNDLE_ID}`,
+    required: false,
+    options: BUNDLE_IDS.map(b => b),
+  })(),
+}
+
+type MachineCreationFlagTypes = InferredFlags<typeof machineCreationFlags>
+
 type MachineCreationContext = DriverContext & {
   availabilityZone?: string
   bundleId?: BundleId
+  metadata: MachineCreationFlagTypes
 }
 
-const DEFAULT_BUNDLE_ID: BundleId = 'medium_2_0'
-
 const machineCreationDriver = (
-  { region, client, availabilityZone, bundleId: specifiedBundleId, store, log, debug }: MachineCreationContext
+  { region, client, availabilityZone, bundleId: specifiedBundleId, store, log, debug, metadata }: MachineCreationContext
 ): MachineCreationDriver<SshMachine> => {
   const bundleId = specifiedBundleId ?? DEFAULT_BUNDLE_ID
   const keyAlias = region
@@ -180,6 +200,7 @@ const machineCreationDriver = (
   const ssh = sshDriver({ getSshKey: () => getStoredSshKey(store, keyAlias) })
 
   return ({
+    metadata: { ...metadata, keyPairAlias: keyAlias, machineVersion: CURRENT_MACHINE_VERSION },
     getMachineAndSpecDiff: async ({ envId }) => {
       const instance = await client.findInstance(envId)
       return instance && {
@@ -238,22 +259,6 @@ const machineCreationDriver = (
   })
 }
 
-const machineCreationFlags = {
-  ...flags,
-  'availability-zone': Flags.string({
-    description: 'AWS availability zone to provision resources in region',
-    required: false,
-    env: 'AWS_AVAILABILITY_ZONE',
-  }),
-  'bundle-id': Flags.custom<BundleId>({
-    description: `Lightsail bundle ID (size of instance) to provision. Default: ${DEFAULT_BUNDLE_ID}`,
-    required: false,
-    options: BUNDLE_IDS.map(b => b),
-  })(),
-}
-
-type MachineCreationFlagTypes = InferredFlags<typeof machineCreationFlags>
-
 const machineCreationContextFromFlags = (
   fl: MachineCreationFlagTypes,
 ): ReturnType<typeof contextFromFlags> & { availabilityZone: string; bundleId: BundleId } => ({
@@ -271,6 +276,7 @@ const machineCreationFactory: MachineCreationDriverFactory<MachineCreationFlagTy
 }) => {
   const c = machineCreationContextFromFlags(f)
   return machineCreationDriver({
+    metadata: pick(f, Object.keys(machineCreationFlags)) as MachineCreationFlagTypes, // filter out non-driver flags
     ...c,
     client: createClient({ ...c, profileId }),
     store,

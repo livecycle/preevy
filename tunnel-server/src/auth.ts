@@ -7,6 +7,7 @@ import { KeyObject, createPublicKey } from 'crypto'
 import fs from 'fs'
 import path from 'path'
 import { PreviewEnv } from './preview-env'
+import { HttpError } from './http-server-helpers'
 
 export class AuthError extends Error {}
 
@@ -122,6 +123,16 @@ export function JwtAuthenticator(
   }
 }
 
+export function authenticator(authenticators: ((req: IncomingMessage)=> Promise<AuthenticationResult>)[]) {
+  return async (req: IncomingMessage):Promise<AuthenticationResult> => {
+    const authInfos = (await Promise.all(authenticators.map(auth => auth(req))))
+    const found = authInfos.find(info => info.isAuthenticated)
+    if (found !== undefined) return found
+    return { isAuthenticated: false }
+  }
+}
+
+// TODO: combine with UnauthorizedError
 export const unauthorized = (res: ServerResponse<IncomingMessage>) => {
   res.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"')
   res.statusCode = 401
@@ -166,6 +177,15 @@ export const saasJWTSchema = z.object({
 
 type SaasJWTSchema = z.infer<typeof saasJWTSchema>
 
+export class UnauthorizedError extends HttpError {
+  static status = 401
+  static defaultMessage = 'Unauthorized'
+  constructor(readonly reason: string) {
+    super(UnauthorizedError.status, UnauthorizedError.defaultMessage, undefined, {
+      'WWW-Authenticate': 'Basic realm="Secure Area"',
+    })
+  }
+}
 export const getSaasTokenVerificationData = (issuer: string, publicKeyThumbprint: string): VerificationData => {
   if (issuer !== SAAS_JWT_ISSUER) {
     throw new AuthError(`Unsupported issuer ${issuer}`)

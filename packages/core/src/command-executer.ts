@@ -1,7 +1,7 @@
 import stream from 'stream'
 import shellEscape from 'shell-escape'
 import { inspect } from 'util'
-import { OrderedOutput } from './child-process'
+import { OrderedOutput } from '@preevy/common'
 
 export type ExecResult = {
   stdout: string

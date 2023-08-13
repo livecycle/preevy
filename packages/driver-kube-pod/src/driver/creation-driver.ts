@@ -1,9 +1,8 @@
 import { Flags, Interfaces } from '@oclif/core'
 import { MachineCreationDriver, MachineCreationDriverFactory, telemetryEmitter } from '@preevy/core'
+import { pick } from 'lodash'
 import { DeploymentMachine, machineFromDeployment } from './common'
 import { DriverContext, clientFromConfiguration, machineConnection, flags as machineDriverFlags } from './driver'
-
-type MachineCreationDriverContext = DriverContext & { serverSideApply: boolean }
 
 export const flags = {
   ...machineDriverFlags,
@@ -17,9 +16,15 @@ export const flags = {
 
 export type MachineCreationFlagTypes = Omit<Interfaces.InferredFlags<typeof flags>, 'json'>
 
+type MachineCreationDriverContext = DriverContext & {
+  serverSideApply: boolean
+  metadata: MachineCreationFlagTypes
+}
+
 const machineCreationDriver = (
-  { client, serverSideApply }: MachineCreationDriverContext,
+  { client, serverSideApply, log, metadata }: MachineCreationDriverContext,
 ): MachineCreationDriver<DeploymentMachine> => ({
+  metadata,
   createMachine: async ({ envId }) => {
     const startTime = new Date().getTime()
     telemetryEmitter().capture('kube-pod create machine start', {})
@@ -27,10 +32,11 @@ const machineCreationDriver = (
     return ({
       fromSnapshot: true,
       result: (async () => {
+        log.debug('create machine', { envId, serverSideApply })
         const deployment = await client.createEnv(envId, { serverSideApply })
         const machine = machineFromDeployment(deployment)
         telemetryEmitter().capture('kube-pod create machine end', { elapsed_sec: (new Date().getTime() - startTime) / 1000 })
-        const connection = await machineConnection(client, machine)
+        const connection = await machineConnection(client, machine, log)
         return { machine, connection }
       })(),
     })
@@ -60,6 +66,7 @@ export const factory: MachineCreationDriverFactory<
   Interfaces.InferredFlags<typeof flags>,
   DeploymentMachine
 > = ({ flags: f, profile: { id: profileId }, log, debug }) => machineCreationDriver({
+  metadata: pick(f, Object.keys(machineDriverFlags)) as MachineCreationFlagTypes, // filter out non-driver flags
   log,
   debug,
   client: clientFromConfiguration({ log, flags: f, profileId }),

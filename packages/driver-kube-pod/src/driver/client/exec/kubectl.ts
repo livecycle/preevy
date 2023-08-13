@@ -1,5 +1,5 @@
 import { readable as isReadableStream } from 'is-stream'
-import { ProcessOutputBuffers } from '@preevy/core'
+import { ProcessOutputBuffers } from '@preevy/common'
 import { Readable, Writable } from 'stream'
 import { ChildProcess, StdioOptions, spawn } from 'child_process'
 import { BaseExecOpts, ExecError, ReadableBufferStream, callbackWritableStream } from './common'
