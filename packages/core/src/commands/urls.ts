@@ -9,19 +9,19 @@ export const urls = async ({
   includeAccessCredentials,
   retryOpts,
   showPreevyService,
-  serviceUrls,
+  composeTunnelServiceUrl,
 }: {
   serviceAndPort?: { service: string; port?: number }
   tunnelingKey: string | Buffer
   includeAccessCredentials: boolean
   retryOpts: retry.Options
   showPreevyService: boolean
-  serviceUrls: { name: string; port: number; url: string }[]
+  composeTunnelServiceUrl: string
 }) => {
   const credentials = await generateBasicAuthCredentials(jwtGenerator(tunnelingKey))
 
   const { tunnels } = await queryTunnels({
-    serviceUrls,
+    composeTunnelServiceUrl,
     retryOpts,
     credentials,
     includeAccessCredentials,

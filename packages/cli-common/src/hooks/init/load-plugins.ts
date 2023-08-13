@@ -1,7 +1,7 @@
 import { Hook as OclifHook, Command, Flags } from '@oclif/core'
 import { Parser } from '@oclif/core/lib/parser/parse'
 import { Config, Topic } from '@oclif/core/lib/interfaces'
-import { localComposeClient, ComposeModel, resolveComposeFiles, withSpinner } from '@preevy/core'
+import { localComposeClient, ComposeModel, resolveComposeFiles, withSpinner, NoComposeFilesError } from '@preevy/core'
 import { composeFlags } from '../../lib/flags'
 import { addPluginFlags, loadPlugins, hooksFromPlugins, addPluginCommands } from '../../lib/plugins'
 
@@ -29,15 +29,17 @@ export const initHook: OclifHook<'init'> = async function hook({ config, id, arg
     systemFiles: flags['system-compose-file'],
   })
 
-  const userModelOrError = await withSpinner(
-    async () => await localComposeClient({
-      composeFiles,
-      projectName: flags.project,
-    }).getModelOrError(),
-    {
-      text: `Loading compose file${composeFiles.length > 1 ? 's' : ''}: ${composeFiles.join(', ')}`,
-    },
-  )
+  const userModelOrError = composeFiles.length
+    ? await withSpinner(
+      async () => await localComposeClient({
+        composeFiles,
+        projectName: flags.project,
+      }).getModelOrError(),
+      {
+        text: `Loading compose file${composeFiles.length > 1 ? 's' : ''}: ${composeFiles.join(', ')}`,
+      },
+    )
+    : new NoComposeFilesError()
 
   const userModel = userModelOrError instanceof Error ? {} as ComposeModel : userModelOrError
   const preevyConfig = userModel['x-preevy'] ?? {}

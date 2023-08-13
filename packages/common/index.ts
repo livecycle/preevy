@@ -13,6 +13,9 @@ export {
   stateEmitter,
   SimpleEmitter, StateEmitter, EmitterConsumer, StateEmitterConsumer,
 } from './src/emitter'
+export {
+  readOrUndefined, isNotFoundError,
+} from './src/files'
 export { hasPropertyDefined, RequiredProperties } from './src/ts-utils'
 export { tryParseJson, dateReplacer } from './src/json'
 export { Logger } from './src/log'

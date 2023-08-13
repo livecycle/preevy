@@ -1,7 +1,7 @@
 import { Args, Flags, ux } from '@oclif/core'
 import {
   addBaseComposeTunnelAgentService,
-  commands, findEnvId, getTunnelNamesToServicePorts, profileStore,
+  commands, findComposeTunnelAgentUrl, findEnvId, findProjectName, getTunnelNamesToServicePorts, profileStore,
   telemetryEmitter,
   withSpinner,
 } from '@preevy/core'
@@ -46,11 +46,16 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
     const machineCreationDriver = await this.machineCreationDriver()
     const userModel = await this.ensureUserModel()
 
-    const { envId, normalizedProjectName } = await findEnvId({
-      userSpecifiedEnvId: flags.id,
+    const { projectName, projectNameBasedOn } = await findProjectName({
       userSpecifiedProjectName: flags.project,
       userModel,
-      log: this.logger.info,
+    })
+
+    const { envId } = await findEnvId({
+      log: this.logger,
+      userSpecifiedEnvId: flags.id,
+      projectName,
+      projectNameBasedOn,
     })
 
     const pStore = profileStore(this.store)
@@ -103,7 +108,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
     this.logger.debug('expectedServiceUrls: %j', expectedServiceUrls)
 
     const { machine } = await commands.up({
-      normalizedProjectName,
+      projectName,
       expectedServiceUrls,
       userSpecifiedServices: restArgs,
       debug: flags.debug,
@@ -126,8 +131,9 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
     this.log(`Preview environment ${envId} provisioned at: ${machine.locationDescription}`)
 
+    const composeTunnelServiceUrl = findComposeTunnelAgentUrl(expectedServiceUrls)
     const flatTunnels = await withSpinner(() => commands.urls({
-      serviceUrls: expectedServiceUrls,
+      composeTunnelServiceUrl,
       tunnelingKey,
       includeAccessCredentials: flags['include-access-credentials'],
       showPreevyService: flags['show-preevy-service-urls'],

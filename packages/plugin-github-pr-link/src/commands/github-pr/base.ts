@@ -28,7 +28,7 @@ abstract class BaseGithubPrCommand<T extends typeof Command> extends BaseCommand
       userSpecifiedEnvId: this.flags.id,
       userSpecifiedProjectName: this.flags.project,
       userModel: await this.ensureUserModel(),
-      log: this.logger.info,
+      log: this.logger,
     })
     return envId
   }

@@ -4,7 +4,7 @@ import retry from 'p-retry'
 import util from 'util'
 import { mapValues } from 'lodash'
 import { MachineStatusCommand, dateReplacer } from '@preevy/common'
-import { ComposeModel, ComposeService } from './compose/model'
+import { ComposeModel, ComposeService, composeModelFilename } from './compose/model'
 import { TunnelOpts } from './ssh/url'
 import { Tunnel } from './tunneling'
 import { withBasicAuthCredentials } from './url'
@@ -61,6 +61,7 @@ export const addComposeTunnelAgentService = (
     envId,
     machineStatusCommand,
     envMetadata,
+    composeModelPath,
   }: {
     tunnelOpts: TunnelOpts
     sshPrivateKeyPath: string
@@ -70,6 +71,7 @@ export const addComposeTunnelAgentService = (
     envId: string
     machineStatusCommand?: MachineStatusCommand
     envMetadata: Record<string, unknown>
+    composeModelPath: string
   },
   model: ComposeModel,
 ): ComposeModel => ({
@@ -107,6 +109,13 @@ export const addComposeTunnelAgentService = (
           read_only: true,
           bind: { create_host_path: true },
         },
+        {
+          type: 'bind',
+          source: composeModelPath,
+          target: `/preevy/${composeModelFilename}`,
+          read_only: true,
+          bind: { create_host_path: true },
+        },
       ],
       user,
       environment: {
@@ -124,19 +133,9 @@ export const addComposeTunnelAgentService = (
   },
 })
 
-export const queryTunnels = async ({
-  retryOpts = { retries: 0 },
-  serviceUrls,
-  credentials,
-  includeAccessCredentials,
-  showPreevyService,
-}: {
+export const findComposeTunnelAgentUrl = (
   serviceUrls: { name: string; port: number; url: string }[]
-  credentials: { user: string; password: string }
-  retryOpts?: retry.Options
-  includeAccessCredentials: boolean
-  showPreevyService: boolean
-}) => {
+) => {
   const serviceUrl = serviceUrls.find(
     ({ name, port }) => name === COMPOSE_TUNNEL_AGENT_SERVICE_NAME && port === COMPOSE_TUNNEL_AGENT_PORT
   )?.url
@@ -145,13 +144,28 @@ export const queryTunnels = async ({
     throw new Error(`Cannot find compose tunnel agent API service URL ${COMPOSE_TUNNEL_AGENT_SERVICE_NAME}:${COMPOSE_TUNNEL_AGENT_PORT} in: ${util.inspect(serviceUrls)}`)
   }
 
+  return serviceUrl
+}
+
+export const queryTunnels = async ({
+  retryOpts = { retries: 0 },
+  composeTunnelServiceUrl,
+  credentials,
+  includeAccessCredentials,
+  showPreevyService,
+}: {
+  composeTunnelServiceUrl: string
+  credentials: { user: string; password: string }
+  retryOpts?: retry.Options
+  includeAccessCredentials: boolean
+  showPreevyService: boolean
+}) => {
   const addCredentials = withBasicAuthCredentials(credentials)
-  const url = addCredentials(`${serviceUrl}/tunnels`)
 
   const { tunnels, clientId: tunnelId } = await retry(async () => {
-    const r = await fetch(url, { timeout: 2500 })
+    const r = await fetch(addCredentials(`${composeTunnelServiceUrl}/tunnels`), { timeout: 2500 })
     if (!r.ok) {
-      throw new Error(`Failed to connect to docker proxy at ${url}: ${r.status}: ${r.statusText}`)
+      throw new Error(`Failed to connect to docker proxy at ${composeTunnelServiceUrl}: ${r.status}: ${r.statusText}`)
     }
     return await (r.json() as Promise<{ tunnels: Tunnel[]; clientId: string }>)
   }, retryOpts)

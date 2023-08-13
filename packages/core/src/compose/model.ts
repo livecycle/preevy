@@ -152,3 +152,5 @@ export const fixModelForRemote = async (
     filesToCopy,
   }
 }
+
+export const composeModelFilename = 'docker-compose.yaml'

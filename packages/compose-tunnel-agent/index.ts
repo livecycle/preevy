@@ -109,6 +109,7 @@ const main = async () => {
         ? async () => await runMachineStatusCommand({ log, docker })(machineStatusCommand)
         : undefined,
       envMetadata: await envMetadata({ env: process.env, log }),
+      composeModelPath: '/preevy/docker-compose.yaml',
     }),
     dockerProxyHandlers: createDockerProxyHandlers({
       log: log.child({ name: 'docker-proxy' }),

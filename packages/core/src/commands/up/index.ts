@@ -1,10 +1,10 @@
-import { formatPublicKey } from '@preevy/common'
+import { formatPublicKey, readOrUndefined } from '@preevy/common'
 import fs from 'fs'
 import path from 'path'
 import { rimraf } from 'rimraf'
 import yaml from 'yaml'
 import { TunnelOpts } from '../../ssh'
-import { fixModelForRemote, localComposeClient, resolveComposeFiles } from '../../compose'
+import { composeModelFilename, fixModelForRemote, localComposeClient, resolveComposeFiles } from '../../compose'
 import { ensureCustomizedMachine } from './machine'
 import { wrapWithDockerSocket } from '../../docker'
 import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addComposeTunnelAgentService } from '../../compose-tunnel-agent-client'
@@ -24,9 +24,12 @@ const createCopiedFileInDataDir = (
   content: string | Buffer
 ): Promise<{ local: string; remote: string }> => {
   const local = path.join(projectLocalDataDir, filename)
+  const result = { local, remote: filename }
+  if (await readOrUndefined(local) === Buffer.from(content)) {
+    return result
+  }
   await fs.promises.mkdir(path.dirname(local), { recursive: true })
   await fs.promises.writeFile(local, content, { flag: 'w' })
-  const result = { local, remote: filename }
   filesToCopy.push(result)
   return result
 }
@@ -74,7 +77,7 @@ const up = async ({
   version,
   envId,
   expectedServiceUrls,
-  normalizedProjectName,
+  projectName,
 }: {
   debug: boolean
   machineDriver: MachineDriver
@@ -94,9 +97,9 @@ const up = async ({
   version: string
   envId: string
   expectedServiceUrls: { name: string; port: number; url: string }[]
-  normalizedProjectName: string
+  projectName: string
 }): Promise<{ machine: MachineBase }> => {
-  const remoteDir = remoteProjectDir(normalizedProjectName)
+  const remoteDir = remoteProjectDir(projectName)
 
   const composeFiles = await resolveComposeFiles({
     userSpecifiedFiles: userSpecifiedComposeFiles,
@@ -116,7 +119,7 @@ const up = async ({
     await composeClientWithInjectedArgs.getModel()
   )
 
-  const projectLocalDataDir = path.join(dataDir, normalizedProjectName)
+  const projectLocalDataDir = path.join(dataDir, projectName)
   await rimraf(projectLocalDataDir)
 
   const createCopiedFile = createCopiedFileInDataDir({ projectLocalDataDir, filesToCopy })
@@ -141,11 +144,12 @@ const up = async ({
       user: userAndGroup.join(':'),
       machineStatusCommand: await machineDriver.machineStatusCommand(machine),
       envMetadata: await envMetadata({ version }),
+      composeModelPath: path.join(remoteDir, composeModelFilename),
     }, fixedModel)
 
     const modelStr = yaml.stringify(remoteModel)
     log.debug('model', modelStr)
-    const composeFilePath = (await createCopiedFile('docker-compose.yml', modelStr)).local
+    const composeFilePath = await createCopiedFile(composeModelFilename, modelStr)
 
     await exec(`mkdir -p "${remoteDir}"`)
 
@@ -154,7 +158,7 @@ const up = async ({
     await uploadWithSpinner(exec, remoteDir, filesToCopy, skipUnchangedFiles)
 
     const compose = localComposeClient({
-      composeFiles: [composeFilePath],
+      composeFiles: [composeFilePath.local],
       projectName: userSpecifiedProjectName,
     })
     const composeArgs = calcComposeArgs({ userSpecifiedServices, debug, cwd })

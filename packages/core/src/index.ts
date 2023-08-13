@@ -21,9 +21,9 @@ export {
 export { profileStore, Profile, ProfileStore } from './profile'
 export { telemetryEmitter, registerEmitter, wireProcessExit, createTelemetryEmitter } from './telemetry'
 export { fsTypeFromUrl, Store, VirtualFS, localFsFromUrl } from './store'
-export { localComposeClient, ComposeModel, resolveComposeFiles, getExposedTcpServicePorts } from './compose'
+export { localComposeClient, ComposeModel, resolveComposeFiles, getExposedTcpServicePorts, remoteUserModel, NoComposeFilesError } from './compose'
 export { withSpinner } from './spinner'
-export { findEnvId } from './env-id'
+export { findEnvId, findProjectName } from './env-id'
 export { sshKeysStore } from './state'
 export { connectSshClient, generateSshKeyPair, SshKeyPairType } from './ssh'
 export {
@@ -40,6 +40,7 @@ export {
   COMPOSE_TUNNEL_AGENT_SERVICE_NAME,
   addBaseComposeTunnelAgentService,
   queryTunnels,
+  findComposeTunnelAgentUrl,
 } from './compose-tunnel-agent-client'
 export * as commands from './commands'
 export { wrapWithDockerSocket } from './docker'

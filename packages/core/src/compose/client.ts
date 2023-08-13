@@ -8,14 +8,21 @@ import { childProcessPromise, childProcessStdoutPromise, ProcessError } from '..
 const DOCKER_COMPOSE_NO_CONFIGURATION_FILE_ERROR_CODE = 14
 
 class LoadComposeFileError extends Error {
-  constructor(readonly cause: Error) {
-    super(`Could not load compose file: ${cause.message}`)
+  constructor(readonly cause: unknown) {
+    const causeMessage = cause instanceof Error ? cause.message : String(cause)
+    super(`Could not load compose file: ${causeMessage}`)
+  }
+}
+
+export class NoComposeFilesError extends LoadComposeFileError {
+  constructor() {
+    super('No compose files found')
   }
 }
 
 class DockerIsNotInstalled extends Error {
   constructor(readonly cause: Error) {
-    super(`Failed to run 'docker compose', is Docker installed? (${cause.message})`)
+    super(`Failed to run 'docker compose', is Docker installed with the Compose plugin? (${cause.message})`)
   }
 }
 
