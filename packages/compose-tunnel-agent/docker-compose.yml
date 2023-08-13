@@ -17,6 +17,7 @@ services:
 
     ports:
       - 3000
+      - 3001
 
     # healthcheck:
     #   test: wget --no-verbose --tries=1 --spider http://localhost:3000/healthz || exit 1

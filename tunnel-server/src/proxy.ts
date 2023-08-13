@@ -1,77 +1,101 @@
 import httpProxy from 'http-proxy'
 import { IncomingMessage, ServerResponse } from 'http'
+import net from 'net'
 import internal from 'stream'
 import type { Logger } from 'pino'
+import { inspect } from 'util'
 import { PreviewEnvStore } from './preview-env'
 import { requestsCounter } from './metrics'
-import { authenticator, tunnelingKeyAuthenticator } from './auth'
+import { Claims, authenticator, JwtAuthenticator, getIssuerToKeyDataFromEnv, AuthenticationResult, AuthError, UnauthorizedError } from './auth'
+import { SessionStore } from './session'
+import { BadGatewayError, BadRequestError, errorHandler, errorUpgradeHandler, tryHandler, tryUpgradeHandler } from './http-server-helpers'
 
 export const isProxyRequest = (
   hostname: string,
 ) => (req: IncomingMessage) => Boolean(req.headers.host?.split(':')?.[0]?.endsWith(`.${hostname}`))
 
-function asyncHandler<TArgs extends unknown[]>(
-  fn: (...args: TArgs) => Promise<void>,
-  onError: (error: unknown, ...args: TArgs)=> void,
-) {
-  return async (...args: TArgs) => {
-    try {
-      await fn(...args)
-    } catch (err) {
-      onError(err, ...args)
+function loginRedirector(loginUrl:string) {
+  return (res: ServerResponse<IncomingMessage>, env: string, returnPath?: string) => {
+    res.statusCode = 307
+    const url = new URL(loginUrl)
+    url.searchParams.set('env', env)
+    if (returnPath) {
+      url.searchParams.set('returnPath', returnPath)
     }
-  }
-}
 
-const unauthorized = (res: ServerResponse<IncomingMessage>) => {
-  res.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"')
-  res.statusCode = 401
-  res.end('Unauthorized')
+    res.setHeader('location', url.toString())
+    res.end()
+  }
 }
 
 export function proxyHandlers({
   envStore,
-  logger,
+  loginUrl,
+  sessionStore,
+  log,
 }: {
+  sessionStore: SessionStore<Claims>
   envStore: PreviewEnvStore
-  logger: Logger
+  loginUrl: string
+  log: Logger
 }) {
   const proxy = httpProxy.createProxy({})
+  const redirectToLogin = loginRedirector(loginUrl)
   const resolveTargetEnv = async (req: IncomingMessage) => {
     const { url } = req
     const host = req.headers.host?.split(':')?.[0]
     const targetHost = host?.split('.', 1)[0]
     const env = await envStore.get(targetHost as string)
     if (!env) {
-      logger.warn('no env for %j', { targetHost, url })
+      log.warn('no env for %j', { targetHost, url })
       return undefined
     }
     return env
   }
   return {
-    handler: asyncHandler(async (req: IncomingMessage, res: ServerResponse<IncomingMessage>) => {
+    handler: tryHandler({ log }, async (req: IncomingMessage, res: ServerResponse<IncomingMessage>) => {
       const env = await resolveTargetEnv(req)
       if (!env) {
-        res.statusCode = 502
-        res.end()
-        return undefined
+        throw new BadGatewayError()
       }
 
-      if (env.access === 'private') {
-        const authenticate = authenticator([tunnelingKeyAuthenticator(env.publicKey)])
-        try {
-          const claims = await authenticate(req)
-          if (!claims) {
-            return unauthorized(res)
+      const session = sessionStore(req, res, env.publicKeyThumbprint)
+      if (env.access === 'private' && req.method !== 'OPTIONS') {
+        if (!session.user) {
+          const authenticate = authenticator([
+            JwtAuthenticator(getIssuerToKeyDataFromEnv(env, log)),
+          ])
+          let authResult: AuthenticationResult
+          try {
+            authResult = await authenticate(req)
+          } catch (e) {
+            if (e instanceof AuthError) {
+              log.warn('Auth error %j', inspect(e))
+              throw new BadRequestError(`Auth error: ${e.message}`)
+            }
+            throw e
           }
-        } catch (error) {
-          res.statusCode = 400
-          res.end()
-          return undefined
+          if (!authResult.isAuthenticated) {
+            log.debug('unauthorized request: %j %j %j', req.url, req.method, req.headers)
+            throw new UnauthorizedError('invalid auth')
+          }
+          session.set(authResult.claims)
+          if (authResult.login && req.method === 'GET') {
+            session.save()
+            redirectToLogin(res, env.hostname, req.url)
+            return undefined
+          }
+          if (authResult.method.type === 'header') {
+            delete req.headers[authResult.method.header]
+          }
+        }
+
+        if (session.user?.role !== 'admin') {
+          throw new UnauthorizedError('not admin')
         }
       }
 
-      logger.debug('proxying to %j', { target: env.target, url: req.url })
+      log.debug('proxying to %j', { target: env.target, url: req.url })
       requestsCounter.inc({ clientId: env.clientId })
 
       return proxy.web(
@@ -84,40 +108,56 @@ export function proxyHandlers({
             socketPath: env.target,
           },
         },
-        err => {
-          logger.warn('error in proxy %j', { error: err, targetHost: env.target, url: req.url })
-          res.statusCode = 502
-          res.end(`error proxying request: ${(err as unknown as { code: unknown }).code}`)
-        }
+        err => errorHandler(log, err, req, res)
       )
-    }, err => logger.error('error forwarding traffic %j', { error: err })),
-    wsHandler: asyncHandler(async (req: IncomingMessage, socket: internal.Duplex, head: Buffer) => {
+    }),
+
+    upgradeHandler: tryUpgradeHandler({ log }, async (req: IncomingMessage, socket: internal.Duplex, head: Buffer) => {
       const env = await resolveTargetEnv(req)
       if (!env) {
-        socket.end()
+        log.warn('env not found for upgrade %j', req.url)
+        throw new BadGatewayError()
+      }
+
+      log.debug('upgrade handler %j', { url: req.url, env, headers: req.headers })
+
+      if (env.access === 'private') {
+        const session = sessionStore(req, undefined as any, env.publicKeyThumbprint)
+        if (session.user?.role !== 'admin') {
+          log.debug('unauthorized upgrade - not admin %j %j %j', req.url, req.method, req.headers)
+          throw new UnauthorizedError('not admin')
+        }
+      }
+
+      const upgrade = req.headers.upgrade?.toLowerCase()
+
+      if (upgrade === 'websocket') {
+        return proxy.ws(
+          req,
+          socket,
+          head,
+          {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            target: {
+              socketPath: env.target,
+            },
+          },
+          err => errorUpgradeHandler(log, err, req, socket)
+        )
+      }
+
+      if (upgrade === 'tcp') {
+        const targetSocket = net.createConnection({ path: env.target }, () => {
+          const reqBuf = `${req.method} ${req.url} HTTP/${req.httpVersion}\r\n${Object.entries(req.headers).map(([k, v]) => `${k}: ${v}`).join('\r\n')}\r\n\r\n`
+          targetSocket.write(reqBuf)
+          targetSocket.write(head)
+          socket.pipe(targetSocket).pipe(socket)
+        })
         return undefined
       }
 
-      if (env.access === 'private') {
-        // need to support session cookie, native browser Websocket api doesn't forward authorization header
-        socket.end()
-        return undefined
-      }
-      return proxy.ws(
-        req,
-        socket,
-        head,
-        {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          target: {
-            socketPath: env.target,
-          },
-        },
-        err => {
-          logger.warn('error in ws proxy %j', { error: err, targetHost: env.target, url: req.url })
-        }
-      )
-    }, err => logger.error('error forwarding ws traffic %j', { error: err })),
+      throw new BadRequestError('Unsupported upgrade header')
+    }),
   }
 }

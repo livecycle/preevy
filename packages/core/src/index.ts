@@ -4,6 +4,7 @@ export {
   SshMachine,
   MachineBase,
   MachineResource,
+  MachineCreationResult,
   MachineDriver,
   MachineCreationDriver,
   MachineCreationDriverFactory,
@@ -15,6 +16,7 @@ export {
   getStoredKey as getStoredSshKey,
   getStoredKeyOrUndefined as getStoredSshKeyOrUndefined,
   ForwardSocket,
+  machineStatusNodeExporterCommand,
 } from './driver'
 export { profileStore, Profile, ProfileStore, link, Org } from './profile'
 export { telemetryEmitter, registerEmitter, wireProcessExit, createTelemetryEmitter } from './telemetry'
@@ -23,15 +25,12 @@ export { localComposeClient, ComposeModel, resolveComposeFiles } from './compose
 export { withSpinner } from './spinner'
 export { findAmbientEnvId } from './env-id'
 export { sshKeysStore } from './state'
-export { connectSshClient, generateSshKeyPair } from './ssh'
+export { connectSshClient, generateSshKeyPair, SshKeyPairType } from './ssh'
 export {
   ProcessError,
   spawnPromise,
   childProcessPromise,
   childProcessStdoutPromise,
-  orderedOutput,
-  OrderedOutput,
-  ProcessOutputBuffers,
   expandStdioOptions,
 } from './child-process'
 export {

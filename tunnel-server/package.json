@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@fastify/request-context": "^4.2.0",
-    "@sinclair/typebox": "^0.25.21",
+    "cookies": "^0.8.0",
     "fastify": "^4.12.0",
     "http-proxy": "^1.18.1",
     "jose": "^4.14.4",
@@ -15,9 +15,12 @@
     "pino-pretty": "^9.4.0",
     "prom-client": "^14.2.0",
     "ssh2": "^1.12.0",
-    "ts-node": "^10.9.1"
+    "ts-node": "^10.9.1",
+    "ts-pattern": "^5.0.4",
+    "zod": "^3.21.4"
   },
   "devDependencies": {
+    "@types/cookies": "^0.7.7",
     "@types/http-proxy": "^1.17.9",
     "@types/lodash": "^4.14.192",
     "@types/node": "18",

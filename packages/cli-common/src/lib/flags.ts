@@ -52,4 +52,8 @@ export const urlFlags = {
     description: 'Include access credentials for basic auth for each service URL',
     default: false,
   }),
+  'show-preevy-service-urls': Flags.boolean({
+    description: 'Show URLs for internal Preevy services',
+    default: false,
+  }),
 } as const

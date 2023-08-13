@@ -1,4 +1,5 @@
-import { ProcessError, ProcessOutputBuffers } from '@preevy/core'
+import { ProcessOutputBuffers } from '@preevy/common'
+import { ProcessError } from '@preevy/core'
 import { Readable, Writable } from 'stream'
 
 export type BaseExecOpts = {

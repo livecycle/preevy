@@ -19,7 +19,9 @@ import {
   getStoredSshKey,
   machineResourceType,
   Logger,
+  machineStatusNodeExporterCommand,
 } from '@preevy/core'
+import { pick } from 'lodash'
 import { Client, client as createClient, REGIONS } from './client'
 import { CUSTOMIZE_BARE_MACHINE } from './scripts'
 import { AzureCustomTags, extractResourceGroupNameFromId } from './vm-creation-utils'
@@ -49,11 +51,6 @@ type DriverContext = {
   store: Store
 }
 
-type MachineCreationContext = DriverContext & {
-  vmSize?: string
-  resourceGroupId: string
-}
-
 const UBUNTU_IMAGE_DETAILS = {
   publisher: 'Canonical',
   offer: '0001-com-ubuntu-server-jammy',
@@ -67,7 +64,7 @@ const requireTagValue = (tags: Resource['tags'], key: string) => {
   return tags[key]
 }
 
-const SSH_KEYPAIR_ALIAS = 'default' as const
+const SSH_KEYPAIR_ALIAS = 'azure' as const
 
 const machineFromVm = (
   { publicIPAddress, vm }: {
@@ -91,12 +88,8 @@ const machineFromVm = (
 
 const machineDriver = (
   { store, client: cl }: DriverContext,
-): MachineDriver<SshMachine, ResourceType> => ({
-  customizationScripts: CUSTOMIZE_BARE_MACHINE,
-  friendlyName: 'Microsoft Azure',
-  getMachine: async ({ envId }) => await cl.getInstance(envId).then(vm => machineFromVm(vm)),
-
-  listDeletableResources: () => asyncMap(
+): MachineDriver<SshMachine, ResourceType> => {
+  const listMachines = () => asyncMap(
     rg => cl.getInstanceByRg(rg.name as string).then(vm => {
       if (vm) {
         return machineFromVm(vm)
@@ -109,21 +102,32 @@ const machineDriver = (
       }
     }),
     cl.listResourceGroups()
-  ),
+  )
 
-  deleteResources: async (wait, ...resources) => {
-    await Promise.all(resources.map(({ type, providerId }) => {
-      if (type === machineResourceType) {
-        return cl.deleteResourcesResourceGroup(providerId, wait)
-      }
-      throw new Error(`Unknown resource type "${type}"`)
-    }))
-  },
+  return ({
+    customizationScripts: CUSTOMIZE_BARE_MACHINE,
+    friendlyName: 'Microsoft Azure',
+    getMachine: async ({ envId }) => await cl.getInstance(envId).then(vm => machineFromVm(vm)),
 
-  resourcePlurals: {},
+    listMachines,
+    listDeletableResources: listMachines,
 
-  ...sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) }),
-})
+    deleteResources: async (wait, ...resources) => {
+      await Promise.all(resources.map(({ type, providerId }) => {
+        if (type === machineResourceType) {
+          return cl.deleteResourcesResourceGroup(providerId, wait)
+        }
+        throw new Error(`Unknown resource type "${type}"`)
+      }))
+    },
+
+    resourcePlurals: {},
+
+    ...sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) }),
+
+    machineStatusCommand: async () => machineStatusNodeExporterCommand,
+  })
+}
 
 const flags = {
   region: Flags.string({
@@ -135,6 +139,8 @@ const flags = {
     required: true,
   }),
 } as const
+
+type FlagTypes = Omit<Interfaces.InferredFlags<typeof flags>, 'json'>
 
 const questions = async (): Promise<(Question | ListQuestion)[]> => [
   {
@@ -164,19 +170,45 @@ const flagsFromAnswers = async (answers: Record<string, unknown>) => ({
 const contextFromFlags = ({
   region,
   'subscription-id': subscriptionId,
-}: Interfaces.InferredFlags<typeof flags>): { region: string; subscriptionId: string } => ({
+}: FlagTypes): { region: string; subscriptionId: string } => ({
   region,
   subscriptionId,
 })
 
 const DEFAULT_VM_SIZE = 'Standard_B2s'
 
+const machineCreationFlags = {
+  ...flags,
+  region: Flags.string({
+    description: 'Microsoft Azure region in which resources will be provisioned',
+    required: true,
+  }),
+  'vm-size': Flags.string({
+    description: 'Machine type to be provisioned',
+    default: DEFAULT_VM_SIZE,
+    required: false,
+  }),
+  'resource-group-name': Flags.string({
+    description: 'Microsoft Azure resource group name',
+    required: true,
+  }),
+} as const
+
+type MachineCreationFlagTypes = Omit<InferredFlags<typeof machineCreationFlags>, 'json'>
+
+type MachineCreationContext = DriverContext & {
+  vmSize?: string
+  resourceGroupId: string
+  metadata: MachineCreationFlagTypes
+}
+
 const machineCreationDriver = (
-  { client: cl, vmSize, store, log, debug }: MachineCreationContext,
+  { client: cl, vmSize, store, log, debug, metadata }: MachineCreationContext,
 ): MachineCreationDriver<SshMachine> => {
   const ssh = sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) })
 
   return {
+    metadata,
     createMachine: async ({ envId }) => ({
       fromSnapshot: false,
       result: (async () => {
@@ -188,7 +220,7 @@ const machineCreationDriver = (
           vm,
         } = await cl.createVMInstance({
           imageRef: UBUNTU_IMAGE_DETAILS,
-          sshPublicKey: await sshKeysStore(store).upsertKey(SSH_KEYPAIR_ALIAS),
+          sshPublicKey: await sshKeysStore(store).upsertKey(SSH_KEYPAIR_ALIAS, 'rsa'),
           vmSize: vmSize ?? DEFAULT_VM_SIZE,
           envId,
         })
@@ -225,33 +257,6 @@ const machineCreationDriver = (
   }
 }
 
-const machineCreationFlags = {
-  ...flags,
-  region: Flags.string({
-    description: 'Microsoft Azure region in which resources will be provisioned',
-    required: true,
-  }),
-  'vm-size': Flags.string({
-    description: 'Machine type to be provisioned',
-    default: DEFAULT_VM_SIZE,
-    required: false,
-  }),
-  'resource-group-name': Flags.string({
-    description: 'Microsoft Azure resource group name',
-    required: true,
-  }),
-} as const
-
-type MachineCreationFlagTypes = InferredFlags<typeof machineCreationFlags>
-
-const machineCreationContextFromFlags = (
-  f: MachineCreationFlagTypes,
-): ReturnType<typeof contextFromFlags> & { vmSize: string; resourceGroupId: string } => ({
-  ...contextFromFlags(f),
-  vmSize: f['vm-size'],
-  resourceGroupId: f['resource-group-name'],
-})
-
 const factory: MachineDriverFactory<
   Interfaces.InferredFlags<typeof flags>,
   SshMachine,
@@ -266,12 +271,21 @@ const factory: MachineDriverFactory<
   store,
 })
 
+const machineCreationContextFromFlags = (
+  f: MachineCreationFlagTypes,
+): ReturnType<typeof contextFromFlags> & { vmSize: string; resourceGroupId: string } => ({
+  ...contextFromFlags(f),
+  vmSize: f['vm-size'],
+  resourceGroupId: f['resource-group-name'],
+})
+
 const machineCreationFactory: MachineCreationDriverFactory<
-  Interfaces.InferredFlags<typeof machineCreationFlags>,
+  MachineCreationFlagTypes,
   SshMachine
 > = ({ flags: f, profile: { id: profileId }, store, log, debug }) => {
   const c = machineCreationContextFromFlags(f)
   return machineCreationDriver({
+    metadata: pick(f, Object.keys(machineCreationFlags)) as MachineCreationFlagTypes, // filter out non-driver flags
     client: createClient({
       ...c,
       profileId,

@@ -1,6 +1,6 @@
 {
   "name": "@preevy/core",
-  "version": "0.0.47",
+  "version": "0.0.48",
   "description": "Core functionality for Preevy",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,8 +9,8 @@
   ],
   "license": "Apache-2.0",
   "dependencies": {
-    "@preevy/common": "0.0.47",
-    "@preevy/compose-tunnel-agent": "0.0.47",
+    "@preevy/common": "0.0.48",
+    "@preevy/compose-tunnel-agent": "0.0.48",
     "chalk": "^4.1.2",
     "fast-safe-stringify": "^2.1.1",
     "inquirer": "^8.0.0",
@@ -61,6 +61,7 @@
     "eslint-plugin-jsx-a11y": "^6.7.1",
     "eslint-plugin-react": "^7.32.2",
     "jest": "^29.4.3",
+    "shx": "^0.3.3",
     "ts-jest": "^29.1.0",
     "ts-node": "^10.9.1",
     "tslib": "^2.5.0",
@@ -69,7 +70,7 @@
   "scripts": {
     "test": "yarn jest",
     "lint": "eslint . --ext .ts,.tsx --cache",
-    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "clean": "shx rm -rf dist tsconfig.tsbuildinfo",
     "build": "tsc -b",
     "prepack": "yarn clean && yarn build",
     "prepare": "cd ../.. && husky install"

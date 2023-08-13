@@ -34,6 +34,7 @@ export interface ClientForward extends EventEmitter {
 }
 
 export interface SshClient extends EventEmitter {
+  envId: string
   clientId: string
   publicKey: ParsedKey
   on: (
@@ -91,7 +92,7 @@ export const sshServer = (
   const serverEmitter = new EventEmitter() as Omit<SshServer, 'close' | 'listen'>
   const server = new ssh2.Server(
     {
-      debug: x => log.debug(x),
+      // debug: x => log.debug(x),
       // keepaliveInterval: 1000,
       // keepaliveCountMax: 5,
       hostKeys: [sshPrivateKey],
@@ -126,8 +127,9 @@ export const sshServer = (
           preevySshClient = Object.assign(new EventEmitter(), {
             publicKey: keyOrError,
             clientId: idFromPublicSsh(keyOrError.getPublicSSH()),
+            envId: ctx.username,
           })
-          log.debug('accepting clientId %j', preevySshClient.clientId)
+          log.debug('accepting clientId %j envId %j', preevySshClient.clientId, preevySshClient.envId)
           ctx.accept()
           serverEmitter.emit('client', preevySshClient)
         })
@@ -180,7 +182,7 @@ export const sshServer = (
             parsed,
             () => new Promise<ClientForward>((resolveForward, rejectForward) => {
               const socketServer = net.createServer(socket => {
-                log.debug('socketServer connected %j', socket)
+                log.debug('socketServer connected')
                 client.openssh_forwardOutStreamLocal(
                   request,
                   (err, upstream) => {
