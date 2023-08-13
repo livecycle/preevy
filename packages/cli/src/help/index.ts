@@ -3,7 +3,7 @@ import { BaseCommand } from '@preevy/cli-common'
 
 export default class MyHelpClass extends Help {
   protected async showRootHelp(): Promise<void> {
-    super.showRootHelp();
+    await super.showRootHelp()
     this.log(this.formatFlag())
   }
 
