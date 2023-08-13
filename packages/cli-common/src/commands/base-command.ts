@@ -86,7 +86,7 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
     if (this.flags.debug) {
       oclifSettings.debug = true
     }
-    this.logger = commandLogger(this, 'stdout')
+    this.logger = commandLogger(this, this.flags.json ? 'stderr' : 'stdout')
     this.stdErrLogger = commandLogger(this, 'stderr')
   }
 

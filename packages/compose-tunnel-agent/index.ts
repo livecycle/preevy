@@ -8,9 +8,7 @@ import pino from 'pino'
 import pinoPretty from 'pino-pretty'
 import { EOL } from 'os'
 import {
-  ConnectionCheckResult,
   requiredEnv,
-  checkConnection,
   formatPublicKey,
   parseSshUrl,
   SshConnectionConfig,
@@ -46,24 +44,12 @@ const sshConnectionConfigFromEnv = async (): Promise<{ connectionConfig: SshConn
     connectionConfig: {
       ...parsed,
       clientPrivateKey,
-      username: process.env.PREEVY_ENV_ID ?? 'foo',
+      username: requiredEnv('PREEVY_ENV_ID'),
       knownServerPublicKeys,
       insecureSkipVerify: Boolean(process.env.INSECURE_SKIP_VERIFY),
       tlsServerName: process.env.TLS_SERVERNAME || undefined,
     },
   }
-}
-
-const formatConnectionCheckResult = (
-  r: ConnectionCheckResult,
-) => {
-  if ('unverifiedHostKey' in r) {
-    return { unverifiedHostKey: formatPublicKey(r.unverifiedHostKey) }
-  }
-  if ('error' in r) {
-    return { error: r.error.message || r.error.toString(), stack: r.error.stack, details: inspect(r.error) }
-  }
-  return r
 }
 
 const writeLineToStdout = (s: string) => [s, EOL].forEach(d => process.stdout.write(d))
@@ -85,22 +71,13 @@ const main = async () => {
     clientPublicKey: formatPublicKey(connectionConfig.clientPrivateKey),
   })
 
-  if (process.env.SSH_CHECK_ONLY || process.argv.includes('check')) {
-    const result = await checkConnection({
-      connectionConfig,
-      log: log.child({ name: 'ssh' }, { level: 'warn' }),
-    })
-    writeLineToStdout(JSON.stringify(formatConnectionCheckResult(result)))
-    process.exit(0)
-  }
-
   const docker = new Docker({ socketPath: dockerSocket })
   const dockerClient = createDockerClient({ log: log.child({ name: 'docker' }), docker, debounceWait: 500 })
 
   const sshLog = log.child({ name: 'ssh' })
   const sshClient = await createSshClient({
     connectionConfig,
-    tunnelNameResolver: tunnelNameResolver({ userDefinedSuffix: process.env.TUNNEL_URL_SUFFIX }),
+    tunnelNameResolver: tunnelNameResolver({ envId: requiredEnv('PREEVY_ENV_ID') }),
     log: sshLog,
     onError: err => {
       log.error(err)
@@ -132,6 +109,7 @@ const main = async () => {
         ? async () => await runMachineStatusCommand({ log, docker })(machineStatusCommand)
         : undefined,
       envMetadata: await envMetadata({ env: process.env, log }),
+      composeModelPath: '/preevy/docker-compose.yaml',
     }),
     dockerProxyHandlers: createDockerProxyHandlers({
       log: log.child({ name: 'docker-proxy' }),
