@@ -3,37 +3,7 @@ import { BaseCommand } from '@preevy/cli-common'
 
 export default class MyHelpClass extends Help {
   protected async showRootHelp(): Promise<void> {
-    let rootTopics = this.sortedTopics
-    let rootCommands = this.sortedCommands
-
-    const state = this.config.pjson?.oclif?.state
-    if (state) {
-      this.log(
-        state === 'deprecated'
-          ? `${this.config.bin} is deprecated`
-          : `${this.config.bin} is in ${state}.\n`,
-      )
-    }
-
-    this.log(this.formatRoot())
-    this.log('')
-
-    if (!this.opts.all) {
-      rootTopics = rootTopics.filter(t => !t.name.includes(':'))
-      rootCommands = rootCommands.filter(c => !c.id.includes(':'))
-    }
-
-    if (rootTopics.length > 0) {
-      this.log(this.formatTopics(rootTopics))
-      this.log('')
-    }
-
-    if (rootCommands.length > 0) {
-      rootCommands = rootCommands.filter(c => c.id)
-      this.log(this.formatCommands(rootCommands))
-      this.log('')
-    }
-
+    super.showRootHelp();
     this.log(this.formatFlag())
   }
 
@@ -52,7 +22,7 @@ export default class MyHelpClass extends Help {
         if (flag.helpGroup === 'GLOBAL') {
           const flagHelp: Flag = {
             name: flagName,
-            description: flag.summary !== undefined ? flag.summary : '',
+            description: flag.summary ?? '',
           }
           flags.push(flagHelp)
         }
