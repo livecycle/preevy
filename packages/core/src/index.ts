@@ -25,6 +25,7 @@ export { localComposeClient, ComposeModel, resolveComposeFiles, getExposedTcpSer
 export { withSpinner } from './spinner'
 export { findEnvId, findProjectName, findEnvIdByProjectName } from './env-id'
 export { sshKeysStore } from './state'
+export { truncateWithHash } from './strings'
 export { connectSshClient, generateSshKeyPair, SshKeyPairType } from './ssh'
 export {
   ProcessError,

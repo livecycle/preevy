@@ -2,6 +2,7 @@ import * as k8s from '@kubernetes/client-node'
 import { ensureDefined, extractDefined } from '@preevy/core'
 import { asyncFilter, asyncFirst, asyncToArray } from 'iter-tools-es'
 import { paginationIterator } from './pagination'
+import { FuncWrapper } from './log-error'
 
 export type DeploymentNotReadyErrorReason = 'NoRevision' | 'NoReplicaSet' | 'NoReadyPod'
 export class DeploymentNotReadyError extends Error {
@@ -11,9 +12,10 @@ export class DeploymentNotReadyError extends Error {
 }
 
 export default (
-  { k8sAppsApi, k8sApi }: {
+  { k8sAppsApi, k8sApi, wrap }: {
     k8sAppsApi: k8s.AppsV1Api
     k8sApi: k8s.CoreV1Api
+    wrap: FuncWrapper
   }
 ) => {
   const listDeployments = (
@@ -26,7 +28,7 @@ export default (
       watch?: boolean
     },
   ) => paginationIterator<k8s.V1Deployment>(
-    continueToken => k8sAppsApi.listNamespacedDeployment(
+    wrap(continueToken => k8sAppsApi.listNamespacedDeployment(
       namespace,
       undefined,
       undefined,
@@ -38,7 +40,7 @@ export default (
       undefined,
       timeoutSeconds,
       watch,
-    ),
+    )),
   )
 
   const listReplicaSets = (
@@ -51,7 +53,7 @@ export default (
       watch?: boolean
     },
   ) => paginationIterator<k8s.V1ReplicaSet>(
-    continueToken => k8sAppsApi.listNamespacedReplicaSet(
+    wrap(continueToken => k8sAppsApi.listNamespacedReplicaSet(
       namespace,
       undefined,
       undefined,
@@ -63,7 +65,7 @@ export default (
       undefined,
       timeoutSeconds,
       watch,
-    ),
+    )),
   )
 
   const listPods = (
@@ -77,7 +79,7 @@ export default (
       watch?: boolean
     },
   ) => paginationIterator<k8s.V1Pod>(
-    continueToken => k8sApi.listNamespacedPod(
+    wrap(continueToken => k8sApi.listNamespacedPod(
       namespace,
       undefined,
       undefined,
@@ -89,7 +91,7 @@ export default (
       undefined,
       timeoutSeconds,
       watch,
-    ),
+    )),
   )
 
   const listServices = (
@@ -102,7 +104,7 @@ export default (
       watch?: boolean
     },
   ) => paginationIterator<k8s.V1Service>(
-    continueToken => k8sApi.listNamespacedService(
+    wrap(continueToken => k8sApi.listNamespacedService(
       namespace,
       undefined,
       undefined,
@@ -114,7 +116,7 @@ export default (
       undefined,
       timeoutSeconds,
       watch,
-    ),
+    )),
   )
 
   const findReplicaSetForDeployment = async (deployment: Pick<k8s.V1Deployment, 'metadata'>) => {
