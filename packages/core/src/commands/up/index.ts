@@ -143,7 +143,7 @@ const up = async ({
       knownServerPublicKeyPath: path.join(remoteDir, knownServerPublicKey.remote),
       user: userAndGroup.join(':'),
       machineStatusCommand: await machineDriver.machineStatusCommand(machine),
-      envMetadata: await envMetadata({ version }),
+      envMetadata: await envMetadata({ envId, version }),
       composeModelPath: path.join(remoteDir, composeModelFilename),
     }, fixedModel)
 

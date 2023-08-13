@@ -24,7 +24,7 @@ export type MachineConnection = {
   close: () => Promise<void>
 }
 
-export type MachineMetadata = Omit<EnvDriverMetadata, 'machineLocationDescription' | 'driver'>
+export type MachineMetadata = Omit<EnvDriverMetadata, 'machineLocationDescription' | 'driver' | 'providerId'>
 
 export type MachineDriver<
   Machine extends MachineBase = MachineBase,
