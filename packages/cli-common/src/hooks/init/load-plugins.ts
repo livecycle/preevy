@@ -31,6 +31,8 @@ export const initHook: OclifHook<'init'> = async function hook({ config, id, arg
 
   const userModelOrError = composeFiles.length
     ? await withSpinner(
+      // eslint false positive here on case-sensitive filesystems due to unknown type
+      // eslint-disable-next-line @typescript-eslint/return-await
       async () => await localComposeClient({
         composeFiles,
         projectName: flags.project,

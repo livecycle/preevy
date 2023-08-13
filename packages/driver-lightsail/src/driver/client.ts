@@ -129,6 +129,8 @@ const client = ({
           ls.startInstance({ instanceName: instance.name })
         )
       }
+      // eslint false positive here on case-sensitive filesystems due to unknown type
+      // eslint-disable-next-line @typescript-eslint/return-await
       return await extractDefined(
         ls.getInstance({ instanceName: instance.name }),
         'instance'
@@ -207,6 +209,8 @@ const client = ({
         ],
       })
 
+      // eslint false positive here on case-sensitive filesystems due to unknown type
+      // eslint-disable-next-line @typescript-eslint/return-await
       return await extractDefined(ls.getInstance({ instanceName: name }), 'instance')
     },
 

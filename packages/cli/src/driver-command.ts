@@ -80,6 +80,8 @@ abstract class DriverCommand<T extends typeof Command> extends ProfileCommand<T>
     if (!machine || isPartialMachine(machine)) {
       throw new Error(`No machine found for envId ${envId}`)
     }
+    // eslint false positive here on case-sensitive filesystems due to unknown type
+    // eslint-disable-next-line @typescript-eslint/return-await
     return await driver.connect(machine, { log: this.logger, debug: this.flags.debug })
   }
 }
