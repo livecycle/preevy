@@ -86,6 +86,7 @@ const writeMetadata = async (
   const metadata: Pick<EnvMetadata, 'driver'> = {
     driver: {
       creationTime: new Date(),
+      providerId: machine.providerId,
       machineLocationDescription: machine.locationDescription,
       driver: machineDriverName,
       opts: driverOpts,

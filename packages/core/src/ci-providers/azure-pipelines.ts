@@ -4,7 +4,7 @@ import { stringOrUndefinedToNumber } from './common'
 // https://learn.microsoft.com/en-us/azure/devops/pipelines/build/variables?view=azure-devops&tabs=yaml
 export const azurePipelinesCiProvider = (): CiProvider => ({
   name: 'Azure Pipelines',
-  telemetryId: 'azurepipelines',
+  id: 'azurepipelines',
   currentlyRunningInProvider: () => Boolean(process.env.BUILD_DEFINITIONNAME),
   branchName: () => process.env.BUILD_SOURCEBRANCHNAME,
   gitCommit: () => process.env.BUILD_SOURCEVERSION as string,
