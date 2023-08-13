@@ -5,14 +5,18 @@ import internal from 'stream'
 import { Logger } from 'pino'
 import { match } from 'ts-pattern'
 import { SessionStore } from './session'
-import { Claims, JwtAuthenticator, authenticator, getIssuerToKeyDataFromEnv, unauthorized } from './auth'
+import { Claims, JwtAuthenticator, getCombinedCLIAndSAASVerificationData } from './auth'
 import { PreviewEnvStore } from './preview-env'
 import { replaceHostname } from './url'
 
-export const app = ({ isProxyRequest, proxyHandlers, session: sessionManager, baseUrl, envStore, logger }: {
+const { SAAS_BASE_URL } = process.env
+if (SAAS_BASE_URL === undefined) { throw new Error('Env var SAAS_BASE_URL is missing') }
+
+export const app = ({ isProxyRequest, proxyHandlers, session: sessionManager, baseUrl, envStore, logger, loginUrl }: {
   isProxyRequest: (req: http.IncomingMessage) => boolean
   logger: Logger
   baseUrl: URL
+  loginUrl: string
   session: SessionStore<Claims>
   envStore: PreviewEnvStore
   proxyHandlers: {
@@ -63,10 +67,11 @@ export const app = ({ isProxyRequest, proxyHandlers, session: sessionManager, ba
       }
       const session = sessionManager(req.raw, res.raw, env.publicKeyThumbprint)
       if (!session.user) {
-        const auth = authenticator([JwtAuthenticator(getIssuerToKeyDataFromEnv(env, logger))])
+        const auth = JwtAuthenticator(env.publicKeyThumbprint, getCombinedCLIAndSAASVerificationData(env))
         const result = await auth(req.raw)
         if (!result.isAuthenticated) {
-          return unauthorized(res.raw)
+          return await res.header('Access-Control-Allow-Origin', SAAS_BASE_URL)
+            .redirect(`${SAAS_BASE_URL}/api/auth/login?redirectTo=${encodeURIComponent(`${loginUrl}?env=${envId}&returnPath=${returnPath}`)}`)
         }
         session.set(result.claims)
         session.save()

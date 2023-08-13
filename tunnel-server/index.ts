@@ -46,6 +46,7 @@ const app = createApp({
   isProxyRequest: isProxyRequest(BASE_URL.hostname),
   proxyHandlers: proxyHandlers({ envStore, logger, loginUrl, sessionManager: appSessionManager }),
   logger,
+  loginUrl,
 })
 const sshLogger = logger.child({ name: 'ssh_server' })
 

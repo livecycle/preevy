@@ -5,7 +5,7 @@ import type { Logger } from 'pino'
 import { inspect } from 'util'
 import { PreviewEnvStore } from './preview-env'
 import { requestsCounter } from './metrics'
-import { Claims, authenticator, JwtAuthenticator, unauthorized, getIssuerToKeyDataFromEnv, AuthenticationResult, AuthError } from './auth'
+import { Claims, JwtAuthenticator, unauthorized, AuthenticationResult, AuthError, getCombinedCLIAndSAASVerificationData } from './auth'
 import { SessionStore } from './session'
 
 export const isProxyRequest = (
@@ -75,7 +75,11 @@ export function proxyHandlers({
       const session = sessionManager(req, res, env.publicKeyThumbprint)
       if (env.access === 'private') {
         if (!session.user) {
-          const authenticate = authenticator([JwtAuthenticator(getIssuerToKeyDataFromEnv(env, logger))])
+          const authenticate = JwtAuthenticator(
+            env.publicKeyThumbprint,
+            getCombinedCLIAndSAASVerificationData(env)
+          )
+
           let authResult: AuthenticationResult
           try {
             authResult = await authenticate(req)
@@ -88,9 +92,12 @@ export function proxyHandlers({
             }
             throw e
           }
+
           if (!authResult.isAuthenticated) {
-            return unauthorized(res)
+            redirectToLogin(res, env.hostname, req.url)
+            return undefined
           }
+
           session.set(authResult.claims)
           if (authResult.login && req.method === 'GET') {
             session.save()
