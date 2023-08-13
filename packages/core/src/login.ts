@@ -28,7 +28,8 @@ const pollTokensFromAuthEndpoint = async (
   loginUrl: string,
   deviceCode: string,
   logger: Logger,
-  interval: number
+  interval: number,
+  clientId: string
 ) => {
   try {
     while (true) {
@@ -36,7 +37,7 @@ const pollTokensFromAuthEndpoint = async (
         headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
         body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
           device_code: deviceCode,
-          client_id: 'jEnySAwuAaWaLOdWdALbvXj6dZEqgAJB' }) })
+          client_id: clientId }) })
 
       if (tokenResponse.status !== 403) {
         if (!tokenResponse.ok) throw new Error(`Bad response from token endpoint: ${tokenResponse.status}: ${tokenResponse.statusText}`)
@@ -66,7 +67,7 @@ const deviceFlow = async (loginUrl: string, logger: Logger, clientId: string) =>
     body: new URLSearchParams({
       client_id: clientId,
       scope: 'email openid profile',
-      audience: 'https://livecycle-preevy-cli/',
+      audience: 'https://livecycle-preevy-saas',
     }),
   })
 
@@ -86,7 +87,8 @@ const deviceFlow = async (loginUrl: string, logger: Logger, clientId: string) =>
 
       logger,
 
-      responseData.interval * 1000
+      responseData.interval * 1000,
+      clientId
     ),
     { opPrefix: 'Waiting for approval', successText: 'Done!' }
   )
@@ -125,7 +127,7 @@ export const login = async (dataDir: string, loginUrl: string, lcUrl: string, cl
   await fs.write(PERSISTENT_TOKEN_FILE_NAME, JSON.stringify(tokens))
 
   const postLoginResponse = await fetch(
-    `${lcUrl}/post-login`,
+    `${lcUrl}/api/cli/post-login`,
     { method: 'POST',
       body: JSON.stringify({ id_token: tokens.id_token }),
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokens.access_token}` } }

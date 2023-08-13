@@ -36,7 +36,7 @@ export const link = async (
   }
 
   const orgsResponse = await fetch(
-    `${lcUrl}/orgs`,
+    `${lcUrl}/api/user/orgs`,
     { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokens.access_token}` } }
   )
 
@@ -77,10 +77,10 @@ export const link = async (
     .sign(prk)
 
   const linkResponse = await fetch(
-    `${lcUrl}/link`,
+    `${lcUrl}/api/org/${chosenOrg.id}/profiles`,
     { method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokens.access_token}` },
-      body: JSON.stringify({ organization: chosenOrg.id, profileTunnellingPublicKey: pk.export({ format: 'jwk' }), tokenSignedByTunnelingPrivateKey, idToken: tokens.id_token }) }
+      body: JSON.stringify({ profileTunnellingPublicKey: pk.export({ format: 'jwk' }), tokenSignedByTunnelingPrivateKey, idToken: tokens.id_token }) }
   )
 
   if (!linkResponse.ok) throw new Error(`Error while requesting to link ${linkResponse.status}: ${linkResponse.statusText}`)
