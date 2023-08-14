@@ -9,6 +9,7 @@ import fetch from 'node-fetch'
 import { inspect, promisify } from 'node:util'
 import waitForExpect from 'wait-for-expect'
 import WebSocket from 'ws'
+import stripAnsi from 'strip-ansi'
 import { createDockerProxyHandlers } from '.'
 
 const setupDockerContainer = () => {
@@ -173,9 +174,9 @@ describe('docker proxy', () => {
       it('should communicate via websocket', async () => {
         const { receivedBuffers, send, close } = await openWebSocket(`ws://${serverBaseUrl()}/exec/${execId}/start`)
         await waitForExpect(() => expect(receivedBuffers.length).toBeGreaterThan(0))
-        await send('ls \n')
+        await send('ls\n')
         await waitForExpect(() => {
-          const received = Buffer.concat(receivedBuffers).toString('utf-8')
+          const received = stripAnsi(Buffer.concat(receivedBuffers).toString('utf-8'))
           expect(received).toMatch(/#/)
           expect(received).toMatch(/ls/)
           expect(received).toMatch(/bin/)
