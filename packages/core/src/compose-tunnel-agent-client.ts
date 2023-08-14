@@ -175,7 +175,12 @@ export const queryTunnels = async ({
       .filter(({ service }: Tunnel) => showPreevyService || service !== COMPOSE_TUNNEL_AGENT_SERVICE_NAME)
       .map(tunnel => ({
         ...tunnel,
-        ports: mapValues(tunnel.ports, includeAccessCredentials ? addCredentials : (x: string) => x),
+        ports: mapValues(
+          tunnel.ports,
+          includeAccessCredentials
+            ? (x: string) => `${addCredentials(x)}?basic-auth=true`
+            : (x: string) => x
+        ),
       })),
     tunnelId,
   }
