@@ -7,7 +7,7 @@ import { profileStore } from './store'
 import { Store, localFs } from '../store'
 import { Logger } from '../log'
 
-export type Org = {id: string; name: string; role: string}
+export type Org = {id: string; name: string; role: string; slug: string}
 
 const keyTypeToArgs = {
   rsa: 'RS256',
@@ -53,7 +53,7 @@ export const link = async (
     chosenOrg = await promptUserWithChooseOrg(orgs)
   }
 
-  logger.info(`Linking to org ${chosenOrg.name}`)
+  logger.info(`Linking to org "${chosenOrg.name}"`)
 
   const tunnelingKey = await profileStore(store).getTunnelingKey()
   if (tunnelingKey === undefined) {
@@ -77,7 +77,7 @@ export const link = async (
     .sign(prk)
 
   const linkResponse = await fetch(
-    `${lcUrl}/api/org/${chosenOrg.id}/profiles`,
+    `${lcUrl}/api/org/${chosenOrg.slug}/profiles`,
     { method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokens.access_token}` },
       body: JSON.stringify({ profileTunnellingPublicKey: pk.export({ format: 'jwk' }), tokenSignedByTunnelingPrivateKey, idToken: tokens.id_token }) }
@@ -85,5 +85,5 @@ export const link = async (
 
   if (!linkResponse.ok) throw new Error(`Error while requesting to link ${linkResponse.status}: ${linkResponse.statusText}`)
 
-  logger.info(`Linked current profile to org ${chosenOrg.name} successfully! 🤘`)
+  logger.info(`Linked current profile to org "${chosenOrg.name}" successfully! 🤘`)
 }
