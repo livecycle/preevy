@@ -18,7 +18,7 @@ export {
   ForwardSocket,
   machineStatusNodeExporterCommand,
 } from './driver'
-export { profileStore, Profile, ProfileStore } from './profile'
+export { profileStore, Profile, ProfileStore, link, Org } from './profile'
 export { telemetryEmitter, registerEmitter, wireProcessExit, createTelemetryEmitter } from './telemetry'
 export { fsTypeFromUrl, Store, VirtualFS, localFsFromUrl } from './store'
 export { localComposeClient, ComposeModel, resolveComposeFiles, getExposedTcpServicePorts, remoteUserModel, NoComposeFilesError } from './compose'
@@ -63,4 +63,5 @@ export { ensureDefined, extractDefined, HasRequired } from './nulls'
 export { pSeries } from './p-series'
 export * as git from './git'
 export * as config from './config'
+export { login } from './login'
 export * from './url'
