@@ -15,7 +15,7 @@ import k8sHelpers from './k8s-helpers'
 import {
   LABELS,
   addEnvMetadata,
-  envRandomId,
+  envRandomName,
   envSelector,
   markObjectAsDeleted,
   profileSelector,
@@ -109,7 +109,7 @@ const kubeClient = ({ log, namespace, kc, profileId, template, package: packageD
     envId: string,
     { serverSideApply }: { serverSideApply: boolean },
   ) => {
-    const instance = envRandomId({ envId, profileId })
+    const instance = envRandomName({ envId, profileId })
     const specs = await renderTemplate({ instance })
     log.debug('createEnv: apply', instance, inspect(specs, { depth: null }))
     await apply(specs, {
