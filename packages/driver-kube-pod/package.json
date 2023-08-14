@@ -24,6 +24,7 @@
     "yaml": "^2.3.1"
   },
   "devDependencies": {
+    "@jest/globals": "^29.5.0",
     "@types/lodash": "^4.14.192",
     "@types/node": "18",
     "@types/stream-buffers": "^3.0.4",
@@ -44,6 +45,7 @@
     "typescript": "^5.0.4"
   },
   "scripts": {
+    "test": "yarn jest",
     "lint": "eslint . --ext .ts,.tsx --cache",
     "clean": "shx rm -rf dist tsconfig.tsbuildinfo",
     "build": "tsc -b",
