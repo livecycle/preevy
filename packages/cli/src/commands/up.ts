@@ -1,15 +1,18 @@
 import { Args, Flags, ux } from '@oclif/core'
 import {
-  commands, profileStore,
+  addBaseComposeTunnelAgentService,
+  commands, findComposeTunnelAgentUrl,
+  findEnvIdByProjectName, findProjectName, getTunnelNamesToServicePorts, profileStore,
   telemetryEmitter,
   withSpinner,
 } from '@preevy/core'
 import { tunnelServerFlags } from '@preevy/cli-common'
 import { inspect } from 'util'
-import { tunnelServerHello } from '../tunnel-server-client'
+import { tunnelNameResolver } from '@preevy/common'
 import MachineCreationDriverCommand from '../machine-creation-driver-command'
 import { envIdFlags, urlFlags } from '../common-flags'
 import { filterUrls, printUrls } from './urls'
+import { connectToTunnelServerSsh } from '../tunnel-server-client'
 
 // eslint-disable-next-line no-use-before-define
 export default class Up extends MachineCreationDriverCommand<typeof Up> {
@@ -42,9 +45,24 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
     const driver = await this.driver()
     const machineCreationDriver = await this.machineCreationDriver()
-    const pStore = profileStore(this.store)
+    const userModel = await this.ensureUserModel()
 
-    const tunnelingKey = await pStore.getTunnelingKey()
+    const { projectName, projectNameBasedOn } = await findProjectName({
+      userSpecifiedProjectName: flags.project,
+      userModel,
+    })
+
+    const envId = flags.id ?? await findEnvIdByProjectName({
+      log: this.logger,
+      projectName,
+      projectNameBasedOn,
+    })
+
+    const pStore = profileStore(this.store)
+    const tunnelingKey = await withSpinner(
+      () => pStore.getTunnelingKey(),
+      { text: 'Getting tunneling key from profile...', successText: 'Got tunneling key from profile' },
+    )
 
     const tunnelOpts = {
       url: flags['tunnel-url'],
@@ -52,32 +70,54 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       insecureSkipVerify: flags['insecure-skip-verify'],
     }
 
-    const { clientId, rootUrl, hostKey } = await withSpinner(async spinner => {
-      spinner.text = 'Getting tunnel server details...'
-      return await tunnelServerHello({
+    const expectedTunnels = getTunnelNamesToServicePorts(
+      addBaseComposeTunnelAgentService(userModel),
+      tunnelNameResolver({ envId }),
+    )
+
+    const { hostKey, expectedServiceUrls } = await withSpinner(async spinner => {
+      spinner.text = 'Connecting...'
+
+      const { hostKey: hk, client: tunnelServerSshClient } = await connectToTunnelServerSsh({
         tunnelingKey,
         knownServerPublicKeys: pStore.knownServerPublicKeys,
         tunnelOpts,
         log: this.logger,
+        spinner,
       })
-    })
 
-    telemetryEmitter().group({ type: 'profile' }, { proxy_client_id: clientId })
+      spinner.text = 'Getting server details...'
 
-    const userModel = await this.ensureUserModel()
+      const [{ clientId }, expectedTunnelUrls] = await Promise.all([
+        tunnelServerSshClient.execHello(),
+        tunnelServerSshClient.execTunnelUrl(Object.keys(expectedTunnels)),
+      ])
 
-    const { machine, envId } = await commands.up({
-      clientId,
-      rootUrl,
+      this.logger.debug('Tunnel server details: %j', { clientId, expectedTunnelUrls })
+
+      tunnelServerSshClient.close()
+
+      telemetryEmitter().group({ type: 'profile' }, { proxy_client_id: clientId })
+
+      const esu = Object.entries(expectedTunnels)
+        .map(([tunnel, { name, port }]) => ({ name, port, url: expectedTunnelUrls[tunnel] }))
+
+      return { hostKey: hk, expectedServiceUrls: esu }
+    }, { opPrefix: 'Tunnel server', successText: 'Got tunnel server details' })
+
+    this.logger.debug('expectedServiceUrls: %j', expectedServiceUrls)
+
+    const { machine } = await commands.up({
+      projectName,
+      expectedServiceUrls,
       userSpecifiedServices: restArgs,
       debug: flags.debug,
       machineDriver: driver,
       machineDriverName: this.driverName,
       machineCreationDriver,
-      userModel,
       userSpecifiedProjectName: flags.project,
-      userSpecifiedEnvId: flags.id,
       userSpecifiedComposeFiles: flags.file,
+      envId,
       systemComposeFiles: flags['system-compose-file'],
       tunnelOpts,
       log: this.logger,
@@ -91,23 +131,19 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
     this.log(`Preview environment ${envId} provisioned at: ${machine.locationDescription}`)
 
-    const flatTunnels = await withSpinner(async spinner => {
-      spinner.text = 'Getting tunnel URLs...'
-      return await commands.urls({
-        rootUrl,
-        clientId,
-        envId,
-        tunnelingKey,
-        includeAccessCredentials: flags['include-access-credentials'],
-        showPreevyService: flags['show-preevy-service-urls'],
-        retryOpts: {
-          minTimeout: 1000,
-          maxTimeout: 2000,
-          retries: 10,
-          onFailedAttempt: e => { this.logger.debug(`Failed to query tunnels: ${inspect(e)}`) },
-        },
-      })
-    })
+    const composeTunnelServiceUrl = findComposeTunnelAgentUrl(expectedServiceUrls)
+    const flatTunnels = await withSpinner(() => commands.urls({
+      composeTunnelServiceUrl,
+      tunnelingKey,
+      includeAccessCredentials: flags['include-access-credentials'],
+      showPreevyService: flags['show-preevy-service-urls'],
+      retryOpts: {
+        minTimeout: 1000,
+        maxTimeout: 2000,
+        retries: 10,
+        onFailedAttempt: e => { this.logger.debug(`Failed to query tunnels: ${inspect(e)}`) },
+      },
+    }), { text: 'Getting tunnel URLs...' })
 
     const urls = await filterUrls({
       flatTunnels,

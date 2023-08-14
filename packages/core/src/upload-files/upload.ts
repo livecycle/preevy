@@ -103,7 +103,7 @@ export const uploadWithSpinner = async (
     opPrefix: 'Copying files',
     text: 'Calculating...',
     successText: ({ files, skipped }) => [
-      `Copied ${files} files`,
+      `Copied ${files} files to remote machine`,
       skipped && `${`(${skipped} skipped)`}`,
     ].filter(Boolean).join(' '),
   })

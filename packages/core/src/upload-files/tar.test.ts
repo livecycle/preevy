@@ -44,16 +44,15 @@ describe('tar', () => {
     await done
 
     expect(emittedBytes).toEqual(bytes)
-    expect(emittedFiles).toEqual([
-      path.join(local1, 'f1.txt'),
-      path.join(local2, 'd3/blob1'),
-      path.join(local2, 'd3/f2.txt'),
-    ])
+    expect(emittedFiles).toContain(path.join(local1, 'f1.txt'))
+    expect(emittedFiles).toContain(path.join(local2, 'd3/blob1'))
+    expect(emittedFiles).toContain(path.join(local2, 'd3/f2.txt'))
+    expect(emittedFiles).toHaveLength(3)
 
     const outDir = path.join(tempDir, 'out')
     await fs.promises.mkdir(outDir, { recursive: true })
     await execPromise(`tar xf "${filename}" -C "${outDir}"`)
-    expect(await execPromiseStdout(`diff -qe "${local1}" "${path.join(outDir, remote1)}"`)).toBe('')
+    expect(await execPromiseStdout(`diff -qr "${local1}" "${path.join(outDir, remote1)}"`)).toBe('')
     expect(await execPromiseStdout(`diff -qr "${local2}" "${path.join(outDir, remote2)}"`)).toBe('')
   })
 })

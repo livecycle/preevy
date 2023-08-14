@@ -1,12 +1,9 @@
-import { inspect, promisify } from 'util'
+import { promisify } from 'util'
 import url from 'url'
 import path from 'path'
 import pino from 'pino'
-import { createPublicKey } from 'crypto'
-import { calculateJwkThumbprintUri, exportJWK } from 'jose'
 import { app as createApp } from './src/app'
 import { inMemoryPreviewEnvStore } from './src/preview-env'
-import { sshServer as createSshServer } from './src/ssh-server'
 import { getSSHKeys } from './src/ssh-keys'
 import { isProxyRequest, proxyHandlers } from './src/proxy'
 import { appLoggerFromEnv } from './src/logging'
@@ -15,6 +12,8 @@ import { numberFromEnv, requiredEnv } from './src/env'
 import { replaceHostname } from './src/url'
 import { cookieSessionStore } from './src/session'
 import { claimsSchema } from './src/auth'
+import { createSshServer } from './src/ssh'
+import { truncateWithHash } from './src/strings'
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
@@ -50,72 +49,41 @@ const app = createApp({
 })
 const sshLogger = log.child({ name: 'ssh_server' })
 
-const tunnelName = (clientId: string, remotePath: string) => {
-  const serviceName = remotePath.replace(/^\//, '')
-  return `${serviceName}-${clientId}`.toLowerCase()
+const MAX_DNS_LABEL_LENGTH = 63
+
+const envStoreKey = (clientId: string, remotePath: string) => {
+  const noLeadingSlash = remotePath.replace(/^\//, '')
+  // return value needs to be DNS safe:
+  // - max DNS label name length is 63 octets (== 63 ASCII chars)
+  // - case insensitive
+  return truncateWithHash(
+    `${noLeadingSlash}-${clientId}`.replace(/[^a-zA-Z0-9_-]/g, '-'),
+    MAX_DNS_LABEL_LENGTH,
+  ).toLowerCase()
 }
 
 const tunnelUrl = (
   rootUrl: URL,
   clientId: string,
   tunnel: string,
-) => replaceHostname(rootUrl, `${tunnelName(clientId, tunnel)}.${rootUrl.hostname}`).toString()
+) => replaceHostname(rootUrl, `${envStoreKey(clientId, tunnel)}.${rootUrl.hostname}`).toString()
 
 const sshServer = createSshServer({
   log: sshLogger,
   sshPrivateKey,
   socketDir: '/tmp', // TODO
+  envStore,
+  envStoreKey,
+  helloBaseResponse: {
+    // TODO: backwards compat, remove when we drop support for CLI v0.0.35
+    baseUrl: { hostname: BASE_URL.hostname, port: BASE_URL.port, protocol: BASE_URL.protocol },
+    rootUrl: BASE_URL.toString(),
+  },
+  tunnelsGauge,
+  tunnelUrl: (clientId, remotePath) => tunnelUrl(BASE_URL, clientId, remotePath),
 })
-  .on('client', client => {
-    const { clientId, publicKey, envId } = client
-    const tunnels = new Map<string, string>()
-    client
-      .on('forward', async (requestId, { path: remotePath, access }, accept, reject) => {
-        const key = tunnelName(clientId, remotePath)
-        if (await envStore.has(key)) {
-          reject(new Error(`duplicate path: ${key}`))
-          return
-        }
-        const forward = await accept()
-        sshLogger.debug('creating tunnel %s for localSocket %s', key, forward.localSocketPath)
-        const pk = createPublicKey(publicKey.getPublicPEM())
-
-        await envStore.set(key, {
-          envId,
-          target: forward.localSocketPath,
-          clientId,
-          publicKey: pk,
-          access,
-          hostname: key,
-          publicKeyThumbprint: await calculateJwkThumbprintUri(await exportJWK(pk)),
-        })
-        tunnels.set(requestId, tunnelUrl(BASE_URL, clientId, remotePath))
-        tunnelsGauge.inc({ clientId })
-
-        forward.on('close', () => {
-          sshLogger.debug('deleting tunnel %s', key)
-          tunnels.delete(requestId)
-          void envStore.delete(key)
-          tunnelsGauge.dec({ clientId })
-        })
-      })
-      .on('error', err => { sshLogger.warn('client error %j: %j', clientId, inspect(err)) })
-      .on('hello', channel => {
-        channel.stdout.write(`${JSON.stringify({
-          clientId,
-          // TODO: backwards compat, remove when we drop support for CLI v0.0.35
-          baseUrl: { hostname: BASE_URL.hostname, port: BASE_URL.port, protocol: BASE_URL.protocol },
-          rootUrl: BASE_URL.toString(),
-          tunnels: Object.fromEntries(tunnels.entries()),
-        })}\r\n`)
-        channel.exit(0)
-      })
-  })
   .listen(SSH_PORT, LISTEN_HOST, () => {
     app.log.debug('ssh server listening on port %j', SSH_PORT)
-  })
-  .on('error', (err: unknown) => {
-    app.log.error('ssh server error: %j', err)
   })
 
 app.listen({ host: LISTEN_HOST, port: PORT }).catch(err => {

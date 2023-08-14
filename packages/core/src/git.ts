@@ -16,6 +16,9 @@ export const gitAuthor = async (commit?: string) => {
 
 export const gitRemoteTrackingBranchUrl = async (localBranch?: string) => {
   const b = localBranch ?? (await execPromiseStdout('git rev-parse --abbrev-ref HEAD'))
-  const trackingRemote = await execPromiseStdout(`git config branch.${b}.remote`)
+  const trackingRemote = await execPromiseStdout(`git config branch.${b}.remote || true`)
+  if (!trackingRemote) {
+    return undefined
+  }
   return await execPromiseStdout(`git config remote.${trackingRemote}.url`)
 }

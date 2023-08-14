@@ -2,6 +2,7 @@ name: Run tests
 on:
   pull_request:
     types: [opened, reopened, synchronize]
+    branches: [main]
 
 jobs:
   run-tests:

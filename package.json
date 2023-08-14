@@ -19,8 +19,8 @@
   "scripts": {
     "test": "yarn -s run lerna -- run test --",
     "lint": "yarn -s run lerna -- run lint --parallel --",
-    "clean": "yarn lerna run -- clean --parallel --",
     "build": "yarn -s run lerna run build --",
+    "clean": "yarn -s run lerna -- run clean --parallel --",
     "check-mismatches": "syncpack list-mismatches",
     "fix-mismatches": "syncpack fix-mismatches",
     "prepare": "husky install"

@@ -1,5 +1,6 @@
 import { Logger } from './log'
 import { MachineConnection, ForwardSocket } from './driver'
+import { withSpinner } from './spinner'
 
 export type FuncWrapper = <Return>(
   f: () => Promise<Return>,
@@ -19,7 +20,10 @@ export const wrapWithDockerSocket = (
 ): FuncWrapper => async <Return>(
   f: () => Promise<Return>,
 ): Promise<Return> => {
-  const { address, close } = await connection.dockerSocket()
+  const { address, close } = await withSpinner(
+    () => connection.dockerSocket(),
+    { text: 'Connecting to remote docker socket...', successText: 'Connected to remote docker socket' },
+  )
 
   log.debug(`Local socket: ${JSON.stringify(address)}`)
 
