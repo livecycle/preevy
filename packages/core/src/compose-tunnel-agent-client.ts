@@ -163,7 +163,10 @@ export const queryTunnels = async ({
   const addCredentials = withBasicAuthCredentials(credentials)
 
   const { tunnels, clientId: tunnelId } = await retry(async () => {
-    const r = await fetch(addCredentials(`${composeTunnelServiceUrl}/tunnels`), { timeout: 2500 })
+    const r = await fetch(
+      `${composeTunnelServiceUrl}/tunnels`,
+      { timeout: 2500, headers: { Authorization: `Bearer ${credentials.password}` } }
+    )
     if (!r.ok) {
       throw new Error(`Failed to connect to docker proxy at ${composeTunnelServiceUrl}: ${r.status}: ${r.statusText}`)
     }
@@ -178,7 +181,7 @@ export const queryTunnels = async ({
         ports: mapValues(
           tunnel.ports,
           includeAccessCredentials
-            ? (x: string) => `${addCredentials(x)}?basic-auth=true`
+            ? (x: string) => `${addCredentials(x)}?_preevy_auth_hint=basic`
             : (x: string) => x
         ),
       })),
