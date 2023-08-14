@@ -4,7 +4,7 @@ import retry from 'p-retry'
 import util from 'util'
 import { mapValues } from 'lodash'
 import { MachineStatusCommand, dateReplacer } from '@preevy/common'
-import { ComposeModel, ComposeService } from './compose/model'
+import { ComposeModel, ComposeService, composeModelFilename } from './compose/model'
 import { TunnelOpts } from './ssh/url'
 import { Tunnel } from './tunneling'
 import { withBasicAuthCredentials } from './url'
@@ -19,6 +19,14 @@ const baseDockerProxyService: ComposeService = {
   build: {
     context: COMPOSE_TUNNEL_AGENT_DIR,
   },
+  ports: [
+    {
+      mode: 'ingress',
+      target: COMPOSE_TUNNEL_AGENT_PORT,
+      published: '0',
+      protocol: 'tcp',
+    },
+  ],
   labels: {
     'preevy.access': 'private',
   },
@@ -48,15 +56,14 @@ export const addComposeTunnelAgentService = (
     tunnelOpts,
     sshPrivateKeyPath,
     knownServerPublicKeyPath,
-    urlSuffix,
     debug,
     user,
     envId,
     machineStatusCommand,
     envMetadata,
+    composeModelPath,
   }: {
     tunnelOpts: TunnelOpts
-    urlSuffix: string
     sshPrivateKeyPath: string
     knownServerPublicKeyPath: string
     debug: boolean
@@ -64,6 +71,7 @@ export const addComposeTunnelAgentService = (
     envId: string
     machineStatusCommand?: MachineStatusCommand
     envMetadata: Record<string, unknown>
+    composeModelPath: string
   },
   model: ComposeModel,
 ): ComposeModel => ({
@@ -74,14 +82,6 @@ export const addComposeTunnelAgentService = (
       ...baseDockerProxyService,
       restart: 'always',
       networks: Object.keys(model.networks || {}),
-      ports: [
-        {
-          mode: 'ingress',
-          target: COMPOSE_TUNNEL_AGENT_PORT,
-          published: '0',
-          protocol: 'tcp',
-        },
-      ],
       volumes: [
         {
           type: 'bind',
@@ -109,12 +109,18 @@ export const addComposeTunnelAgentService = (
           read_only: true,
           bind: { create_host_path: true },
         },
+        {
+          type: 'bind',
+          source: composeModelPath,
+          target: `/preevy/${composeModelFilename}`,
+          read_only: true,
+          bind: { create_host_path: true },
+        },
       ],
       user,
       environment: {
         SSH_URL: tunnelOpts.url,
         TLS_SERVERNAME: tunnelOpts.tlsServerName,
-        TUNNEL_URL_SUFFIX: urlSuffix,
         PREEVY_ENV_ID: envId,
         PORT: COMPOSE_TUNNEL_AGENT_PORT.toString(),
         ...machineStatusCommand ? { MACHINE_STATUS_COMMAND: JSON.stringify(machineStatusCommand) } : {},
@@ -127,37 +133,39 @@ export const addComposeTunnelAgentService = (
   },
 })
 
+export const findComposeTunnelAgentUrl = (
+  serviceUrls: { name: string; port: number; url: string }[]
+) => {
+  const serviceUrl = serviceUrls.find(
+    ({ name, port }) => name === COMPOSE_TUNNEL_AGENT_SERVICE_NAME && port === COMPOSE_TUNNEL_AGENT_PORT
+  )?.url
+
+  if (!serviceUrl) {
+    throw new Error(`Cannot find compose tunnel agent API service URL ${COMPOSE_TUNNEL_AGENT_SERVICE_NAME}:${COMPOSE_TUNNEL_AGENT_PORT} in: ${util.inspect(serviceUrls)}`)
+  }
+
+  return serviceUrl
+}
+
 export const queryTunnels = async ({
   retryOpts = { retries: 0 },
-  tunnelUrlsForService,
+  composeTunnelServiceUrl,
   credentials,
   includeAccessCredentials,
   showPreevyService,
 }: {
-  tunnelUrlsForService: (service: { name: string; ports: number[] }) => { port: number; url: string }[]
+  composeTunnelServiceUrl: string
   credentials: { user: string; password: string }
   retryOpts?: retry.Options
   includeAccessCredentials: boolean
   showPreevyService: boolean
 }) => {
-  const serviceUrls = tunnelUrlsForService({
-    name: COMPOSE_TUNNEL_AGENT_SERVICE_NAME,
-    ports: [COMPOSE_TUNNEL_AGENT_PORT],
-  })
-
-  const serviceUrl = serviceUrls.find(({ port }) => port === COMPOSE_TUNNEL_AGENT_PORT)?.url.replace(/\/$/, '')
-
-  if (!serviceUrl) {
-    throw new Error(`Cannot find compose tunnel agent API service URL in: ${util.inspect(serviceUrls)}`)
-  }
-
   const addCredentials = withBasicAuthCredentials(credentials)
-  const url = addCredentials(`${serviceUrl}/tunnels`)
 
   const { tunnels, clientId: tunnelId } = await retry(async () => {
-    const r = await fetch(url, { timeout: 2500 })
+    const r = await fetch(addCredentials(`${composeTunnelServiceUrl}/tunnels`), { timeout: 2500 })
     if (!r.ok) {
-      throw new Error(`Failed to connect to docker proxy at ${url}: ${r.status}: ${r.statusText}`)
+      throw new Error(`Failed to connect to docker proxy at ${composeTunnelServiceUrl}: ${r.status}: ${r.statusText}`)
     }
     return await (r.json() as Promise<{ tunnels: Tunnel[]; clientId: string }>)
   }, retryOpts)

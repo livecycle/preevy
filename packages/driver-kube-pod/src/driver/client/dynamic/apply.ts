@@ -3,6 +3,7 @@ import { pSeries } from '@preevy/core'
 import { inspect } from 'util'
 import { bodyOrUndefined } from '../common'
 import waiter from './wait'
+import { FuncWrapper } from '../log-error'
 
 export type ApplyFunc<Return = k8s.KubernetesObject | undefined> = (
   existingObject: k8s.KubernetesObject | undefined,
@@ -75,7 +76,7 @@ const normalizeSpec = (spec: k8s.KubernetesObject) => {
 const booleanFilter = <T>(v: T | undefined | null): v is T => v !== undefined && v !== null
 
 const apply = (
-  { client }: { client: k8s.KubernetesObjectApi },
+  { client, wrap }: { client: k8s.KubernetesObjectApi; wrap: FuncWrapper },
 ) => async <T>(
   s: k8s.KubernetesObject[],
   { filter = x => x, strategy }: {
@@ -89,12 +90,14 @@ const apply = (
     ? (factories: (() => Promise<T>)[]) => Promise.all(factories.map(f => f()))
     : pSeries
 
-  return await concurrencyFunc(filteredSpecs.map(spec => async () => {
+  // eslint false positive here on case-sensitive filesystems due to unknown type
+  // eslint-disable-next-line @typescript-eslint/return-await
+  return await concurrencyFunc(filteredSpecs.map(spec => wrap(async () => {
     const o = await bodyOrUndefined<k8s.KubernetesObject>(
       client.read(spec as { metadata: { name: string; namespace: string }})
     )
     return await strategy(o, spec, client)
-  }))
+  })))
 }
 
 export default apply

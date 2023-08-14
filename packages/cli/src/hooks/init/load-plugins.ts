@@ -4,10 +4,6 @@ import { telemetryEmitter } from '@preevy/core'
 
 const wrappedHook: OclifHook<'init'> = async function wrappedHook(...args) {
   try {
-    const { id } = args[0]
-    if (id === 'version' || id === 'init') {
-      return
-    }
     await initHook.call(this, ...args)
   } catch (e) {
     // eslint-disable-next-line no-console

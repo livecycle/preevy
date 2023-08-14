@@ -20,11 +20,12 @@ export {
 } from './driver'
 export { profileStore, Profile, ProfileStore, link, Org } from './profile'
 export { telemetryEmitter, registerEmitter, wireProcessExit, createTelemetryEmitter } from './telemetry'
-export { fsTypeFromUrl, Store, VirtualFS, localFsFromUrl, localFs } from './store'
-export { localComposeClient, ComposeModel, resolveComposeFiles } from './compose'
+export { fsTypeFromUrl, Store, VirtualFS, localFsFromUrl } from './store'
+export { localComposeClient, ComposeModel, resolveComposeFiles, getExposedTcpServicePorts, remoteUserModel, NoComposeFilesError } from './compose'
 export { withSpinner } from './spinner'
-export { findAmbientEnvId } from './env-id'
+export { findEnvId, findProjectName, findEnvIdByProjectName } from './env-id'
 export { sshKeysStore } from './state'
+export { truncateWithHash } from './strings'
 export { connectSshClient, generateSshKeyPair, SshKeyPairType } from './ssh'
 export {
   ProcessError,
@@ -40,6 +41,7 @@ export {
   COMPOSE_TUNNEL_AGENT_SERVICE_NAME,
   addBaseComposeTunnelAgentService,
   queryTunnels,
+  findComposeTunnelAgentUrl,
 } from './compose-tunnel-agent-client'
 export * as commands from './commands'
 export { wrapWithDockerSocket } from './docker'
@@ -48,8 +50,12 @@ export {
   flattenTunnels,
   HostKeySignatureConfirmer,
   createTunnelingKey,
-  performTunnelConnectionCheck,
+  connectToTunnelServerSsh,
+  getTunnelNamesToServicePorts,
 } from './tunneling'
+export { TunnelOpts } from './ssh'
+export { Spinner } from './spinner'
+export { withClosable } from './closable'
 export { generateBasicAuthCredentials as getUserCredentials, jwtGenerator } from './credentials'
 export { ciProviders, detectCiProvider } from './ci-providers'
 export { paginationIterator } from './pagination'

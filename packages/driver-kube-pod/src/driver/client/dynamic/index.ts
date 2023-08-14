@@ -5,9 +5,10 @@ import { defaults } from 'lodash'
 import { paginationIterator } from '../pagination'
 import apply from './apply'
 import waiter from './wait'
+import { FuncWrapper } from '../log-error'
 
 const dynamicApi = (
-  { client }: { client: k8s.KubernetesObjectApi },
+  { client, wrap }: { client: k8s.KubernetesObjectApi; wrap: FuncWrapper },
 ) => {
   const list = (
     types: { apiVersion: string; kind: string; namespace?: string }[],
@@ -20,7 +21,7 @@ const dynamicApi = (
     // https://github.com/kubernetes/kubernetes/issues/3030
     o => defaults(o, { apiVersion: t.apiVersion, kind: t.kind }),
     paginationIterator<k8s.KubernetesObject>(
-      continueToken => client.list(
+      wrap(continueToken => client.list(
         t.apiVersion,
         t.kind,
         t.namespace,
@@ -31,7 +32,7 @@ const dynamicApi = (
         labelSelector,
         undefined,
         continueToken,
-      ),
+      )),
     ),
   )))
 
@@ -50,7 +51,7 @@ const dynamicApi = (
   return {
     list,
     gatherTypes,
-    apply: apply({ client }),
+    apply: apply({ client, wrap }),
     waiter: (watcher: k8s.Watch) => waiter({ watcher, client }),
   }
 }
