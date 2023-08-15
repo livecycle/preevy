@@ -3,9 +3,7 @@ import { JWTPayload, JWTVerifyResult, jwtVerify, errors, decodeJwt } from 'jose'
 import { match } from 'ts-pattern'
 import { ZodError, z } from 'zod'
 import Cookies from 'cookies'
-import { KeyObject, createPublicKey } from 'crypto'
-import fs from 'fs'
-import path from 'path'
+import { KeyObject } from 'crypto'
 import { PreviewEnv } from './preview-env'
 import { HttpError } from './http-server-helpers'
 
@@ -49,7 +47,45 @@ export type AuthorizationHeader = BasicAuthorizationHeader | BearerAuthorization
 
 const cookieName = 'preevy-saas-jwt'
 
-function extractAuthorizationHeader(req: IncomingMessage): AuthorizationHeader | undefined {
+type VerificationData = {
+  pk: KeyObject
+  extractClaims: (token: JWTPayload, thumbprint: string) => Claims
+}
+
+// TODO: combine with UnauthorizedError
+export const basicAuthUnauthorized = (res: ServerResponse<IncomingMessage>) => {
+  res.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"')
+  res.statusCode = 401
+  res.end('Unauthorized')
+}
+
+// export const SAAS_JWT_ISSUER = process.env.SAAS_JWT_ISSUER ?? 'app.livecycle.run'
+
+export const saasJWTSchema = z.object({
+  iss: z.string(),
+  sub: z.string(),
+  profiles: z.array(z.string()),
+  exp: z.number(),
+  iat: z.number(),
+})
+
+type SaasJWTSchema = z.infer<typeof saasJWTSchema>
+
+export class UnauthorizedError extends HttpError {
+  static status = 401
+  static defaultMessage = 'Unauthorized'
+  constructor(readonly reason: string) {
+    super(UnauthorizedError.status, UnauthorizedError.defaultMessage, undefined, {
+      'WWW-Authenticate': 'Basic realm="Secure Area"',
+    })
+  }
+}
+const isBrowser = (req: IncomingMessage) => {
+  const userAgent = req.headers['user-agent']?.toLowerCase() ?? ''
+  return /(chrome|firefox|safari|opera|msie|trident)/.test(userAgent)
+}
+
+const extractAuthorizationHeader = (req: IncomingMessage): AuthorizationHeader | undefined => {
   const { authorization } = req.headers
   const [scheme, data] = authorization?.split(' ') ?? []
   if (scheme === 'Bearer') {
@@ -66,22 +102,12 @@ function extractAuthorizationHeader(req: IncomingMessage): AuthorizationHeader |
   return undefined
 }
 
-type VerificationData = {
-  pk: KeyObject
-  extractClaims: (token: JWTPayload, thumbprint: string) => Claims
-}
-
-const isBrowser = (req: IncomingMessage) => {
-  const userAgent = req.headers['user-agent']?.toLowerCase() ?? ''
-  return /(chrome|firefox|safari|opera|msie|trident)/.test(userAgent)
-}
-
 export const jwtAuthenticator = (
   publicKeyThumbprint: string,
   getVerificationData: (issuer: string, publicKeyThumbprint: string) => VerificationData
 ) => async (req: IncomingMessage): Promise<AuthenticationResult> => {
-  const auth = extractAuthorizationHeader(req)
-  const jwt = match(auth)
+  const authHeader = extractAuthorizationHeader(req)
+  const jwt = match(authHeader)
     .with({ scheme: 'Basic', username: 'x-preevy-profile-key' }, ({ password }) => password)
     .with({ scheme: 'Bearer' }, ({ token }) => token)
     .otherwise(() => new Cookies(req, undefined as unknown as ServerResponse<IncomingMessage>).get(cookieName))
@@ -116,102 +142,68 @@ export const jwtAuthenticator = (
   return {
     method: { type: 'header', header: 'authorization' },
     isAuthenticated: true,
-    login: isBrowser(req) && auth?.scheme !== 'Bearer',
+    login: isBrowser(req) && authHeader?.scheme !== 'Bearer',
     claims: extractClaims(token.payload, publicKeyThumbprint),
   }
 }
 
-export function authenticator(authenticators: ((req: IncomingMessage)=> Promise<AuthenticationResult>)[]) {
-  return async (req: IncomingMessage):Promise<AuthenticationResult> => {
-    const authInfos = (await Promise.all(authenticators.map(auth => auth(req))))
+export const authenticator = (authenticators: ((req: IncomingMessage)=> Promise<AuthenticationResult>)[]) =>
+  async (req: IncomingMessage):Promise<AuthenticationResult> => {
+    const authInfos = (await Promise.all(authenticators.map(authn => authn(req))))
     const found = authInfos.find(info => info.isAuthenticated)
     if (found !== undefined) return found
     return { isAuthenticated: false }
   }
-}
 
-// TODO: combine with UnauthorizedError
-export const basicAuthUnauthorized = (res: ServerResponse<IncomingMessage>) => {
-  res.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"')
-  res.statusCode = 401
-  res.end('Unauthorized')
-}
+export const createGetVerificationData = (saasPublicKey: KeyObject, jwtSaasIssuer: string) => {
+  const getSaasTokenVerificationData = (): VerificationData => ({
+    pk: saasPublicKey,
+    extractClaims: (token, thumbprint) => {
+      let parsedToken: SaasJWTSchema
+      try {
+        parsedToken = saasJWTSchema.parse(token)
+      } catch (e) {
+        if (e instanceof ZodError) {
+          throw new AuthError(`JWT schema is incorrect. ${e.message}`, { cause: e })
+        }
+        throw e
+      }
 
-const SAAS_PUBLIC_KEY = process.env.SAAS_PUBLIC_KEY || fs.readFileSync(
-  path.join('/', 'etc', 'certs', 'preview-proxy', 'saas.key.pub'),
-  { encoding: 'utf8' },
-)
-
-const publicKey = createPublicKey(SAAS_PUBLIC_KEY)
-
-export const SAAS_JWT_ISSUER = process.env.SAAS_JWT_ISSUER ?? 'app.livecycle.run'
-
-export const getCLIIssuerFromPK = (publicKeyThumbprint: string) => `preevy://${publicKeyThumbprint}`
-
-const getCLITokenVerificationData = (pk: KeyObject,) =>
-  (): VerificationData => ({
-    pk,
-    extractClaims: (token, thumbprint) => ({
-      role: 'admin',
-      type: 'profile',
-      exp: token.exp,
-      scopes: ['admin'],
-      sub: `preevy-profile:${thumbprint}`,
-    }),
+      return {
+        exp: parsedToken.exp,
+        iat: parsedToken.iat,
+        sub: parsedToken.sub,
+        role: parsedToken.profiles.includes(thumbprint) ? 'admin' : 'guest',
+        type: 'profile',
+        scopes: parsedToken.profiles.includes(thumbprint) ? ['admin'] : [],
+      }
+    },
   })
 
-export const saasJWTSchema = z.object({
-  iss: z.string(),
-  sub: z.string(),
-  profiles: z.array(z.string()),
-  exp: z.number(),
-  iat: z.number(),
-})
-
-type SaasJWTSchema = z.infer<typeof saasJWTSchema>
-
-export class UnauthorizedError extends HttpError {
-  static status = 401
-  static defaultMessage = 'Unauthorized'
-  constructor(readonly reason: string) {
-    super(UnauthorizedError.status, UnauthorizedError.defaultMessage, undefined, {
-      'WWW-Authenticate': 'Basic realm="Secure Area"',
+  const getCliTokenVerificationData = (pk: KeyObject,) =>
+    (): VerificationData => ({
+      pk,
+      extractClaims: (token, thumbprint) => ({
+        role: 'admin',
+        type: 'profile',
+        exp: token.exp,
+        scopes: ['admin'],
+        sub: `preevy-profile:${thumbprint}`,
+      }),
     })
-  }
-}
-const getSaasTokenVerificationData = (): VerificationData => ({
-  pk: publicKey,
-  extractClaims: (token, thumbprint) => {
-    let parsedToken: SaasJWTSchema
-    try {
-      parsedToken = saasJWTSchema.parse(token)
-    } catch (e) {
-      if (e instanceof ZodError) {
-        throw new AuthError(`JWT schema is incorrect. ${e.message}`, { cause: e })
+
+  const getCliIssuerFromPk = (publicKeyThumbprint: string) => `preevy://${publicKeyThumbprint}`
+
+  return (env: PreviewEnv) =>
+    (issuer: string, publicKeyThumbprint: string) => {
+      if (issuer === jwtSaasIssuer) {
+        return getSaasTokenVerificationData()
       }
-      throw e
-    }
 
-    return {
-      exp: parsedToken.exp,
-      iat: parsedToken.iat,
-      sub: parsedToken.sub,
-      role: parsedToken.profiles.includes(thumbprint) ? 'admin' : 'guest',
-      type: 'profile',
-      scopes: parsedToken.profiles.includes(thumbprint) ? ['admin'] : [],
-    }
-  },
-})
+      if (issuer === getCliIssuerFromPk(publicKeyThumbprint)) {
+        return getCliTokenVerificationData(env.publicKey)()
+      }
 
-export const getCombinedCLIAndSAASVerificationData = (env: PreviewEnv) =>
-  (issuer: string, publicKeyThumbprint: string) => {
-    if (issuer === SAAS_JWT_ISSUER) {
-      return getSaasTokenVerificationData()
+      throw new AuthError(`Unsupported issuer ${issuer}`)
     }
-
-    if (issuer === getCLIIssuerFromPK(publicKeyThumbprint)) {
-      return getCLITokenVerificationData(env.publicKey)()
-    }
-
-    throw new AuthError(`Unsupported issuer ${issuer}`)
-  }
+}

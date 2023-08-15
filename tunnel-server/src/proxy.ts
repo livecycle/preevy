@@ -4,9 +4,10 @@ import net from 'net'
 import internal from 'stream'
 import type { Logger } from 'pino'
 import { inspect } from 'util'
+import { KeyObject } from 'crypto'
 import { PreviewEnvStore } from './preview-env'
 import { requestsCounter } from './metrics'
-import { Claims, jwtAuthenticator, AuthenticationResult, AuthError, UnauthorizedError, getCombinedCLIAndSAASVerificationData, basicAuthUnauthorized } from './auth'
+import { Claims, jwtAuthenticator, AuthenticationResult, AuthError, UnauthorizedError, basicAuthUnauthorized, createGetVerificationData } from './auth'
 import { SessionStore } from './session'
 import { BadGatewayError, BadRequestError, errorHandler, errorUpgradeHandler, tryHandler, tryUpgradeHandler } from './http-server-helpers'
 
@@ -36,11 +37,15 @@ export function proxyHandlers({
   loginUrl,
   sessionStore,
   log,
+  publicKey,
+  jwtSaasIssuer,
 }: {
   sessionStore: SessionStore<Claims>
   envStore: PreviewEnvStore
   loginUrl: string
   log: Logger
+  publicKey: KeyObject
+  jwtSaasIssuer: string
 }) {
   const proxy = httpProxy.createProxy({})
   const redirectToLogin = loginRedirector(loginUrl)
@@ -73,7 +78,7 @@ export function proxyHandlers({
 
           const authenticate = jwtAuthenticator(
             env.publicKeyThumbprint,
-            getCombinedCLIAndSAASVerificationData(env)
+            createGetVerificationData(publicKey, jwtSaasIssuer)(env)
           )
 
           let authResult: AuthenticationResult

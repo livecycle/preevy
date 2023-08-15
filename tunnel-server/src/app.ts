@@ -3,15 +3,17 @@ import { fastifyRequestContext } from '@fastify/request-context'
 import http from 'http'
 import internal from 'stream'
 import { Logger } from 'pino'
+import { KeyObject } from 'crypto'
 import { SessionStore } from './session'
-import { Claims, jwtAuthenticator, getCombinedCLIAndSAASVerificationData } from './auth'
+import { Claims, createGetVerificationData, jwtAuthenticator } from './auth'
 import { PreviewEnvStore } from './preview-env'
 import { replaceHostname } from './url'
 
 const { SAAS_BASE_URL } = process.env
 if (SAAS_BASE_URL === undefined) { throw new Error('Env var SAAS_BASE_URL is missing') }
 
-export const app = ({ isProxyRequest, proxyHandlers, sessionStore, baseUrl, envStore, log, loginUrl }: {
+export const app = (
+  { isProxyRequest, proxyHandlers, sessionStore, baseUrl, envStore, log, loginUrl, publicKey, jwtSaasIssuer }: {
   isProxyRequest: (req: http.IncomingMessage) => boolean
   log: Logger
   baseUrl: URL
@@ -22,7 +24,11 @@ export const app = ({ isProxyRequest, proxyHandlers, sessionStore, baseUrl, envS
     upgradeHandler: (req: http.IncomingMessage, socket: internal.Duplex, head: Buffer) => void
     handler: (req: http.IncomingMessage, res: http.ServerResponse) => void
   }
-}) =>
+  publicKey: KeyObject
+  jwtSaasIssuer: string
+
+}
+) =>
   Fastify({
     serverFactory: handler => {
       const { upgradeHandler: proxyUpgradeHandler, handler: proxyHandler } = proxyHandlers
@@ -74,7 +80,7 @@ export const app = ({ isProxyRequest, proxyHandlers, sessionStore, baseUrl, envS
       }
       const session = sessionStore(req.raw, res.raw, env.publicKeyThumbprint)
       if (!session.user) {
-        const auth = jwtAuthenticator(env.publicKeyThumbprint, getCombinedCLIAndSAASVerificationData(env))
+        const auth = jwtAuthenticator(env.publicKeyThumbprint, createGetVerificationData(publicKey, jwtSaasIssuer)(env))
         const result = await auth(req.raw)
         if (!result.isAuthenticated) {
           return await res.header('Access-Control-Allow-Origin', SAAS_BASE_URL)
