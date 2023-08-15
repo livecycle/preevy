@@ -53,6 +53,7 @@ export const app = ({ isProxyRequest, proxyHandlers, sessionStore, baseUrl, envS
     .get<{Querystring: {env: string; returnPath?: string}}>('/login', {
       schema: {
         querystring: {
+          type: 'object',
           properties: {
             env: { type: 'string' },
             returnPath: { type: 'string' },
