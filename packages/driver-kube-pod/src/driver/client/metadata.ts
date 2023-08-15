@@ -1,6 +1,5 @@
-import { randomBytes } from 'crypto'
 import * as k8s from '@kubernetes/client-node'
-import { extractDefined, truncateWithHash } from '@preevy/core'
+import { extractDefined, randomString, truncatePrefix } from '@preevy/core'
 import { sanitizeLabel, sanitizeLabels } from './labels'
 import { HasMetadata, Package } from './common'
 
@@ -130,30 +129,20 @@ export const profileSelector = ({ profileId }: { profileId: string }) => ({
 export const isDockerHostDeployment = (s: k8s.KubernetesObject) => s.kind === 'Deployment'
     && s.metadata?.labels?.[LABELS.COMPONENT] === DOCKER_HOST_VALUE
 
-const MAX_NAME_LENGTH = 63
-
 // https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-const sanitizeName = (s: string) => truncateWithHash(
-  s
-    .toLowerCase()
-    .replace(/[^a-z0-9-]/g, '-')
-    .replace(/^[^a-z0-9]/, ''), // remove first char if it is not alphanumeric
-  MAX_NAME_LENGTH,
-)
-
-const truncatePrefixToMaxLength = (prefix: string, suffix: string, spareLength = 0) => {
-  const maxPrefixLength = MAX_NAME_LENGTH - suffix.length - 1 - spareLength
-  return [prefix.substring(0, maxPrefixLength), suffix].join('-')
-}
-
-const nameWithRandomSuffix = (s: string[], spareLength = 0) => {
-  const prefix = sanitizeName(s.join('-'))
-  const suffix = sanitizeName(randomBytes(5).toString('base64url'))
-  return truncatePrefixToMaxLength(prefix, suffix, spareLength)
-}
+const sanitizeName = (s: string) => s
+  .toLowerCase()
+  .replace(/[^a-z0-9-]/g, '-')
+  .replace(/^[^a-z]/, firstChar => `a${firstChar}`) // prefix with alphabetic if first char is not alphabetic
+  .replace(/[^a-z0-9]$/, lastChar => `${lastChar}z`) // suffix with alphanumeric if last char is not alphanumeric
 
 const RANDOM_ID_SPARE_LENGTH = 10
+const MAX_NAME_LENGTH = 63
 
-export const envRandomId = (
+export const envRandomName = (
   { envId, profileId }: { envId: string; profileId: string },
-) => nameWithRandomSuffix([profileId, envId], RANDOM_ID_SPARE_LENGTH)
+) => truncatePrefix(
+  sanitizeName([profileId, envId].join('-')),
+  randomString.lowercaseNumeric(5),
+  MAX_NAME_LENGTH - RANDOM_ID_SPARE_LENGTH,
+)

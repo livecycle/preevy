@@ -41,6 +41,7 @@
     "lint-staged": "^13.1.2",
     "node-fetch": "2.6.9",
     "shx": "^0.3.3",
+    "strip-ansi": "6.0.0",
     "tsx": "^3.12.3",
     "typescript": "^5.0.4",
     "wait-for-expect": "^3.0.2"
