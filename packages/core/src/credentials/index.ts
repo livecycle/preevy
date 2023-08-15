@@ -11,10 +11,11 @@ const BASIC_AUTH_HINT_QUERY_PARAMS = {
 
 export const withBasicAuthCredentials = (
   { user, password } : { user: string; password: string },
+  mode: 'browser' | 'api',
 ) => (url: string) => editUrl(url, {
   username: user,
   password,
-  queryParams: BASIC_AUTH_HINT_QUERY_PARAMS,
+  queryParams: mode === 'browser' ? BASIC_AUTH_HINT_QUERY_PARAMS : {},
 }).toString()
 
 function getAsymmetricKeyAlg(key: KeyObject) {

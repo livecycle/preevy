@@ -152,37 +152,31 @@ export const queryTunnels = async ({
   composeTunnelServiceUrl,
   credentials,
   includeAccessCredentials,
-  showPreevyService,
 }: {
   composeTunnelServiceUrl: string
   credentials: { user: string; password: string }
   retryOpts?: retry.Options
-  includeAccessCredentials: boolean
-  showPreevyService: boolean
+  includeAccessCredentials: false | 'browser' | 'api'
 }) => {
-  const addCredentials = withBasicAuthCredentials(credentials)
-
-  const { tunnels, clientId: tunnelId } = await retry(async () => {
+  const { tunnels } = await retry(async () => {
     const r = await fetch(
-      addCredentials(`${composeTunnelServiceUrl}/tunnels`),
-      { timeout: 2500 },
+      `${composeTunnelServiceUrl}/tunnels`,
+      { timeout: 2500, headers: { Authorization: `Bearer ${credentials.password}` } }
     )
     if (!r.ok) {
       throw new Error(`Failed to connect to docker proxy at ${composeTunnelServiceUrl}: ${r.status}: ${r.statusText}`)
     }
-    return await (r.json() as Promise<{ tunnels: Tunnel[]; clientId: string }>)
+    return await (r.json() as Promise<{ tunnels: Tunnel[] }>)
   }, retryOpts)
 
-  return {
-    tunnels: tunnels
-      .filter(({ service }: Tunnel) => showPreevyService || service !== COMPOSE_TUNNEL_AGENT_SERVICE_NAME)
-      .map(tunnel => ({
-        ...tunnel,
-        ports: mapValues(
-          tunnel.ports,
-          includeAccessCredentials ? addCredentials : x => x
-        ),
-      })),
-    tunnelId,
-  }
+  return tunnels
+    .map(tunnel => ({
+      ...tunnel,
+      ports: mapValues(
+        tunnel.ports,
+        includeAccessCredentials
+          ? withBasicAuthCredentials(credentials, includeAccessCredentials)
+          : x => x,
+      ),
+    }))
 }
