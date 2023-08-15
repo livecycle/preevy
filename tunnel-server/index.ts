@@ -2,6 +2,8 @@ import { promisify } from 'util'
 import url from 'url'
 import path from 'path'
 import pino from 'pino'
+import fs from 'fs'
+import { createPublicKey } from 'crypto'
 import { app as createApp } from './src/app'
 import { inMemoryPreviewEnvStore } from './src/preview-env'
 import { getSSHKeys } from './src/ssh-keys'
@@ -17,11 +19,11 @@ import { truncateWithHash } from './src/strings'
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
-const logger = pino(appLoggerFromEnv())
+const log = pino(appLoggerFromEnv())
 
 const { sshPrivateKey } = await getSSHKeys({
   defaultKeyLocation: path.join(__dirname, './ssh/ssh_host_key'),
-  log: logger,
+  log,
 })
 
 const PORT = numberFromEnv('PORT') || 3000
@@ -35,6 +37,14 @@ const BASE_URL = (() => {
   return result
 })()
 
+const SAAS_PUBLIC_KEY = process.env.SAAS_PUBLIC_KEY || fs.readFileSync(
+  path.join('/', 'etc', 'certs', 'preview-proxy', 'saas.key.pub'),
+  { encoding: 'utf8' },
+)
+
+const publicKey = createPublicKey(SAAS_PUBLIC_KEY)
+const SAAS_JWT_ISSUER = process.env.SAAS_JWT_ISSUER ?? 'app.livecycle.run'
+
 const envStore = inMemoryPreviewEnvStore()
 const appSessionStore = cookieSessionStore({ domain: BASE_URL.hostname, schema: claimsSchema, keys: process.env.COOKIE_SECRETS?.split(' ') })
 const loginUrl = new URL('/login', replaceHostname(BASE_URL, `auth.${BASE_URL.hostname}`)).toString()
@@ -43,10 +53,15 @@ const app = createApp({
   envStore,
   baseUrl: BASE_URL,
   isProxyRequest: isProxyRequest(BASE_URL.hostname),
-  proxyHandlers: proxyHandlers({ envStore, log: logger, loginUrl, sessionStore: appSessionStore }),
-  log: logger,
+  proxyHandlers: proxyHandlers(
+    { envStore, log, loginUrl, sessionStore: appSessionStore, publicKey, jwtSaasIssuer: SAAS_JWT_ISSUER }
+  ),
+  log,
+  loginUrl,
+  jwtSaasIssuer: SAAS_JWT_ISSUER,
+  publicKey,
 })
-const sshLogger = logger.child({ name: 'ssh_server' })
+const sshLogger = log.child({ name: 'ssh_server' })
 
 const MAX_DNS_LABEL_LENGTH = 63
 

@@ -4,9 +4,10 @@ import net from 'net'
 import internal from 'stream'
 import type { Logger } from 'pino'
 import { inspect } from 'util'
+import { KeyObject } from 'crypto'
 import { PreviewEnvStore } from './preview-env'
 import { requestsCounter } from './metrics'
-import { Claims, authenticator, JwtAuthenticator, getIssuerToKeyDataFromEnv, AuthenticationResult, AuthError, UnauthorizedError } from './auth'
+import { Claims, jwtAuthenticator, AuthenticationResult, AuthError, UnauthorizedError, basicAuthUnauthorized, createGetVerificationData } from './auth'
 import { SessionStore } from './session'
 import { BadGatewayError, BadRequestError, errorHandler, errorUpgradeHandler, tryHandler, tryUpgradeHandler } from './http-server-helpers'
 
@@ -28,16 +29,23 @@ function loginRedirector(loginUrl:string) {
   }
 }
 
+const hasBasicAuthQueryParamHint = (url: string) =>
+  new URL(url, 'http://a').searchParams.get('_preevy_auth_hint') === 'basic'
+
 export function proxyHandlers({
   envStore,
   loginUrl,
   sessionStore,
   log,
+  publicKey,
+  jwtSaasIssuer,
 }: {
   sessionStore: SessionStore<Claims>
   envStore: PreviewEnvStore
   loginUrl: string
   log: Logger
+  publicKey: KeyObject
+  jwtSaasIssuer: string
 }) {
   const proxy = httpProxy.createProxy({})
   const redirectToLogin = loginRedirector(loginUrl)
@@ -60,25 +68,37 @@ export function proxyHandlers({
       }
 
       const session = sessionStore(req, res, env.publicKeyThumbprint)
-      if (env.access === 'private' && req.method !== 'OPTIONS') {
+      if (env.access === 'private') {
         if (!session.user) {
-          const authenticate = authenticator([
-            JwtAuthenticator(getIssuerToKeyDataFromEnv(env, log)),
-          ])
+          if (!req.headers.authorization) {
+            return req.url !== undefined && hasBasicAuthQueryParamHint(req.url)
+              ? basicAuthUnauthorized(res)
+              : redirectToLogin(res, env.hostname, req.url)
+          }
+
+          const authenticate = jwtAuthenticator(
+            env.publicKeyThumbprint,
+            createGetVerificationData(publicKey, jwtSaasIssuer)(env)
+          )
+
           let authResult: AuthenticationResult
           try {
             authResult = await authenticate(req)
           } catch (e) {
             if (e instanceof AuthError) {
+              res.statusCode = 400
               log.warn('Auth error %j', inspect(e))
-              throw new BadRequestError(`Auth error: ${e.message}`)
+              res.end(`Auth error: ${e.message}`)
+              return undefined
             }
             throw e
           }
+
           if (!authResult.isAuthenticated) {
-            log.debug('unauthorized request: %j %j %j', req.url, req.method, req.headers)
-            throw new UnauthorizedError('invalid auth')
+            redirectToLogin(res, env.hostname, req.url)
+            return undefined
           }
+
           session.set(authResult.claims)
           if (authResult.login && req.method === 'GET') {
             session.save()
@@ -91,7 +111,10 @@ export function proxyHandlers({
         }
 
         if (session.user?.role !== 'admin') {
-          throw new UnauthorizedError('not admin')
+          log.info('Non admin role tried to access private environment %j', session.user?.role)
+          res.statusCode = 403
+          res.end('Not allowed')
+          return undefined
         }
       }
 

@@ -3,22 +3,32 @@ import { fastifyRequestContext } from '@fastify/request-context'
 import http from 'http'
 import internal from 'stream'
 import { Logger } from 'pino'
+import { KeyObject } from 'crypto'
 import { SessionStore } from './session'
-import { Claims, JwtAuthenticator, authenticator, getIssuerToKeyDataFromEnv, unauthorized } from './auth'
+import { Claims, createGetVerificationData, jwtAuthenticator } from './auth'
 import { PreviewEnvStore } from './preview-env'
 import { replaceHostname } from './url'
 
-export const app = ({ isProxyRequest, proxyHandlers, sessionStore, baseUrl, envStore, log }: {
+const { SAAS_BASE_URL } = process.env
+if (SAAS_BASE_URL === undefined) { throw new Error('Env var SAAS_BASE_URL is missing') }
+
+export const app = (
+  { isProxyRequest, proxyHandlers, sessionStore, baseUrl, envStore, log, loginUrl, publicKey, jwtSaasIssuer }: {
   isProxyRequest: (req: http.IncomingMessage) => boolean
   log: Logger
   baseUrl: URL
+  loginUrl: string
   sessionStore: SessionStore<Claims>
   envStore: PreviewEnvStore
   proxyHandlers: {
     upgradeHandler: (req: http.IncomingMessage, socket: internal.Duplex, head: Buffer) => void
     handler: (req: http.IncomingMessage, res: http.ServerResponse) => void
   }
-}) =>
+  publicKey: KeyObject
+  jwtSaasIssuer: string
+
+}
+) =>
   Fastify({
     serverFactory: handler => {
       const { upgradeHandler: proxyUpgradeHandler, handler: proxyHandler } = proxyHandlers
@@ -49,6 +59,7 @@ export const app = ({ isProxyRequest, proxyHandlers, sessionStore, baseUrl, envS
     .get<{Querystring: {env: string; returnPath?: string}}>('/login', {
       schema: {
         querystring: {
+          type: 'object',
           properties: {
             env: { type: 'string' },
             returnPath: { type: 'string' },
@@ -69,10 +80,11 @@ export const app = ({ isProxyRequest, proxyHandlers, sessionStore, baseUrl, envS
       }
       const session = sessionStore(req.raw, res.raw, env.publicKeyThumbprint)
       if (!session.user) {
-        const auth = authenticator([JwtAuthenticator(getIssuerToKeyDataFromEnv(env, log))])
+        const auth = jwtAuthenticator(env.publicKeyThumbprint, createGetVerificationData(publicKey, jwtSaasIssuer)(env))
         const result = await auth(req.raw)
         if (!result.isAuthenticated) {
-          return unauthorized(res.raw)
+          return await res.header('Access-Control-Allow-Origin', SAAS_BASE_URL)
+            .redirect(`${SAAS_BASE_URL}/api/auth/login?redirectTo=${encodeURIComponent(`${loginUrl}?env=${envId}&returnPath=${returnPath}`)}`)
         }
         session.set(result.claims)
         session.save()
