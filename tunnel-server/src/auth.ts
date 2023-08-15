@@ -133,7 +133,7 @@ export function authenticator(authenticators: ((req: IncomingMessage)=> Promise<
 }
 
 // TODO: combine with UnauthorizedError
-export const unauthorized = (res: ServerResponse<IncomingMessage>) => {
+export const basicAuthUnauthorized = (res: ServerResponse<IncomingMessage>) => {
   res.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"')
   res.statusCode = 401
   res.end('Unauthorized')

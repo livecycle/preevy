@@ -6,7 +6,7 @@ import type { Logger } from 'pino'
 import { inspect } from 'util'
 import { PreviewEnvStore } from './preview-env'
 import { requestsCounter } from './metrics'
-import { Claims, JwtAuthenticator, AuthenticationResult, AuthError, UnauthorizedError, authenticator, getCombinedCLIAndSAASVerificationData, unauthorized } from './auth'
+import { Claims, JwtAuthenticator, AuthenticationResult, AuthError, UnauthorizedError, getCombinedCLIAndSAASVerificationData, basicAuthUnauthorized } from './auth'
 import { SessionStore } from './session'
 import { BadGatewayError, BadRequestError, errorHandler, errorUpgradeHandler, tryHandler, tryUpgradeHandler } from './http-server-helpers'
 
@@ -27,6 +27,9 @@ function loginRedirector(loginUrl:string) {
     res.end()
   }
 }
+
+const hasBasicAuthQueryParamHint = (url: string) =>
+  new URL(url, 'http://a').searchParams.get('_preevy_auth_hint') === 'basic'
 
 export function proxyHandlers({
   envStore,
@@ -62,6 +65,12 @@ export function proxyHandlers({
       const session = sessionStore(req, res, env.publicKeyThumbprint)
       if (env.access === 'private') {
         if (!session.user) {
+          if (!req.headers.authorization) {
+            return req.url !== undefined && hasBasicAuthQueryParamHint(req.url)
+              ? basicAuthUnauthorized(res)
+              : redirectToLogin(res, env.hostname, req.url)
+          }
+
           const authenticate = JwtAuthenticator(
             env.publicKeyThumbprint,
             getCombinedCLIAndSAASVerificationData(env)
@@ -97,7 +106,10 @@ export function proxyHandlers({
         }
 
         if (session.user?.role !== 'admin') {
-          return unauthorized(res)
+          log.info('Non admin role tried to access private environment %j', session.user?.role)
+          res.statusCode = 403
+          res.end('Not allowed')
+          return undefined
         }
       }
 
