@@ -4,7 +4,7 @@ import http from 'http'
 import internal from 'stream'
 import { Logger } from 'pino'
 import { SessionStore } from './session'
-import { Claims, JwtAuthenticator, getCombinedCLIAndSAASVerificationData } from './auth'
+import { Claims, jwtAuthenticator, getCombinedCLIAndSAASVerificationData } from './auth'
 import { PreviewEnvStore } from './preview-env'
 import { replaceHostname } from './url'
 
@@ -74,7 +74,7 @@ export const app = ({ isProxyRequest, proxyHandlers, sessionStore, baseUrl, envS
       }
       const session = sessionStore(req.raw, res.raw, env.publicKeyThumbprint)
       if (!session.user) {
-        const auth = JwtAuthenticator(env.publicKeyThumbprint, getCombinedCLIAndSAASVerificationData(env))
+        const auth = jwtAuthenticator(env.publicKeyThumbprint, getCombinedCLIAndSAASVerificationData(env))
         const result = await auth(req.raw)
         if (!result.isAuthenticated) {
           return await res.header('Access-Control-Allow-Origin', SAAS_BASE_URL)

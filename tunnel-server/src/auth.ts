@@ -76,50 +76,48 @@ const isBrowser = (req: IncomingMessage) => {
   return /(chrome|firefox|safari|opera|msie|trident)/.test(userAgent)
 }
 
-export function JwtAuthenticator(
+export const jwtAuthenticator = (
   publicKeyThumbprint: string,
   getVerificationData: (issuer: string, publicKeyThumbprint: string) => VerificationData
-) {
-  return async (req: IncomingMessage): Promise<AuthenticationResult> => {
-    const auth = extractAuthorizationHeader(req)
-    const jwt = match(auth)
-      .with({ scheme: 'Basic', username: 'x-preevy-profile-key' }, ({ password }) => password)
-      .with({ scheme: 'Bearer' }, ({ token }) => token)
-      .otherwise(() => new Cookies(req, undefined as unknown as ServerResponse<IncomingMessage>).get(cookieName))
+) => async (req: IncomingMessage): Promise<AuthenticationResult> => {
+  const auth = extractAuthorizationHeader(req)
+  const jwt = match(auth)
+    .with({ scheme: 'Basic', username: 'x-preevy-profile-key' }, ({ password }) => password)
+    .with({ scheme: 'Bearer' }, ({ token }) => token)
+    .otherwise(() => new Cookies(req, undefined as unknown as ServerResponse<IncomingMessage>).get(cookieName))
 
-    if (!jwt) {
-      return { isAuthenticated: false }
-    }
+  if (!jwt) {
+    return { isAuthenticated: false }
+  }
 
-    const parsedJwt = decodeJwt(jwt)
-    if (parsedJwt.iss === undefined) throw new AuthError('Could not find issuer in JWT')
+  const parsedJwt = decodeJwt(jwt)
+  if (parsedJwt.iss === undefined) throw new AuthError('Could not find issuer in JWT')
 
-    let verificationData: VerificationData
-    try {
-      verificationData = getVerificationData(parsedJwt.iss, publicKeyThumbprint)
-    } catch (e) {
-      if (e instanceof AuthError) return { isAuthenticated: false }
+  let verificationData: VerificationData
+  try {
+    verificationData = getVerificationData(parsedJwt.iss, publicKeyThumbprint)
+  } catch (e) {
+    if (e instanceof AuthError) return { isAuthenticated: false }
 
-      throw e
-    }
+    throw e
+  }
 
-    const { pk, extractClaims } = verificationData
+  const { pk, extractClaims } = verificationData
 
-    let token: JWTVerifyResult
-    try {
-      token = await jwtVerify(jwt, pk,)
-    } catch (e) {
-      if (e instanceof errors.JOSEError) throw new AuthError(`Could not verify JWT. ${e.message}`, { cause: e })
+  let token: JWTVerifyResult
+  try {
+    token = await jwtVerify(jwt, pk,)
+  } catch (e) {
+    if (e instanceof errors.JOSEError) throw new AuthError(`Could not verify JWT. ${e.message}`, { cause: e })
 
-      throw e
-    }
+    throw e
+  }
 
-    return {
-      method: { type: 'header', header: 'authorization' },
-      isAuthenticated: true,
-      login: isBrowser(req) && auth?.scheme !== 'Bearer',
-      claims: extractClaims(token.payload, publicKeyThumbprint),
-    }
+  return {
+    method: { type: 'header', header: 'authorization' },
+    isAuthenticated: true,
+    login: isBrowser(req) && auth?.scheme !== 'Bearer',
+    claims: extractClaims(token.payload, publicKeyThumbprint),
   }
 }
 
@@ -150,22 +148,17 @@ export const SAAS_JWT_ISSUER = process.env.SAAS_JWT_ISSUER ?? 'app.livecycle.run
 
 export const getCLIIssuerFromPK = (publicKeyThumbprint: string) => `preevy://${publicKeyThumbprint}`
 
-export const getCLITokenVerificationData = (pk: KeyObject) =>
-  (issuer: string, publicKeyThumbprint: string): VerificationData => {
-    if (issuer !== getCLIIssuerFromPK(publicKeyThumbprint)) {
-      throw new AuthError(`Unsupported issuer ${issuer}`)
-    }
-    return {
-      pk,
-      extractClaims: token => ({
-        role: 'admin',
-        type: 'profile',
-        exp: token.exp,
-        scopes: ['admin'],
-        sub: `preevy-profile:${publicKeyThumbprint}`,
-      }),
-    }
-  }
+const getCLITokenVerificationData = (pk: KeyObject,) =>
+  (): VerificationData => ({
+    pk,
+    extractClaims: (token, thumbprint) => ({
+      role: 'admin',
+      type: 'profile',
+      exp: token.exp,
+      scopes: ['admin'],
+      sub: `preevy-profile:${thumbprint}`,
+    }),
+  })
 
 export const saasJWTSchema = z.object({
   iss: z.string(),
@@ -186,44 +179,38 @@ export class UnauthorizedError extends HttpError {
     })
   }
 }
-export const getSaasTokenVerificationData = (issuer: string, publicKeyThumbprint: string): VerificationData => {
-  if (issuer !== SAAS_JWT_ISSUER) {
-    throw new AuthError(`Unsupported issuer ${issuer}`)
-  }
-
-  return {
-    pk: publicKey,
-    extractClaims: token => {
-      let parsedToken: SaasJWTSchema
-      try {
-        parsedToken = saasJWTSchema.parse(token)
-      } catch (e) {
-        if (e instanceof ZodError) {
-          throw new AuthError(`JWT schema is incorrect. ${e.message}`, { cause: e })
-        }
-        throw e
+const getSaasTokenVerificationData = (): VerificationData => ({
+  pk: publicKey,
+  extractClaims: (token, thumbprint) => {
+    let parsedToken: SaasJWTSchema
+    try {
+      parsedToken = saasJWTSchema.parse(token)
+    } catch (e) {
+      if (e instanceof ZodError) {
+        throw new AuthError(`JWT schema is incorrect. ${e.message}`, { cause: e })
       }
+      throw e
+    }
 
-      return {
-        exp: parsedToken.exp,
-        iat: parsedToken.iat,
-        sub: parsedToken.sub,
-        role: parsedToken.profiles.includes(publicKeyThumbprint) ? 'admin' : 'guest',
-        type: 'profile',
-        scopes: parsedToken.profiles.includes(publicKeyThumbprint) ? ['admin'] : [],
-      }
-    },
-  }
-}
+    return {
+      exp: parsedToken.exp,
+      iat: parsedToken.iat,
+      sub: parsedToken.sub,
+      role: parsedToken.profiles.includes(thumbprint) ? 'admin' : 'guest',
+      type: 'profile',
+      scopes: parsedToken.profiles.includes(thumbprint) ? ['admin'] : [],
+    }
+  },
+})
 
 export const getCombinedCLIAndSAASVerificationData = (env: PreviewEnv) =>
   (issuer: string, publicKeyThumbprint: string) => {
     if (issuer === SAAS_JWT_ISSUER) {
-      return getSaasTokenVerificationData(issuer, publicKeyThumbprint)
+      return getSaasTokenVerificationData()
     }
 
     if (issuer === getCLIIssuerFromPK(publicKeyThumbprint)) {
-      return getCLITokenVerificationData(env.publicKey)(issuer, publicKeyThumbprint)
+      return getCLITokenVerificationData(env.publicKey)()
     }
 
     throw new AuthError(`Unsupported issuer ${issuer}`)

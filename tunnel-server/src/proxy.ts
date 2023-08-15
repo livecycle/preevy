@@ -6,7 +6,7 @@ import type { Logger } from 'pino'
 import { inspect } from 'util'
 import { PreviewEnvStore } from './preview-env'
 import { requestsCounter } from './metrics'
-import { Claims, JwtAuthenticator, AuthenticationResult, AuthError, UnauthorizedError, getCombinedCLIAndSAASVerificationData, basicAuthUnauthorized } from './auth'
+import { Claims, jwtAuthenticator, AuthenticationResult, AuthError, UnauthorizedError, getCombinedCLIAndSAASVerificationData, basicAuthUnauthorized } from './auth'
 import { SessionStore } from './session'
 import { BadGatewayError, BadRequestError, errorHandler, errorUpgradeHandler, tryHandler, tryUpgradeHandler } from './http-server-helpers'
 
@@ -71,7 +71,7 @@ export function proxyHandlers({
               : redirectToLogin(res, env.hostname, req.url)
           }
 
-          const authenticate = JwtAuthenticator(
+          const authenticate = jwtAuthenticator(
             env.publicKeyThumbprint,
             getCombinedCLIAndSAASVerificationData(env)
           )
