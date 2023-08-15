@@ -7,7 +7,7 @@ import { MachineStatusCommand, dateReplacer } from '@preevy/common'
 import { ComposeModel, ComposeService, composeModelFilename } from './compose/model'
 import { TunnelOpts } from './ssh/url'
 import { Tunnel } from './tunneling'
-import { withBasicAuthCredentials } from './url'
+import { withBasicAuthCredentials } from './credentials'
 import { driverMetadataFilename } from './env-metadata'
 import { REMOTE_DIR_BASE } from './remote-files'
 
@@ -164,8 +164,8 @@ export const queryTunnels = async ({
 
   const { tunnels, clientId: tunnelId } = await retry(async () => {
     const r = await fetch(
-      `${composeTunnelServiceUrl}/tunnels`,
-      { timeout: 2500, headers: { Authorization: `Bearer ${credentials.password}` } }
+      addCredentials(`${composeTunnelServiceUrl}/tunnels`),
+      { timeout: 2500 },
     )
     if (!r.ok) {
       throw new Error(`Failed to connect to docker proxy at ${composeTunnelServiceUrl}: ${r.status}: ${r.statusText}`)
@@ -180,9 +180,7 @@ export const queryTunnels = async ({
         ...tunnel,
         ports: mapValues(
           tunnel.ports,
-          includeAccessCredentials
-            ? (x: string) => `${addCredentials(x)}?_preevy_auth_hint=basic`
-            : (x: string) => x
+          includeAccessCredentials ? addCredentials : x => x
         ),
       })),
     tunnelId,

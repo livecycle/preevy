@@ -9,7 +9,7 @@ import { isProxyRequest, proxyHandlers } from './src/proxy'
 import { appLoggerFromEnv } from './src/logging'
 import { tunnelsGauge, runMetricsServer } from './src/metrics'
 import { numberFromEnv, requiredEnv } from './src/env'
-import { replaceHostname } from './src/url'
+import { editUrl } from './src/url'
 import { cookieSessionStore } from './src/session'
 import { claimsSchema } from './src/auth'
 import { createSshServer } from './src/ssh'
@@ -37,7 +37,7 @@ const BASE_URL = (() => {
 
 const envStore = inMemoryPreviewEnvStore()
 const appSessionStore = cookieSessionStore({ domain: BASE_URL.hostname, schema: claimsSchema, keys: process.env.COOKIE_SECRETS?.split(' ') })
-const loginUrl = new URL('/login', replaceHostname(BASE_URL, `auth.${BASE_URL.hostname}`)).toString()
+const loginUrl = new URL('/login', editUrl(BASE_URL, { hostname: `auth.${BASE_URL.hostname}` })).toString()
 const app = createApp({
   sessionStore: appSessionStore,
   envStore,
@@ -65,7 +65,7 @@ const tunnelUrl = (
   rootUrl: URL,
   clientId: string,
   tunnel: string,
-) => replaceHostname(rootUrl, `${envStoreKey(clientId, tunnel)}.${rootUrl.hostname}`).toString()
+) => editUrl(rootUrl, { hostname: `${envStoreKey(clientId, tunnel)}.${rootUrl.hostname}` }).toString()
 
 const sshServer = createSshServer({
   log: sshLogger,

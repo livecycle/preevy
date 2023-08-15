@@ -3,6 +3,19 @@ import ssh2 from 'ssh2'
 import { Buffer } from 'buffer'
 import { KeyObject, createPrivateKey } from 'crypto'
 import memoize from 'p-memoize'
+import { editUrl } from '@preevy/common'
+
+const BASIC_AUTH_HINT_QUERY_PARAMS = {
+  _preevy_auth_hint: 'basic',
+} as const
+
+export const withBasicAuthCredentials = (
+  { user, password } : { user: string; password: string },
+) => (url: string) => editUrl(url, {
+  username: user,
+  password,
+  queryParams: BASIC_AUTH_HINT_QUERY_PARAMS,
+}).toString()
 
 function getAsymmetricKeyAlg(key: KeyObject) {
   if (!key.asymmetricKeyType) {

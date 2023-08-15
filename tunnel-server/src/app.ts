@@ -6,7 +6,7 @@ import { Logger } from 'pino'
 import { SessionStore } from './session'
 import { Claims, JwtAuthenticator, authenticator, getIssuerToKeyDataFromEnv, unauthorized } from './auth'
 import { PreviewEnvStore } from './preview-env'
-import { replaceHostname } from './url'
+import { editUrl } from './url'
 
 export const app = ({ isProxyRequest, proxyHandlers, sessionStore, baseUrl, envStore, log }: {
   isProxyRequest: (req: http.IncomingMessage) => boolean
@@ -77,6 +77,6 @@ export const app = ({ isProxyRequest, proxyHandlers, sessionStore, baseUrl, envS
         session.set(result.claims)
         session.save()
       }
-      return await res.redirect(new URL(returnPath, replaceHostname(baseUrl, `${envId}.${baseUrl.hostname}`)).toString())
+      return await res.redirect(new URL(returnPath, editUrl(baseUrl, { hostname: `${envId}.${baseUrl.hostname}` })).toString())
     })
     .get('/healthz', { logLevel: 'warn' }, async () => 'OK')
