@@ -15,7 +15,7 @@ import {
 } from '@preevy/core'
 import { pick } from 'lodash'
 import createClient, { Client, Instance, availableRegions, defaultProjectId, shortResourceName } from './client'
-import { LABELS } from './labels'
+import { deserializeMetadata, metadataKey } from './metadata'
 
 type DriverContext = {
   log: Logger
@@ -43,7 +43,7 @@ const machineFromInstance = (
     sshUsername: SSH_USERNAME,
     providerId: instance.name as string,
     version: '',
-    envId: instance.labels?.[LABELS.ENV_ID] as string,
+    envId: deserializeMetadata(instance.metadata?.items?.find(({ key }) => key === metadataKey)?.value as string).envId,
   }
 }
 

@@ -2,8 +2,9 @@ import { InstancesClient, ImagesClient, ZoneOperationsClient, RegionsClient } fr
 import { GoogleError, Status, operationsProtos, CallOptions } from 'google-gax'
 import { asyncFirst } from 'iter-tools-es'
 import { randomBytes } from 'crypto'
-import { LABELS } from './labels'
+import { LABELS, sha1hex } from './labels'
 import { readCloudConfig } from '../static'
+import { metadataKey, serializeMetadata } from './metadata'
 
 type Operation = operationsProtos.google.longrunning.IOperation
 
@@ -41,8 +42,8 @@ const client = ({
   }
 
   const labelFilter = (key: string, value: string) => `labels.${key} = "${value}"`
-  const baseFilter = labelFilter(LABELS.PROFILE_ID, profileId)
-  const envIdFilter = (envId: string) => labelFilter(LABELS.ENV_ID, envId)
+  const baseFilter = labelFilter(LABELS.PROFILE_ID_HASH_SHA1_HEX, sha1hex(profileId))
+  const envIdFilter = (envId: string) => labelFilter(LABELS.ENV_ID_HASH_SHA1_HEX, sha1hex(envId))
   const filter = (envId?: string) => [baseFilter, ...(envId ? [envIdFilter(envId)] : [])]
     .map(s => `(${s})`)
     .join(' ')
@@ -103,8 +104,8 @@ const client = ({
         instanceResource: {
           name,
           labels: {
-            [LABELS.ENV_ID]: envId,
-            [LABELS.PROFILE_ID]: profileId,
+            [LABELS.ENV_ID_HASH_SHA1_HEX]: sha1hex(envId),
+            [LABELS.PROFILE_ID_HASH_SHA1_HEX]: sha1hex(profileId),
           },
           machineType,
           disks: [{
@@ -120,8 +121,8 @@ const client = ({
           metadata: {
             items: [
               { key: 'ssh-keys', value: `${username}:${sshPublicKey}` },
-              // { key: 'startup-script', value: await readStartupScript() },
               { key: 'user-data', value: await readCloudConfig() },
+              { key: metadataKey, value: serializeMetadata({ envId, profileId }) },
             ],
           },
           networkInterfaces: [
