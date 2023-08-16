@@ -60,6 +60,7 @@ const client = ({
       stream.on('data', handler)
       log.info('listening on docker')
       void handler()
+      return { close: () => stream.removeAllListeners() }
     },
   }
 }

@@ -1,16 +1,17 @@
 ---
 sidebar_position: 2
-title: "Example: Github Actions"
+title: "Example: Github Actions + AWS"
 ---
 
 # GitHub Actions
 
-In this section we'll show an example of how to run Preevy using our GitHub Actions [preevy-up](https://github.com/marketplace/actions/preevy-up) and [preevy-down](https://github.com/marketplace/actions/preevy-down).
+In this section we'll show an example of how to run Preevy using our GitHub Actions [preevy-up](https://github.com/marketplace/actions/preevy-up) and [preevy-down](https://github.com/marketplace/actions/preevy-down) with AWS as the VM provider.
 
 # Preevy-Up
 
 ## Authentication
-In this example Preevy will get your stored profile from AWS S3, and will deploy the repo using docker compose file to AWS Lightsail. 
+
+In this example Preevy will get your stored profile from AWS S3, and will deploy the repo using docker compose file to AWS Lightsail.
 Make sure the action has [sufficient permissions](/drivers/aws-lightsail#required-permissions) to AWS.
 See: [Assume a rule](https://github.com/aws-actions/configure-aws-credentials#assuming-a-role)
 
@@ -78,7 +79,7 @@ jobs:
           docker-compose-yaml-paths: "./docker/docker-compose.yaml"
       - uses: mshick/add-pr-comment@v2
         with:
-          message: ${{ steps.preevy.outputs.urls-markdown }} 
+          message: ${{ steps.preevy.outputs.urls-markdown }}
 ```
 
 # Preevy-Down

@@ -46,6 +46,7 @@ export type ComposeService = {
   build?: ComposeBuild
   restart?: 'always' | 'on-failure'
   volumes?: ComposeVolume[]
+  extra_hosts?: string[]
   networks?: string[]
   ports?: ComposePort[]
   environment?: Record<string, string | undefined> | EnvString[]
@@ -151,3 +152,5 @@ export const fixModelForRemote = async (
     filesToCopy,
   }
 }
+
+export const composeModelFilename = 'docker-compose.yaml'

@@ -1,19 +1,23 @@
 name: Run tests
 on:
   pull_request:
-  push:
+    types: [opened, reopened, synchronize]
+    branches: [main]
 
 jobs:
   run-tests:
     runs-on: ubuntu-latest
 
     steps:
+    - uses: actions/checkout@v3
+
     - uses: actions/setup-node@v3
       with:
         node-version: '18.x'
-
-    - uses: actions/checkout@v3
+        cache: yarn
 
     - run: yarn
+
+    - run: yarn build
 
     - run: yarn test

@@ -1,4 +1,4 @@
-import { InputQuestion, ListQuestion, ConfirmQuestion } from 'inquirer'
+import { InputQuestion, ListQuestion, ConfirmQuestion, Separator } from 'inquirer'
 import { MachineCreationFlagTypes, flags } from './creation-driver'
 import { loadKubeConfig } from './client'
 
@@ -14,11 +14,11 @@ export const questions = async (): Promise<(InputQuestion | ListQuestion | Confi
     name: 'context',
     choices: () => {
       const kc = loadKubeConfig() // will read from KUBECONFIG env var as well
-      return kc.getContexts().map(c => c.name)
-    },
-    default: () => {
-      const kc = loadKubeConfig() // will read from KUBECONFIG env var as well
-      return kc.getCurrentContext()
+      return [
+        { name: 'Default: use default context at runtime', value: undefined },
+        new Separator(),
+        ...kc.getContexts().map(c => c.name),
+      ]
     },
     message: flags.context.description,
   },

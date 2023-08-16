@@ -19,7 +19,7 @@ $ npm install -g preevy
 $ preevy COMMAND
 running command...
 $ preevy (--version)
-preevy/0.0.45 darwin-arm64 node-v18.12.1
+preevy/0.0.49 darwin-arm64 node-v18.12.1
 $ preevy --help [COMMAND]
 USAGE
   $ preevy COMMAND
@@ -83,7 +83,7 @@ GCE DRIVER FLAGS
   --gce-zone=<value>        Google Cloud zone in which resources will be provisioned
 
 KUBE-POD DRIVER FLAGS
-  --kube-pod-context=<value>     Path to kubeconfig file (will load config from defaults if not specified)
+  --kube-pod-context=<value>     Path to kubeconfig context (will load config from defaults if not specified)
   --kube-pod-kubeconfig=<value>  Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-namespace=<value>   [default: default] Kubernetes namespace in which resources will be provisioned (needs
                                  to exist)
@@ -98,7 +98,7 @@ DESCRIPTION
   Delete preview environments
 ```
 
-_See code: [dist/commands/down.ts](https://github.com/livecycle/preevy/blob/v0.0.45/dist/commands/down.ts)_
+_See code: [dist/commands/down.ts](https://github.com/livecycle/preevy/blob/v0.0.49/dist/commands/down.ts)_
 
 ## `preevy help [COMMANDS]`
 
@@ -144,7 +144,7 @@ DESCRIPTION
   Initialize or import a new profile
 ```
 
-_See code: [dist/commands/init.ts](https://github.com/livecycle/preevy/blob/v0.0.45/dist/commands/init.ts)_
+_See code: [dist/commands/init.ts](https://github.com/livecycle/preevy/blob/v0.0.49/dist/commands/init.ts)_
 
 ## `preevy logs [SERVICES]`
 
@@ -157,8 +157,8 @@ USAGE
     st-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1]
     [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
     [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template
-    <value>] [--id <value>] [--columns <value> | -x] [--sort <value>] [--filter <value>] [--output csv|json|yaml |  |
-    [--csv | --no-truncate]] [--no-header | ]
+    <value>] [--id <value>] [--follow] [--tail <value>] [--no-log-prefix] [--timestamps] [--since <value>] [--until
+    <value>]
 
 ARGUMENTS
   SERVICES  Service name(s). If not specified, will show all services
@@ -166,16 +166,13 @@ ARGUMENTS
 FLAGS
   -d, --driver=<option>  Machine driver to use
                          <options: lightsail|gce|azure|kube-pod>
-  -x, --extended         show extra columns
-  --columns=<value>      only show provided columns (comma-separated)
-  --csv                  output is csv format [alias: --output=csv]
-  --filter=<value>       filter property by partial string matching, ex: name=foo
+  --follow               Follow log output
   --id=<value>           Environment id - affects created URLs. If not specified, will try to detect automatically
-  --no-header            hide table header from output
-  --no-truncate          do not truncate output to fit screen
-  --output=<option>      output in a more machine friendly format
-                         <options: csv|json|yaml>
-  --sort=<value>         property to sort by (prepend '-' for descending)
+  --no-log-prefix        Don't print log prefix in logs
+  --since=<value>        Show logs since timestamp
+  --tail=<value>         Number of lines to show from the end of the logs for each container (default: all)
+  --timestamps           Show timestamps
+  --until=<value>        Show logs before timestamp
 
 GLOBAL FLAGS
   -D, --debug                       Enable debug logging
@@ -192,7 +189,7 @@ GCE DRIVER FLAGS
   --gce-zone=<value>        Google Cloud zone in which resources will be provisioned
 
 KUBE-POD DRIVER FLAGS
-  --kube-pod-context=<value>     Path to kubeconfig file (will load config from defaults if not specified)
+  --kube-pod-context=<value>     Path to kubeconfig context (will load config from defaults if not specified)
   --kube-pod-kubeconfig=<value>  Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-namespace=<value>   [default: default] Kubernetes namespace in which resources will be provisioned (needs
                                  to exist)
@@ -207,7 +204,7 @@ DESCRIPTION
   Show logs for an existing environment
 ```
 
-_See code: [dist/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.45/dist/commands/logs.ts)_
+_See code: [dist/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.49/dist/commands/logs.ts)_
 
 ## `preevy ls`
 
@@ -252,7 +249,7 @@ GCE DRIVER FLAGS
   --gce-zone=<value>        Google Cloud zone in which resources will be provisioned
 
 KUBE-POD DRIVER FLAGS
-  --kube-pod-context=<value>     Path to kubeconfig file (will load config from defaults if not specified)
+  --kube-pod-context=<value>     Path to kubeconfig context (will load config from defaults if not specified)
   --kube-pod-kubeconfig=<value>  Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-namespace=<value>   [default: default] Kubernetes namespace in which resources will be provisioned (needs
                                  to exist)
@@ -267,7 +264,7 @@ DESCRIPTION
   List preview environments
 ```
 
-_See code: [dist/commands/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.45/dist/commands/ls.ts)_
+_See code: [dist/commands/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.49/dist/commands/ls.ts)_
 
 ## `preevy profile config update`
 
@@ -306,7 +303,7 @@ GCE DRIVER FLAGS
   --gce-zone=<value>          Google Cloud zone in which resources will be provisioned
 
 KUBE-POD DRIVER FLAGS
-  --kube-pod-context=<value>         Path to kubeconfig file (will load config from defaults if not specified)
+  --kube-pod-context=<value>         Path to kubeconfig context (will load config from defaults if not specified)
   --kube-pod-kubeconfig=<value>      Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-namespace=<value>       Kubernetes namespace in which resources will be provisioned (needs to exist)
   --[no-]kube-pod-server-side-apply  Use server side apply to create Kubernetes resources
@@ -387,7 +384,7 @@ GCE DRIVER FLAGS
   --gce-zone=<value>          Google Cloud zone in which resources will be provisioned
 
 KUBE-POD DRIVER FLAGS
-  --kube-pod-context=<value>         Path to kubeconfig file (will load config from defaults if not specified)
+  --kube-pod-context=<value>         Path to kubeconfig context (will load config from defaults if not specified)
   --kube-pod-kubeconfig=<value>      Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-namespace=<value>       [default: default] Kubernetes namespace in which resources will be provisioned
                                      (needs to exist)
@@ -554,7 +551,7 @@ GCE DRIVER FLAGS
   --gce-zone=<value>        Google Cloud zone in which resources will be provisioned
 
 KUBE-POD DRIVER FLAGS
-  --kube-pod-context=<value>     Path to kubeconfig file (will load config from defaults if not specified)
+  --kube-pod-context=<value>     Path to kubeconfig context (will load config from defaults if not specified)
   --kube-pod-kubeconfig=<value>  Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-namespace=<value>   [default: default] Kubernetes namespace in which resources will be provisioned (needs
                                  to exist)
@@ -569,7 +566,7 @@ DESCRIPTION
   Delete all cloud provider machines, and potentially other resources
 ```
 
-_See code: [dist/commands/purge.ts](https://github.com/livecycle/preevy/blob/v0.0.45/dist/commands/purge.ts)_
+_See code: [dist/commands/purge.ts](https://github.com/livecycle/preevy/blob/v0.0.49/dist/commands/purge.ts)_
 
 ## `preevy up [SERVICE]`
 
@@ -586,8 +583,8 @@ USAGE
     nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0] [--gce-machine-type <value>]
     [--azure-vm-size <value>] [--azure-resource-group-name <value>] [--kube-pod-server-side-apply] [--id <value>] [-t
     <value>] [--tls-hostname <value>] [--insecure-skip-verify] [--skip-unchanged-files] [--include-access-credentials]
-    [--columns <value> | -x] [--sort <value>] [--filter <value>] [--output csv|json|yaml |  | [--csv | --no-truncate]]
-    [--no-header | ]
+    [--show-preevy-service-urls] [--columns <value> | -x] [--sort <value>] [--filter <value>] [--output csv|json|yaml |
+    | [--csv | --no-truncate]] [--no-header | ]
 
 ARGUMENTS
   SERVICE  Service name(s). If not specified, will deploy all services
@@ -609,6 +606,7 @@ FLAGS
   --no-truncate                 do not truncate output to fit screen
   --output=<option>             output in a more machine friendly format
                                 <options: csv|json|yaml>
+  --show-preevy-service-urls    Show URLs for internal Preevy services
   --[no-]skip-unchanged-files   Detect and skip unchanged files when copying (default: true)
   --sort=<value>                property to sort by (prepend '-' for descending)
   --tls-hostname=<value>        Override TLS server name when tunneling via HTTPS
@@ -631,7 +629,7 @@ GCE DRIVER FLAGS
   --gce-zone=<value>          Google Cloud zone in which resources will be provisioned
 
 KUBE-POD DRIVER FLAGS
-  --kube-pod-context=<value>         Path to kubeconfig file (will load config from defaults if not specified)
+  --kube-pod-context=<value>         Path to kubeconfig context (will load config from defaults if not specified)
   --kube-pod-kubeconfig=<value>      Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-namespace=<value>       [default: default] Kubernetes namespace in which resources will be provisioned
                                      (needs to exist)
@@ -652,7 +650,7 @@ DESCRIPTION
   Bring up a preview environment
 ```
 
-_See code: [dist/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.45/dist/commands/up.ts)_
+_See code: [dist/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.49/dist/commands/up.ts)_
 
 ## `preevy urls [SERVICE] [PORT]`
 
@@ -663,7 +661,7 @@ USAGE
   $ preevy urls [SERVICE] [PORT] [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--id
     <value>] [-t <value>] [--tls-hostname <value>] [--insecure-skip-verify] [--columns <value> | -x] [--sort <value>]
     [--filter <value>] [--output csv|json|yaml |  | [--csv | --no-truncate]] [--no-header | ]
-    [--include-access-credentials] [--json]
+    [--include-access-credentials] [--show-preevy-service-urls] [--json]
 
 ARGUMENTS
   SERVICE  Service name. If not specified, will show all services
@@ -684,6 +682,7 @@ FLAGS
   --no-truncate                 do not truncate output to fit screen
   --output=<option>             output in a more machine friendly format
                                 <options: csv|json|yaml>
+  --show-preevy-service-urls    Show URLs for internal Preevy services
   --sort=<value>                property to sort by (prepend '-' for descending)
   --tls-hostname=<value>        Override TLS server name when tunneling via HTTPS
 
@@ -698,7 +697,7 @@ DESCRIPTION
   Show urls for an existing environment
 ```
 
-_See code: [dist/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.45/dist/commands/urls.ts)_
+_See code: [dist/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.49/dist/commands/urls.ts)_
 
 ## `preevy version`
 
@@ -719,5 +718,5 @@ DESCRIPTION
   Show Preevy version
 ```
 
-_See code: [dist/commands/version.ts](https://github.com/livecycle/preevy/blob/v0.0.45/dist/commands/version.ts)_
+_See code: [dist/commands/version.ts](https://github.com/livecycle/preevy/blob/v0.0.49/dist/commands/version.ts)_
 <!-- commandsstop -->

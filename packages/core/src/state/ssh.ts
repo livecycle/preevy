@@ -1,5 +1,5 @@
 import path from 'path'
-import { SSHKeyConfig, generateSshKeyPair } from '../ssh/keypair'
+import { SSHKeyConfig, SshKeyPairType, generateSshKeyPair } from '../ssh/keypair'
 import { Store } from '../store'
 
 export const sshKeysStore = (store: Store) => {
@@ -28,10 +28,10 @@ export const sshKeysStore = (store: Store) => {
   return {
     readKey,
     writeKey,
-    upsertKey: async (alias: string) => {
+    upsertKey: async (alias: string, type: SshKeyPairType = 'ed25519') => {
       let storedKeyPair = await readKey(alias)
       if (!storedKeyPair) {
-        const newKeyPair = await generateSshKeyPair()
+        const newKeyPair = await generateSshKeyPair(type)
         storedKeyPair = { alias, ...newKeyPair }
         await writeKey(storedKeyPair)
       }

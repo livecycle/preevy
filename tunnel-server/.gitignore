@@ -26,5 +26,6 @@ ssh/ssh_host_key*
 
 tls/cert.pem
 tls/key.pem
+tls/saas.key.pub
 
 dist

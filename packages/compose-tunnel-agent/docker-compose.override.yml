@@ -4,8 +4,7 @@ services:
   preevy_proxy:
     build:
       context: .
-      target: development
+      dockerfile: Dockerfile.dev
     volumes:
       - ${HOME}/.ssh:/root/.ssh
-
 

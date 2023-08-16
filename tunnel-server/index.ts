@@ -1,23 +1,29 @@
-import { inspect, promisify } from 'util'
-import { app as createApp } from './src/app'
-import { inMemoryPreviewEnvStore } from './src/preview-env'
-import { sshServer as createSshServer } from './src/ssh-server'
-import { getSSHKeys } from './src/ssh-keys'
+import { promisify } from 'util'
 import url from 'url'
 import path from 'path'
+import pino from 'pino'
+import fs from 'fs'
+import { createPublicKey } from 'crypto'
+import { app as createApp } from './src/app'
+import { inMemoryPreviewEnvStore } from './src/preview-env'
+import { getSSHKeys } from './src/ssh-keys'
 import { isProxyRequest, proxyHandlers } from './src/proxy'
 import { appLoggerFromEnv } from './src/logging'
-import pino from 'pino'
-import { tunnelsGauge } from './src/metrics'
-import { runMetricsServer } from './src/metrics'
+import { tunnelsGauge, runMetricsServer } from './src/metrics'
 import { numberFromEnv, requiredEnv } from './src/env'
 import { replaceHostname } from './src/url'
-import { createPublicKey } from 'crypto'
+import { cookieSessionStore } from './src/session'
+import { claimsSchema } from './src/auth'
+import { createSshServer } from './src/ssh'
+import { truncateWithHash } from './src/strings'
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
+const log = pino(appLoggerFromEnv())
+
 const { sshPrivateKey } = await getSSHKeys({
-  defaultKeyLocation: path.join(__dirname, "./ssh/ssh_host_key")
+  defaultKeyLocation: path.join(__dirname, './ssh/ssh_host_key'),
+  log,
 })
 
 const PORT = numberFromEnv('PORT') || 3000
@@ -31,93 +37,83 @@ const BASE_URL = (() => {
   return result
 })()
 
+const SAAS_PUBLIC_KEY = process.env.SAAS_PUBLIC_KEY || fs.readFileSync(
+  path.join('/', 'etc', 'certs', 'preview-proxy', 'saas.key.pub'),
+  { encoding: 'utf8' },
+)
+
+const publicKey = createPublicKey(SAAS_PUBLIC_KEY)
+const SAAS_JWT_ISSUER = process.env.SAAS_JWT_ISSUER ?? 'app.livecycle.run'
+
 const envStore = inMemoryPreviewEnvStore()
-
-const logger = pino(appLoggerFromEnv())
+const appSessionStore = cookieSessionStore({ domain: BASE_URL.hostname, schema: claimsSchema, keys: process.env.COOKIE_SECRETS?.split(' ') })
+const loginUrl = new URL('/login', replaceHostname(BASE_URL, `auth.${BASE_URL.hostname}`)).toString()
 const app = createApp({
+  sessionStore: appSessionStore,
+  envStore,
+  baseUrl: BASE_URL,
   isProxyRequest: isProxyRequest(BASE_URL.hostname),
-  proxyHandlers: proxyHandlers({envStore, logger}),
-  logger,
+  proxyHandlers: proxyHandlers(
+    { envStore, log, loginUrl, sessionStore: appSessionStore, publicKey, jwtSaasIssuer: SAAS_JWT_ISSUER }
+  ),
+  log,
+  loginUrl,
+  jwtSaasIssuer: SAAS_JWT_ISSUER,
+  publicKey,
 })
-const sshLogger = logger.child({ name: 'ssh_server' })
+const sshLogger = log.child({ name: 'ssh_server' })
 
-const tunnelName = (clientId: string, remotePath: string) => {
-  const serviceName = remotePath.replace(/^\//, '')
-  return `${serviceName}-${clientId}`.toLowerCase()
+const MAX_DNS_LABEL_LENGTH = 63
+
+const envStoreKey = (clientId: string, remotePath: string) => {
+  const noLeadingSlash = remotePath.replace(/^\//, '')
+  // return value needs to be DNS safe:
+  // - max DNS label name length is 63 octets (== 63 ASCII chars)
+  // - case insensitive
+  return truncateWithHash(
+    `${noLeadingSlash}-${clientId}`.replace(/[^a-zA-Z0-9_-]/g, '-'),
+    MAX_DNS_LABEL_LENGTH,
+  ).toLowerCase()
 }
 
 const tunnelUrl = (
   rootUrl: URL,
   clientId: string,
   tunnel: string,
-) => replaceHostname(rootUrl, `${tunnelName(clientId, tunnel)}.${rootUrl.hostname}`).toString()
+) => replaceHostname(rootUrl, `${envStoreKey(clientId, tunnel)}.${rootUrl.hostname}`).toString()
 
 const sshServer = createSshServer({
   log: sshLogger,
   sshPrivateKey,
   socketDir: '/tmp', // TODO
+  envStore,
+  envStoreKey,
+  helloBaseResponse: {
+    // TODO: backwards compat, remove when we drop support for CLI v0.0.35
+    baseUrl: { hostname: BASE_URL.hostname, port: BASE_URL.port, protocol: BASE_URL.protocol },
+    rootUrl: BASE_URL.toString(),
+  },
+  tunnelsGauge,
+  tunnelUrl: (clientId, remotePath) => tunnelUrl(BASE_URL, clientId, remotePath),
 })
-  .on('client', client => {
-    const { clientId, publicKey } = client
-    const tunnels = new Map<string, string>()
-    client
-      .on('forward', async (requestId, { path: remotePath, access }, accept, reject) => {
-        const key = tunnelName(clientId, remotePath)
-        if (await envStore.has(key)) {
-          reject(new Error(`duplicate path: ${key}`))
-          return
-        }
-        const forward = await accept()
-        sshLogger.debug('creating tunnel %s for localSocket %s', key, forward.localSocketPath)
-        await envStore.set(key, {
-          target: forward.localSocketPath,
-          clientId,
-          publicKey: createPublicKey(publicKey.getPublicPEM()),
-          access,
-        })
-        tunnels.set(requestId, tunnelUrl(BASE_URL, clientId, remotePath))
-        tunnelsGauge.inc({clientId})
-
-        forward.on('close', () => {
-          sshLogger.debug('deleting tunnel %s', key)
-          tunnels.delete(requestId)
-          void envStore.delete(key)
-          tunnelsGauge.dec({clientId})
-        })
-      })
-      .on('error', err => { sshLogger.warn('client error %j: %j', clientId, inspect(err)) })
-      .on('hello', channel => {
-        channel.stdout.write(JSON.stringify({
-          clientId,
-          // TODO: backwards compat, remove when we drop support for CLI v0.0.35
-          baseUrl: { hostname: BASE_URL.hostname, port: BASE_URL.port, protocol: BASE_URL.protocol },
-          rootUrl: BASE_URL.toString(),
-          tunnels: Object.fromEntries(tunnels.entries()),
-        }) + '\r\n')
-        channel.exit(0)
-      })
-  })
   .listen(SSH_PORT, LISTEN_HOST, () => {
     app.log.debug('ssh server listening on port %j', SSH_PORT)
   })
-  .on('error', (err: unknown) => {
-    app.log.error('ssh server error: %j', err)
-  })
 
-app.listen({ host: LISTEN_HOST, port: PORT }).catch((err) => {
+app.listen({ host: LISTEN_HOST, port: PORT }).catch(err => {
   app.log.error(err)
   process.exit(1)
 })
 
-runMetricsServer(8888).catch((err) => {
+runMetricsServer(8888).catch(err => {
   app.log.error(err)
-})
+});
 
-;['SIGTERM', 'SIGINT'].forEach((signal) => {
+['SIGTERM', 'SIGINT'].forEach(signal => {
   process.once(signal, () => {
     app.log.info(`shutting down on ${signal}`)
     Promise.all([promisify(sshServer.close).call(sshServer), app.close()])
-      .catch((err) => {
+      .catch(err => {
         app.log.error(err)
         process.exit(1)
       })

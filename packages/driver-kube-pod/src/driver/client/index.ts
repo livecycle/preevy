@@ -15,7 +15,7 @@ import k8sHelpers from './k8s-helpers'
 import {
   LABELS,
   addEnvMetadata,
-  envRandomId,
+  envRandomName,
   envSelector,
   markObjectAsDeleted,
   profileSelector,
@@ -27,6 +27,7 @@ import {
   ANNOTATIONS,
 } from './metadata'
 import { Package } from './common'
+import { logError } from './log-error'
 
 export const loadKubeConfig = (kubeconfig?: string, context?:string) => {
   const kc = new k8s.KubeConfig()
@@ -69,14 +70,15 @@ const kubeClient = ({ log, namespace, kc, profileId, template, package: packageD
   template: Buffer | string | Promise<Buffer | string>
   package: Package | Promise<Package>
 }) => {
+  const wrap = logError(log)
   const k8sApi = kc.makeApiClient(k8s.CoreV1Api)
   const k8sAppsApi = kc.makeApiClient(k8s.AppsV1Api)
   const k8sObjApi = kc.makeApiClient(k8s.KubernetesObjectApi)
   const watcher = new k8s.Watch(kc)
 
-  const helpers = k8sHelpers({ k8sApi, k8sAppsApi, namespace })
+  const helpers = k8sHelpers({ k8sApi, k8sAppsApi, wrap })
 
-  const { apply, gatherTypes, list: dynamicList, waiter } = dynamicApi({ client: k8sObjApi })
+  const { apply, gatherTypes, list: dynamicList, waiter } = dynamicApi({ client: k8sObjApi, wrap })
 
   const renderTemplate = async ({ instance }: { instance: string }) => {
     const specsStr = nunjucks.renderString((await template).toString('utf-8'), {
@@ -96,7 +98,7 @@ const kubeClient = ({ log, namespace, kc, profileId, template, package: packageD
   )
 
   const findInstanceDeployment = async (instance: string) => {
-    const deployment = await asyncFirst(helpers.listDeployments({ ...instanceSelector({ instance }) }))
+    const deployment = await asyncFirst(helpers.listDeployments({ namespace, ...instanceSelector({ instance }) }))
     if (!deployment) {
       throw new Error(`Cannot find deployment with label "${LABELS.INSTANCE}": "${instance}" in namespace "${namespace}"`)
     }
@@ -107,8 +109,9 @@ const kubeClient = ({ log, namespace, kc, profileId, template, package: packageD
     envId: string,
     { serverSideApply }: { serverSideApply: boolean },
   ) => {
-    const instance = envRandomId({ envId, profileId })
+    const instance = envRandomName({ envId, profileId })
     const specs = await renderTemplate({ instance })
+    log.debug('createEnv: apply', instance, inspect(specs, { depth: null }))
     await apply(specs, {
       filter: compositeApplyFilter(
         ensureSingleDockerHostDeployment(),
@@ -126,6 +129,7 @@ const kubeClient = ({ log, namespace, kc, profileId, template, package: packageD
         : applyStrategies.clientSideApply,
     })
 
+    log.debug('createEnv: findInstanceDeployment', instance)
     const deployment = await findInstanceDeployment(instance)
 
     // objects returned by the list API missing 'kind' and 'apiVersion' props
@@ -155,6 +159,7 @@ const kubeClient = ({ log, namespace, kc, profileId, template, package: packageD
     envId: string,
     deleted?: boolean,
   ) => helpers.listDeployments({
+    namespace,
     ...envSelector({ profileId, envId, deleted, dockerHost: true }),
   })
 
@@ -177,9 +182,21 @@ const kubeClient = ({ log, namespace, kc, profileId, template, package: packageD
     return await basePortForward({ namespace, forward, log })(podName, targetPort, listenAddress)
   }
 
+  const apiServiceClusterAddress = async (): Promise<[string, number] | undefined> => {
+    const service = await asyncFirst(helpers.listServices({
+      namespace: 'default',
+      fieldSelector: 'metadata.name=kubernetes',
+    }))
+    const [host, port] = [service?.spec?.clusterIP, service?.spec?.ports?.[0]?.port]
+    if (host === undefined || port === undefined) {
+      return undefined
+    }
+    return [host, port]
+  }
+
   return {
     findMostRecentDeployment,
-    listProfileDeployments: () => helpers.listDeployments({ ...profileSelector({ profileId }) }),
+    listProfileDeployments: () => helpers.listDeployments({ namespace, ...profileSelector({ profileId }) }),
     exec: baseExec({ kubeConfig: kc, kubeconfigLocation: kubeconfig, namespace, log }),
     findReadyPodForDeployment: helpers.findReadyPodForDeployment,
     createEnv,
@@ -187,6 +204,7 @@ const kubeClient = ({ log, namespace, kc, profileId, template, package: packageD
     portForward,
     extractTemplateHash,
     calcTemplateHash,
+    apiServiceClusterAddress,
   }
 }
 

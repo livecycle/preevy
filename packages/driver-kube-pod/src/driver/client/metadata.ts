@@ -1,14 +1,18 @@
 import * as k8s from '@kubernetes/client-node'
-import { extractDefined } from '@preevy/core'
-import { labelWithRandomSuffix, sanitizeLabel } from './labels'
+import { extractDefined, randomString, truncatePrefix } from '@preevy/core'
+import { sanitizeLabel, sanitizeLabels } from './labels'
 import { HasMetadata, Package } from './common'
 
+export const MAX_LABEL_LENGTH = 63
+
+const PREEVY_PREFIX = 'preevy.dev' as const
+
 export const LABELS = {
-  PROFILE_ID: 'preevy.dev/profile-id',
-  ENV_ID: 'preevy.dev/env-id',
-  INSTANCE: 'preevy.dev/instance',
-  DELETED: 'preevy.dev/deleted',
-  DOCKER_HOST: 'app.kubernetes.io/component',
+  PROFILE_ID: `${PREEVY_PREFIX}/profile-id`,
+  ENV_ID: `${PREEVY_PREFIX}/env-id`,
+  INSTANCE: `${PREEVY_PREFIX}/instance`,
+  DELETED: `${PREEVY_PREFIX}/deleted`,
+  COMPONENT: 'app.kubernetes.io/component',
 } as const
 
 export const DOCKER_HOST_VALUE = 'docker-host'
@@ -16,10 +20,12 @@ export const DOCKER_HOST_VALUE = 'docker-host'
 const TRUE_VALUE = 'true'
 
 export const ANNOTATIONS = {
-  CREATED_AT: 'preevy.dev/created-at',
-  TEMPLATE_HASH: 'preevy.dev/template-hash',
-  KUBERNETES_KIND: 'preevy.dev/kubernetes-kind',
-  KUERBETES_API_VERSION: 'preev.dev/kubernetes-api-version',
+  PROFILE_ID: `${PREEVY_PREFIX}/profile-id`,
+  ENV_ID: `${PREEVY_PREFIX}/env-id`,
+  CREATED_AT: `${PREEVY_PREFIX}/created-at`,
+  TEMPLATE_HASH: `${PREEVY_PREFIX}/template-hash`,
+  KUBERNETES_KIND: `${PREEVY_PREFIX}/kubernetes-kind`,
+  KUERBETES_API_VERSION: `${PREEVY_PREFIX}/kubernetes-api-version`,
   DEPLOYMENT_REVISION: 'deployment.kubernetes.io/revision',
 }
 
@@ -54,18 +60,20 @@ export const addEnvMetadata = (
   spec.metadata ??= {}
   spec.metadata.labels ??= {}
   spec.metadata.annotations ??= {}
-  Object.assign(spec.metadata.labels, {
+  Object.assign(spec.metadata.labels, sanitizeLabels({
     [LABELS.PROFILE_ID]: profileId,
     [LABELS.ENV_ID]: envId,
     [LABELS.INSTANCE]: instance,
     'app.kubernetes.io/instance': instance,
-    'app.kubernetes.io/managed-by': sanitizeLabel(name),
+    'app.kubernetes.io/managed-by': name,
     'app.kubernetes.io/name': envId,
     'app.kubernetes.io/part-of': profileId,
     'app.kubernetes.io/version': version,
     'internal.config.kubernetes.io/index': index.toString(),
-  })
+  }))
   Object.assign(spec.metadata.annotations, {
+    [ANNOTATIONS.ENV_ID]: envId,
+    [ANNOTATIONS.PROFILE_ID]: profileId,
     [ANNOTATIONS.CREATED_AT]: createdAt.toISOString(),
     [ANNOTATIONS.TEMPLATE_HASH]: templateHash,
     [ANNOTATIONS.KUBERNETES_KIND]: spec.kind,
@@ -85,7 +93,7 @@ const extractAnnotation = (
 ) => extractDefined(extractDefined(extractDefined(o, 'metadata'), 'annotations'), ANNOTATIONS[annotation])
 
 export const extractInstance = (o: HasMetadata) => extractLabel(o, 'INSTANCE')
-export const extractEnvId = (o: HasMetadata) => extractLabel(o, 'ENV_ID')
+export const extractEnvId = (o: HasMetadata) => extractAnnotation(o, 'ENV_ID')
 export const extractName = (o: HasMetadata) => extractDefined(extractDefined(o, 'metadata'), 'name')
 export const extractNamespace = (o: HasMetadata) => extractDefined(extractDefined(o, 'metadata'), 'namespace')
 export const extractTemplateHash = (o: HasMetadata) => extractAnnotation(o, 'TEMPLATE_HASH')
@@ -107,22 +115,34 @@ export const envSelector = (
   },
 ) => ({
   labelSelector: [
-    eqSelector(LABELS.PROFILE_ID, profileId),
-    eqSelector(LABELS.ENV_ID, envId),
+    eqSelector(LABELS.PROFILE_ID, sanitizeLabel(profileId)),
+    eqSelector(LABELS.ENV_ID, sanitizeLabel(envId)),
     deleted !== undefined ? (deleted ? eqSelector : neqSelector)(LABELS.DELETED, TRUE_VALUE) : undefined,
-    dockerHost ? eqSelector(LABELS.DOCKER_HOST, DOCKER_HOST_VALUE) : undefined,
+    dockerHost ? eqSelector(LABELS.COMPONENT, DOCKER_HOST_VALUE) : undefined,
   ].filter(Boolean).join(','),
 })
 
 export const profileSelector = ({ profileId }: { profileId: string }) => ({
-  labelSelector: eqSelector(LABELS.PROFILE_ID, profileId),
+  labelSelector: eqSelector(LABELS.PROFILE_ID, sanitizeLabel(profileId)),
 })
 
 export const isDockerHostDeployment = (s: k8s.KubernetesObject) => s.kind === 'Deployment'
-    && s.metadata?.labels?.[LABELS.DOCKER_HOST] === DOCKER_HOST_VALUE
+    && s.metadata?.labels?.[LABELS.COMPONENT] === DOCKER_HOST_VALUE
+
+// https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+const sanitizeName = (s: string) => s
+  .toLowerCase()
+  .replace(/[^a-z0-9-]/g, '-')
+  .replace(/^[^a-z]/, firstChar => `a${firstChar}`) // prefix with alphabetic if first char is not alphabetic
+  .replace(/[^a-z0-9]$/, lastChar => `${lastChar}z`) // suffix with alphanumeric if last char is not alphanumeric
 
 const RANDOM_ID_SPARE_LENGTH = 10
+const MAX_NAME_LENGTH = 63
 
-export const envRandomId = (
+export const envRandomName = (
   { envId, profileId }: { envId: string; profileId: string },
-) => labelWithRandomSuffix([profileId, envId], RANDOM_ID_SPARE_LENGTH)
+) => truncatePrefix(
+  sanitizeName([profileId, envId].join('-')),
+  randomString.lowercaseNumeric(5),
+  MAX_NAME_LENGTH - RANDOM_ID_SPARE_LENGTH,
+)

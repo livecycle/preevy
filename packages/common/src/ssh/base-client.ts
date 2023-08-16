@@ -1,6 +1,6 @@
 import tls, { TLSSocket } from 'tls'
 import ssh2, { ParsedKey } from 'ssh2'
-import { inspect } from 'util'
+import { promisify } from 'util'
 import { tryParseJson } from '../json'
 import { Logger } from '../log'
 import { formatPublicKey, parseKey } from './keys'
@@ -76,33 +76,43 @@ export type SshClientOpts = {
   onHostKey?: (key: Buffer, isVerified: boolean) => void
 }
 
+type ReadStream = {
+  on: (event: 'data', handler: (data: Buffer) => void) => void
+}
+
 export const baseSshClient = async (
   { log, onError, connectionConfig, onHostKey }: SshClientOpts,
 ) => {
   const ssh = new ssh2.Client()
 
-  const execHello = () => new Promise<HelloResponse>((resolve, reject) => {
-    ssh.exec('hello', (err, stream) => {
-      if (err) {
-        log.error('error running hello: %j', inspect(err))
-        reject(err)
-        return
+  const tryParseJsonChunks = <T>(
+    channel: { stdout: ReadStream; close: () => void },
+  ) => new Promise<T>(resolve => {
+    let buf = Buffer.from([])
+    channel.stdout.on('data', (data: Buffer) => {
+      log.debug('exec: got data %j', data?.toString())
+      buf = Buffer.concat([buf, data])
+      const obj = tryParseJson(buf.toString()) as T | undefined
+      if (obj) {
+        log.debug('exec: got response %j', obj)
+        resolve(obj)
+        channel.close()
       }
-      let buf = Buffer.from([])
-      stream.stdout.on('data', (data: Buffer) => {
-        log.debug('got data %j', data?.toString())
-        buf = Buffer.concat([buf, data])
-        const obj = tryParseJson(buf.toString()) as HelloResponse | undefined
-        if (obj) {
-          log.debug('got hello response %j', obj)
-          resolve(obj)
-          stream.close()
-        }
-      })
     })
   })
 
-  const result = { ssh, execHello }
+  const execPromise = promisify(ssh.exec.bind(ssh))
+  const exec = async <T>(command: string) => {
+    const channel = await execPromise(command)
+    return await tryParseJsonChunks<T>(channel)
+  }
+
+  const result = {
+    ssh,
+    close: () => ssh.end(),
+    execHello: () => exec<HelloResponse>('hello'),
+    execTunnelUrl: <T extends string>(tunnels: T[]) => exec<Record<T, string>>(`tunnel-url ${tunnels.join(' ')}`),
+  }
 
   const {
     isTls, hostname, port, username, clientPrivateKey, insecureSkipVerify, knownServerPublicKeys,
@@ -138,3 +148,5 @@ export const baseSshClient = async (
     })
   })
 }
+
+export type BaseSshClient = Awaited<ReturnType<typeof baseSshClient>>

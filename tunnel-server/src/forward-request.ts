@@ -5,6 +5,7 @@ export type Accesss = typeof access[number]
 export type ForwardRequest = {
   path: string
   access: Accesss
+  meta: Record<string, unknown>
 }
 
 export const parseForwardRequest = (request: string) => {
@@ -18,6 +19,12 @@ export const parseForwardRequest = (request: string) => {
         throw new Error(`invalid access "${v}" in request "${request}", allowed values: ${access.join(', ')}`)
       }
       forwardRequest.access = v as Accesss
+    } else if (k === 'meta') {
+      try {
+        forwardRequest.meta = JSON.parse(Buffer.from(v, 'base64url').toString('utf-8'))
+      } catch (e) {
+        throw new Error(`invalid meta in request: ${v}`)
+      }
     } else {
       throw new Error(`invalid param "${k}" in request "${request}"`)
     }

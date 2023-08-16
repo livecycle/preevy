@@ -3,7 +3,6 @@ import { Flags, Interfaces } from '@oclif/core'
 import {
   MachineDriver,
   MachineDriverFactory,
-  orderedOutput,
   commandWith,
   execResultFromOrderedOutput,
   checkResult,
@@ -14,6 +13,7 @@ import {
 import { asyncMap } from 'iter-tools-es'
 import { AddressInfo } from 'net'
 import { Readable, Writable } from 'stream'
+import { orderedOutput } from '@preevy/common'
 import { DeploymentMachine, ResourceType, machineFromDeployment } from './common'
 import createClient, { Client, extractName, loadKubeConfig } from './client'
 import { PACKAGE_JSON, DEFAULT_TEMPLATE } from '../static'
@@ -29,9 +29,12 @@ const isTTY = (s: Readable | Writable) => (s as unknown as { isTTY: boolean }).i
 export const machineConnection = async (
   client: Client,
   machine: DeploymentMachine,
+  log: Logger,
 ): Promise<MachineConnection> => {
   const { deployment } = machine as DeploymentMachine
+  log.debug(`Connecting to deployment "${deployment.metadata?.namespace}/${deployment.metadata?.name}"`)
   const pod = await client.findReadyPodForDeployment(deployment)
+  log.debug(`Found pod "${pod.metadata?.name}"`)
 
   return ({
     close: async () => undefined,
@@ -62,45 +65,78 @@ export const machineConnection = async (
 }
 
 const machineDriver = (
-  { client }: DriverContext,
-): MachineDriver<DeploymentMachine, ResourceType> => ({
-  friendlyName: 'Kubernetes single Pod',
+  { client, log }: DriverContext,
+): MachineDriver<DeploymentMachine, ResourceType> => {
+  const listMachines = () => asyncMap(machineFromDeployment, client.listProfileDeployments())
 
-  getMachine: async ({ envId }) => {
-    const deployment = await client.findMostRecentDeployment({ envId, deleted: false })
-    return deployment && machineFromDeployment(deployment)
-  },
+  return ({
+    friendlyName: 'Kubernetes single Pod',
 
-  listDeletableResources: () => asyncMap(machineFromDeployment, client.listProfileDeployments()),
+    getMachine: async ({ envId }) => {
+      const deployment = await client.findMostRecentDeployment({ envId, deleted: false })
+      return deployment && machineFromDeployment(deployment)
+    },
 
-  deleteResources: async (wait, ...resources) => {
-    await Promise.all(resources.map(({ type, providerId }) => {
-      if (type === 'machine') {
-        return client.deleteEnv(providerId, { wait })
+    listMachines,
+    listDeletableResources: listMachines,
+
+    deleteResources: async (wait, ...resources) => {
+      await Promise.all(resources.map(({ type, providerId }) => {
+        if (type === 'machine') {
+          return client.deleteEnv(providerId, { wait })
+        }
+        throw new Error(`Unknown resource type: "${type}"`)
+      }))
+    },
+
+    resourcePlurals: {},
+
+    spawnRemoteCommand: async (machine, command, stdio) => {
+      const pod = await client.findReadyPodForDeployment((machine as DeploymentMachine).deployment)
+      const { stdin, stdout, stderr } = expandStdioOptions(stdio)
+      const opts = {
+        pod: extractName(pod),
+        container: pod.spec?.containers[0]?.name as string,
+        command: command.length > 0 ? command : ['sh'],
+        tty: [stdin, stdout, stderr].every(isTTY),
+        stdin,
+        stdout,
+        stderr,
       }
-      throw new Error(`Unknown resource type: "${type}"`)
-    }))
-  },
+      return await client.exec(opts)
+    },
 
-  resourcePlurals: {},
+    connect: machine => machineConnection(client, machine as DeploymentMachine, log),
 
-  spawnRemoteCommand: async (machine, command, stdio) => {
-    const pod = await client.findReadyPodForDeployment((machine as DeploymentMachine).deployment)
-    const { stdin, stdout, stderr } = expandStdioOptions(stdio)
-    const opts = {
-      pod: extractName(pod),
-      container: pod.spec?.containers[0]?.name as string,
-      command: command.length > 0 ? command : ['sh'],
-      tty: [stdin, stdout, stderr].every(isTTY),
-      stdin,
-      stdout,
-      stderr,
-    }
-    return await client.exec(opts)
-  },
+    machineStatusCommand: async machine => {
+      const pod = await client.findReadyPodForDeployment((machine as DeploymentMachine).deployment)
+      const apiServiceAddress = await client.apiServiceClusterAddress()
+      if (!apiServiceAddress) {
+        log.warn('API service not found for cluster')
+        return undefined
+      }
+      const [apiServiceHost, apiServicePort] = apiServiceAddress
 
-  connect: machine => machineConnection(client, machine as DeploymentMachine),
-})
+      return ({
+        contentType: 'application/vnd.kubectl-top-pod-containers',
+        recipe: {
+          type: 'docker',
+          command: ['top', 'pod', '--containers', '--no-headers', extractName(pod)],
+          image: 'rancher/kubectl:v1.26.7',
+          network: 'host',
+          tty: false,
+          env: {
+            KUBERNETES_SERVICE_HOST: apiServiceHost,
+            KUBERNETES_SERVICE_PORT: apiServicePort.toString(),
+          },
+          bindMounts: [
+            '/var/run/secrets/kubernetes.io/serviceaccount:/var/run/secrets/kubernetes.io/serviceaccount',
+          ],
+        },
+      })
+    },
+  })
+}
 
 export const flags = {
   namespace: Flags.string({
@@ -114,7 +150,7 @@ export const flags = {
     env: 'KUBECONFIG',
   }),
   context: Flags.string({
-    description: 'Path to kubeconfig file (will load config from defaults if not specified)',
+    description: 'kubeconfig context name (will load config from defaults if not specified)',
     required: false,
     env: 'KUBE_CONTEXT',
   }),

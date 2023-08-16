@@ -1,8 +1,9 @@
 import { Args, ux, Interfaces } from '@oclif/core'
-import { FlatTunnel, commands, findAmbientEnvId, profileStore } from '@preevy/core'
+import { FlatTunnel, ProfileStore, TunnelOpts, addBaseComposeTunnelAgentService, commands, findComposeTunnelAgentUrl, findEnvId, getTunnelNamesToServicePorts, profileStore } from '@preevy/core'
 import { HooksListeners, PluginContext, tunnelServerFlags } from '@preevy/cli-common'
 import { asyncReduce } from 'iter-tools-es'
-import { tunnelServerHello } from '../tunnel-server-client'
+import { tunnelNameResolver } from '@preevy/common'
+import { connectToTunnelServerSsh } from '../tunnel-server-client'
 import ProfileCommand from '../profile-command'
 import { envIdFlags, urlFlags } from '../common-flags'
 
@@ -59,13 +60,43 @@ export default class Urls extends ProfileCommand<typeof Urls> {
     }),
   }
 
+  async getComposeTunnelAgentUrl(
+    envId: string,
+    tunnelOpts: TunnelOpts,
+    tunnelingKey: string | Buffer,
+    knownServerPublicKeys: ProfileStore['knownServerPublicKeys']
+  ) {
+    const { client: tunnelServerSshClient } = await connectToTunnelServerSsh({
+      tunnelOpts,
+      knownServerPublicKeys,
+      tunnelingKey,
+      log: this.logger,
+    })
+
+    const expectedTunnels = getTunnelNamesToServicePorts(
+      addBaseComposeTunnelAgentService({ name: '' }),
+      tunnelNameResolver({ envId }),
+    )
+    const expectedTunnelUrls = await tunnelServerSshClient.execTunnelUrl(Object.keys(expectedTunnels))
+
+    tunnelServerSshClient.close()
+
+    const expectedServiceUrls = Object.entries(expectedTunnels)
+      .map(([tunnel, { name, port }]) => ({ name, port, url: expectedTunnelUrls[tunnel] }))
+
+    return findComposeTunnelAgentUrl(expectedServiceUrls)
+  }
+
   async run(): Promise<unknown> {
     const log = this.logger
     const { flags, args } = await this.parse(Urls)
-    const envId = flags.id || await findAmbientEnvId((await this.ensureUserModel()).name)
-    log.debug(`envId: ${envId}`)
 
-    const pStore = profileStore(this.store)
+    const envId = await findEnvId({
+      userSpecifiedEnvId: flags.id,
+      userSpecifiedProjectName: flags.project,
+      userModel: () => this.ensureUserModel(),
+      log,
+    })
 
     const tunnelOpts = {
       url: flags['tunnel-url'],
@@ -73,21 +104,24 @@ export default class Urls extends ProfileCommand<typeof Urls> {
       insecureSkipVerify: flags['insecure-skip-verify'],
     }
 
+    const pStore = profileStore(this.store)
+
     const tunnelingKey = await pStore.getTunnelingKey()
-    const { clientId, rootUrl } = await tunnelServerHello({
+
+    const composeTunnelServiceUrl = await this.getComposeTunnelAgentUrl(
+      envId,
       tunnelOpts,
-      knownServerPublicKeys: pStore.knownServerPublicKeys,
       tunnelingKey,
-      log: this.logger,
-    })
+      pStore.knownServerPublicKeys,
+    )
 
     const flatTunnels = await commands.urls({
-      rootUrl,
-      clientId,
-      envId,
+      composeTunnelServiceUrl,
       serviceAndPort: args.service ? { service: args.service, port: args.port } : undefined,
       tunnelingKey,
       includeAccessCredentials: flags['include-access-credentials'],
+      showPreevyService: flags['show-preevy-service-urls'],
+      retryOpts: { retries: 2 },
     })
 
     const urls = await filterUrls({

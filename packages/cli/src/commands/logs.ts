@@ -1,12 +1,61 @@
 import yaml from 'yaml'
-import { Args, ux } from '@oclif/core'
+import { Args, Flags, Interfaces } from '@oclif/core'
 import {
-  isPartialMachine,
   COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addBaseComposeTunnelAgentService,
-  findAmbientEnvId, localComposeClient, wrapWithDockerSocket,
+  localComposeClient, wrapWithDockerSocket, findEnvId, MachineConnection, ComposeModel, remoteUserModel,
 } from '@preevy/core'
 import DriverCommand from '../driver-command'
 import { envIdFlags } from '../common-flags'
+
+const validateServices = (
+  specifiedServices: string[],
+  userModel: Pick<ComposeModel, 'services'>,
+) => {
+  // exclude compose tunnel agent service unless explicitly specified
+  const modelServices = Object.keys(userModel.services ?? {})
+
+  const services = specifiedServices.length ? specifiedServices : modelServices
+
+  for (const service of services) {
+    if (service !== COMPOSE_TUNNEL_AGENT_SERVICE_NAME && !modelServices.includes(service)) {
+      throw new Error(`Specified service ${service} not found. Available services: ${modelServices.join(', ')}`)
+    }
+  }
+
+  return services
+}
+
+const dockerComposeLogsFlags = {
+  follow: Flags.boolean({
+    description: 'Follow log output',
+  }),
+  tail: Flags.integer({
+    description: 'Number of lines to show from the end of the logs for each container (default: all)',
+  }),
+  'no-log-prefix': Flags.boolean({
+    description: 'Don\'t print log prefix in logs',
+  }),
+  timestamps: Flags.boolean({
+    description: 'Show timestamps',
+  }),
+  since: Flags.string({
+    description: 'Show logs since timestamp',
+  }),
+  until: Flags.string({
+    description: 'Show logs before timestamp',
+  }),
+} as const
+
+const serializeDockerComposeLogsFlags = (
+  flags: Omit<Interfaces.InferredFlags<typeof dockerComposeLogsFlags>, 'json'>
+) => [
+  ...flags.follow ? ['--follow'] : [],
+  ...flags.tail ? ['--tail', flags.tail.toString()] : [],
+  ...flags.until ? ['--until', flags.until] : [],
+  ...flags.since ? ['--since', flags.since] : [],
+  ...flags.timestamps ? ['--timestamps'] : [],
+  ...flags['no-log-prefix'] ? ['--no-log-prefix'] : [],
+]
 
 // eslint-disable-next-line no-use-before-define
 export default class Logs extends DriverCommand<typeof Logs> {
@@ -14,7 +63,7 @@ export default class Logs extends DriverCommand<typeof Logs> {
 
   static flags = {
     ...envIdFlags,
-    ...ux.table.flags(),
+    ...dockerComposeLogsFlags,
   }
 
   static strict = false
@@ -31,41 +80,38 @@ export default class Logs extends DriverCommand<typeof Logs> {
     const log = this.logger
     const { flags, raw } = await this.parse(Logs)
     const restArgs = raw.filter(arg => arg.type === 'arg').map(arg => arg.input)
-    const driver = await this.driver()
 
-    const projectName = (await this.ensureUserModel()).name
-    log.debug(`project: ${projectName}`)
-    const envId = flags.id || await findAmbientEnvId(projectName)
-    log.debug(`envId: ${envId}`)
-
-    const model = await this.ensureUserModel()
-
-    // exclude docker proxy service unless explicitly specified
-    const modelServices = Object.keys(model.services ?? {})
-
-    const services = restArgs.length ? restArgs : modelServices
-
-    for (const service of services) {
-      if (service !== COMPOSE_TUNNEL_AGENT_SERVICE_NAME && !modelServices.includes(service)) {
-        throw new Error(`Specified service ${service} not found. Available services: ${modelServices.join(', ')}`)
-      }
+    let connection: MachineConnection
+    let userModel: ComposeModel
+    if (flags.id) {
+      connection = await this.connect(flags.id)
+      userModel = await remoteUserModel(connection)
+    } else {
+      userModel = await this.ensureUserModel()
+      const envId = await findEnvId({
+        log,
+        userSpecifiedEnvId: undefined,
+        userSpecifiedProjectName: flags.project,
+        userModel,
+      })
+      connection = await this.connect(envId)
     }
-
-    const machine = await driver.getMachine({ envId })
-    if (!machine || isPartialMachine(machine)) {
-      throw new Error(`No machine found for envId ${envId}`)
-    }
-
-    const connection = await driver.connect(machine, { log, debug: flags.debug })
 
     try {
+      const compose = localComposeClient({
+        composeFiles: Buffer.from(yaml.stringify(addBaseComposeTunnelAgentService(userModel))),
+        projectName: flags.project,
+      })
+
       const withDockerSocket = wrapWithDockerSocket({ connection, log })
-
-      const compose = localComposeClient(
-        { composeFiles: Buffer.from(yaml.stringify(addBaseComposeTunnelAgentService(model))), projectName }
-      )
-
-      await withDockerSocket(() => compose.spawnPromise(['logs', ...services], { stdio: 'inherit' }))
+      await withDockerSocket(() => compose.spawnPromise(
+        [
+          'logs',
+          ...serializeDockerComposeLogsFlags(flags),
+          ...validateServices(restArgs, userModel),
+        ],
+        { stdio: 'inherit' },
+      ))
     } finally {
       await connection.close()
     }

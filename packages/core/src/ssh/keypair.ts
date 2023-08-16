@@ -9,18 +9,28 @@ export type SshKeyPair = {
 
 const gen = promisify(crypto.generateKeyPair)
 
-export const generateSshKeyPair = async (): Promise<{ privateKey: string; publicKey: string }> => {
-  const { privateKey, publicKey } = await gen('ed25519', {
-    publicKeyEncoding: {
-      type: 'spki',
-      format: 'pem',
-    },
-    privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
-  })
+const genRsa = () => gen('rsa', {
+  modulusLength: 4096,
+  publicKeyEncoding: { type: 'pkcs1', format: 'pem' },
+  privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+})
+
+const genEd25519 = () => gen('ed25519', {
+  publicKeyEncoding: { type: 'spki', format: 'pem' },
+  privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+})
+
+export type SshKeyPairType = 'rsa' | 'ed25519'
+
+export const generateSshKeyPair = async (
+  type: SshKeyPairType,
+): Promise<{ privateKey: string; publicKey: string }> => {
+  const { privateKey, publicKey } = await (type === 'rsa' ? genRsa() : genEd25519())
 
   return {
     privateKey: parsePrivateKey(privateKey).toString('ssh-private'),
     publicKey: parseKey(publicKey).toString('ssh'),
   }
 }
+
 export type SSHKeyConfig = SshKeyPair & { alias: string }

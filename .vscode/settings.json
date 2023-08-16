@@ -1,12 +1,14 @@
 {
   "editor.tabSize": 2,
   "cSpell.words": [
+    "Fastify",
     "Livecycle",
     "Preevy",
     "Snapshotter"
   ],
   "eslint.format.enable": true,
   "eslint.workingDirectories": [
+    "./tunnel-server",
     { "pattern": "./packages/*/" }
   ],
   "eslint.useESLintClass": true,
@@ -22,7 +24,6 @@
   "typescript.implementationsCodeLens.enabled": true,
   "typescript.preferences.quoteStyle": "single",
   "typescript.tsdk": "node_modules/typescript/lib",
-  "markdown.extension.preview.autoShowPreviewToSide": true,
   "markdown.extension.toc.levels": "2..6",
   "prettier.enable": false,
   "editor.defaultFormatter": "dbaeumer.vscode-eslint",

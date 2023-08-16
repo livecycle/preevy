@@ -5,7 +5,6 @@ import { StorageManagementClient } from '@azure/arm-storage'
 import { DefaultAzureCredential } from '@azure/identity'
 import { randomBytes } from 'crypto'
 import { asyncFilter, asyncFirst, asyncFlatMap, asyncMap } from 'iter-tools-es'
-import { generateSshKeyPair } from '@preevy/core'
 import {
   AzureCustomTags,
   createNIC,
@@ -99,12 +98,6 @@ export const client = ({
   const storageClient = new StorageManagementClient(credentials, subscriptionId)
   const networkClient = new NetworkManagementClient(credentials, subscriptionId)
   return {
-    createKeyPair: async (alias: string) => ({
-      // https://learn.microsoft.com/en-us/rest/api/compute/ssh-public-keys/generate-key-pair?tabs=HTTP
-      keyPair: await generateSshKeyPair(),
-      alias,
-    }),
-
     deleteResourcesResourceGroup: async (resourceGroupName: string, wait: boolean) => {
       if (wait) {
         await resourceClient.resourceGroups.beginDeleteAndWait(resourceGroupName, {

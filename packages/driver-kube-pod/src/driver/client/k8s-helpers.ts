@@ -2,6 +2,7 @@ import * as k8s from '@kubernetes/client-node'
 import { ensureDefined, extractDefined } from '@preevy/core'
 import { asyncFilter, asyncFirst, asyncToArray } from 'iter-tools-es'
 import { paginationIterator } from './pagination'
+import { FuncWrapper } from './log-error'
 
 export type DeploymentNotReadyErrorReason = 'NoRevision' | 'NoReplicaSet' | 'NoReadyPod'
 export class DeploymentNotReadyError extends Error {
@@ -11,22 +12,23 @@ export class DeploymentNotReadyError extends Error {
 }
 
 export default (
-  { k8sAppsApi, k8sApi, namespace }: {
+  { k8sAppsApi, k8sApi, wrap }: {
     k8sAppsApi: k8s.AppsV1Api
     k8sApi: k8s.CoreV1Api
-    namespace: string
+    wrap: FuncWrapper
   }
 ) => {
   const listDeployments = (
-    { fieldSelector, labelSelector, resourceVersion, timeoutSeconds, watch }: {
+    { namespace, fieldSelector, labelSelector, resourceVersion, timeoutSeconds, watch }: {
+      namespace: string
       fieldSelector?: string
       labelSelector?: string
       resourceVersion?: string
       timeoutSeconds?: number
       watch?: boolean
-    } = {},
+    },
   ) => paginationIterator<k8s.V1Deployment>(
-    continueToken => k8sAppsApi.listNamespacedDeployment(
+    wrap(continueToken => k8sAppsApi.listNamespacedDeployment(
       namespace,
       undefined,
       undefined,
@@ -38,19 +40,20 @@ export default (
       undefined,
       timeoutSeconds,
       watch,
-    ),
+    )),
   )
 
   const listReplicaSets = (
-    { fieldSelector, labelSelector, resourceVersion, timeoutSeconds, watch }: {
+    { namespace, fieldSelector, labelSelector, resourceVersion, timeoutSeconds, watch }: {
+      namespace: string
       fieldSelector?: string
       labelSelector?: string
       resourceVersion?: string
       timeoutSeconds?: number
       watch?: boolean
-    } = {},
+    },
   ) => paginationIterator<k8s.V1ReplicaSet>(
-    continueToken => k8sAppsApi.listNamespacedReplicaSet(
+    wrap(continueToken => k8sAppsApi.listNamespacedReplicaSet(
       namespace,
       undefined,
       undefined,
@@ -62,19 +65,21 @@ export default (
       undefined,
       timeoutSeconds,
       watch,
-    ),
+    )),
   )
 
   const listPods = (
-    { fieldSelector, labelSelector, resourceVersion, timeoutSeconds, watch }: {
+    { namespace, fieldSelector, labelSelector, resourceVersion, timeoutSeconds, watch }: {
+      namespace: string
+      namespaceOverride?: string
       fieldSelector?: string
       labelSelector?: string
       resourceVersion?: string
       timeoutSeconds?: number
       watch?: boolean
-    } = {},
+    },
   ) => paginationIterator<k8s.V1Pod>(
-    continueToken => k8sApi.listNamespacedPod(
+    wrap(continueToken => k8sApi.listNamespacedPod(
       namespace,
       undefined,
       undefined,
@@ -86,11 +91,36 @@ export default (
       undefined,
       timeoutSeconds,
       watch,
-    ),
+    )),
+  )
+
+  const listServices = (
+    { namespace, fieldSelector, labelSelector, resourceVersion, timeoutSeconds, watch }: {
+      namespace: string
+      fieldSelector?: string
+      labelSelector?: string
+      resourceVersion?: string
+      timeoutSeconds?: number
+      watch?: boolean
+    },
+  ) => paginationIterator<k8s.V1Service>(
+    wrap(continueToken => k8sApi.listNamespacedService(
+      namespace,
+      undefined,
+      undefined,
+      continueToken,
+      fieldSelector,
+      labelSelector,
+      undefined,
+      resourceVersion,
+      undefined,
+      timeoutSeconds,
+      watch,
+    )),
   )
 
   const findReplicaSetForDeployment = async (deployment: Pick<k8s.V1Deployment, 'metadata'>) => {
-    const { name, annotations } = ensureDefined(extractDefined(deployment, 'metadata'), 'name', 'annotations', 'labels')
+    const { name, namespace, annotations } = ensureDefined(extractDefined(deployment, 'metadata'), 'name', 'annotations', 'labels')
     const revision = annotations['deployment.kubernetes.io/revision']
     if (!revision) {
       throw new DeploymentNotReadyError(deployment, 'NoRevision')
@@ -98,7 +128,7 @@ export default (
     const result = await asyncFirst(asyncFilter<k8s.V1ReplicaSet>(
       r => r.metadata?.annotations?.['deployment.kubernetes.io/revision'] === revision
         && Boolean(r.metadata?.ownerReferences?.some(ref => ref.kind === 'Deployment' && ref.name === name)),
-      listReplicaSets(),
+      listReplicaSets({ namespace: namespace || '' }),
     ))
     if (!result) {
       throw new DeploymentNotReadyError(deployment, 'NoReplicaSet')
@@ -107,11 +137,11 @@ export default (
   }
 
   const listPodsForReplicaSet = (rs: Pick<k8s.V1ReplicaSet, 'metadata'>) => {
-    const { labels, name } = ensureDefined(extractDefined(rs, 'metadata'), 'labels', 'name')
+    const { labels, name, namespace } = ensureDefined(extractDefined(rs, 'metadata'), 'labels', 'name')
     const podTemplateHash = extractDefined(labels, 'pod-template-hash')
     return asyncFilter<k8s.V1Pod>(
       pod => Boolean(pod.metadata?.ownerReferences?.some(ref => ref.kind === 'ReplicaSet' && ref.name === name)),
-      listPods({ labelSelector: `pod-template-hash=${podTemplateHash}` }),
+      listPods({ namespace: namespace || '', labelSelector: `pod-template-hash=${podTemplateHash}` }),
     )
   }
 
@@ -133,5 +163,6 @@ export default (
     listReplicaSets,
     listPods,
     findReadyPodForDeployment,
+    listServices,
   }
 }

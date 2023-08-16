@@ -1,15 +1,19 @@
 import path from 'path'
 import fetch from 'node-fetch'
 import retry from 'p-retry'
+import util from 'util'
 import { mapValues } from 'lodash'
-import { ComposeModel, ComposeService } from './compose/model'
+import { MachineStatusCommand, dateReplacer } from '@preevy/common'
+import { ComposeModel, ComposeService, composeModelFilename } from './compose/model'
 import { TunnelOpts } from './ssh/url'
 import { Tunnel } from './tunneling'
 import { withBasicAuthCredentials } from './url'
 import { isPacked, pkgSnapshotDir } from './pkg'
+import { driverMetadataFilename } from './env-metadata'
+import { REMOTE_DIR_BASE } from './remote-files'
 
 export const COMPOSE_TUNNEL_AGENT_SERVICE_NAME = 'preevy_proxy'
-export const COMPOSE_TUNNEL_AGENT_SERVICE_PORT = 3000
+export const COMPOSE_TUNNEL_AGENT_PORT = 3000
 const COMPOSE_TUNNEL_AGENT_DIR = path.join(path.dirname(require.resolve('@preevy/compose-tunnel-agent')), '..')
 
 const baseDockerProxyService = () => {
@@ -18,6 +22,14 @@ const baseDockerProxyService = () => {
     build: {
       context: contextDir,
     },
+    ports: [
+      {
+        mode: 'ingress',
+        target: COMPOSE_TUNNEL_AGENT_PORT,
+        published: '0',
+        protocol: 'tcp',
+      },
+    ],
     labels: {
       'preevy.access': 'private',
     },
@@ -34,14 +46,29 @@ export const addBaseComposeTunnelAgentService = (
   },
 })
 
+const metadataDirectory = '/preevy/metadata'
+
 export const addComposeTunnelAgentService = (
-  { tunnelOpts, sshPrivateKeyPath, knownServerPublicKeyPath, urlSuffix, debug, user }: {
+  {
+    tunnelOpts,
+    sshPrivateKeyPath,
+    knownServerPublicKeyPath,
+    debug,
+    user,
+    envId,
+    machineStatusCommand,
+    envMetadata,
+    composeModelPath,
+  }: {
     tunnelOpts: TunnelOpts
-    urlSuffix: string
     sshPrivateKeyPath: string
     knownServerPublicKeyPath: string
     debug: boolean
     user: string
+    envId: string
+    machineStatusCommand?: MachineStatusCommand
+    envMetadata: Record<string, unknown>
+    composeModelPath: string
   },
   model: ComposeModel,
 ): ComposeModel => ({
@@ -52,14 +79,6 @@ export const addComposeTunnelAgentService = (
       ...baseDockerProxyService(),
       restart: 'always',
       networks: Object.keys(model.networks || {}),
-      ports: [
-        {
-          mode: 'ingress',
-          target: 3000,
-          published: '0',
-          protocol: 'tcp',
-        },
-      ],
       volumes: [
         {
           type: 'bind',
@@ -80,13 +99,30 @@ export const addComposeTunnelAgentService = (
           read_only: true,
           bind: { create_host_path: true },
         },
+        {
+          type: 'bind',
+          source: `${REMOTE_DIR_BASE}/${driverMetadataFilename}`,
+          target: `${metadataDirectory}/${driverMetadataFilename}`,
+          read_only: true,
+          bind: { create_host_path: true },
+        },
+        {
+          type: 'bind',
+          source: composeModelPath,
+          target: `/preevy/${composeModelFilename}`,
+          read_only: true,
+          bind: { create_host_path: true },
+        },
       ],
       user,
       environment: {
         SSH_URL: tunnelOpts.url,
         TLS_SERVERNAME: tunnelOpts.tlsServerName,
-        TUNNEL_URL_SUFFIX: urlSuffix,
-        PORT: COMPOSE_TUNNEL_AGENT_SERVICE_PORT.toString(),
+        PREEVY_ENV_ID: envId,
+        PORT: COMPOSE_TUNNEL_AGENT_PORT.toString(),
+        ...machineStatusCommand ? { MACHINE_STATUS_COMMAND: JSON.stringify(machineStatusCommand) } : {},
+        ENV_METADATA: JSON.stringify(envMetadata, dateReplacer),
+        ENV_METADATA_FILES: `${metadataDirectory}/${driverMetadataFilename}`,
         ...debug ? { DEBUG: '1' } : {},
         HOME: '/preevy',
       },
@@ -94,39 +130,57 @@ export const addComposeTunnelAgentService = (
   },
 })
 
+export const findComposeTunnelAgentUrl = (
+  serviceUrls: { name: string; port: number; url: string }[]
+) => {
+  const serviceUrl = serviceUrls.find(
+    ({ name, port }) => name === COMPOSE_TUNNEL_AGENT_SERVICE_NAME && port === COMPOSE_TUNNEL_AGENT_PORT
+  )?.url
+
+  if (!serviceUrl) {
+    throw new Error(`Cannot find compose tunnel agent API service URL ${COMPOSE_TUNNEL_AGENT_SERVICE_NAME}:${COMPOSE_TUNNEL_AGENT_PORT} in: ${util.inspect(serviceUrls)}`)
+  }
+
+  return serviceUrl
+}
+
 export const queryTunnels = async ({
   retryOpts = { retries: 0 },
-  tunnelUrlsForService,
+  composeTunnelServiceUrl,
   credentials,
   includeAccessCredentials,
+  showPreevyService,
 }: {
-  tunnelUrlsForService: (service: { name: string; ports: number[] }) => { port: number; url: string }[]
+  composeTunnelServiceUrl: string
   credentials: { user: string; password: string }
   retryOpts?: retry.Options
   includeAccessCredentials: boolean
+  showPreevyService: boolean
 }) => {
-  const serviceUrl = tunnelUrlsForService({
-    name: COMPOSE_TUNNEL_AGENT_SERVICE_NAME,
-    ports: [COMPOSE_TUNNEL_AGENT_SERVICE_PORT],
-  })[0].url.replace(/\/$/, '')
-
   const addCredentials = withBasicAuthCredentials(credentials)
-  const url = addCredentials(`${serviceUrl}/tunnels`)
 
   const { tunnels, clientId: tunnelId } = await retry(async () => {
-    const r = await fetch(url, { timeout: 2500 })
+    const r = await fetch(
+      `${composeTunnelServiceUrl}/tunnels`,
+      { timeout: 2500, headers: { Authorization: `Bearer ${credentials.password}` } }
+    )
     if (!r.ok) {
-      throw new Error(`Failed to connect to docker proxy at ${url}: ${r.status}: ${r.statusText}`)
+      throw new Error(`Failed to connect to docker proxy at ${composeTunnelServiceUrl}: ${r.status}: ${r.statusText}`)
     }
     return await (r.json() as Promise<{ tunnels: Tunnel[]; clientId: string }>)
   }, retryOpts)
 
   return {
     tunnels: tunnels
-      .filter(({ service }: Tunnel) => service !== COMPOSE_TUNNEL_AGENT_SERVICE_NAME)
+      .filter(({ service }: Tunnel) => showPreevyService || service !== COMPOSE_TUNNEL_AGENT_SERVICE_NAME)
       .map(tunnel => ({
         ...tunnel,
-        ports: mapValues(tunnel.ports, includeAccessCredentials ? addCredentials : (x: string) => x),
+        ports: mapValues(
+          tunnel.ports,
+          includeAccessCredentials
+            ? (x: string) => `${addCredentials(x)}?_preevy_auth_hint=basic`
+            : (x: string) => x
+        ),
       })),
     tunnelId,
   }

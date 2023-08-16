@@ -2,7 +2,7 @@
   "compilerOptions": {
     "lib": ["ES2022"],
     "module": "CommonJS",
-    "target": "ES2019",
+    "target": "ES2022",
     "moduleResolution": "node",
     "strict": true,
     "esModuleInterop": true,

@@ -1,5 +1,9 @@
 version: '3.7'
 
+configs:
+  saas-public-key:
+    file: ./tls/saas.key.pub
+
 services:
   proxy:
     build:
@@ -10,6 +14,8 @@ services:
     #image: preview-proxy
     environment:
       BASE_URL: ${BASE_URL:-http://local.livecycle.run:8030}
+      SAAS_BASE_URL: ${SAAS_BASE_URL:-https://local.livecycle.run:3001}
+      SAAS_JWT_ISSUER: ${SAAS_JWT_ISSUER:-app.livecycle.run}
 
     ports:
       - '8030:3000'
@@ -21,3 +27,7 @@ services:
       retries: 4
       start_period: 20s
       timeout: 10s
+
+    configs:
+      - source: saas-public-key
+        target: /etc/certs/preview-proxy/saas.key.pub

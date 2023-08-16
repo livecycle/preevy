@@ -19,17 +19,24 @@
 
 <br />
 
+> **If you're a Preevy user, we'd love to hear from you! Please take a few minutes to fill out this [form](https://forms.gle/x9YVuLo5MCULaGAL7) to help us understand your user experience and improve Preevy. As a token of appreciation for your effort, we'll send you some Amazon gift cards, Livecycle swag, or similar items! 🎉**
+
+<br>
+
 ![Terminal GIF](./terminal.gif)
 
 # Preevy
 
-Preevy is a powerful Command Line Interface (CLI) tool designed to simplify the process of creating ephemeral preview environments. With Preevy, you can easily provision a preview environment for any Docker-Compose application in the cloud.  
-It supports various platforms, including affordable VMs from [AWS Lightsail](https://aws.amazon.com/free/compute/lightsail), [Google Cloud](https://cloud.google.com/compute/), and [Microsoft Azure](https://azure.microsoft.com/en-us/products/virtual-machines), or any [Kubernetes cluster](https://preevy.dev/drivers/kube-pod).
+Preevy is a Command Line Interface (CLI) tool designed to simplify the process of creating ephemeral preview environments from Dockerized applications. Integrate Preevy into your CI flow to deploy Pull Requests as preview environments, using your existing cloud provider or Kubernetes cluster.
 
-Preevy makes it a breeze to create preview environments for your PRs, offering a range of exciting benefits:
+Preevy makes use of affordable VMs from [AWS Lightsail](https://aws.amazon.com/free/compute/lightsail), [Google Cloud](https://cloud.google.com/compute/), and [Microsoft Azure](https://azure.microsoft.com/en-us/products/virtual-machines), or any [Kubernetes cluster](https://preevy.dev/drivers/kube-pod).
+
+Preevy can deploy your app with public or protected access, on the public internet or inside your existing private network.
+
+Deploying a preview environment per Pull Request offers a range of benefits:
 
 - 🌍 **Universal Access**: Just by sharing a URL, you can allow anyone to try your product revision on any device.
-  
+
 - 📩 **Effortless Asynchronous Updates**: Keep non-technical stakeholders in the loop without coordinating synchronous meetings.
 
 - 🎨 **Hassle-free Design Reviews**: Designers can verify implementation independently, minimizing interruptions.
@@ -41,7 +48,7 @@ Preevy makes it a breeze to create preview environments for your PRs, offering a
 - 🧪 **Non-production Experimentation**: Develop and share unique versions of your product for presentations, examples, or tests.
 
 - 🔐 **Secure Collaboration**: Generate private sandboxes to share with external stakeholders, ensuring secure collaborative efforts.
-  
+
 \
 Visit The full documentation here: https://preevy.dev/
 
@@ -89,21 +96,21 @@ You can read more about the story and philosophy behind Preevy [here](https://pr
 
 To start using the Preevy CLI you will need:
 
-- Docker for desktop/Docker cli
-- Node 18 
+- Docker for desktop/Docker CLI
+- Node 18
 - A Docker-Compose application (examples can be found [here](https://github.com/docker/awesome-compose))
 - A cloud provider for provisioning VMs (AWS/GCP/Azure), or a Kubernetes cluster (local, remote or managed)
 
-If you don't have an existing cloud account or prefer to try Preevy first locally, you can use the embeded Kuberentes inside Docker for Desktop at:
-Docker Settings -> Kuberentes -> Enable Kubernetes.  
-Afterwards just follow the instructions for Kuberentes driver.  
+If you don't have an existing cloud account or prefer to try Preevy first locally, you can use the [Docker Desktop Kuberentes server](https://docs.docker.com/desktop/kubernetes/). Go to:
+Docker Settings -> Kuberentes -> Enable Kubernetes.
+And follow the instructions below.
 
 *For provisioning a VM*, configure your provider:
 - In AWS, it could be by using `aws configure`
 - In GCP, it could be by using `gcloud auth application-default login`
 - In Azure, it could be by using `az login`
 
-*For provisioning a Kubernetes Pod*, make sure a kubeconfig file exists and that you can run `kubectl` commands locally (e.g, `kubectl get pod`)
+*For provisioning a Pod on Kubernetes*, make sure a kubeconfig file exists and that you can run `kubectl` commands locally (e.g, `kubectl get pod`)
 
 Running Preevy:
 
