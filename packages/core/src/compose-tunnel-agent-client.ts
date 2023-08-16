@@ -1,46 +1,19 @@
 import path from 'path'
 import fetch from 'node-fetch'
 import retry from 'p-retry'
-import { mapValues, memoize } from 'lodash'
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, statSync } from 'fs'
-import { tmpdir } from 'os'
+import { mapValues } from 'lodash'
 import { ComposeModel, ComposeService } from './compose/model'
 import { TunnelOpts } from './ssh/url'
 import { Tunnel } from './tunneling'
 import { withBasicAuthCredentials } from './url'
+import { isPacked, pkgSnapshotDir } from './pkg'
 
 export const COMPOSE_TUNNEL_AGENT_SERVICE_NAME = 'preevy_proxy'
 export const COMPOSE_TUNNEL_AGENT_SERVICE_PORT = 3000
 const COMPOSE_TUNNEL_AGENT_DIR = path.join(path.dirname(require.resolve('@preevy/compose-tunnel-agent')), '..')
-declare let process : {
-  pkg?: {}
-}
-
-const pkgComposeTunnelAgentDirFromSnapshot = memoize(() => {
-  // can't use fs.cpSync because it's not patched by pkg (https://github.com/vercel/pkg/blob/bb042694e4289a1cbc530d2938babe35ccc84a93/prelude/bootstrap.js#L600)
-  const copyDirRecursive = (sourceDir: string, targetDir:string) => {
-    if (!existsSync(targetDir)) {
-      mkdirSync(targetDir)
-    }
-    const files = readdirSync(sourceDir)
-    for (const file of files) {
-      const sourcePath = path.join(sourceDir, file)
-      const targetPath = path.join(targetDir, file)
-      const stat = statSync(sourcePath)
-      if (stat.isDirectory()) {
-        copyDirRecursive(sourcePath, targetPath)
-      } else {
-        copyFileSync(sourcePath, targetPath)
-      }
-    }
-  }
-  const dest = mkdtempSync(path.join(tmpdir(), 'compose-tunnel-agent'))
-  copyDirRecursive(path.join(__dirname, '../../compose-tunnel-agent'), dest)
-  return dest
-})
 
 const baseDockerProxyService = () => {
-  const contextDir = process?.pkg ? pkgComposeTunnelAgentDirFromSnapshot() : COMPOSE_TUNNEL_AGENT_DIR
+  const contextDir = isPacked() ? pkgSnapshotDir(path.join(__dirname, '../../compose-tunnel-agent')) : COMPOSE_TUNNEL_AGENT_DIR
   return {
     build: {
       context: contextDir,
