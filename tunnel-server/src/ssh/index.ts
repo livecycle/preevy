@@ -33,7 +33,7 @@ export const createSshServer = ({
     const { clientId, publicKey, envId } = client
     const tunnels = new Map<string, string>()
     client
-      .on('forward', async (requestId, { path: remotePath, access }, accept, reject) => {
+      .on('forward', async (requestId, { path: remotePath, access, meta }, accept, reject) => {
         const key = envStoreKey(clientId, remotePath)
         if (await envStore.has(key)) {
           reject(new Error(`duplicate path: ${key}`))
@@ -51,6 +51,7 @@ export const createSshServer = ({
           access,
           hostname: key,
           publicKeyThumbprint: await calculateJwkThumbprintUri(await exportJWK(pk)),
+          meta,
         })
         tunnels.set(requestId, tunnelUrl(clientId, remotePath))
         tunnelsGauge.inc({ clientId })

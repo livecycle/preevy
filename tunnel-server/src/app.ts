@@ -26,7 +26,6 @@ export const app = (
   }
   publicKey: KeyObject
   jwtSaasIssuer: string
-
 }
 ) =>
   Fastify({

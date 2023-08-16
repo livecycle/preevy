@@ -8,6 +8,7 @@ export type PreviewEnv = {
   publicKey: KeyObject
   publicKeyThumbprint: string
   access: 'private' | 'public'
+  meta: Record<string, unknown>
 }
 
 export type PreviewEnvStore = {

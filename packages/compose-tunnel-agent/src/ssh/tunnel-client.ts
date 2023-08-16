@@ -136,8 +136,18 @@ export const sshClient = async ({
 
   const stringifyForwardRequests = (service: {name: string; project: string; ports: number[]; access: 'private' | 'public'}) => {
     const tunnels = tunnelNameResolver({ ...service })
-    const metadata = service.access === 'private' ? '#access=private' : ''
-    return tunnels.map(({ port, tunnel }) => ({ port, requestId: `/${tunnel}${metadata}` }))
+    return tunnels.map(({ port, tunnel }) => {
+      const args: Record<string, string> = {
+        ...(service.access === 'private' ? { access: 'private' } : {}),
+        meta: Buffer.from(JSON.stringify({
+          service: service.name,
+          project: service.project,
+          port,
+        })).toString('base64url'),
+      }
+      const argsStr = Object.entries(args).map(([k, v]) => `${k}=${v}`).join(';')
+      return ({ port, requestId: `/${tunnel}#${argsStr}` })
+    })
   }
 
   let state: SshState

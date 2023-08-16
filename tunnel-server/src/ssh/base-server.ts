@@ -177,6 +177,8 @@ export const baseSshServer = (
             return
           }
 
+          log.debug('emitting forward: %j', res)
+
           preevySshClient.emit(
             'forward',
             request,
