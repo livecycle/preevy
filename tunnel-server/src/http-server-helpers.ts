@@ -60,8 +60,28 @@ export class BadGatewayError extends HttpError {
 export class BadRequestError extends HttpError {
   static status = 400
   static defaultMessage = 'Bad request'
-  constructor(reason?: string) {
-    super(BadGatewayError.status, reason ? `${BadRequestError.defaultMessage}: ${reason}` : BadRequestError.defaultMessage)
+  constructor(reason?: string, cause?: unknown) {
+    super(BadGatewayError.status, reason ? `${BadRequestError.defaultMessage}: ${reason}` : BadRequestError.defaultMessage, cause)
+  }
+}
+
+export class UnauthorizedError extends HttpError {
+  static status = 401
+  static defaultMessage = 'Unauthorized'
+  constructor(readonly responseHeaders?: Record<string, string>) {
+    super(UnauthorizedError.status, UnauthorizedError.defaultMessage, undefined, responseHeaders)
+  }
+}
+
+export class BasicAuthUnauthorizedError extends UnauthorizedError {
+  constructor() {
+    super({ 'WWW-Authenticate': 'Basic realm="Secure Area"' })
+  }
+}
+
+export class RedirectError extends HttpError {
+  constructor(readonly status: 302 | 307, readonly location: string) {
+    super(status, 'Redirected', undefined, { location })
   }
 }
 

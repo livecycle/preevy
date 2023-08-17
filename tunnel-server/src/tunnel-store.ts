@@ -1,8 +1,10 @@
 import { KeyObject } from 'crypto'
+import { Logger } from 'pino'
 
 export type ActiveTunnel = {
   envId: string
   clientId: string
+  tunnelPath: string
   target: string
   hostname: string
   publicKey: KeyObject
@@ -19,7 +21,7 @@ export type ActiveTunnelStore = {
   delete: (key: string) => Promise<boolean>
 }
 
-export const inMemoryActiveTunnelStore = (): ActiveTunnelStore => {
+export const inMemoryActiveTunnelStore = ({ log }: { log: Logger }): ActiveTunnelStore => {
   const tunnelNameToEnv = new Map<string, ActiveTunnel>()
   const pkThumbprintToEnv = new Map<string, ActiveTunnel[]>()
 
@@ -27,6 +29,7 @@ export const inMemoryActiveTunnelStore = (): ActiveTunnelStore => {
     get: async key => tunnelNameToEnv.get(key),
     getByPkThumbprint: async pkThumbprint => pkThumbprintToEnv.get(pkThumbprint),
     set: async (key, value) => {
+      log.debug('setting tunnel %s: %j', key, value)
       tunnelNameToEnv.set(key, value)
       pkThumbprintToEnv.set(
         value.publicKeyThumbprint,

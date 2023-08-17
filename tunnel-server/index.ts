@@ -5,7 +5,7 @@ import pino from 'pino'
 import fs from 'fs'
 import { createPublicKey } from 'crypto'
 import { app as createApp } from './src/app'
-import { inMemoryActiveTunnelStore } from './src/preview-env'
+import { inMemoryActiveTunnelStore } from './src/tunnel-store'
 import { getSSHKeys } from './src/ssh-keys'
 import { proxyHandlers } from './src/proxy'
 import { appLoggerFromEnv } from './src/logging'
@@ -45,7 +45,7 @@ const SAAS_PUBLIC_KEY = process.env.SAAS_PUBLIC_KEY || fs.readFileSync(
 const publicKey = createPublicKey(SAAS_PUBLIC_KEY)
 const SAAS_JWT_ISSUER = process.env.SAAS_JWT_ISSUER ?? 'app.livecycle.run'
 
-const activeTunnelStore = inMemoryActiveTunnelStore()
+const activeTunnelStore = inMemoryActiveTunnelStore({ log })
 const appSessionStore = cookieSessionStore({ domain: BASE_URL.hostname, schema: claimsSchema, keys: process.env.COOKIE_SECRETS?.split(' ') })
 const loginUrl = new URL('/login', replaceHostname(BASE_URL, `auth.${BASE_URL.hostname}`)).toString()
 const app = createApp({
@@ -85,8 +85,8 @@ const sshServer = createSshServer({
   log: sshLogger,
   sshPrivateKey,
   socketDir: '/tmp', // TODO
-  envStore: activeTunnelStore,
-  envStoreKey: activeTunnelStoreKey,
+  activeTunnelStore,
+  activeTunnelStoreKey,
   helloBaseResponse: {
     // TODO: backwards compat, remove when we drop support for CLI v0.0.35
     baseUrl: { hostname: BASE_URL.hostname, port: BASE_URL.port, protocol: BASE_URL.protocol },

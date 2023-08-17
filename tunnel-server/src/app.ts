@@ -6,7 +6,7 @@ import { Logger } from 'pino'
 import { KeyObject } from 'crypto'
 import { SessionStore } from './session'
 import { Claims, createGetVerificationData, jwtAuthenticator } from './auth'
-import { ActiveTunnelStore } from './preview-env'
+import { ActiveTunnelStore } from './tunnel-store'
 import { replaceHostname } from './url'
 
 const { SAAS_BASE_URL } = process.env

@@ -5,28 +5,36 @@ import internal from 'stream'
 import type { Logger } from 'pino'
 import { inspect } from 'util'
 import { KeyObject } from 'crypto'
-import { ActiveTunnel, ActiveTunnelStore } from './preview-env'
+import { ActiveTunnel, ActiveTunnelStore } from './tunnel-store'
 import { requestsCounter } from './metrics'
-import { Claims, jwtAuthenticator, AuthenticationResult, AuthError, UnauthorizedError, basicAuthUnauthorized, createGetVerificationData } from './auth'
+import { Claims, jwtAuthenticator, AuthenticationResult, AuthError, createGetVerificationData } from './auth'
 import { SessionStore } from './session'
-import { BadGatewayError, BadRequestError, errorHandler, errorUpgradeHandler, tryHandler, tryUpgradeHandler } from './http-server-helpers'
+import { BadGatewayError, BadRequestError, BasicAuthUnauthorizedError, NotFoundError, RedirectError, UnauthorizedError, errorHandler, errorUpgradeHandler, tryHandler, tryUpgradeHandler } from './http-server-helpers'
 
-function loginRedirector(loginUrl:string) {
-  return (res: ServerResponse<IncomingMessage>, env: string, returnPath?: string) => {
-    res.statusCode = 307
-    const url = new URL(loginUrl)
-    url.searchParams.set('env', env)
-    if (returnPath) {
-      url.searchParams.set('returnPath', returnPath)
-    }
-
-    res.setHeader('location', url.toString())
-    res.end()
+const loginRedirectUrl = (loginUrl: string) => ({ env, returnPath }: { env: string; returnPath?: string }) => {
+  const url = new URL(loginUrl)
+  url.searchParams.set('env', env)
+  if (returnPath) {
+    url.searchParams.set('returnPath', returnPath)
   }
+  return url.toString()
 }
 
 const hasBasicAuthQueryParamHint = (url: string) =>
   new URL(url, 'http://a').searchParams.get('_preevy_auth_hint') === 'basic'
+
+const tunnelUrlRe = /^\/?([^/]+)\/([^/]+)\/([^/]+)(\/.*)/
+const parseTunnelPath = (path: string) => {
+  const match = tunnelUrlRe.exec(path)
+  return match && {
+    pkThumbprint: match[1],
+    tunnel: match[2],
+    reqType: match[3],
+    path: match[4] as `/${string}` | undefined,
+  }
+}
+
+const proxyRequestType = 'proxy' as const
 
 export function proxyHandlers({
   activeTunnelStore,
@@ -44,30 +52,48 @@ export function proxyHandlers({
   jwtSaasIssuer: string
 }) {
   const proxy = httpProxy.createProxy({})
-  const redirectToLogin = loginRedirector(loginUrl)
-  const findActiveTunnelForRequest = async (req: IncomingMessage) => {
-    const { url } = req
-    const host = req.headers.host?.split(':')?.[0]
-    const targetHost = host?.split('.', 1)[0]
-    const activeTunnel = await activeTunnelStore.get(targetHost as string)
-    if (!activeTunnel) {
-      log.warn('no env for %j', { targetHost, url })
+  const loginRedirectUrlForRequest = loginRedirectUrl(loginUrl)
+
+  const extractActiveTunnelFromReqHostname = async ({ headers, url }: Pick<IncomingMessage, 'headers' | 'url'>) => {
+    const host = headers.host?.split(':')?.[0]
+    const firstHostnameLabel = host?.split('.', 1)[0] as string
+    const activeTunnel = await activeTunnelStore.get(firstHostnameLabel)
+    return activeTunnel
+      ? { reqType: proxyRequestType, path: url, activeTunnel }
+      : undefined
+  }
+
+  const extractActiveTunnelFromPath = async ({ url, headers, method }: Pick<IncomingMessage, 'url' | 'headers' | 'method'>) => {
+    if (!url) {
+      log.warn('no url for request: %j', { url, host: headers.host, method })
       return undefined
     }
+    const parsedPath = parseTunnelPath(url)
+    if (!parsedPath) {
+      return undefined
+    }
+    const { pkThumbprint, tunnel, reqType, path } = parsedPath
+    const tunnels = await activeTunnelStore.getByPkThumbprint(pkThumbprint)
+    const activeTunnel = tunnels?.find(t => t.tunnelPath === tunnel)
     return activeTunnel
+      ? { reqType, path, activeTunnel }
+      : undefined
   }
+
+  const extractActiveTunnelFromReq = async (
+    req: IncomingMessage
+  ) => await extractActiveTunnelFromReqHostname(req) ?? await extractActiveTunnelFromPath(req)
 
   const validatePrivateTunnelRequest = async (
     req: IncomingMessage,
-    res: ServerResponse<IncomingMessage>,
     tunnel: Pick<ActiveTunnel, 'publicKeyThumbprint' | 'hostname' | 'publicKey'>,
     session: ReturnType<typeof sessionStore>,
   ) => {
     if (!session.user) {
       if (!req.headers.authorization) {
-        return req.url !== undefined && hasBasicAuthQueryParamHint(req.url)
-          ? basicAuthUnauthorized(res)
-          : redirectToLogin(res, tunnel.hostname, req.url)
+        throw req.url !== undefined && hasBasicAuthQueryParamHint(req.url)
+          ? new BasicAuthUnauthorizedError()
+          : new RedirectError(307, loginRedirectUrlForRequest({ env: tunnel.hostname, returnPath: req.url }))
       }
 
       const authenticate = jwtAuthenticator(
@@ -80,25 +106,22 @@ export function proxyHandlers({
         authResult = await authenticate(req)
       } catch (e) {
         if (e instanceof AuthError) {
-          res.statusCode = 400
           log.warn('Auth error %j', inspect(e))
-          res.end(`Auth error: ${e.message}`)
-          return undefined
+          throw new BadRequestError(`Auth error: ${e.message}`, e)
         }
         throw e
       }
 
       if (!authResult.isAuthenticated) {
-        redirectToLogin(res, tunnel.hostname, req.url)
-        return undefined
+        throw new RedirectError(307, loginRedirectUrlForRequest({ env: tunnel.hostname, returnPath: req.url }))
       }
 
       session.set(authResult.claims)
       if (authResult.login && req.method === 'GET') {
         session.save()
-        redirectToLogin(res, tunnel.hostname, req.url)
-        return undefined
+        throw new RedirectError(307, loginRedirectUrlForRequest({ env: tunnel.hostname, returnPath: req.url }))
       }
+
       if (authResult.method.type === 'header') {
         delete req.headers[authResult.method.header]
       }
@@ -106,33 +129,52 @@ export function proxyHandlers({
 
     if (session.user?.role !== 'admin') {
       log.info('Non admin role tried to access private environment %j', session.user?.role)
-      res.statusCode = 403
-      res.end('Not allowed')
-      return undefined
+      throw new UnauthorizedError()
     }
 
-    return true
+    return req
+  }
+
+  const validateProxyRequest = async (
+    req: IncomingMessage,
+    session: (pkThumbprint: string) => ReturnType<typeof sessionStore>,
+  ) => {
+    const found = await extractActiveTunnelFromReq(req)
+    if (!found) {
+      log.warn('no active tunnel for %j', { url: req.url, method: req.method, host: req.headers?.host })
+      throw new BadGatewayError('No active tunnel found')
+    }
+
+    const { activeTunnel, reqType, path } = found
+    if (reqType !== proxyRequestType) {
+      log.warn('invalid request type %s: %j', { url: req.url, method: req.method, host: req.headers?.host })
+      throw new NotFoundError('Request type not found')
+    }
+
+    req.url = path ?? '/'
+
+    if (activeTunnel.access === 'private') {
+      return {
+        req: await validatePrivateTunnelRequest(req, activeTunnel, session(activeTunnel.publicKeyThumbprint)),
+        activeTunnel,
+      }
+    }
+
+    return { req, activeTunnel }
   }
 
   return {
     handler: tryHandler({ log }, async (req: IncomingMessage, res: ServerResponse<IncomingMessage>) => {
-      const activeTunnel = await findActiveTunnelForRequest(req)
-      if (!activeTunnel) {
-        throw new BadGatewayError()
-      }
-
-      if (activeTunnel.access === 'private') {
-        const session = sessionStore(req, res, activeTunnel.publicKeyThumbprint)
-        if (!await validatePrivateTunnelRequest(req, res, activeTunnel, session)) {
-          return undefined
-        }
-      }
+      const { req: mutatedReq, activeTunnel } = await validateProxyRequest(
+        req,
+        pkThumbprint => sessionStore(req, res, pkThumbprint),
+      )
 
       log.debug('proxying to %j', { target: activeTunnel.target, url: req.url })
       requestsCounter.inc({ clientId: activeTunnel.clientId })
 
       return proxy.web(
-        req,
+        mutatedReq,
         res,
         {
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -146,23 +188,12 @@ export function proxyHandlers({
     }),
 
     upgradeHandler: tryUpgradeHandler({ log }, async (req: IncomingMessage, socket: internal.Duplex, head: Buffer) => {
-      const activeTunnel = await findActiveTunnelForRequest(req)
-      if (!activeTunnel) {
-        log.warn('env not found for upgrade %j', req.url)
-        throw new BadGatewayError()
-      }
+      const { req: mutatedReq, activeTunnel } = await validateProxyRequest(
+        req,
+        pkThumbprint => sessionStore(req, undefined as unknown as ServerResponse, pkThumbprint),
+      )
 
-      log.debug('upgrade handler %j', { url: req.url, env: activeTunnel, headers: req.headers })
-
-      if (activeTunnel.access === 'private') {
-        const session = sessionStore(req, undefined as any, activeTunnel.publicKeyThumbprint)
-        if (session.user?.role !== 'admin') {
-          log.debug('unauthorized upgrade - not admin %j %j %j', req.url, req.method, req.headers)
-          throw new UnauthorizedError('not admin')
-        }
-      }
-
-      const upgrade = req.headers.upgrade?.toLowerCase()
+      const upgrade = mutatedReq.headers.upgrade?.toLowerCase()
 
       if (upgrade === 'websocket') {
         return proxy.ws(
