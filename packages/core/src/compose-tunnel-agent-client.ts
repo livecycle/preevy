@@ -8,6 +8,7 @@ import { ComposeModel, ComposeService, composeModelFilename } from './compose/mo
 import { TunnelOpts } from './ssh/url'
 import { Tunnel } from './tunneling'
 import { withBasicAuthCredentials } from './url'
+import { isPacked, pkgSnapshotDir } from './pkg'
 import { driverMetadataFilename } from './env-metadata'
 import { REMOTE_DIR_BASE } from './remote-files'
 
@@ -15,29 +16,25 @@ export const COMPOSE_TUNNEL_AGENT_SERVICE_NAME = 'preevy_proxy'
 export const COMPOSE_TUNNEL_AGENT_PORT = 3000
 const COMPOSE_TUNNEL_AGENT_DIR = path.join(path.dirname(require.resolve('@preevy/compose-tunnel-agent')), '..')
 
-const baseDockerProxyService: ComposeService = {
-  build: {
-    context: COMPOSE_TUNNEL_AGENT_DIR,
-  },
-  ports: [
-    {
-      mode: 'ingress',
-      target: COMPOSE_TUNNEL_AGENT_PORT,
-      published: '0',
-      protocol: 'tcp',
+const baseDockerProxyService = () => {
+  const contextDir = isPacked() ? pkgSnapshotDir(path.join(__dirname, '../../compose-tunnel-agent')) : COMPOSE_TUNNEL_AGENT_DIR
+  return {
+    build: {
+      context: contextDir,
     },
-  ],
-  labels: {
-    'preevy.access': 'private',
-  },
+    ports: [
+      {
+        mode: 'ingress',
+        target: COMPOSE_TUNNEL_AGENT_PORT,
+        published: '0',
+        protocol: 'tcp',
+      },
+    ],
+    labels: {
+      'preevy.access': 'private',
+    },
+  } as ComposeService
 }
-
-export const minimalModelWithDockerProxyService = (name: string): ComposeModel => ({
-  name,
-  services: {
-    [COMPOSE_TUNNEL_AGENT_SERVICE_NAME]: baseDockerProxyService,
-  },
-})
 
 export const addBaseComposeTunnelAgentService = (
   model: ComposeModel,
@@ -45,7 +42,7 @@ export const addBaseComposeTunnelAgentService = (
   ...model,
   services: {
     ...model.services,
-    [COMPOSE_TUNNEL_AGENT_SERVICE_NAME]: baseDockerProxyService,
+    [COMPOSE_TUNNEL_AGENT_SERVICE_NAME]: baseDockerProxyService(),
   },
 })
 
@@ -79,7 +76,7 @@ export const addComposeTunnelAgentService = (
   services: {
     ...model.services,
     [COMPOSE_TUNNEL_AGENT_SERVICE_NAME]: {
-      ...baseDockerProxyService,
+      ...baseDockerProxyService(),
       restart: 'always',
       networks: Object.keys(model.networks || {}),
       volumes: [
