@@ -60,4 +60,10 @@ export const urlFlags = {
     description: 'Show URLs for internal Preevy services',
     default: false,
   }),
+  'access-credentials-type': Flags.custom<'browser' | 'api'>({
+    options: ['api', 'browser'],
+    dependsOn: ['include-access-credentials'],
+    default: 'browser',
+    required: true,
+  })(),
 } as const

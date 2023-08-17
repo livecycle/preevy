@@ -135,7 +135,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
     const flatTunnels = await withSpinner(() => commands.urls({
       composeTunnelServiceUrl,
       tunnelingKey,
-      includeAccessCredentials: flags['include-access-credentials'],
+      includeAccessCredentials: flags['include-access-credentials'] && (flags['access-credentials-type'] as 'api' | 'browser'),
       showPreevyService: flags['show-preevy-service-urls'],
       retryOpts: {
         minTimeout: 1000,
