@@ -90,10 +90,15 @@ export function proxyHandlers({
     session: ReturnType<typeof sessionStore>,
   ) => {
     if (!session.user) {
+      const redirectoToLoginError = () => new RedirectError(
+        307,
+        loginRedirectUrlForRequest({ env: tunnel.hostname, returnPath: req.url }),
+      )
+
       if (!req.headers.authorization) {
         throw req.url !== undefined && hasBasicAuthQueryParamHint(req.url)
           ? new BasicAuthUnauthorizedError()
-          : new RedirectError(307, loginRedirectUrlForRequest({ env: tunnel.hostname, returnPath: req.url }))
+          : redirectoToLoginError()
       }
 
       const authenticate = jwtAuthenticator(
@@ -113,13 +118,13 @@ export function proxyHandlers({
       }
 
       if (!authResult.isAuthenticated) {
-        throw new RedirectError(307, loginRedirectUrlForRequest({ env: tunnel.hostname, returnPath: req.url }))
+        throw redirectoToLoginError()
       }
 
       session.set(authResult.claims)
       if (authResult.login && req.method === 'GET') {
         session.save()
-        throw new RedirectError(307, loginRedirectUrlForRequest({ env: tunnel.hostname, returnPath: req.url }))
+        throw redirectoToLoginError()
       }
 
       if (authResult.method.type === 'header') {
