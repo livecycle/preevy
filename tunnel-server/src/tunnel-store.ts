@@ -16,27 +16,27 @@ export type ActiveTunnel = {
 export type ActiveTunnelStore = {
   get: (key: string) => Promise<ActiveTunnel | undefined>
   getByPkThumbprint: (pkThumbprint: string) => Promise<ActiveTunnel[] | undefined>
-  set: (key: string, env: ActiveTunnel) => Promise<void>
+  set: (key: string, value: ActiveTunnel) => Promise<void>
   has: (key: string) => Promise<boolean>
   delete: (key: string) => Promise<boolean>
 }
 
 export const inMemoryActiveTunnelStore = ({ log }: { log: Logger }): ActiveTunnelStore => {
-  const tunnelNameToEnv = new Map<string, ActiveTunnel>()
-  const pkThumbprintToEnv = new Map<string, ActiveTunnel[]>()
+  const keyToTunnel = new Map<string, ActiveTunnel>()
+  const pkThumbprintToTunnel = new Map<string, ActiveTunnel[]>()
 
   return {
-    get: async key => tunnelNameToEnv.get(key),
-    getByPkThumbprint: async pkThumbprint => pkThumbprintToEnv.get(pkThumbprint),
+    get: async key => keyToTunnel.get(key),
+    getByPkThumbprint: async pkThumbprint => pkThumbprintToTunnel.get(pkThumbprint),
     set: async (key, value) => {
       log.debug('setting tunnel %s: %j', key, value)
-      tunnelNameToEnv.set(key, value)
-      pkThumbprintToEnv.set(
+      keyToTunnel.set(key, value)
+      pkThumbprintToTunnel.set(
         value.publicKeyThumbprint,
-        [...pkThumbprintToEnv.get(value.publicKeyThumbprint) ?? [], value]
+        [...pkThumbprintToTunnel.get(value.publicKeyThumbprint) ?? [], value]
       )
     },
-    has: async key => tunnelNameToEnv.has(key),
-    delete: async key => tunnelNameToEnv.delete(key),
+    has: async key => keyToTunnel.has(key),
+    delete: async key => keyToTunnel.delete(key),
   }
 }
