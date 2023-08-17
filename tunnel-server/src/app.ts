@@ -13,12 +13,12 @@ const { SAAS_BASE_URL } = process.env
 if (SAAS_BASE_URL === undefined) { throw new Error('Env var SAAS_BASE_URL is missing') }
 
 export const app = (
-  { proxyHandlers, sessionStore, baseUrl, envStore, log, loginUrl, publicKey, jwtSaasIssuer }: {
+  { proxyHandlers, sessionStore, baseUrl, activeTunnelStore, log, loginUrl, publicKey, jwtSaasIssuer }: {
   log: Logger
   baseUrl: URL
   loginUrl: string
   sessionStore: SessionStore<Claims>
-  envStore: ActiveTunnelStore
+  activeTunnelStore: ActiveTunnelStore
   proxyHandlers: {
     upgradeHandler: (req: http.IncomingMessage, socket: internal.Duplex, head: Buffer) => void
     handler: (req: http.IncomingMessage, res: http.ServerResponse) => void
@@ -76,7 +76,7 @@ export const app = (
         res.statusCode = 400
         return { error: 'returnPath must be a relative path' }
       }
-      const env = await envStore.get(envId)
+      const env = await activeTunnelStore.get(envId)
       if (!env) {
         res.statusCode = 404
         return { error: 'unknown envId' }

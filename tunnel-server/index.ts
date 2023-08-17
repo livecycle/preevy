@@ -50,7 +50,7 @@ const appSessionStore = cookieSessionStore({ domain: BASE_URL.hostname, schema: 
 const loginUrl = new URL('/login', replaceHostname(BASE_URL, `auth.${BASE_URL.hostname}`)).toString()
 const app = createApp({
   sessionStore: appSessionStore,
-  envStore: activeTunnelStore,
+  activeTunnelStore,
   baseUrl: BASE_URL,
   proxyHandlers: proxyHandlers(
     { activeTunnelStore, log, loginUrl, sessionStore: appSessionStore, publicKey, jwtSaasIssuer: SAAS_JWT_ISSUER }
