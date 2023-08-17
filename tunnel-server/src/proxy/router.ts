@@ -21,7 +21,7 @@ const parseHostHeader = (hostHeader: string) => {
 }
 
 export type TunnelFinder = (
-  activeTunnelStore: ActiveTunnelStore
+  activeTunnelStore: Pick<ActiveTunnelStore, 'get'>
 ) => Promise<undefined | { path: string; activeTunnel: ActiveTunnel }>
 
 export const proxyRouter = (

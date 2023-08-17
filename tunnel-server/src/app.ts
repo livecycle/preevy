@@ -24,16 +24,24 @@ export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, logi
 }) =>
   Fastify({
     serverFactory: handler => {
+      const baseHostname = baseUrl.hostname
+      const authHostname = `auth.${baseHostname}`
+
+      const isNonProxyRequest = ({ headers }: http.IncomingMessage) => {
+        const host = headers.host?.split(':')?.[0]
+        return host === authHostname
+      }
+
       const server = http.createServer((req, res) => {
         if (req.url !== '/healthz') {
           log.debug('request %j', { method: req.method, url: req.url, headers: req.headers })
         }
-        const proxyHandler = proxy.routeRequest(req)
+        const proxyHandler = !isNonProxyRequest(req) && proxy.routeRequest(req)
         return proxyHandler ? proxyHandler(req, res) : handler(req, res)
       })
         .on('upgrade', (req, socket, head) => {
           log.debug('upgrade', req.url)
-          const proxyHandler = proxy.routeUpgrade(req)
+          const proxyHandler = !isNonProxyRequest(req) && proxy.routeUpgrade(req)
           if (proxyHandler) {
             return proxyHandler(req, socket, head)
           }
