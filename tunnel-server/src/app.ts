@@ -13,8 +13,7 @@ const { SAAS_BASE_URL } = process.env
 if (SAAS_BASE_URL === undefined) { throw new Error('Env var SAAS_BASE_URL is missing') }
 
 export const app = (
-  { isProxyRequest, proxyHandlers, sessionStore, baseUrl, envStore, log, loginUrl, publicKey, jwtSaasIssuer }: {
-  isProxyRequest: (req: http.IncomingMessage) => boolean
+  { proxyHandlers, sessionStore, baseUrl, envStore, log, loginUrl, publicKey, jwtSaasIssuer }: {
   log: Logger
   baseUrl: URL
   loginUrl: string
@@ -31,14 +30,19 @@ export const app = (
   Fastify({
     serverFactory: handler => {
       const { upgradeHandler: proxyUpgradeHandler, handler: proxyHandler } = proxyHandlers
+
+      const baseHostname = baseUrl.hostname
+      const authHostname = `auth.${baseHostname}`
+      const isProxyRequest = ({ headers }: http.IncomingMessage) => {
+        const host = headers.host?.split(':')?.[0]
+        return host && (host !== authHostname && (host === baseHostname || host.endsWith(`.${baseHostname}`)))
+      }
+
       const server = http.createServer((req, res) => {
         if (req.url !== '/healthz') {
           log.debug('request %j', { method: req.method, url: req.url, headers: req.headers })
         }
-        if (!req.headers.host?.startsWith('auth.') && isProxyRequest(req)) {
-          return proxyHandler(req, res)
-        }
-        return handler(req, res)
+        return isProxyRequest(req) ? proxyHandler(req, res) : handler(req, res)
       })
         .on('upgrade', (req, socket, head) => {
           log.debug('upgrade', req.url)

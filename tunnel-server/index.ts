@@ -7,7 +7,7 @@ import { createPublicKey } from 'crypto'
 import { app as createApp } from './src/app'
 import { inMemoryActiveTunnelStore } from './src/preview-env'
 import { getSSHKeys } from './src/ssh-keys'
-import { isProxyRequest, proxyHandlers } from './src/proxy'
+import { proxyHandlers } from './src/proxy'
 import { appLoggerFromEnv } from './src/logging'
 import { tunnelsGauge, runMetricsServer } from './src/metrics'
 import { numberFromEnv, requiredEnv } from './src/env'
@@ -52,7 +52,6 @@ const app = createApp({
   sessionStore: appSessionStore,
   envStore: activeTunnelStore,
   baseUrl: BASE_URL,
-  isProxyRequest: isProxyRequest(BASE_URL.hostname),
   proxyHandlers: proxyHandlers(
     { activeTunnelStore, log, loginUrl, sessionStore: appSessionStore, publicKey, jwtSaasIssuer: SAAS_JWT_ISSUER }
   ),

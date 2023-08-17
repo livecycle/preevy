@@ -11,10 +11,6 @@ import { Claims, jwtAuthenticator, AuthenticationResult, AuthError, Unauthorized
 import { SessionStore } from './session'
 import { BadGatewayError, BadRequestError, errorHandler, errorUpgradeHandler, tryHandler, tryUpgradeHandler } from './http-server-helpers'
 
-export const isProxyRequest = (
-  hostname: string,
-) => (req: IncomingMessage) => Boolean(req.headers.host?.split(':')?.[0]?.endsWith(`.${hostname}`))
-
 function loginRedirector(loginUrl:string) {
   return (res: ServerResponse<IncomingMessage>, env: string, returnPath?: string) => {
     res.statusCode = 307
