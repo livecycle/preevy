@@ -4,8 +4,6 @@ import { match } from 'ts-pattern'
 import { ZodError, z } from 'zod'
 import Cookies from 'cookies'
 import { KeyObject } from 'crypto'
-import { PreviewEnv } from './preview-env'
-import { HttpError } from './http-server-helpers'
 
 export class AuthError extends Error {}
 
@@ -52,13 +50,6 @@ type VerificationData = {
   extractClaims: (token: JWTPayload, thumbprint: string) => Claims
 }
 
-// TODO: combine with UnauthorizedError
-export const basicAuthUnauthorized = (res: ServerResponse<IncomingMessage>) => {
-  res.setHeader('WWW-Authenticate', 'Basic realm="Secure Area"')
-  res.statusCode = 401
-  res.end('Unauthorized')
-}
-
 // export const SAAS_JWT_ISSUER = process.env.SAAS_JWT_ISSUER ?? 'app.livecycle.run'
 
 export const saasJWTSchema = z.object({
@@ -71,15 +62,7 @@ export const saasJWTSchema = z.object({
 
 type SaasJWTSchema = z.infer<typeof saasJWTSchema>
 
-export class UnauthorizedError extends HttpError {
-  static status = 401
-  static defaultMessage = 'Unauthorized'
-  constructor(readonly reason: string) {
-    super(UnauthorizedError.status, UnauthorizedError.defaultMessage, undefined, {
-      'WWW-Authenticate': 'Basic realm="Secure Area"',
-    })
-  }
-}
+
 const isBrowser = (req: IncomingMessage) => {
   const userAgent = req.headers['user-agent']?.toLowerCase() ?? ''
   return /(chrome|firefox|safari|opera|msie|trident)/.test(userAgent)
@@ -194,14 +177,14 @@ export const createGetVerificationData = (saasPublicKey: KeyObject, jwtSaasIssue
 
   const getCliIssuerFromPk = (publicKeyThumbprint: string) => `preevy://${publicKeyThumbprint}`
 
-  return (env: PreviewEnv) =>
+  return ({ publicKey }: { publicKey: KeyObject }) =>
     (issuer: string, publicKeyThumbprint: string) => {
       if (issuer === jwtSaasIssuer) {
         return getSaasTokenVerificationData()
       }
 
       if (issuer === getCliIssuerFromPk(publicKeyThumbprint)) {
-        return getCliTokenVerificationData(env.publicKey)()
+        return getCliTokenVerificationData(publicKey)()
       }
 
       throw new AuthError(`Unsupported issuer ${issuer}`)

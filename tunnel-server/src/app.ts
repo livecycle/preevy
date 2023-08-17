@@ -1,49 +1,49 @@
 import Fastify from 'fastify'
 import { fastifyRequestContext } from '@fastify/request-context'
 import http from 'http'
-import internal from 'stream'
 import { Logger } from 'pino'
 import { KeyObject } from 'crypto'
 import { SessionStore } from './session'
 import { Claims, createGetVerificationData, jwtAuthenticator } from './auth'
-import { PreviewEnvStore } from './preview-env'
+import { ActiveTunnelStore } from './tunnel-store'
 import { replaceHostname } from './url'
+import { Proxy } from './proxy'
 
 const { SAAS_BASE_URL } = process.env
 if (SAAS_BASE_URL === undefined) { throw new Error('Env var SAAS_BASE_URL is missing') }
 
-export const app = (
-  { isProxyRequest, proxyHandlers, sessionStore, baseUrl, envStore, log, loginUrl, publicKey, jwtSaasIssuer }: {
-  isProxyRequest: (req: http.IncomingMessage) => boolean
+export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, loginUrl, publicKey, jwtSaasIssuer }: {
   log: Logger
   baseUrl: URL
   loginUrl: string
   sessionStore: SessionStore<Claims>
-  envStore: PreviewEnvStore
-  proxyHandlers: {
-    upgradeHandler: (req: http.IncomingMessage, socket: internal.Duplex, head: Buffer) => void
-    handler: (req: http.IncomingMessage, res: http.ServerResponse) => void
-  }
+  activeTunnelStore: ActiveTunnelStore
+  proxy: Proxy
   publicKey: KeyObject
   jwtSaasIssuer: string
-}
-) =>
+}) =>
   Fastify({
     serverFactory: handler => {
-      const { upgradeHandler: proxyUpgradeHandler, handler: proxyHandler } = proxyHandlers
+      const baseHostname = baseUrl.hostname
+      const authHostname = `auth.${baseHostname}`
+
+      const isNonProxyRequest = ({ headers }: http.IncomingMessage) => {
+        const host = headers.host?.split(':')?.[0]
+        return host === authHostname
+      }
+
       const server = http.createServer((req, res) => {
         if (req.url !== '/healthz') {
           log.debug('request %j', { method: req.method, url: req.url, headers: req.headers })
         }
-        if (!req.headers.host?.startsWith('auth.') && isProxyRequest(req)) {
-          return proxyHandler(req, res)
-        }
-        return handler(req, res)
+        const proxyHandler = !isNonProxyRequest(req) && proxy.routeRequest(req)
+        return proxyHandler ? proxyHandler(req, res) : handler(req, res)
       })
         .on('upgrade', (req, socket, head) => {
           log.debug('upgrade', req.url)
-          if (isProxyRequest(req)) {
-            return proxyUpgradeHandler(req, socket, head)
+          const proxyHandler = !isNonProxyRequest(req) && proxy.routeUpgrade(req)
+          if (proxyHandler) {
+            return proxyHandler(req, socket, head)
           }
 
           log.warn('upgrade request %j not found', { url: req.url, host: req.headers.host })
@@ -72,7 +72,7 @@ export const app = (
         res.statusCode = 400
         return { error: 'returnPath must be a relative path' }
       }
-      const env = await envStore.get(envId)
+      const env = await activeTunnelStore.get(envId)
       if (!env) {
         res.statusCode = 404
         return { error: 'unknown envId' }

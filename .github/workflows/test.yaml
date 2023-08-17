@@ -21,3 +21,23 @@ jobs:
     - run: yarn build
 
     - run: yarn test
+
+  run-tunnel-server-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+        cache: yarn
+
+    - run: yarn
+      working-directory: tunnel-server
+
+    - run: yarn build
+      working-directory: tunnel-server
+
+    - run: yarn test
+      working-directory: tunnel-server

@@ -4,14 +4,14 @@ import { calculateJwkThumbprintUri, exportJWK } from 'jose'
 import { inspect } from 'util'
 import { Gauge } from 'prom-client'
 import { baseSshServer } from './base-server'
-import { PreviewEnvStore } from '../preview-env'
+import { ActiveTunnelStore } from '../tunnel-store'
 
 export const createSshServer = ({
   log,
   sshPrivateKey,
   socketDir,
-  envStore,
-  envStoreKey,
+  activeTunnelStore,
+  activeTunnelStoreKey,
   tunnelUrl,
   helloBaseResponse,
   tunnelsGauge,
@@ -19,8 +19,8 @@ export const createSshServer = ({
   log: Logger
   sshPrivateKey: string
   socketDir: string
-  envStore: PreviewEnvStore
-  envStoreKey: (clientId: string, remotePath: string) => string
+  activeTunnelStore: ActiveTunnelStore
+  activeTunnelStoreKey: (clientId: string, remotePath: string) => string
   tunnelUrl: (clientId: string, remotePath: string) => string
   helloBaseResponse: Record<string, unknown>
   tunnelsGauge: Pick<Gauge, 'inc' | 'dec'>
@@ -33,9 +33,9 @@ export const createSshServer = ({
     const { clientId, publicKey, envId } = client
     const tunnels = new Map<string, string>()
     client
-      .on('forward', async (requestId, { path: remotePath, access, meta }, accept, reject) => {
-        const key = envStoreKey(clientId, remotePath)
-        if (await envStore.has(key)) {
+      .on('forward', async (requestId, { path: tunnelPath, access, meta }, accept, reject) => {
+        const key = activeTunnelStoreKey(clientId, tunnelPath)
+        if (await activeTunnelStore.has(key)) {
           reject(new Error(`duplicate path: ${key}`))
           return
         }
@@ -43,7 +43,8 @@ export const createSshServer = ({
         const pk = createPublicKey(publicKey.getPublicPEM())
 
         log.debug('creating tunnel %s for localSocket %s', key, forward.localSocketPath)
-        await envStore.set(key, {
+        await activeTunnelStore.set(key, {
+          tunnelPath,
           envId,
           target: forward.localSocketPath,
           clientId,
@@ -53,13 +54,13 @@ export const createSshServer = ({
           publicKeyThumbprint: await calculateJwkThumbprintUri(await exportJWK(pk)),
           meta,
         })
-        tunnels.set(requestId, tunnelUrl(clientId, remotePath))
+        tunnels.set(requestId, tunnelUrl(clientId, tunnelPath))
         tunnelsGauge.inc({ clientId })
 
         forward.on('close', () => {
           log.debug('deleting tunnel %s', key)
           tunnels.delete(requestId)
-          void envStore.delete(key)
+          void activeTunnelStore.delete(key)
           tunnelsGauge.dec({ clientId })
         })
       })
