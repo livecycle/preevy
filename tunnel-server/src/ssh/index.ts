@@ -4,7 +4,7 @@ import { calculateJwkThumbprintUri, exportJWK } from 'jose'
 import { inspect } from 'util'
 import { Gauge } from 'prom-client'
 import { baseSshServer } from './base-server'
-import { PreviewEnvStore } from '../preview-env'
+import { ActiveTunnelStore } from '../preview-env'
 
 export const createSshServer = ({
   log,
@@ -19,7 +19,7 @@ export const createSshServer = ({
   log: Logger
   sshPrivateKey: string
   socketDir: string
-  envStore: PreviewEnvStore
+  envStore: ActiveTunnelStore
   envStoreKey: (clientId: string, remotePath: string) => string
   tunnelUrl: (clientId: string, remotePath: string) => string
   helloBaseResponse: Record<string, unknown>

@@ -5,7 +5,7 @@ import pino from 'pino'
 import fs from 'fs'
 import { createPublicKey } from 'crypto'
 import { app as createApp } from './src/app'
-import { inMemoryPreviewEnvStore } from './src/preview-env'
+import { inMemoryActiveTunnelStore } from './src/preview-env'
 import { getSSHKeys } from './src/ssh-keys'
 import { isProxyRequest, proxyHandlers } from './src/proxy'
 import { appLoggerFromEnv } from './src/logging'
@@ -45,16 +45,16 @@ const SAAS_PUBLIC_KEY = process.env.SAAS_PUBLIC_KEY || fs.readFileSync(
 const publicKey = createPublicKey(SAAS_PUBLIC_KEY)
 const SAAS_JWT_ISSUER = process.env.SAAS_JWT_ISSUER ?? 'app.livecycle.run'
 
-const envStore = inMemoryPreviewEnvStore()
+const activeTunnelStore = inMemoryActiveTunnelStore()
 const appSessionStore = cookieSessionStore({ domain: BASE_URL.hostname, schema: claimsSchema, keys: process.env.COOKIE_SECRETS?.split(' ') })
 const loginUrl = new URL('/login', replaceHostname(BASE_URL, `auth.${BASE_URL.hostname}`)).toString()
 const app = createApp({
   sessionStore: appSessionStore,
-  envStore,
+  envStore: activeTunnelStore,
   baseUrl: BASE_URL,
   isProxyRequest: isProxyRequest(BASE_URL.hostname),
   proxyHandlers: proxyHandlers(
-    { envStore, log, loginUrl, sessionStore: appSessionStore, publicKey, jwtSaasIssuer: SAAS_JWT_ISSUER }
+    { activeTunnelStore, log, loginUrl, sessionStore: appSessionStore, publicKey, jwtSaasIssuer: SAAS_JWT_ISSUER }
   ),
   log,
   loginUrl,
@@ -65,7 +65,7 @@ const sshLogger = log.child({ name: 'ssh_server' })
 
 const MAX_DNS_LABEL_LENGTH = 63
 
-const envStoreKey = (clientId: string, remotePath: string) => {
+const activeTunnelStoreKey = (clientId: string, remotePath: string) => {
   const noLeadingSlash = remotePath.replace(/^\//, '')
   // return value needs to be DNS safe:
   // - max DNS label name length is 63 octets (== 63 ASCII chars)
@@ -80,14 +80,14 @@ const tunnelUrl = (
   rootUrl: URL,
   clientId: string,
   tunnel: string,
-) => replaceHostname(rootUrl, `${envStoreKey(clientId, tunnel)}.${rootUrl.hostname}`).toString()
+) => replaceHostname(rootUrl, `${activeTunnelStoreKey(clientId, tunnel)}.${rootUrl.hostname}`).toString()
 
 const sshServer = createSshServer({
   log: sshLogger,
   sshPrivateKey,
   socketDir: '/tmp', // TODO
-  envStore,
-  envStoreKey,
+  envStore: activeTunnelStore,
+  envStoreKey: activeTunnelStoreKey,
   helloBaseResponse: {
     // TODO: backwards compat, remove when we drop support for CLI v0.0.35
     baseUrl: { hostname: BASE_URL.hostname, port: BASE_URL.port, protocol: BASE_URL.protocol },

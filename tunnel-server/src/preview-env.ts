@@ -1,6 +1,6 @@
 import { KeyObject } from 'crypto'
 
-export type PreviewEnv = {
+export type ActiveTunnel = {
   envId: string
   clientId: string
   target: string
@@ -11,17 +11,17 @@ export type PreviewEnv = {
   meta: Record<string, unknown>
 }
 
-export type PreviewEnvStore = {
-  get: (key: string) => Promise<PreviewEnv | undefined>
-  getByPkThumbprint: (pkThumbprint: string) => Promise<PreviewEnv[] | undefined>
-  set: (key: string, env: PreviewEnv) => Promise<void>
+export type ActiveTunnelStore = {
+  get: (key: string) => Promise<ActiveTunnel | undefined>
+  getByPkThumbprint: (pkThumbprint: string) => Promise<ActiveTunnel[] | undefined>
+  set: (key: string, env: ActiveTunnel) => Promise<void>
   has: (key: string) => Promise<boolean>
   delete: (key: string) => Promise<boolean>
 }
 
-export const inMemoryPreviewEnvStore = (): PreviewEnvStore => {
-  const tunnelNameToEnv = new Map<string, PreviewEnv>()
-  const pkThumbprintToEnv = new Map<string, PreviewEnv[]>()
+export const inMemoryActiveTunnelStore = (): ActiveTunnelStore => {
+  const tunnelNameToEnv = new Map<string, ActiveTunnel>()
+  const pkThumbprintToEnv = new Map<string, ActiveTunnel[]>()
 
   return {
     get: async key => tunnelNameToEnv.get(key),

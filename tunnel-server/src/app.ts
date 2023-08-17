@@ -6,7 +6,7 @@ import { Logger } from 'pino'
 import { KeyObject } from 'crypto'
 import { SessionStore } from './session'
 import { Claims, createGetVerificationData, jwtAuthenticator } from './auth'
-import { PreviewEnvStore } from './preview-env'
+import { ActiveTunnelStore } from './preview-env'
 import { replaceHostname } from './url'
 
 const { SAAS_BASE_URL } = process.env
@@ -19,7 +19,7 @@ export const app = (
   baseUrl: URL
   loginUrl: string
   sessionStore: SessionStore<Claims>
-  envStore: PreviewEnvStore
+  envStore: ActiveTunnelStore
   proxyHandlers: {
     upgradeHandler: (req: http.IncomingMessage, socket: internal.Duplex, head: Buffer) => void
     handler: (req: http.IncomingMessage, res: http.ServerResponse) => void
