@@ -146,7 +146,18 @@ export function proxyHandlers({
 
       if (env.access === 'private') {
         const session = sessionStore(req, undefined as any, env.publicKeyThumbprint)
-        if (session.user?.role !== 'admin') {
+        let role = session.user?.role
+        if (!role) {
+          const authenticate = jwtAuthenticator(
+            env.publicKeyThumbprint,
+            createGetVerificationData(publicKey, jwtSaasIssuer)(env)
+          )
+          const authResult = await authenticate(req)
+          if (authResult.isAuthenticated) {
+            role = authResult.claims.role
+          }
+        }
+        if (role !== 'admin') {
           log.debug('unauthorized upgrade - not admin %j %j %j', req.url, req.method, req.headers)
           throw new UnauthorizedError('not admin')
         }
