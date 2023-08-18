@@ -59,6 +59,9 @@ Visit The full documentation here: https://preevy.dev/
 - [What](#what)
 - [Why](#why)
 - [Getting started](#getting-started)
+- [Understanding The Environment ID](#understanding-the-environment-id)
+  - [How is the Environment ID Generated?](#how-is-the-environment-id-generated)
+  - [Why is the Environment ID Important for Updates?](#why-is-the-environment-id-important-for-updates)
 - [Under the hood](#under-the-hood)
   - [CLI](#cli)
   - [Tunnel server](#tunnel-server)
@@ -120,6 +123,30 @@ Running Preevy:
 4. Access and share your new preview environment at the `*.livecycle.run` link provided in the command output.
 5. Code changed? Re-run `preevy up` to quickly sync the preview environment with your changes on the existing VM.
 6. Remove the environment by using: `preevy down`.
+
+## Understanding The Environment ID
+
+The Environment ID is a unique identifier within Preevy, responsible for distinguishing different environments. This identifier is crucial for several reasons:
+
+- **Uniqueness**: It ensures that every environment has its distinctive identity, preventing clashes and overlaps.
+- **Traceability**: Using the Environment ID, users can easily trace back to a specific environment, making it simpler to manage and troubleshoot.
+- **Consistency**: It provides a standardized way to reference environments across different operations in Preevy.
+
+### How is the Environment ID Generated?
+The Environment ID can either be explicitly provided or derived based on certain criteria:
+
+1. **Explicitly Specified**: Users can manually specify the Environment ID when they initiate an environment. This is useful for scenarios where a predetermined naming convention or structure is required.
+2. **Derived from Branch Name and Project Directory**: In cases where the Environment ID is not explicitly provided, Preevy calculates it using the combination of the branch name and the project directory. This ensures that the ID remains relevant to the source and context of the environment.
+
+### Why is the Environment ID Important for Updates?
+When you wish to create a new environment or update an existing one, the Environment ID plays a pivotal role:
+
+- For **new environments**, the ID helps in setting up the unique context and resources.
+- For **updates**, Preevy uses the Environment ID to determine which environment to update, ensuring that the right resources get the required modifications.
+
+Further References
+
+For more specific details on how the Environment ID is used in various commands, especially the `up` command, refer to the [up command documentation](https://preevy.dev/cli-reference/up). Additionally, for an introduction to Preevy and its foundational concepts, including the Environment ID, check out the [intro section](#preevy).
 
 ## Under the hood
 
