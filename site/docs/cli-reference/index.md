@@ -31,7 +31,7 @@ USAGE
 <!-- commands -->
 # Command Topics
 
-* [`preevy down`](down.md) - Delete preview environments
+* [`preevy rm`](down.md) - Delete preview environments
 * [`preevy help`](help.md) - Display help for preevy.
 * [`preevy init`](init.md) - Initialize or import a new profile
 * [`preevy logs`](logs.md) - Show logs for an existing environment

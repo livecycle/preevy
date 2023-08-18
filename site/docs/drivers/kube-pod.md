@@ -52,7 +52,7 @@ It's possible to customize the Kubernetes resources provisioned by the driver pe
 
 The resources are specified as [Kubernetes object specs](https://kubernetes.io/docs/concepts/overview/working-with-objects/#describing-a-kubernetes-object) in a single YAML file rendered from a [nunjucks template](https://mozilla.github.io/nunjucks/templating.html). The template file may contain multiple definitions separated by lines containing `---` (three dashes).
 
-Start by copying the [default template](https://github.com/livecycle/preevy/blob/main/packages/driver-kube-pod/static/default-template.yaml.njk). To use the custom template, enter the path to the custom template file at the `preevy init` or `preevy profile create` command, or specify the `--kube-pod-template` flag for the `preevy up` and `preevy down` commands. The template file at the specified path needs to be accessible at runtime to the CLI[^1].
+Start by copying the [default template](https://github.com/livecycle/preevy/blob/main/packages/driver-kube-pod/static/default-template.yaml.njk). To use the custom template, enter the path to the custom template file at the `preevy init` or `preevy profile create` command, or specify the `--kube-pod-template` flag for the `preevy up` and `preevy rm` commands. The template file at the specified path needs to be accessible at runtime to the CLI[^1].
 
 [^1]: Embedding the template in the profile, or specifying its path in the `x-preevy` section of the Docker Compose file is in the roadmap, but not implemented yet.
 

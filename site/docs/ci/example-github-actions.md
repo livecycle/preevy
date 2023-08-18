@@ -99,7 +99,7 @@ With the `profile-url` arg, load the Preevy profile you [configured earlier](/ci
   profile-url: "s3://preevy-12345678-my-profile?region=eu-west-1"
 ```
 This part is a bit different from the preevy-up action,
-you should pass the args as if you are passing them to the [preevy down command](/cli-reference/down),
+you should pass the args as if you are passing them to the [preevy rm command](/cli-reference/down),
 note the `-f` before the docker-compose file path.
 ```yaml
   args: "-f ./docker/docker-compose.yaml"

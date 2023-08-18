@@ -28,31 +28,31 @@ USAGE
 <!-- usagestop -->
 # Commands
 <!-- commands -->
-* [`preevy down`](#preevy-down)
-* [`preevy help [COMMANDS]`](#preevy-help-commands)
-* [`preevy init [PROFILE-ALIAS]`](#preevy-init-profile-alias)
-* [`preevy logs [SERVICES]`](#preevy-logs-services)
-* [`preevy ls`](#preevy-ls)
-* [`preevy profile config update`](#preevy-profile-config-update)
-* [`preevy profile config view`](#preevy-profile-config-view)
-* [`preevy profile create NAME URL`](#preevy-profile-create-name-url)
-* [`preevy profile current`](#preevy-profile-current)
-* [`preevy profile import LOCATION`](#preevy-profile-import-location)
-* [`preevy profile ls`](#preevy-profile-ls)
-* [`preevy profile rm NAME`](#preevy-profile-rm-name)
-* [`preevy profile use NAME`](#preevy-profile-use-name)
-* [`preevy purge`](#preevy-purge)
-* [`preevy up [SERVICE]`](#preevy-up-service)
-* [`preevy urls [SERVICE] [PORT]`](#preevy-urls-service-port)
-* [`preevy version`](#preevy-version)
+- [`preevy rm`](#preevy-rm)
+- [`preevy help [COMMANDS]`](#preevy-help-commands)
+- [`preevy init [PROFILE-ALIAS]`](#preevy-init-profile-alias)
+- [`preevy logs [SERVICES]`](#preevy-logs-services)
+- [`preevy ls`](#preevy-ls)
+- [`preevy profile config update`](#preevy-profile-config-update)
+- [`preevy profile config view`](#preevy-profile-config-view)
+- [`preevy profile create NAME URL`](#preevy-profile-create-name-url)
+- [`preevy profile current`](#preevy-profile-current)
+- [`preevy profile import LOCATION`](#preevy-profile-import-location)
+- [`preevy profile ls`](#preevy-profile-ls)
+- [`preevy profile rm NAME`](#preevy-profile-rm-name)
+- [`preevy profile use NAME`](#preevy-profile-use-name)
+- [`preevy purge`](#preevy-purge)
+- [`preevy up [SERVICE]`](#preevy-up-service)
+- [`preevy urls [SERVICE] [PORT]`](#preevy-urls-service-port)
+- [`preevy version`](#preevy-version)
 
-## `preevy down`
+## `preevy rm`
 
 Delete preview environments
 
 ```
 USAGE
-  $ preevy down [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [-d
+  $ preevy rm [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [-d
     lightsail|gce|azure|kube-pod] [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southea
     st-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1]
     [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]

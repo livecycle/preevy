@@ -119,7 +119,7 @@ Running Preevy:
 3. Use the `preevy up` command to provision a new VM with your application.
 4. Access and share your new preview environment at the `*.livecycle.run` link provided in the command output.
 5. Code changed? Re-run `preevy up` to quickly sync the preview environment with your changes on the existing VM.
-6. Remove the environment by using: `preevy down`.
+6. Remove the environment by using: `preevy rm`.
 
 ## Under the hood
 
