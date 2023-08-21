@@ -1,6 +1,5 @@
 import { ux, Args } from '@oclif/core'
-import { execPromiseStdout } from '@preevy/core/src/child-process'
-import { commands } from '@preevy/core'
+import { commands, execPromiseStdout } from '@preevy/core'
 import ProfileCommand from '../../profile-command'
 
 // eslint-disable-next-line no-use-before-define

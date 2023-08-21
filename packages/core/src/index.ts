@@ -32,6 +32,7 @@ export {
   spawnPromise,
   childProcessPromise,
   childProcessStdoutPromise,
+  execPromiseStdout,
   expandStdioOptions,
 } from './child-process'
 export {
