@@ -4,6 +4,7 @@ import { match } from 'ts-pattern'
 import { ZodError, z } from 'zod'
 import Cookies from 'cookies'
 import { KeyObject } from 'crypto'
+import { ActiveTunnel } from './tunnel-store'
 
 export class AuthError extends Error {}
 
@@ -61,7 +62,6 @@ export const saasJWTSchema = z.object({
 })
 
 type SaasJWTSchema = z.infer<typeof saasJWTSchema>
-
 
 const isBrowser = (req: IncomingMessage) => {
   const userAgent = req.headers['user-agent']?.toLowerCase() ?? ''
@@ -177,14 +177,15 @@ export const createGetVerificationData = (saasPublicKey: KeyObject, jwtSaasIssue
 
   const getCliIssuerFromPk = (publicKeyThumbprint: string) => `preevy://${publicKeyThumbprint}`
 
-  return ({ publicKey }: { publicKey: KeyObject }) =>
+  return (activeTunnel?: Pick<ActiveTunnel, 'publicKey'>) =>
     (issuer: string, publicKeyThumbprint: string) => {
       if (issuer === jwtSaasIssuer) {
         return getSaasTokenVerificationData()
       }
 
       if (issuer === getCliIssuerFromPk(publicKeyThumbprint)) {
-        return getCliTokenVerificationData(publicKey)()
+        if (activeTunnel === undefined) throw new Error('Active tunnel must be provided when using the CLI issuer')
+        return getCliTokenVerificationData(activeTunnel.publicKey)()
       }
 
       throw new AuthError(`Unsupported issuer ${issuer}`)

@@ -90,4 +90,28 @@ export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, logi
       }
       return await res.redirect(new URL(returnPath, replaceHostname(baseUrl, `${envId}.${baseUrl.hostname}`)).toString())
     })
+    .get<{Params: { profileId: string } }>('/profiles/:profileId/tunnels', { schema: {
+      params: { type: 'object',
+        properties: {
+          profileId: { type: 'string' },
+        },
+        required: ['profileId'] },
+    } }, async (req, res) => {
+      // TODO: use fastify middleware
+      const { profileId } = req.params
+      const auth = jwtAuthenticator(profileId, createGetVerificationData(publicKey, jwtSaasIssuer)())
+      const result = await auth(req.raw)
+
+      if (!result.isAuthenticated) {
+        res.statusCode = 401
+        return await res.send('unauthenticated')
+      }
+
+      // TODO: return uri instead of hostname
+      const tunnels = (await activeTunnelStore.getByPkThumbprint(profileId))
+        ?.map(env => ({ envId: env.envId, hostname: env.hostname, access: env.access }))
+
+      return await res.send(tunnels ?? [])
+    })
+
     .get('/healthz', { logLevel: 'warn' }, async () => 'OK')
