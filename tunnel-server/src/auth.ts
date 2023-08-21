@@ -4,7 +4,6 @@ import { match } from 'ts-pattern'
 import { ZodError, z } from 'zod'
 import Cookies from 'cookies'
 import { KeyObject } from 'crypto'
-import { ActiveTunnel } from './tunnel-store'
 
 export class AuthError extends Error {}
 
