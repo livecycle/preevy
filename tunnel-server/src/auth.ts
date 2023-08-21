@@ -62,7 +62,6 @@ export const saasJWTSchema = z.object({
 
 type SaasJWTSchema = z.infer<typeof saasJWTSchema>
 
-
 const isBrowser = (req: IncomingMessage) => {
   const userAgent = req.headers['user-agent']?.toLowerCase() ?? ''
   return /(chrome|firefox|safari|opera|msie|trident)/.test(userAgent)
@@ -177,7 +176,7 @@ export const createGetVerificationData = (saasPublicKey: KeyObject, jwtSaasIssue
 
   const getCliIssuerFromPk = (publicKeyThumbprint: string) => `preevy://${publicKeyThumbprint}`
 
-  return ({ publicKey }: { publicKey: KeyObject }) =>
+  return (publicKey: KeyObject) =>
     (issuer: string, publicKeyThumbprint: string) => {
       if (issuer === jwtSaasIssuer) {
         return getSaasTokenVerificationData()
