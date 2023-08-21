@@ -4,3 +4,4 @@ import shell from './shell'
 
 export { up, ls, shell }
 export { urls } from './urls'
+export * as proxy from './proxy'

@@ -64,7 +64,7 @@ export const addComposeTunnelAgentService = (
     sshPrivateKeyPath: string
     knownServerPublicKeyPath: string
     debug: boolean
-    user: string
+    user?: string
     envId: string
     machineStatusCommand?: MachineStatusCommand
     envMetadata: Record<string, unknown>
@@ -115,6 +115,10 @@ export const addComposeTunnelAgentService = (
         },
       ],
       user,
+      labels: {
+        ...model.services?.[COMPOSE_TUNNEL_AGENT_SERVICE_NAME]?.labels ?? {},
+        'preevy.env_id': envId,
+      },
       environment: {
         SSH_URL: tunnelOpts.url,
         TLS_SERVERNAME: tunnelOpts.tlsServerName,

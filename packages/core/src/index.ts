@@ -52,6 +52,7 @@ export {
   createTunnelingKey,
   connectToTunnelServerSsh,
   getTunnelNamesToServicePorts,
+  Connection as SshConnection,
 } from './tunneling'
 export { TunnelOpts } from './ssh'
 export { Spinner } from './spinner'
