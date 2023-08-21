@@ -64,7 +64,7 @@ const app = createApp({
   log,
   loginUrl,
   jwtSaasIssuer: SAAS_JWT_ISSUER,
-  publicKey,
+  saasPublicKey: publicKey,
 })
 const sshLogger = log.child({ name: 'ssh_server' })
 

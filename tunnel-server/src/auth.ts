@@ -177,14 +177,13 @@ export const createGetVerificationData = (saasPublicKey: KeyObject, jwtSaasIssue
 
   const getCliIssuerFromPk = (publicKeyThumbprint: string) => `preevy://${publicKeyThumbprint}`
 
-  return (activeTunnel?: Pick<ActiveTunnel, 'publicKey'>) =>
+  return (activeTunnel: Pick<ActiveTunnel, 'publicKey'>) =>
     (issuer: string, publicKeyThumbprint: string) => {
       if (issuer === jwtSaasIssuer) {
         return getSaasTokenVerificationData()
       }
 
       if (issuer === getCliIssuerFromPk(publicKeyThumbprint)) {
-        if (activeTunnel === undefined) throw new Error('Active tunnel must be provided when using the CLI issuer')
         return getCliTokenVerificationData(activeTunnel.publicKey)()
       }
 

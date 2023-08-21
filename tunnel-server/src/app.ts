@@ -12,14 +12,14 @@ import { Proxy } from './proxy'
 const { SAAS_BASE_URL } = process.env
 if (SAAS_BASE_URL === undefined) { throw new Error('Env var SAAS_BASE_URL is missing') }
 
-export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, loginUrl, publicKey, jwtSaasIssuer }: {
+export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, loginUrl, saasPublicKey, jwtSaasIssuer }: {
   log: Logger
   baseUrl: URL
   loginUrl: string
   sessionStore: SessionStore<Claims>
   activeTunnelStore: ActiveTunnelStore
   proxy: Proxy
-  publicKey: KeyObject
+  saasPublicKey: KeyObject
   jwtSaasIssuer: string
 }) =>
   Fastify({
@@ -79,7 +79,10 @@ export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, logi
       }
       const session = sessionStore(req.raw, res.raw, env.publicKeyThumbprint)
       if (!session.user) {
-        const auth = jwtAuthenticator(env.publicKeyThumbprint, createGetVerificationData(publicKey, jwtSaasIssuer)(env))
+        const auth = jwtAuthenticator(
+          env.publicKeyThumbprint,
+          createGetVerificationData(saasPublicKey, jwtSaasIssuer)(env)
+        )
         const result = await auth(req.raw)
         if (!result.isAuthenticated) {
           return await res.header('Access-Control-Allow-Origin', SAAS_BASE_URL)
@@ -98,18 +101,18 @@ export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, logi
         required: ['profileId'] },
     } }, async (req, res) => {
       const { profileId } = req.params
-      const auth = jwtAuthenticator(profileId, createGetVerificationData(publicKey, jwtSaasIssuer)())
+      const tunnels = (await activeTunnelStore.getByPkThumbprint(profileId))
+      if (!tunnels?.length) return []
+
+      const auth = jwtAuthenticator(profileId, createGetVerificationData(saasPublicKey, jwtSaasIssuer)(tunnels[0]))
       const result = await auth(req.raw)
 
       if (!result.isAuthenticated) {
         res.statusCode = 401
-        return await res.send('unauthenticated')
+        return await res.send('Unauthenticated')
       }
 
-      const tunnels = (await activeTunnelStore.getByPkThumbprint(profileId))
-        ?.map(env => ({ envId: env.envId, hostname: env.hostname, access: env.access }))
-
-      return await res.send(tunnels ?? [])
+      return await res.send(tunnels.map(t => ({ envId: t.envId, hostname: t.hostname, access: t.access })))
     })
 
     .get('/healthz', { logLevel: 'warn' }, async () => 'OK')
