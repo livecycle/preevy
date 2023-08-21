@@ -72,16 +72,16 @@ export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, logi
         res.statusCode = 400
         return { error: 'returnPath must be a relative path' }
       }
-      const env = await activeTunnelStore.get(envId)
-      if (!env) {
+      const activeTunnel = await activeTunnelStore.get(envId)
+      if (!activeTunnel) {
         res.statusCode = 404
         return { error: 'unknown envId' }
       }
-      const session = sessionStore(req.raw, res.raw, env.publicKeyThumbprint)
+      const session = sessionStore(req.raw, res.raw, activeTunnel.publicKeyThumbprint)
       if (!session.user) {
         const auth = jwtAuthenticator(
-          env.publicKeyThumbprint,
-          createGetVerificationData(saasPublicKey, jwtSaasIssuer)(env)
+          activeTunnel.publicKeyThumbprint,
+          createGetVerificationData(saasPublicKey, jwtSaasIssuer)(activeTunnel.publicKey)
         )
         const result = await auth(req.raw)
         if (!result.isAuthenticated) {
@@ -104,7 +104,7 @@ export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, logi
       const tunnels = (await activeTunnelStore.getByPkThumbprint(profileId))
       if (!tunnels?.length) return []
 
-      const auth = jwtAuthenticator(profileId, createGetVerificationData(saasPublicKey, jwtSaasIssuer)(tunnels[0]))
+      const auth = jwtAuthenticator(profileId, createGetVerificationData(saasPublicKey, jwtSaasIssuer)(tunnels[0].publicKey))
       const result = await auth(req.raw)
 
       if (!result.isAuthenticated) {

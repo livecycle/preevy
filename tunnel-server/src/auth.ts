@@ -177,14 +177,14 @@ export const createGetVerificationData = (saasPublicKey: KeyObject, jwtSaasIssue
 
   const getCliIssuerFromPk = (publicKeyThumbprint: string) => `preevy://${publicKeyThumbprint}`
 
-  return (activeTunnel: Pick<ActiveTunnel, 'publicKey'>) =>
+  return (publicKey: KeyObject) =>
     (issuer: string, publicKeyThumbprint: string) => {
       if (issuer === jwtSaasIssuer) {
         return getSaasTokenVerificationData()
       }
 
       if (issuer === getCliIssuerFromPk(publicKeyThumbprint)) {
-        return getCliTokenVerificationData(activeTunnel.publicKey)()
+        return getCliTokenVerificationData(publicKey)()
       }
 
       throw new AuthError(`Unsupported issuer ${issuer}`)

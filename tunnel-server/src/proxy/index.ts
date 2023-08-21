@@ -63,7 +63,7 @@ export const proxy = ({
 
       const authenticate = jwtAuthenticator(
         tunnel.publicKeyThumbprint,
-        createGetVerificationData(publicKey, jwtSaasIssuer)(tunnel)
+        createGetVerificationData(publicKey, jwtSaasIssuer)(tunnel.publicKey)
       )
 
       let authResult: AuthenticationResult
