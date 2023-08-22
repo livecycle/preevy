@@ -26,10 +26,11 @@ export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, logi
     serverFactory: handler => {
       const baseHostname = baseUrl.hostname
       const authHostname = `auth.${baseHostname}`
+      const apiHostname = `api.${baseHostname}`
 
       const isNonProxyRequest = ({ headers }: http.IncomingMessage) => {
         const host = headers.host?.split(':')?.[0]
-        return host === authHostname
+        return (host === authHostname) || (host === apiHostname)
       }
 
       const server = http.createServer((req, res) => {
@@ -104,7 +105,11 @@ export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, logi
       const tunnels = (await activeTunnelStore.getByPkThumbprint(profileId))
       if (!tunnels?.length) return []
 
-      const auth = jwtAuthenticator(profileId, createGetVerificationData(saasPublicKey, jwtSaasIssuer)(tunnels[0].publicKey))
+      const auth = jwtAuthenticator(
+        profileId,
+        createGetVerificationData(saasPublicKey, jwtSaasIssuer)(tunnels[0].publicKey)
+      )
+
       const result = await auth(req.raw)
 
       if (!result.isAuthenticated) {
