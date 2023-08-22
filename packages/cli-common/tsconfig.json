@@ -25,6 +25,7 @@
     "rootDir": "src",
   },
   "include": ["**/*"],
+  "exclude": ["jest.config.js", "dist"],
   "references": [
     { "path": "../core" },
   ]

@@ -32,6 +32,7 @@
   },
   "scripts": {
     "lint": "eslint . --ext .ts,.tsx --cache",
+    "test": "yarn jest",
     "clean": "shx rm -rf dist tsconfig.tsbuildinfo",
     "build": "tsc -b",
     "prepack": "yarn clean && yarn build",
