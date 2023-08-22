@@ -34,6 +34,8 @@ export default class Connect extends ProfileCommand<typeof Connect> {
     }),
   }
 
+  static enableJsonFlag = true
+
   // eslint-disable-next-line class-methods-use-this
   async run(): Promise<unknown> {
     const { flags, args, store } = this
@@ -85,7 +87,7 @@ export default class Connect extends ProfileCommand<typeof Connect> {
     const composeTmpDir = await model.write({ tunnelingKey, knownServerPublicKey: tunnelServerPublicKey })
 
     const proc = spawn('docker', ['compose', 'up', '--build', '-d'], { cwd: composeTmpDir })
-    proc.stdout?.pipe(process.stdout)
+    proc.stdout?.pipe(process.stderr)
     proc.stderr?.pipe(process.stderr)
 
     const exitCode = await new Promise<number>(res => {

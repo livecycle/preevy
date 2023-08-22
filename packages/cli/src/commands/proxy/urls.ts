@@ -26,6 +26,8 @@ export default class Urls extends ProfileCommand<typeof Urls> {
     ...PreevyUrlsCmd.args,
   }
 
+  static enableJsonFlag = true
+
   // eslint-disable-next-line class-methods-use-this
   async run(): Promise<unknown> {
     const { args, flags } = this
