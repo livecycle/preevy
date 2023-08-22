@@ -4,6 +4,7 @@ WORKDIR /app
 COPY --link yarn.lock package.json .
 COPY --link packages packages
 RUN find . -type f -not -iname "yarn.lock" -not -iname "package.json" -delete && find . -type l -delete && find . -type d -empty -delete 
+COPY --link patches patches
 
 FROM busybox as ldid
 RUN wget -q https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_aarch64 -O /usr/bin/ldid
