@@ -2,7 +2,7 @@ import path from 'path'
 import fetch from 'node-fetch'
 import retry from 'p-retry'
 import util from 'util'
-import { mapValues } from 'lodash'
+import { mapValues, merge } from 'lodash'
 import { MachineStatusCommand, dateReplacer } from '@preevy/common'
 import { ComposeModel, ComposeService, composeModelFilename } from './compose/model'
 import { TunnelOpts } from './ssh/url'
@@ -75,62 +75,61 @@ export const addComposeTunnelAgentService = (
   ...model,
   services: {
     ...model.services,
-    [COMPOSE_TUNNEL_AGENT_SERVICE_NAME]: {
-      ...baseDockerProxyService(),
-      restart: 'always',
-      networks: Object.keys(model.networks || {}),
-      volumes: [
-        {
-          type: 'bind',
-          source: '/var/run/docker.sock',
-          target: '/var/run/docker.sock',
+    [COMPOSE_TUNNEL_AGENT_SERVICE_NAME]:
+      merge(baseDockerProxyService(), {
+        restart: 'always',
+        networks: Object.keys(model.networks || {}),
+        volumes: [
+          {
+            type: 'bind',
+            source: '/var/run/docker.sock',
+            target: '/var/run/docker.sock',
+          },
+          {
+            type: 'bind',
+            source: sshPrivateKeyPath,
+            target: '/preevy/.ssh/id_rsa',
+            read_only: true,
+            bind: { create_host_path: true },
+          },
+          {
+            type: 'bind',
+            source: knownServerPublicKeyPath,
+            target: '/preevy/known_server_keys/tunnel_server',
+            read_only: true,
+            bind: { create_host_path: true },
+          },
+          {
+            type: 'bind',
+            source: `${REMOTE_DIR_BASE}/${driverMetadataFilename}`,
+            target: `${metadataDirectory}/${driverMetadataFilename}`,
+            read_only: true,
+            bind: { create_host_path: true },
+          },
+          {
+            type: 'bind',
+            source: composeModelPath,
+            target: `/preevy/${composeModelFilename}`,
+            read_only: true,
+            bind: { create_host_path: true },
+          },
+        ],
+        user,
+        labels: {
+          'preevy.env_id': envId,
         },
-        {
-          type: 'bind',
-          source: sshPrivateKeyPath,
-          target: '/preevy/.ssh/id_rsa',
-          read_only: true,
-          bind: { create_host_path: true },
+        environment: {
+          SSH_URL: tunnelOpts.url,
+          TLS_SERVERNAME: tunnelOpts.tlsServerName,
+          PREEVY_ENV_ID: envId,
+          PORT: COMPOSE_TUNNEL_AGENT_PORT.toString(),
+          ...machineStatusCommand ? { MACHINE_STATUS_COMMAND: JSON.stringify(machineStatusCommand) } : {},
+          ENV_METADATA: JSON.stringify(envMetadata, dateReplacer),
+          ENV_METADATA_FILES: `${metadataDirectory}/${driverMetadataFilename}`,
+          ...debug ? { DEBUG: '1' } : {},
+          HOME: '/preevy',
         },
-        {
-          type: 'bind',
-          source: knownServerPublicKeyPath,
-          target: '/preevy/known_server_keys/tunnel_server',
-          read_only: true,
-          bind: { create_host_path: true },
-        },
-        {
-          type: 'bind',
-          source: `${REMOTE_DIR_BASE}/${driverMetadataFilename}`,
-          target: `${metadataDirectory}/${driverMetadataFilename}`,
-          read_only: true,
-          bind: { create_host_path: true },
-        },
-        {
-          type: 'bind',
-          source: composeModelPath,
-          target: `/preevy/${composeModelFilename}`,
-          read_only: true,
-          bind: { create_host_path: true },
-        },
-      ],
-      user,
-      labels: {
-        ...model.services?.[COMPOSE_TUNNEL_AGENT_SERVICE_NAME]?.labels ?? {},
-        'preevy.env_id': envId,
-      },
-      environment: {
-        SSH_URL: tunnelOpts.url,
-        TLS_SERVERNAME: tunnelOpts.tlsServerName,
-        PREEVY_ENV_ID: envId,
-        PORT: COMPOSE_TUNNEL_AGENT_PORT.toString(),
-        ...machineStatusCommand ? { MACHINE_STATUS_COMMAND: JSON.stringify(machineStatusCommand) } : {},
-        ENV_METADATA: JSON.stringify(envMetadata, dateReplacer),
-        ENV_METADATA_FILES: `${metadataDirectory}/${driverMetadataFilename}`,
-        ...debug ? { DEBUG: '1' } : {},
-        HOME: '/preevy',
-      },
-    },
+      }),
   },
 })
 
