@@ -3,7 +3,7 @@ import { gitBranchName } from './git'
 import { ComposeModel } from './compose'
 import { Logger } from './log'
 
-const normalize = (s: string) => s
+export const normalize = (s: string) => s
   .toLowerCase()
   .replace(/[^a-z0-9_-]/g, '-')
   .replace(/^[^a-z]/, firstChar => `a${firstChar}`) // prepend alpha char if first char is not alpha

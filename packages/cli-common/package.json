@@ -15,6 +15,7 @@
     "lodash": "^4.17.21"
   },
   "devDependencies": {
+    "@jest/globals": "^29.5.0",
     "@types/lodash": "^4.14.192",
     "@types/node": "18",
     "@typescript-eslint/eslint-plugin": "^5.55.0",
@@ -32,6 +33,7 @@
   },
   "scripts": {
     "lint": "eslint . --ext .ts,.tsx --cache",
+    "test": "yarn jest",
     "clean": "shx rm -rf dist tsconfig.tsbuildinfo",
     "build": "tsc -b",
     "prepack": "yarn clean && yarn build",

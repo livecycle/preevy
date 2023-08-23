@@ -14,10 +14,13 @@ export default class CurrentProfile extends ProfileCommand<typeof CurrentProfile
       return ux.info('No profile is loaded, use init command to create or import a new profile')
     }
     const { alias, id, location } = currentProfile
+    if (this.flags.json) {
+      return { alias, id, location }
+    }
     return ux.table([{ alias, id, location }], {
       alias: { header: 'Alias' },
       id: { header: 'ID' },
       location: { header: 'Location' },
-    })
+    }, this.flags)
   }
 }

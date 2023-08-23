@@ -1,4 +1,4 @@
-import { JWTPayload, calculateJwkThumbprintUri, exportJWK, SignJWT } from 'jose'
+import { JWTPayload, calculateJwkThumbprintUri, exportJWK, SignJWT, calculateJwkThumbprint } from 'jose'
 import ssh2 from 'ssh2'
 import { Buffer } from 'buffer'
 import { KeyObject, createPrivateKey } from 'crypto'
@@ -16,6 +16,15 @@ function getAsymmetricKeyAlg(key: KeyObject) {
     default:
       throw new Error('Only RSA and Ed25519 keys are supported')
   }
+}
+
+export const jwkThumbprint = async (privateKey: string | Buffer) => {
+  const sshKey = ssh2.utils.parseKey(privateKey)
+  if (sshKey instanceof Error) {
+    throw new Error('Could not parse private key', { cause: sshKey })
+  }
+  const key = createPrivateKey(sshKey.getPrivatePEM())
+  return await calculateJwkThumbprint(await exportJWK(key), 'sha256')
 }
 
 export const jwtGenerator = (privateKey: string | Buffer) => {
