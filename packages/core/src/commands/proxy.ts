@@ -76,11 +76,11 @@ export function initProxyComposeModel(opts: {
     sshPrivateKeyPath: './tunneling_key',
   }, compose)
 
-  set(newComposeModel, ['services', 'preevy_proxy', 'environment', 'COMPOSE_PROJECT'], opts.projectName)
-  set(newComposeModel, ['services', 'preevy_proxy', 'labels', 'preevy.profile_thumbprint'], opts.tunnelingKeyThumbprint)
+  set(newComposeModel, ['services', agentServiceName, 'environment', 'COMPOSE_PROJECT'], opts.projectName)
+  set(newComposeModel, ['services', agentServiceName, 'labels', 'preevy.profile_thumbprint'], opts.tunnelingKeyThumbprint)
   if (opts.privateMode) {
-    set(newComposeModel, ['services', 'preevy_proxy', 'environment', 'DEFAULT_ACCESS_LEVEL'], 'private')
-    set(newComposeModel, ['services', 'preevy_proxy', 'labels', 'preevy.private_mode'], 'true')
+    set(newComposeModel, ['services', agentServiceName, 'environment', 'DEFAULT_ACCESS_LEVEL'], 'private')
+    set(newComposeModel, ['services', agentServiceName, 'labels', 'preevy.private_mode'], 'true')
   }
 
   return {
