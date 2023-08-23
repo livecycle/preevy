@@ -1,5 +1,5 @@
 import { ux, Args, Flags } from '@oclif/core'
-import { jwkThumbprint, commands, profileStore, withSpinner, SshConnection } from '@preevy/core'
+import { jwkThumbprint, commands, profileStore, withSpinner, SshConnection, machineId, normalizeEnvId } from '@preevy/core'
 import { tunnelServerFlags, urlFlags } from '@preevy/cli-common'
 import { inspect } from 'util'
 import { formatPublicKey } from '@preevy/common'
@@ -42,14 +42,14 @@ export default class Connect extends ProfileCommand<typeof Connect> {
     const pStore = profileStore(store)
 
     const tunnelingKey = await pStore.getTunnelingKey()
-
     const tunnelOpts = {
       url: flags['tunnel-url'],
       tlsServerName: flags['tls-hostname'],
       insecureSkipVerify: flags['insecure-skip-verify'],
     }
-
-    const envId = `local-${Math.random().toString(36).substring(7)}` // local+find_ambient_id_based on compose dir (?)
+    const composeProject = args['compose-project']
+    const deviceId = (await machineId(this.config.dataDir)).substring(0, 2)
+    const envId = normalizeEnvId(`${composeProject}-dev-${deviceId}`) // local+find_ambient_id_based on compose dir (?)
     let client: SshConnection['client'] | undefined
     let hostKey: Buffer
     let preevyAgentUrl: string
@@ -68,12 +68,12 @@ export default class Connect extends ProfileCommand<typeof Connect> {
     }
     const tunnelServerPublicKey = formatPublicKey(hostKey)
 
-    const inspector = commands.proxy.inspectRunningComposeApp(args['compose-project'])
+    const inspector = commands.proxy.inspectRunningComposeApp(composeProject)
     const networks = await inspector.getComposeNetworks()
 
     const model = commands.proxy.initProxyComposeModel({
       envId,
-      projectName: args['compose-project'],
+      projectName: composeProject,
       tunnelOpts,
       networks,
       privateMode: flags['private-env'],
@@ -110,7 +110,7 @@ export default class Connect extends ProfileCommand<typeof Connect> {
       flatTunnels,
       context: {
         log: this.logger,
-        userModel: { name: args['compose-project'] },
+        userModel: { name: composeProject },
       },
       filters: this.config.preevyHooks.filterUrls,
     })

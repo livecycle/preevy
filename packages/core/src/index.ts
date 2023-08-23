@@ -19,11 +19,11 @@ export {
   machineStatusNodeExporterCommand,
 } from './driver'
 export { profileStore, Profile, ProfileStore, link, Org } from './profile'
-export { telemetryEmitter, registerEmitter, wireProcessExit, createTelemetryEmitter } from './telemetry'
+export { telemetryEmitter, registerEmitter, wireProcessExit, createTelemetryEmitter, machineId } from './telemetry'
 export { fsTypeFromUrl, Store, VirtualFS, localFsFromUrl } from './store'
 export { localComposeClient, ComposeModel, resolveComposeFiles, getExposedTcpServicePorts, remoteUserModel, NoComposeFilesError } from './compose'
 export { withSpinner } from './spinner'
-export { findEnvId, findProjectName, findEnvIdByProjectName } from './env-id'
+export { findEnvId, findProjectName, findEnvIdByProjectName, normalize as normalizeEnvId } from './env-id'
 export { sshKeysStore } from './state'
 export { truncateWithHash, truncatePrefix, randomString, alphabets } from './strings'
 export { connectSshClient, generateSshKeyPair, SshKeyPairType } from './ssh'
