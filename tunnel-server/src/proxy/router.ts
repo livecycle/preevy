@@ -39,6 +39,8 @@ export const proxyRouter = (
       return undefined
     }
 
+    if (parsed.firstLabel === 'proxy') return undefined
+
     return async activeTunnelStore => {
       const activeTunnel = await activeTunnelStore.get(parsed.firstLabel)
       return activeTunnel
