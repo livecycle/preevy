@@ -22,7 +22,7 @@ export type ActiveTunnelStore = {
 }
 
 export const inMemoryActiveTunnelStore = ({ log }: { log: Logger }): ActiveTunnelStore => {
-  const keyToTunnels = new Map<string, ActiveTunnel>()
+  const keyToTunnel = new Map<string, ActiveTunnel>()
   const pkThumbprintToTunnel = new Map<string, ActiveTunnel[]>()
   const removeFromIndex = (key: string, publicKeyThumbprint: string) => {
     const tunnelsForPk = pkThumbprintToTunnel.get(publicKeyThumbprint) ?? []
@@ -34,23 +34,23 @@ export const inMemoryActiveTunnelStore = ({ log }: { log: Logger }): ActiveTunne
     }
   }
   return {
-    get: async key => keyToTunnels.get(key),
+    get: async key => keyToTunnel.get(key),
     getByPkThumbprint: async pkThumbprint => pkThumbprintToTunnel.get(pkThumbprint),
     set: async (key, value) => {
       log.debug('setting tunnel %s: %j', key, value)
-      keyToTunnels.set(key, value)
+      keyToTunnel.set(key, value)
       pkThumbprintToTunnel.set(
         value.publicKeyThumbprint,
         [...pkThumbprintToTunnel.get(value.publicKeyThumbprint) ?? [], value]
       )
     },
-    has: async key => keyToTunnels.has(key),
+    has: async key => keyToTunnel.has(key),
     delete: async key => {
-      const tunnel = keyToTunnels.get(key)
+      const tunnel = keyToTunnel.get(key)
       if (tunnel) {
         removeFromIndex(key, tunnel.publicKeyThumbprint)
       }
-      return keyToTunnels.delete(key)
+      return keyToTunnel.delete(key)
     },
   }
 }
