@@ -2,6 +2,7 @@ import { tunnelNameResolver } from '@preevy/common'
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { tmpdir } from 'node:os'
+import { set } from 'lodash'
 import { Connection } from '../tunneling'
 import { execPromiseStdout } from '../child-process'
 import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, COMPOSE_TUNNEL_AGENT_PORT, addComposeTunnelAgentService } from '../compose-tunnel-agent-client'
@@ -55,6 +56,8 @@ export function initProxyComposeModel(opts: {
   envId: string
   projectName: string
   tunnelOpts: TunnelOpts
+  tunnelingKeyThumbprint: string
+  privateMode?: boolean
   networks: ComposeModel['networks']
 }) {
   const compose = {
@@ -72,6 +75,13 @@ export function initProxyComposeModel(opts: {
     knownServerPublicKeyPath: './tunnel_server_public_key',
     sshPrivateKeyPath: './tunneling_key',
   }, compose)
+
+  set(newComposeModel, ['services', 'preevy_proxy', 'environment', 'COMPOSE_PROJECT'], opts.projectName)
+  set(newComposeModel, ['services', 'preevy_proxy', 'labels', 'preevy.profile_thumbprint'], opts.tunnelingKeyThumbprint)
+  if (opts.privateMode) {
+    set(newComposeModel, ['services', 'preevy_proxy', 'environment', 'DEFAULT_ACCESS_LEVEL'], 'private')
+    set(newComposeModel, ['services', 'preevy_proxy', 'labels', 'preevy.private_mode'], 'true')
+  }
 
   return {
     data: newComposeModel,

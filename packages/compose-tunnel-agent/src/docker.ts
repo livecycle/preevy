@@ -3,7 +3,7 @@ import { tryParseJson, Logger } from '@preevy/common'
 import { throttle } from 'lodash'
 
 const targetComposeProject = process.env.COMPOSE_PROJECT
-const defaultAccess = process.env.PRIVATE_MODE === 'true' ? 'private' : 'public'
+const defaultAccess = process.env.DEFAULT_ACCESS_LEVEL === 'private' ? 'private' : 'public'
 
 const composeFilter = {
   label: targetComposeProject ? [`com.docker.compose.project=${targetComposeProject}`] : ['com.docker.compose.project'],

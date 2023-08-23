@@ -1,7 +1,6 @@
 import { ux, Args, Flags } from '@oclif/core'
-import { set } from 'lodash'
+import { jwkThumbprint, commands, profileStore, withSpinner, SshConnection } from '@preevy/core'
 import { tunnelServerFlags, urlFlags } from '@preevy/cli-common'
-import { commands, profileStore, withSpinner, SshConnection } from '@preevy/core'
 import { inspect } from 'util'
 import { formatPublicKey } from '@preevy/common'
 import { spawn } from 'child_process'
@@ -77,12 +76,9 @@ export default class Connect extends ProfileCommand<typeof Connect> {
       projectName: args['compose-project'],
       tunnelOpts,
       networks,
+      privateMode: flags['private-env'],
+      tunnelingKeyThumbprint: await jwkThumbprint(tunnelingKey),
     })
-
-    set(model.data, ['services', 'preevy_proxy', 'environment', 'COMPOSE_PROJECT'], args['compose-project'])
-    if (flags['private-env']) {
-      set(model.data, ['services', 'preevy_proxy', 'environment', 'PRIVATE_MODE'], 'true')
-    }
 
     const composeTmpDir = await model.write({ tunnelingKey, knownServerPublicKey: tunnelServerPublicKey })
 

@@ -27,7 +27,7 @@ export const pkgSnapshotDir = memoize((dir:string) => {
       }
     }
   }
-  const dest = mkdtempSync(path.join(tmpdir(), path.dirname(dir)))
+  const dest = mkdtempSync(path.join(tmpdir(), path.basename(dir)))
   copyDirRecursiveSync(dir, dest)
   return dest
 })
