@@ -1,4 +1,4 @@
-import { defaults } from 'lodash'
+import lodash from 'lodash'
 
 export const editUrl = (
   url: URL | string,
@@ -13,7 +13,7 @@ export const editUrl = (
   return Object.assign(u, {
     ...hostname ? { hostname } : {},
     ...queryParams ? {
-      search: new URLSearchParams(defaults(queryParams, Object.fromEntries(u.searchParams.entries()))),
+      search: new URLSearchParams(lodash.defaults(queryParams, Object.fromEntries(u.searchParams.entries()))),
     } : {},
     ...username ? { username } : {},
     ...password ? { password } : {},
