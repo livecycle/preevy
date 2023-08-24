@@ -72,6 +72,7 @@ export default class Connect extends ProfileCommand<typeof Connect> {
     const networks = await inspector.getComposeNetworks()
 
     const model = commands.proxy.initProxyComposeModel({
+      version: this.config.version,
       envId,
       projectName: composeProject,
       tunnelOpts,

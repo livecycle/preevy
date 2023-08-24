@@ -8,7 +8,7 @@ import { ComposeModel, ComposeService, composeModelFilename } from './compose/mo
 import { TunnelOpts } from './ssh/url'
 import { Tunnel } from './tunneling'
 import { withBasicAuthCredentials } from './credentials'
-import { driverMetadataFilename } from './env-metadata'
+import { EnvMetadata, driverMetadataFilename } from './env-metadata'
 import { REMOTE_DIR_BASE } from './remote-files'
 import { isPacked, pkgSnapshotDir } from './pkg'
 
@@ -67,7 +67,7 @@ export const addComposeTunnelAgentService = (
     user?: string
     envId: string
     machineStatusCommand?: MachineStatusCommand
-    envMetadata: Record<string, unknown>
+    envMetadata: EnvMetadata
     composeModelPath: string
   },
   model: ComposeModel,

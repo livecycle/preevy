@@ -25,7 +25,7 @@ export type EnvDriverMetadata = {
 export type EnvMetadata = {
   id: string
   git?: EnvGitMetadata
-  driver: EnvDriverMetadata
+  driver?: EnvDriverMetadata
   lastDeployTime: Date
   version: string
 }
