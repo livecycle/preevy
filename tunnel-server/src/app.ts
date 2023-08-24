@@ -6,7 +6,7 @@ import { KeyObject } from 'crypto'
 import { SessionStore } from './session'
 import { Claims, createGetVerificationData, jwtAuthenticator } from './auth'
 import { ActiveTunnelStore } from './tunnel-store'
-import { replaceHostname } from './url'
+import { editUrl } from './url'
 import { Proxy } from './proxy'
 
 const { SAAS_BASE_URL } = process.env
@@ -92,7 +92,7 @@ export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, logi
         session.set(result.claims)
         session.save()
       }
-      return await res.redirect(new URL(returnPath, replaceHostname(baseUrl, `${envId}.${baseUrl.hostname}`)).toString())
+      return await res.redirect(new URL(returnPath, editUrl(baseUrl, { hostname: `${envId}.${baseUrl.hostname}` })).toString())
     })
     .get<{Params: { profileId: string } }>('/profiles/:profileId/tunnels', { schema: {
       params: { type: 'object',

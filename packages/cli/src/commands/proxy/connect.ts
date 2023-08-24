@@ -72,6 +72,7 @@ export default class Connect extends ProfileCommand<typeof Connect> {
     const networks = await inspector.getComposeNetworks()
 
     const model = commands.proxy.initProxyComposeModel({
+      version: this.config.version,
       envId,
       projectName: composeProject,
       tunnelOpts,
@@ -96,7 +97,7 @@ export default class Connect extends ProfileCommand<typeof Connect> {
     const flatTunnels = await withSpinner(() => commands.urls({
       composeTunnelServiceUrl: preevyAgentUrl,
       tunnelingKey,
-      includeAccessCredentials: flags['include-access-credentials'],
+      includeAccessCredentials: flags['include-access-credentials'] && (flags['access-credentials-type'] as 'api' | 'browser'),
       showPreevyService: flags['show-preevy-service-urls'],
       retryOpts: {
         minTimeout: 1000,

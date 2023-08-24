@@ -59,6 +59,7 @@ export function initProxyComposeModel(opts: {
   tunnelingKeyThumbprint: string
   privateMode?: boolean
   networks: ComposeModel['networks']
+  version: string
 }) {
   const compose = {
     version: '3.8',
@@ -71,7 +72,7 @@ export function initProxyComposeModel(opts: {
     envId: opts.envId,
     debug: true,
     composeModelPath: './docker-compose.yml',
-    envMetadata: {}, // can we get envMetadata from com.docker.compose.project.working_dir?
+    envMetadata: { id: opts.envId, lastDeployTime: new Date(), version: opts.version },
     knownServerPublicKeyPath: './tunnel_server_public_key',
     sshPrivateKeyPath: './tunneling_key',
   }, compose)
