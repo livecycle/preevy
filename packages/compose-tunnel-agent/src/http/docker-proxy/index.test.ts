@@ -174,7 +174,7 @@ describe('docker proxy', () => {
       it('should communicate via websocket', async () => {
         const { receivedBuffers, send, close } = await openWebSocket(`ws://${serverBaseUrl()}/exec/${execId}/start`)
         await waitForExpect(() => expect(receivedBuffers.length).toBeGreaterThan(0))
-        await send('ls\n')
+        await send('ls \n')
         await waitForExpect(() => {
           const received = stripAnsi(Buffer.concat(receivedBuffers).toString('utf-8'))
           expect(received).toMatch(/#/)

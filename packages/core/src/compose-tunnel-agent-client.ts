@@ -7,10 +7,10 @@ import { MachineStatusCommand, dateReplacer } from '@preevy/common'
 import { ComposeModel, ComposeService, composeModelFilename } from './compose/model'
 import { TunnelOpts } from './ssh/url'
 import { Tunnel } from './tunneling'
-import { withBasicAuthCredentials } from './url'
-import { isPacked, pkgSnapshotDir } from './pkg'
+import { withBasicAuthCredentials } from './credentials'
 import { driverMetadataFilename } from './env-metadata'
 import { REMOTE_DIR_BASE } from './remote-files'
+import { isPacked, pkgSnapshotDir } from './pkg'
 
 export const COMPOSE_TUNNEL_AGENT_SERVICE_NAME = 'preevy_proxy'
 export const COMPOSE_TUNNEL_AGENT_PORT = 3000
@@ -152,17 +152,13 @@ export const queryTunnels = async ({
   composeTunnelServiceUrl,
   credentials,
   includeAccessCredentials,
-  showPreevyService,
 }: {
   composeTunnelServiceUrl: string
   credentials: { user: string; password: string }
   retryOpts?: retry.Options
-  includeAccessCredentials: boolean
-  showPreevyService: boolean
+  includeAccessCredentials: false | 'browser' | 'api'
 }) => {
-  const addCredentials = withBasicAuthCredentials(credentials)
-
-  const { tunnels, clientId: tunnelId } = await retry(async () => {
+  const { tunnels } = await retry(async () => {
     const r = await fetch(
       `${composeTunnelServiceUrl}/tunnels`,
       { timeout: 2500, headers: { Authorization: `Bearer ${credentials.password}` } }
@@ -170,21 +166,17 @@ export const queryTunnels = async ({
     if (!r.ok) {
       throw new Error(`Failed to connect to docker proxy at ${composeTunnelServiceUrl}: ${r.status}: ${r.statusText}`)
     }
-    return await (r.json() as Promise<{ tunnels: Tunnel[]; clientId: string }>)
+    return await (r.json() as Promise<{ tunnels: Tunnel[] }>)
   }, retryOpts)
 
-  return {
-    tunnels: tunnels
-      .filter(({ service }: Tunnel) => showPreevyService || service !== COMPOSE_TUNNEL_AGENT_SERVICE_NAME)
-      .map(tunnel => ({
-        ...tunnel,
-        ports: mapValues(
-          tunnel.ports,
-          includeAccessCredentials
-            ? (x: string) => `${addCredentials(x)}?_preevy_auth_hint=basic`
-            : (x: string) => x
-        ),
-      })),
-    tunnelId,
-  }
+  return tunnels
+    .map(tunnel => ({
+      ...tunnel,
+      ports: mapValues(
+        tunnel.ports,
+        includeAccessCredentials
+          ? withBasicAuthCredentials(credentials, includeAccessCredentials)
+          : x => x,
+      ),
+    }))
 }
