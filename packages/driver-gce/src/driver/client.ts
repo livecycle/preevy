@@ -2,7 +2,7 @@ import { InstancesClient, ImagesClient, ZoneOperationsClient, RegionsClient } fr
 import { GoogleError, Status, operationsProtos, CallOptions } from 'google-gax'
 import { asyncFirst } from 'iter-tools-es'
 import { randomBytes } from 'crypto'
-import { LABELS, sha1hex } from './labels'
+import { LABELS, isValidLabel, normalizeLabel } from './labels'
 import { readCloudConfig } from '../static'
 import { metadataKey, serializeMetadata } from './metadata'
 
@@ -41,12 +41,19 @@ const client = ({
     }
   }
 
+  const orFilter = (...conditions: string[]) => `${conditions.map(cond => `(${cond})`).join(' OR ')}`
   const labelFilter = (key: string, value: string) => `labels.${key} = "${value}"`
-  const baseFilter = labelFilter(LABELS.PROFILE_ID_HASH_SHA1_HEX, sha1hex(profileId))
-  const envIdFilter = (envId: string) => labelFilter(LABELS.ENV_ID_HASH_SHA1_HEX, sha1hex(envId))
-  const filter = (envId?: string) => [baseFilter, ...(envId ? [envIdFilter(envId)] : [])]
+  const profileFilter = orFilter(...[
+    labelFilter(LABELS.PROFILE_ID, normalizeLabel(profileId)),
+    ...isValidLabel(profileId) ? [labelFilter(LABELS.OLD_PROFILE_ID, profileId)] : [], // backwards compat
+  ])
+  const envIdFilter = (envId: string) => orFilter(...[
+    labelFilter(LABELS.ENV_ID, normalizeLabel(envId)),
+    ...isValidLabel(envId) ? [labelFilter(LABELS.OLD_ENV_ID, envId)] : [], // backwards compat
+  ])
+  const filter = (envId?: string) => [profileFilter, ...(envId ? [envIdFilter(envId)] : [])]
     .map(s => `(${s})`)
-    .join(' ')
+    .join(' AND ')
 
   const instanceName = (envId: string) => {
     const prefix = 'preevy-'
@@ -104,8 +111,8 @@ const client = ({
         instanceResource: {
           name,
           labels: {
-            [LABELS.ENV_ID_HASH_SHA1_HEX]: sha1hex(envId),
-            [LABELS.PROFILE_ID_HASH_SHA1_HEX]: sha1hex(profileId),
+            [LABELS.ENV_ID]: normalizeLabel(envId),
+            [LABELS.PROFILE_ID]: normalizeLabel(profileId),
           },
           machineType,
           disks: [{

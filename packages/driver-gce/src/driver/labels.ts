@@ -1,8 +1,13 @@
-import { createHash } from 'crypto'
+import { truncateWithHash } from '@preevy/core'
 
 export const LABELS = {
-  ENV_ID_HASH_SHA1_HEX: 'preevy-env-id-hash-sha1-hex',
-  PROFILE_ID_HASH_SHA1_HEX: 'preevy-profile-id-hash-sha1-hex',
+  OLD_PROFILE_ID: 'preevy-profile-id',
+  OLD_ENV_ID: 'preevy-env-id',
+  ENV_ID: 'preevy-env-id-normalized',
+  PROFILE_ID: 'preevy-profile-id-normalized',
 }
 
-export const sha1hex = (s: string) => createHash('sha1').update(s).digest('hex')
+// https://cloud.google.com/compute/docs/labeling-resources#requirements
+export const isValidLabel = (label: string) => label.length <= 63 && /[a-z0-9_-]/.test(label)
+
+export const normalizeLabel = (s: string) => truncateWithHash(s, 63).toLowerCase()
