@@ -1,5 +1,6 @@
 import { KeyObject } from 'crypto'
 import { Logger } from 'pino'
+import { truncateWithHash } from './strings'
 
 export type ActiveTunnel = {
   envId: string
@@ -53,4 +54,20 @@ export const inMemoryActiveTunnelStore = ({ log }: { log: Logger }): ActiveTunne
       return keyToTunnel.delete(key)
     },
   }
+}
+
+const MAX_DNS_LABEL_LENGTH = 63
+
+export const activeTunnelStoreKey = (clientId: string, remotePath: string) => {
+  // return value needs to be DNS safe:
+  // - max DNS label name length is 63 octets (== 63 ASCII chars)
+  // - case insensitive
+  const tunnelPath = remotePath.substring(1)
+  const tunnelPathLength = MAX_DNS_LABEL_LENGTH - clientId.length - 1
+  const truncatedPath = truncateWithHash(
+    tunnelPath,
+    x => x.replace(/^\//, '').replace(/[^a-zA-Z0-9_-]/g, '-'),
+    tunnelPathLength,
+  )
+  return `${truncatedPath}-${clientId}`.toLowerCase()
 }

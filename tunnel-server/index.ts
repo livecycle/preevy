@@ -5,7 +5,7 @@ import pino from 'pino'
 import fs from 'fs'
 import { createPublicKey } from 'crypto'
 import { app as createApp } from './src/app'
-import { inMemoryActiveTunnelStore } from './src/tunnel-store'
+import { activeTunnelStoreKey, inMemoryActiveTunnelStore } from './src/tunnel-store'
 import { getSSHKeys } from './src/ssh-keys'
 import { proxy } from './src/proxy'
 import { appLoggerFromEnv } from './src/logging'
@@ -68,19 +68,6 @@ const app = createApp({
 })
 const sshLogger = log.child({ name: 'ssh_server' })
 
-const MAX_DNS_LABEL_LENGTH = 63
-
-const activeTunnelStoreKey = (clientId: string, remotePath: string) => {
-  const noLeadingSlash = remotePath.replace(/^\//, '')
-  // return value needs to be DNS safe:
-  // - max DNS label name length is 63 octets (== 63 ASCII chars)
-  // - case insensitive
-  return truncateWithHash(
-    `${noLeadingSlash}-${clientId}`.replace(/[^a-zA-Z0-9_-]/g, '-'),
-    MAX_DNS_LABEL_LENGTH,
-  ).toLowerCase()
-}
-
 const tunnelUrl = (
   rootUrl: URL,
   clientId: string,
@@ -92,7 +79,6 @@ const sshServer = createSshServer({
   sshPrivateKey,
   socketDir: '/tmp', // TODO
   activeTunnelStore,
-  activeTunnelStoreKey,
   helloBaseResponse: {
     // TODO: backwards compat, remove when we drop support for CLI v0.0.35
     baseUrl: { hostname: BASE_URL.hostname, port: BASE_URL.port, protocol: BASE_URL.protocol },
