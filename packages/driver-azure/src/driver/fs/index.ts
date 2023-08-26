@@ -1,9 +1,9 @@
-import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'
+import { BlobServiceClient, ContainerClient, BlobDeleteOptions, BlobDeleteIfExistsResponse } from '@azure/storage-blob'
 import { VirtualFS } from '@preevy/core'
 
 export const defaultBucketName = (
   { profileAlias, accountId }: { profileAlias: string; accountId: string },
-) => `preevy-${accountId}-${profileAlias}`
+) => `preevy-${accountId}-${profileAlias}` 
 
 const ensureBucketExists = async (blobServiceClient: BlobServiceClient, containerName: string) => {
   const containerClient: ContainerClient = blobServiceClient.getContainerClient(containerName)
@@ -61,6 +61,16 @@ export const azureStorageBlobFs = async (azureBlobUrl: string): Promise<VirtualF
       const blockBlobClient = containerClient.getBlockBlobClient(filename)
       await blockBlobClient.upload(content, content.length)
     },
-    async delete(filename: string){}
+    async delete(filename: string) {
+      const blockBlobClient = containerClient.getBlockBlobClient(filename)
+      const options: BlobDeleteOptions = {
+        deleteSnapshots: 'include',
+      }
+      const blobDeleteIfExistsResponse: BlobDeleteIfExistsResponse = await blockBlobClient.deleteIfExists(options)
+
+      if (blobDeleteIfExistsResponse.errorCode) {
+        throw new Error(`Error: ${blobDeleteIfExistsResponse.errorCode}`)
+      }
+    },
   }
 }
