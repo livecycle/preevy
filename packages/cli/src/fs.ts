@@ -6,6 +6,9 @@ import inquirerAutoComplete from 'inquirer-autocomplete-standalone'
 import { DriverName } from './drivers.js'
 import ambientAwsAccountId = awsUtils.ambientAccountId
 
+inquirer.registerPrompt('autocomplete', inquirerAutoComplete)
+import { azureStorageBlobFs } from '@preevy/driver-azure'
+
 export const fsFromUrl = async (url: string, localBaseDir: string) => {
   const fsType = fsTypeFromUrl(url)
   if (fsType === 'local') {
@@ -20,6 +23,11 @@ export const fsFromUrl = async (url: string, localBaseDir: string) => {
     // eslint false positive here on case-sensitive filesystems due to unknown type
     // eslint-disable-next-line @typescript-eslint/return-await
     return await googleCloudStorageFs(url)
+  }
+  if (fsType === 'az') {
+    // eslint false positive here on case-sensitive filesystems due to unknown type
+    // eslint-disable-next-line @typescript-eslint/return-await
+    return await azureStorageBlobFs(url)
   }
   throw new Error(`Unsupported URL type: ${fsType}`)
 }

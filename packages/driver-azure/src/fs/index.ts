@@ -3,7 +3,7 @@ import { VirtualFS } from '@preevy/core'
 
 export const defaultBucketName = (
   { profileAlias, accountId }: { profileAlias: string; accountId: string },
-) => `preevy-${accountId}-${profileAlias}` 
+) => `preevy-${accountId}-${profileAlias}`
 
 const ensureBucketExists = async (blobServiceClient: BlobServiceClient, containerName: string) => {
   const containerClient: ContainerClient = blobServiceClient.getContainerClient(containerName)
