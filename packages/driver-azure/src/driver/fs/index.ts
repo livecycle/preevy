@@ -1,11 +1,11 @@
 import { BlobServiceClient, ContainerClient } from '@azure/storage-blob'
+import { VirtualFS } from '@preevy/core'
 
 export const defaultBucketName = (
   { profileAlias, accountId }: { profileAlias: string; accountId: string },
 ) => `preevy-${accountId}-${profileAlias}`
 
-const ensureBucketExists = async (containerName: string, connectionString: string) => {
-  const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString)
+const ensureBucketExists = async (blobServiceClient: BlobServiceClient, containerName: string) => {
   const containerClient: ContainerClient = blobServiceClient.getContainerClient(containerName)
   const exists = await containerClient.exists()
 
@@ -15,6 +15,49 @@ const ensureBucketExists = async (containerName: string, connectionString: strin
   return containerName
 }
 
-export const azureStorageBlobFs = async () => {
-  await ensureBucketExists('someName', 'someConnection')
+export const parseAzureBlobUrl = (azureBlobUrl: string) => {
+  const url = new URL(azureBlobUrl)
+  if (url.protocol !== 'azblob:') {
+    throw new Error('Azure Blob urls must start with azblob://')
+  }
+  return {
+    url,
+    containerName: url.hostname,
+    path: url.pathname,
+  }
+}
+
+async function streamToBuffer(readableStream: NodeJS.ReadableStream) {
+  return await new Promise<Buffer>((resolve, reject) => {
+    const chunks: Buffer[] = []
+    readableStream.on('data', data => {
+      chunks.push(data instanceof Buffer ? data : Buffer.from(data))
+    })
+    readableStream.on('end', () => {
+      resolve(Buffer.concat(chunks))
+    })
+    readableStream.on('error', reject)
+  })
+}
+
+export const azureStorageBlobFs = async (azureBlobUrl: string): Promise<VirtualFS> => {
+  const { path, containerName } = parseAzureBlobUrl(azureBlobUrl)
+
+  const blobServiceClient = BlobServiceClient.fromConnectionString(path)
+  const containerClient = blobServiceClient.getContainerClient(containerName)
+
+  await ensureBucketExists(blobServiceClient, containerName)
+
+  return {
+    async read(filename: string) {
+      const blobClient = containerClient.getBlobClient(filename)
+      const result = await blobClient.download()
+      if (result.readableStreamBody !== undefined) {
+        return await streamToBuffer(result.readableStreamBody)
+      }
+      return undefined
+    },
+    async write(filename: string){},
+    async delete(filename: string){}
+  }
 }
