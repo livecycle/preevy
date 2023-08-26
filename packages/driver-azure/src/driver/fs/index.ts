@@ -49,7 +49,7 @@ export const azureStorageBlobFs = async (azureBlobUrl: string): Promise<VirtualF
   await ensureBucketExists(blobServiceClient, containerName)
 
   return {
-    async read(filename: string) {
+    read: async (filename: string) => {
       const blobClient = containerClient.getBlobClient(filename)
       const result = await blobClient.download()
       if (result.readableStreamBody !== undefined) {
@@ -57,11 +57,11 @@ export const azureStorageBlobFs = async (azureBlobUrl: string): Promise<VirtualF
       }
       return undefined
     },
-    async write(filename: string, content: Buffer | string) {
+    write: async (filename: string, content: Buffer | string) => {
       const blockBlobClient = containerClient.getBlockBlobClient(filename)
       await blockBlobClient.upload(content, content.length)
     },
-    async delete(filename: string) {
+    delete: async (filename: string) => {
       const blockBlobClient = containerClient.getBlockBlobClient(filename)
       const options: BlobDeleteOptions = {
         deleteSnapshots: 'include',
