@@ -37,9 +37,9 @@ jobs:
           git config --global user.name 'Preevy Automation'
           git config --global user.email 'preevy-automation@livecycle.dev'
           git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/livecycle/preevy.git
-
         env:
           GITHUB_TOKEN: ${{ steps.gh_app_token.outputs.token }}
+        
       - run: yarn lerna version ${{ github.event.inputs.bump }} --exact --yes  
 
       
