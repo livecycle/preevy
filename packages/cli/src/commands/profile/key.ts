@@ -6,12 +6,12 @@ import ProfileCommand from '../../profile-command'
 const keyTypes = ['private', 'public-pem', 'public-ssh', 'thumbprint', 'thumbprint-uri'] as const
 type KeyType = typeof keyTypes[number]
 
-const extractKey = async (key: Buffer, type: KeyType) => {
+const extractKey = (key: Buffer, type: KeyType) => {
   if (type === 'thumbprint-uri') {
-    return await jwkThumbprintUri(key)
+    return jwkThumbprintUri(key)
   }
   if (type === 'thumbprint') {
-    return await jwkThumbprint(key)
+    return jwkThumbprint(key)
   }
   if (type === 'public-pem') {
     return parseKey(key).getPublicPEM()
