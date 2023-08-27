@@ -41,11 +41,11 @@ jobs:
           tar -xf ./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar
           codesign --remove-signature ./preevy
           echo $CERT_DATA | base64 --decode > certificate.p12
-          security import certificate.p12 -k ~/Library/Keychains/build.keychain -P "${{ secrets.CERTIFICATE_PASSWORD }}" -T /usr/bin/codesign
           security create-keychain -p actions build.keychain
           security default-keychain -s build.keychain
           security unlock-keychain -p actions build.keychain
           security set-keychain-settings -t 3600 -l ~/Library/Keychains/build.keychain
+          security import certificate.p12 -k ~/Library/Keychains/build.keychain -P "${{ secrets.CERTIFICATE_PASSWORD }}" -T /usr/bin/codesign
           security find-identity -v
           codesign --keychain build.keychain --sign $CERT_CN ./preevy
           security delete-keychain build.keychain
