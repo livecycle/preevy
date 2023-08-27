@@ -49,7 +49,7 @@ jobs:
           rm certificate.p12
           security find-identity -v
           codesign --keychain build.keychain --sign "$CERT_CN" ./preevy
-          tar -cf ./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar ./preevy
+          # tar -cf ./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar ./preevy
           
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
