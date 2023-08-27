@@ -72,7 +72,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           generate_release_notes: true
-          draft: true # ${{ !startsWith(github.ref, 'refs/tags/') }}
-          prerelease: true # ${{ !startsWith(github.ref, 'refs/tags/') }}
+          draft: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
           files: |
             ./preevy-bin/**
