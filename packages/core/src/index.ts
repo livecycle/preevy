@@ -58,7 +58,7 @@ export {
 export { TunnelOpts } from './ssh'
 export { Spinner } from './spinner'
 export { withClosable } from './closable'
-export { generateBasicAuthCredentials as getUserCredentials, jwtGenerator, jwkThumbprint } from './credentials'
+export { generateBasicAuthCredentials as getUserCredentials, jwtGenerator, jwkThumbprint, jwkThumbprintUri, parseKey } from './credentials'
 export { ciProviders, detectCiProvider } from './ci-providers'
 export { paginationIterator } from './pagination'
 export { ensureDefined, extractDefined, HasRequired } from './nulls'
