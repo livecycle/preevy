@@ -9,7 +9,7 @@ on:
 
 jobs:
   build-binaries:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     permissions:
       contents: read
       id-token: write
@@ -19,14 +19,37 @@ jobs:
         platform: [linux,macos,win]
         exclude:
           - platform: win # need to debug it
+
+          
     steps:
       - name: Checkout
         uses: actions/checkout@v3
       - uses: depot/setup-action@v1
         with:
           oidc: true
+
       - name: Build using Docker (with depot)
-        run: mkdir preevy-bin && depot build --project ${{ vars.DEPOT_PROJECT_ID }} --build-arg CLI_TARGET=${{ matrix.platform }}-${{ matrix.arch }}  -f Dockerfile.cli --target=cli --output=type=tar,dest=./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz --progress=plain  --platform=linux/${{ matrix.arch == 'x64' && 'amd64' || matrix.arch }} .
+        run: mkdir preevy-bin && depot build --project ${{ vars.DEPOT_PROJECT_ID }} --build-arg CLI_TARGET=${{ matrix.platform }}-${{ matrix.arch }}  -f Dockerfile.cli --target=cli --output=type=tar,dest=./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar --progress=plain  --platform=linux/${{ matrix.arch == 'x64' && 'amd64' || matrix.arch }} .
+
+      - uses: apple-actions/import-codesign-certs@v1
+        if: ${{ matrix.platform == 'macos' }}
+        with: 
+          p12-file-base64: ${{ secrets.APPLE_CERT_DATA }}
+          p12-password: ${{ secrets.APPLE_CERT_PASS }}
+
+      - name: Sign mac binaries
+        if: ${{ matrix.platform == 'macos' }}
+        env: 
+          CERT_DATA: ${{ secrets.APPLE_CERT_DATA }}
+          CERT_PASS: ${{ secrets.APPLE_CERT_PASS }}
+          CERT_CN: ${{ vars.APPLE_CERT_CN }}
+        run: |
+          tar -xf ./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar
+          codesign --remove-signature ./preevy
+          security find-identity -v
+          codesign --verbose=4 --sign "$CERT_CN" ./preevy
+          tar -cf ./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar ./preevy
+          
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with: 
@@ -49,7 +72,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           generate_release_notes: true
-          draft: true # ${{ !startsWith(github.ref, 'refs/tags/') }}
-          prerelease: true # ${{ !startsWith(github.ref, 'refs/tags/') }}
+          draft: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
           files: |
             ./preevy-bin/**
