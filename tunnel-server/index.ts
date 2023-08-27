@@ -42,7 +42,7 @@ const SAAS_PUBLIC_KEY = process.env.SAAS_PUBLIC_KEY || fs.readFileSync(
   { encoding: 'utf8' },
 )
 
-const publicKey = createPublicKey(SAAS_PUBLIC_KEY)
+const saasPublicKey = createPublicKey(SAAS_PUBLIC_KEY)
 const SAAS_JWT_ISSUER = process.env.SAAS_JWT_ISSUER ?? 'app.livecycle.run'
 
 const activeTunnelStore = inMemoryActiveTunnelStore({ log })
@@ -57,14 +57,14 @@ const app = createApp({
     log,
     loginUrl,
     sessionStore: appSessionStore,
-    publicKey,
+    saasPublicKey,
     jwtSaasIssuer: SAAS_JWT_ISSUER,
     baseHostname: BASE_URL.hostname,
   }),
   log,
   loginUrl,
   jwtSaasIssuer: SAAS_JWT_ISSUER,
-  saasPublicKey: publicKey,
+  saasPublicKey,
 })
 const sshLogger = log.child({ name: 'ssh_server' })
 

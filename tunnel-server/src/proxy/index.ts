@@ -30,7 +30,7 @@ export const proxy = ({
   baseHostname,
   sessionStore,
   log,
-  publicKey,
+  saasPublicKey,
   jwtSaasIssuer,
 }: {
   sessionStore: SessionStore<Claims>
@@ -38,7 +38,7 @@ export const proxy = ({
   loginUrl: string
   baseHostname: string
   log: Logger
-  publicKey: KeyObject
+  saasPublicKey: KeyObject
   jwtSaasIssuer: string
 }) => {
   const theProxy = httpProxy.createProxy({})
@@ -50,20 +50,14 @@ export const proxy = ({
     session: ReturnType<typeof sessionStore>,
   ) => {
     if (!session.user) {
-      const redirectoToLoginError = () => new RedirectError(
+      const redirectToLoginError = () => new RedirectError(
         307,
         loginRedirectUrlForRequest({ env: tunnel.hostname, returnPath: req.url }),
       )
 
-      if (!req.headers.authorization) {
-        throw req.url !== undefined && hasBasicAuthQueryParamHint(req.url)
-          ? new BasicAuthUnauthorizedError()
-          : redirectoToLoginError()
-      }
-
       const authenticate = jwtAuthenticator(
         tunnel.publicKeyThumbprint,
-        createGetVerificationData(publicKey, jwtSaasIssuer)(tunnel.publicKey)
+        createGetVerificationData(saasPublicKey, jwtSaasIssuer)(tunnel.publicKey)
       )
 
       let authResult: AuthenticationResult
@@ -78,13 +72,15 @@ export const proxy = ({
       }
 
       if (!authResult.isAuthenticated) {
-        throw redirectoToLoginError()
+        throw req.url !== undefined && hasBasicAuthQueryParamHint(req.url)
+          ? new BasicAuthUnauthorizedError()
+          : redirectToLoginError()
       }
 
       session.set(authResult.claims)
-      if (authResult.login && req.method === 'GET') {
+      if (authResult.login && req.method === 'GET' && !req.headers.upgrade) {
         session.save()
-        throw redirectoToLoginError()
+        throw redirectToLoginError()
       }
 
       if (authResult.method.type === 'header') {
@@ -103,7 +99,7 @@ export const proxy = ({
   const validateProxyRequest = async (
     findTunnel: TunnelFinder,
     req: IncomingMessage,
-    session: (pkThumbprint: string) => ReturnType<typeof sessionStore>,
+    session: (pkThumbprint: string) => ReturnType<typeof sessionStore>
   ) => {
     const found = await findTunnel(activeTunnelStore)
     if (!found) {
