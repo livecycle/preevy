@@ -27,15 +27,15 @@ const extractKey = (key: Buffer, type: KeyType) => {
 }
 
 // eslint-disable-next-line no-use-before-define
-export default class CurrentProfile extends ProfileCommand<typeof CurrentProfile> {
-  static description = 'Display current profile in use'
+export default class Key extends ProfileCommand<typeof Key> {
+  static description = 'Show profile key'
   static strict = false
 
   static enableJsonFlag = true
 
   static args = {
     type: Args.custom<KeyType>({
-      description: 'type of the key to display',
+      description: 'type of the key to show',
       options: keyTypes.map(s => s),
       default: 'thumbprint-uri',
     })(),
