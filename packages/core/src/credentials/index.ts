@@ -32,21 +32,28 @@ function getAsymmetricKeyAlg(key: KeyObject) {
   }
 }
 
-export const jwkThumbprint = async (privateKey: string | Buffer) => {
-  const sshKey = ssh2.utils.parseKey(privateKey)
+export const parseKey = (key: string | Buffer) => {
+  const sshKey = ssh2.utils.parseKey(key)
   if (sshKey instanceof Error) {
     throw new Error('Could not parse private key', { cause: sshKey })
   }
-  const key = createPrivateKey(sshKey.getPrivatePEM())
-  return await calculateJwkThumbprint(await exportJWK(key), 'sha256')
+  return sshKey
 }
 
+const extractPrivateKeyObject = (
+  privateSshKey: string | Buffer,
+) => createPrivateKey(parseKey(privateSshKey).getPrivatePEM())
+
+export const jwkThumbprint = async (
+  privateKey: string | Buffer,
+) => await calculateJwkThumbprint(await exportJWK(extractPrivateKeyObject(privateKey)), 'sha256')
+
+export const jwkThumbprintUri = async (
+  privateKey: string | Buffer,
+) => await calculateJwkThumbprintUri(await exportJWK(extractPrivateKeyObject(privateKey)), 'sha256')
+
 export const jwtGenerator = (privateKey: string | Buffer) => {
-  const sshKey = ssh2.utils.parseKey(privateKey)
-  if (sshKey instanceof Error) {
-    throw new Error('Could not parse private key', { cause: sshKey })
-  }
-  const key = createPrivateKey(sshKey.getPrivatePEM())
+  const key = extractPrivateKeyObject(privateKey)
   const alg = getAsymmetricKeyAlg(key)
   const thumbprint = memoize(async () => await calculateJwkThumbprintUri(await exportJWK(key)))
 
