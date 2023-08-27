@@ -38,7 +38,7 @@ jobs:
           CERT_PASS: ${{ secrets.APPLE_CERT_PASS }}
           CERT_CN: ${{ vars.APPLE_CERT_CN }}
         run: |
-          tar -xzf preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz
+          tar -xzf ./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz
           codesign --remove-signature ./preevy
           echo $CERT_DATA | base64 --decode > certificate.p12
           security create-keychain -p temp temp.keychain
@@ -46,7 +46,7 @@ jobs:
           codesign --keychain temp.keychain --sign $CERT_CN ./preevy
           security delete-keychain temp.keychain
           rm certificate.p12
-          tar -czf preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz ./preevy
+          tar -czf ./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz ./preevy
           
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
