@@ -27,4 +27,9 @@ jobs:
           cache: yarn
       - run: yarn
       - run: yarn build
+      - run: |
+                git config --global user.name 'GitHub Action'
+                git config --global user.email 'action@github.com'
       - run: yarn lerna version ${{ github.event.inputs.bump }} --exact --yes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
