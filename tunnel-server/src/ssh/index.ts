@@ -4,14 +4,13 @@ import { calculateJwkThumbprintUri, exportJWK } from 'jose'
 import { inspect } from 'util'
 import { Gauge } from 'prom-client'
 import { baseSshServer } from './base-server'
-import { ActiveTunnelStore } from '../tunnel-store'
+import { ActiveTunnelStore, activeTunnelStoreKey } from '../tunnel-store'
 
 export const createSshServer = ({
   log,
   sshPrivateKey,
   socketDir,
   activeTunnelStore,
-  activeTunnelStoreKey,
   tunnelUrl,
   helloBaseResponse,
   tunnelsGauge,
@@ -20,7 +19,6 @@ export const createSshServer = ({
   sshPrivateKey: string
   socketDir: string
   activeTunnelStore: ActiveTunnelStore
-  activeTunnelStoreKey: (clientId: string, remotePath: string) => string
   tunnelUrl: (clientId: string, remotePath: string) => string
   helloBaseResponse: Record<string, unknown>
   tunnelsGauge: Pick<Gauge, 'inc' | 'dec'>
@@ -36,7 +34,7 @@ export const createSshServer = ({
       .on('forward', async (requestId, { path: tunnelPath, access, meta }, accept, reject) => {
         const key = activeTunnelStoreKey(clientId, tunnelPath)
         if (await activeTunnelStore.has(key)) {
-          reject(new Error(`duplicate path: ${key}`))
+          reject(new Error(`duplicate path: ${key}, client map contains path: ${tunnels.has(key)}`))
           return
         }
         const forward = await accept()
