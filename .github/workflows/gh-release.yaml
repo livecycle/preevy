@@ -29,7 +29,7 @@ jobs:
           oidc: true
 
       - name: Build using Docker (with depot)
-        run: mkdir preevy-bin && depot build --project ${{ vars.DEPOT_PROJECT_ID }} --build-arg CLI_TARGET=${{ matrix.platform }}-${{ matrix.arch }}  -f Dockerfile.cli --target=cli --output=type=tar,dest=./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz --progress=plain  --platform=linux/${{ matrix.arch == 'x64' && 'amd64' || matrix.arch }} .
+        run: mkdir preevy-bin && depot build --project ${{ vars.DEPOT_PROJECT_ID }} --build-arg CLI_TARGET=${{ matrix.platform }}-${{ matrix.arch }}  -f Dockerfile.cli --target=cli --output=type=tar,dest=./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar --progress=plain  --platform=linux/${{ matrix.arch == 'x64' && 'amd64' || matrix.arch }} .
 
       - name: Sign mac binaries
         if: ${{ matrix.platform == 'macos' }}
@@ -38,7 +38,7 @@ jobs:
           CERT_PASS: ${{ secrets.APPLE_CERT_PASS }}
           CERT_CN: ${{ vars.APPLE_CERT_CN }}
         run: |
-          tar -xzf ./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz
+          tar -xf ./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar
           codesign --remove-signature ./preevy
           echo $CERT_DATA | base64 --decode > certificate.p12
           security create-keychain -p temp temp.keychain
@@ -46,7 +46,7 @@ jobs:
           codesign --keychain temp.keychain --sign $CERT_CN ./preevy
           security delete-keychain temp.keychain
           rm certificate.p12
-          tar -czf ./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz ./preevy
+          tar -cf ./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar ./preevy
           
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
