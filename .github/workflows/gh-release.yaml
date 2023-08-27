@@ -19,19 +19,41 @@ jobs:
         platform: [linux,macos,win]
         exclude:
           - platform: win # need to debug it
+
+          
     steps:
       - name: Checkout
         uses: actions/checkout@v3
       - uses: depot/setup-action@v1
         with:
           oidc: true
+
       - name: Build using Docker (with depot)
         run: mkdir preevy-bin && depot build --project ${{ vars.DEPOT_PROJECT_ID }} --build-arg CLI_TARGET=${{ matrix.platform }}-${{ matrix.arch }}  -f Dockerfile.cli --target=cli --output=type=tar,dest=./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz --progress=plain  --platform=linux/${{ matrix.arch == 'x64' && 'amd64' || matrix.arch }} .
+
+      - name: Sign mac binaries
+        if: ${{ matrix.platform == "macos" }}
+        env: 
+          CERT_DATA: ${{ secrets.APPLE_CERT_DATA }}
+          CERT_PASS: ${{ secrets.APPLE_CERT_PASS }}
+          CERT_CN: ${{ variables.APPLE_CERT_CN }}
+        run: |
+          tar -xzf preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz
+          codesign --remove-signature ./preevy
+          echo $CERT_DATA | base64 --decode > certificate.p12
+          security create-keychain -p temp temp.keychain
+          security import certificate.p12 -k temp.keychain -P $CERT_PASS -T /usr/bin/codesign
+          codesign --keychain temp.keychain --sign $CERT_CN ./preevy
+          security delete-keychain temp.keychain
+          rm certificate.p12
+          tar -czf preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz ./preevy
+          
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with: 
           name: preevy-bin
           path: ./preevy-bin/**
+          
 
   release:
     runs-on: ubuntu-latest
