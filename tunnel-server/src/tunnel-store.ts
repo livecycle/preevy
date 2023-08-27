@@ -58,16 +58,21 @@ export const inMemoryActiveTunnelStore = ({ log }: { log: Logger }): ActiveTunne
 
 const MAX_DNS_LABEL_LENGTH = 63
 
+const sanitizeHostName = (x:string) => x.replace(/[^a-zA-Z0-9_-]/g, '-').toLocaleLowerCase()
 export const activeTunnelStoreKey = (clientId: string, remotePath: string) => {
   // return value needs to be DNS safe:
   // - max DNS label name length is 63 octets (== 63 ASCII chars)
   // - case insensitive
-  const tunnelPath = remotePath.substring(1)
+  if (clientId !== sanitizeHostName(clientId)) {
+    throw new Error('Invalid client id')
+  }
+
+  const tunnelPath = remotePath.replace(/^\//, '')
   const tunnelPathLength = MAX_DNS_LABEL_LENGTH - clientId.length - 1
   const truncatedPath = truncateWithHash(
     tunnelPath,
-    x => x.replace(/^\//, '').replace(/[^a-zA-Z0-9_-]/g, '-'),
+    sanitizeHostName,
     tunnelPathLength,
   )
-  return `${truncatedPath}-${clientId}`.toLowerCase()
+  return `${truncatedPath}-${clientId}`
 }

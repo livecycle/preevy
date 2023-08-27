@@ -1,4 +1,4 @@
-import { it, describe, expect } from '@jest/globals'
+import { it, describe, expect, } from '@jest/globals'
 import { activeTunnelStoreKey } from './tunnel-store'
 
 describe('tunnel store key formatting', () => {
@@ -26,6 +26,11 @@ describe('tunnel store key formatting', () => {
     const path = '/$a§`dgbc``23§4sx'
     const tunnel1 = activeTunnelStoreKey('my-client', path)
     expect(tunnel1).toEqual('-a--dgbc--23-4sx-m27y-my-client')
+  })
+
+  it('should throw error for invalid client id', () => {
+    const invalidClient = "ab`!@3"
+    expect(()=> activeTunnelStoreKey(invalidClient, 'test')).toThrow()
   })
 
   it('should maintain uniqueness in different characters', () => {
