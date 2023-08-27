@@ -6,10 +6,6 @@ COPY --link packages packages
 RUN find . -type f -not -iname "yarn.lock" -not -iname "package.json" -delete && find . -type l -delete && find . -type d -empty -delete 
 COPY --link patches patches
 
-FROM busybox as ldid
-RUN wget -q https://github.com/ProcursusTeam/ldid/releases/download/v2.1.5-procursus7/ldid_linux_aarch64 -O /usr/bin/ldid
-RUN chmod +x /usr/bin/ldid
-
 FROM base as builder
 WORKDIR /app
 COPY --link --from=deps-files /app /app
@@ -22,7 +18,6 @@ FROM builder as pkg
 ARG CLI_TARGET=macos-arm64
 WORKDIR /app/packages/cli
 ENV PKG_CACHE_PATH=/pkg/cache
-COPY --from=ldid --link /usr/bin/ldid /usr/bin/ldid
 RUN --mount=type=cache,id=livecycle/preevy-cli/pkg-cache,target=/pkg/cache \
   yarn pkg --compress GZip --no-dict --public --public-packages tslib --options max_old_space_size=4096 -t node18-${CLI_TARGET} .
 
