@@ -59,10 +59,15 @@ export const inMemoryActiveTunnelStore = ({ log }: { log: Logger }): ActiveTunne
 const MAX_DNS_LABEL_LENGTH = 63
 
 const sanitizeHostName = (x:string) => x.replace(/[^a-zA-Z0-9_-]/g, '-').toLocaleLowerCase()
+
+/**
+Generate a key for tunnel store.
+Return value should be safe to use as DNS subdomain.
+Constraints:
+- max length is 63 octets (== 63 ASCII chars)
+- case insensitive
+*/
 export const activeTunnelStoreKey = (clientId: string, remotePath: string) => {
-  // return value needs to be DNS safe:
-  // - max DNS label name length is 63 octets (== 63 ASCII chars)
-  // - case insensitive
   if (clientId !== sanitizeHostName(clientId)) {
     throw new Error('Invalid client id')
   }
