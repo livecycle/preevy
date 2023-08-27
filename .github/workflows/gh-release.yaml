@@ -40,8 +40,6 @@ jobs:
       - name: Sign mac binaries
         if: ${{ matrix.platform == 'macos' }}
         env: 
-          CERT_DATA: ${{ secrets.APPLE_CERT_DATA }}
-          CERT_PASS: ${{ secrets.APPLE_CERT_PASS }}
           CERT_CN: ${{ vars.APPLE_CERT_CN }}
         run: |
           tar -xf ./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar
