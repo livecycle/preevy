@@ -45,7 +45,7 @@ jobs:
           security default-keychain -s build.keychain
           security unlock-keychain -p actions build.keychain
           security set-keychain-settings -t 3600 -l ~/Library/Keychains/build.keychain
-          security import certificate.p12 -k ~/Library/Keychains/build.keychain -P $CERT_PASS -T /usr/bin/codesign
+          security import certificate.p12 -k ~/Library/Keychains/build.keychain -P '$CERT_PASS' -T /usr/bin/codesign
           security find-identity -v
           codesign --keychain build.keychain --sign '$CERT_CN' ./preevy
           security delete-keychain build.keychain
