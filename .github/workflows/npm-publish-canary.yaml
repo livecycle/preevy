@@ -45,11 +45,11 @@ jobs:
 
         REF="${{ github.head_ref }}"
         if [[ -z "$REF" ]]; then
-          REF="${{ github.ref }}"
+          REF="${{ github.ref_name }}"
         fi
 
         # this will be the NPM dist-tag
-        GIT_ID=$(echo "${REF}" | sed 's/[^a-zA-Z0-9_-]/_/g')
+        GIT_ID=$(echo "${REF}" | sed 's/[^a-zA-Z0-9_-]/-/g')
 
         # run 'lerna version' to get get next prerelease
         yarn lerna version prerelease --no-git-tag-version --preid $GIT_ID --ignore-scripts --exact --yes
