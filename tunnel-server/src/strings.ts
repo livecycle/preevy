@@ -6,8 +6,7 @@ export const truncateWithHash = (s: string, sanitize: (s:string)=> string, maxLe
     return s
   }
 
-  const suffix = createHash('md5').update(s).digest('base64url').replace(/[^a-zA-Z0-9]/g, '')
-    .substring(0, hashLength)
+  const suffix = sanitize(createHash('md5').update(s).digest('base64url')).substring(0, hashLength)
 
   return [sanitized.substring(0, maxLength - suffix.length - sep.length), suffix].join(sep)
 }

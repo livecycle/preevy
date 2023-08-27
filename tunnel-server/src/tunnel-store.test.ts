@@ -1,4 +1,6 @@
+/* eslint-disable jest/no-standalone-expect */
 import { it, describe, expect, } from '@jest/globals'
+import { createHash } from 'crypto'
 import { activeTunnelStoreKey } from './tunnel-store'
 
 describe('tunnel store key formatting', () => {
@@ -10,6 +12,20 @@ describe('tunnel store key formatting', () => {
     const tunnelName = activeTunnelStoreKey('my-client', '/test-some-env-test-some-env-test-some-env-test-some-env')
     expect(tunnelName.length).toBe(63)
     expect(tunnelName.endsWith('my-client')).toBeTruthy()
+  })
+
+  describe('hashes which create digests with uppercase chars', () => {
+    const tunnel = 'preevy_proxy-react-express-mysql-feature-ui-longname-with_other_long_features-12345678'
+    const hash = createHash('md5').update(tunnel).digest('base64url').substring(0, 4)
+
+    expect(hash).not.toBe(hash.toLowerCase())
+
+    it('should handle long names with uppercase', () => {
+      const tunnelName = activeTunnelStoreKey('my-client', tunnel)
+      expect(tunnelName.length).toBe(63)
+      expect(tunnelName.endsWith('my-client')).toBeTruthy()
+      expect(tunnelName.toLowerCase()).toBe(tunnelName)
+    })
   })
 
   it('should maintain uniqueness in long value', () => {
@@ -25,7 +41,7 @@ describe('tunnel store key formatting', () => {
   it('should only contain valid characters in path', () => {
     const path = '/$a§`dgbc``23§4sx'
     const tunnel1 = activeTunnelStoreKey('my-client', path)
-    expect(tunnel1).toEqual('-a--dgbc--23-4sx-m27y-my-client')
+    expect(tunnel1).toEqual('-a--dgbc--23-4sx-m2_7-my-client')
   })
 
   it('should throw error for invalid client id', () => {

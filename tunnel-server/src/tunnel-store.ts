@@ -42,7 +42,7 @@ export const inMemoryActiveTunnelStore = ({ log }: { log: Logger }): ActiveTunne
       keyToTunnel.set(key, value)
       pkThumbprintToTunnel.set(
         value.publicKeyThumbprint,
-        [...pkThumbprintToTunnel.get(value.publicKeyThumbprint) ?? [], value]
+        [...(pkThumbprintToTunnel.get(value.publicKeyThumbprint) ?? []), value]
       )
     },
     has: async key => keyToTunnel.has(key),
@@ -53,12 +53,12 @@ export const inMemoryActiveTunnelStore = ({ log }: { log: Logger }): ActiveTunne
       }
       return keyToTunnel.delete(key)
     },
-  }
+  };
 }
 
 const MAX_DNS_LABEL_LENGTH = 63
 
-const sanitizeHostName = (x:string) => x.replace(/[^a-zA-Z0-9_-]/g, '-').toLocaleLowerCase()
+const sanitizeHostName = (x:string) => x.replace(/[^a-zA-Z0-9_-]/g, '-').toLowerCase()
 
 /**
 Generate a key for tunnel store.
@@ -69,7 +69,7 @@ Constraints:
 */
 export const activeTunnelStoreKey = (clientId: string, remotePath: string) => {
   if (clientId !== sanitizeHostName(clientId)) {
-    throw new Error('Invalid client id')
+    throw new Error(`Invalid client id: "${clientId}"`)
   }
 
   const tunnelPath = remotePath.replace(/^\//, '')
