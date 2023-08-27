@@ -2,8 +2,9 @@ import { InstancesClient, ImagesClient, ZoneOperationsClient, RegionsClient } fr
 import { GoogleError, Status, operationsProtos, CallOptions } from 'google-gax'
 import { asyncFirst } from 'iter-tools-es'
 import { randomBytes } from 'crypto'
-import { LABELS } from './labels'
+import { LABELS, isValidLabel, normalizeLabel } from './labels'
 import { readCloudConfig } from '../static'
+import { metadataKey, serializeMetadata } from './metadata'
 
 type Operation = operationsProtos.google.longrunning.IOperation
 
@@ -40,12 +41,19 @@ const client = ({
     }
   }
 
+  const orFilter = (...conditions: string[]) => `${conditions.map(cond => `(${cond})`).join(' OR ')}`
   const labelFilter = (key: string, value: string) => `labels.${key} = "${value}"`
-  const baseFilter = labelFilter(LABELS.PROFILE_ID, profileId)
-  const envIdFilter = (envId: string) => labelFilter(LABELS.ENV_ID, envId)
-  const filter = (envId?: string) => [baseFilter, ...(envId ? [envIdFilter(envId)] : [])]
+  const profileFilter = orFilter(...[
+    labelFilter(LABELS.PROFILE_ID, normalizeLabel(profileId)),
+    ...isValidLabel(profileId) ? [labelFilter(LABELS.OLD_PROFILE_ID, profileId)] : [], // backwards compat
+  ])
+  const envIdFilter = (envId: string) => orFilter(...[
+    labelFilter(LABELS.ENV_ID, normalizeLabel(envId)),
+    ...isValidLabel(envId) ? [labelFilter(LABELS.OLD_ENV_ID, envId)] : [], // backwards compat
+  ])
+  const filter = (envId?: string) => [profileFilter, ...(envId ? [envIdFilter(envId)] : [])]
     .map(s => `(${s})`)
-    .join(' ')
+    .join(' AND ')
 
   const instanceName = (envId: string) => {
     const prefix = 'preevy-'
@@ -103,8 +111,8 @@ const client = ({
         instanceResource: {
           name,
           labels: {
-            [LABELS.ENV_ID]: envId,
-            [LABELS.PROFILE_ID]: profileId,
+            [LABELS.ENV_ID]: normalizeLabel(envId),
+            [LABELS.PROFILE_ID]: normalizeLabel(profileId),
           },
           machineType,
           disks: [{
@@ -120,8 +128,8 @@ const client = ({
           metadata: {
             items: [
               { key: 'ssh-keys', value: `${username}:${sshPublicKey}` },
-              // { key: 'startup-script', value: await readStartupScript() },
               { key: 'user-data', value: await readCloudConfig() },
+              { key: metadataKey, value: serializeMetadata({ envId, profileId }) },
             ],
           },
           networkInterfaces: [

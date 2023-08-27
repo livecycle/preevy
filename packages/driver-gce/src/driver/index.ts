@@ -12,9 +12,11 @@ import {
   machineResourceType,
   Logger,
   machineStatusNodeExporterCommand,
+  extractDefined,
 } from '@preevy/core'
 import { pick } from 'lodash'
 import createClient, { Client, Instance, availableRegions, defaultProjectId, shortResourceName } from './client'
+import { deserializeMetadata, metadataKey } from './metadata'
 import { LABELS } from './labels'
 
 type DriverContext = {
@@ -31,6 +33,13 @@ const SSH_USERNAME = 'preevy'
 
 const DEFAULT_MACHINE_TYPE = 'e2-small'
 
+const envIdFromInstance = ({ metadata, labels }: Pick<Instance, 'metadata' | 'labels'>) => {
+  const metadataItemValue = metadata?.items?.find(({ key }) => key === metadataKey)?.value
+  return metadataItemValue
+    ? deserializeMetadata(metadataItemValue).envId
+    : extractDefined(labels ?? {}, LABELS.OLD_ENV_ID) // backwards compat
+}
+
 const machineFromInstance = (
   instance: Instance,
 ): SshMachine & { envId: string } => {
@@ -43,7 +52,7 @@ const machineFromInstance = (
     sshUsername: SSH_USERNAME,
     providerId: instance.name as string,
     version: '',
-    envId: instance.labels?.[LABELS.ENV_ID] as string,
+    envId: envIdFromInstance(instance),
   }
 }
 
