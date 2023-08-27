@@ -4,11 +4,17 @@ on:
     types:
       - opened
       - synchronize
+    paths:
+      - packages/**
+  push:
+    branches: [main]
+    paths:
+      - packages/**
 
 jobs:
   publish-packages:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.owner.login == 'livecycle'
+    if: github.event.pull_request.head.repo.owner.login == 'livecycle' || github.event.repository.owner.login == 'livecycle'
 
     steps:
     - uses: actions/checkout@v3
