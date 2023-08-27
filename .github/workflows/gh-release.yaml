@@ -32,6 +32,7 @@ jobs:
         run: mkdir preevy-bin && depot build --project ${{ vars.DEPOT_PROJECT_ID }} --build-arg CLI_TARGET=${{ matrix.platform }}-${{ matrix.arch }}  -f Dockerfile.cli --target=cli --output=type=tar,dest=./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar --progress=plain  --platform=linux/${{ matrix.arch == 'x64' && 'amd64' || matrix.arch }} .
 
       - uses: apple-actions/import-codesign-certs@v1
+        if: ${{ matrix.platform == 'macos' }}
         with: 
           p12-file-base64: ${{ secrets.APPLE_CERT_DATA }}
           p12-password: ${{ secrets.APPLE_CERT_PASS }}
@@ -46,7 +47,8 @@ jobs:
           tar -xf ./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar
           codesign --remove-signature ./preevy
           security find-identity -v
-          codesign --verbose=4 --keychain build.keychain --sign "$CERT_CN" ./preevy
+          codesign --verbose=4 --sign "$CERT_CN" ./preevy
+          tar -cf ./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar ./preevy
           
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
