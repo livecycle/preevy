@@ -32,11 +32,11 @@ jobs:
         run: mkdir preevy-bin && depot build --project ${{ vars.DEPOT_PROJECT_ID }} --build-arg CLI_TARGET=${{ matrix.platform }}-${{ matrix.arch }}  -f Dockerfile.cli --target=cli --output=type=tar,dest=./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz --progress=plain  --platform=linux/${{ matrix.arch == 'x64' && 'amd64' || matrix.arch }} .
 
       - name: Sign mac binaries
-        if: ${{ matrix.platform == "macos" }}
+        if: ${{ matrix.platform == 'macos' }}
         env: 
           CERT_DATA: ${{ secrets.APPLE_CERT_DATA }}
           CERT_PASS: ${{ secrets.APPLE_CERT_PASS }}
-          CERT_CN: ${{ variables.APPLE_CERT_CN }}
+          CERT_CN: ${{ vars.APPLE_CERT_CN }}
         run: |
           tar -xzf preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar.gz
           codesign --remove-signature ./preevy
