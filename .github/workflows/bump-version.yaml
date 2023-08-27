@@ -33,7 +33,11 @@ jobs:
           app_id: ${{ secrets.PREEVY_AUTOMATION_APP_ID }}
           private_key: ${{ secrets.PREEVY_AUTOMATION_PRIVATE_KEY }}
 
-      - run: git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/livecycle/preevy.git
+      - run: |
+          git config --global user.name 'Preevy Automation'
+          git config --global user.email 'preevy-automation@livecycle.dev'
+          git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/livecycle/preevy.git
+
         env:
           GITHUB_TOKEN: ${{ steps.gh_app_token.outputs.token }}
       - run: yarn lerna version ${{ github.event.inputs.bump }} --exact --yes  
