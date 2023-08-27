@@ -26,4 +26,5 @@ jobs:
           node-version: '18.x'
           cache: yarn
       - run: yarn
+      - run: yarn prepack
       - run: yarn lerna version ${{ github.event.inputs.bump }} --exact --yes
