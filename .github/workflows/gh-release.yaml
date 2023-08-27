@@ -31,6 +31,11 @@ jobs:
       - name: Build using Docker (with depot)
         run: mkdir preevy-bin && depot build --project ${{ vars.DEPOT_PROJECT_ID }} --build-arg CLI_TARGET=${{ matrix.platform }}-${{ matrix.arch }}  -f Dockerfile.cli --target=cli --output=type=tar,dest=./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar --progress=plain  --platform=linux/${{ matrix.arch == 'x64' && 'amd64' || matrix.arch }} .
 
+      - uses: apple-actions/import-codesign-certs@v1
+        with: 
+          p12-file-base64: ${{ secrets.APPLE_CERT_DATA }}
+          p12-password: ${{ secrets.APPLE_CERT_PASS }}
+
       - name: Sign mac binaries
         if: ${{ matrix.platform == 'macos' }}
         env: 
@@ -40,14 +45,6 @@ jobs:
         run: |
           tar -xf ./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar
           codesign --remove-signature ./preevy
-          echo $CERT_DATA | base64 --decode > certificate.p12
-          security create-keychain -p actions build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p actions build.keychain
-          security set-keychain-settings -t 3600 -l ~/Library/Keychains/build.keychain
-          security set-key-partition-list -S apple-tool:,apple: -s -k actions build.keychain
-          security import certificate.p12 -k ~/Library/Keychains/build.keychain -P "$CERT_PASS" -T /usr/bin/codesign
-          rm certificate.p12
           security find-identity -v
           codesign --verbose=4 --keychain build.keychain --sign "$CERT_CN" ./preevy
           
@@ -56,12 +53,6 @@ jobs:
         with: 
           name: preevy-bin
           path: ./preevy-bin/**
-
-      - name: clean keychain
-        if: ${{ always() && matrix.platform == 'macos' }}
-        run: |
-          security unlock-keychain -p actions ~/Library/Keychains/build.keychain
-          security delete-keychain build.keychain
 
   release:
     runs-on: ubuntu-latest
