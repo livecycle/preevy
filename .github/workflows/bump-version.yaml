@@ -27,9 +27,15 @@ jobs:
           cache: yarn
       - run: yarn
       - run: yarn build
-      - run: |
-                git config --global user.name 'GitHub Action'
-                git config --global user.email 'action@github.com'
-      - run: yarn lerna version ${{ github.event.inputs.bump }} --exact --yes
+      - id: gh_app_token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.PREEVY_AUTOMATION_APP_ID }}
+          private_key: ${{ secrets.PREEVY_AUTOMATION_PRIVATE_KEY }}
+
+      - run: git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/livecycle/preevy.git
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.gh_app_token.outputs.token }}
+      - run: yarn lerna version ${{ github.event.inputs.bump }} --exact --yes  
+
+      
