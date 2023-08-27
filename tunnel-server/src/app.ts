@@ -117,7 +117,12 @@ export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, logi
         return await res.send('Unauthenticated')
       }
 
-      return await res.send(tunnels.map(t => ({ envId: t.envId, hostname: t.hostname, access: t.access })))
+      return await res.send(tunnels.map(t => ({
+        envId: t.envId,
+        hostname: t.hostname,
+        access: t.access,
+        meta: t.meta,
+      })))
     })
 
     .get('/healthz', { logLevel: 'warn' }, async () => 'OK')
