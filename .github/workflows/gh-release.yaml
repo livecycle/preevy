@@ -46,11 +46,9 @@ jobs:
           security unlock-keychain -p actions build.keychain
           security set-keychain-settings -t 3600 -l ~/Library/Keychains/build.keychain
           security import certificate.p12 -k ~/Library/Keychains/build.keychain -P "$CERT_PASS" -T /usr/bin/codesign
+          rm certificate.p12
           security find-identity -v
           codesign --keychain build.keychain --sign "$CERT_CN" ./preevy
-          security unlock-keychain -p actions ~/Library/Keychains/build.keychain
-          security delete-keychain build.keychain
-          rm certificate.p12
           tar -cf ./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar ./preevy
           
       - name: Upload artifacts
@@ -58,7 +56,12 @@ jobs:
         with: 
           name: preevy-bin
           path: ./preevy-bin/**
-          
+
+      - name: clean keychain
+        if: ${{ always() && matrix.platform == 'macos' }}
+        run: |
+          security unlock-keychain -p actions ~/Library/Keychains/build.keychain
+          security delete-keychain build.keychain
 
   release:
     runs-on: ubuntu-latest
