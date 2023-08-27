@@ -34,10 +34,7 @@ export const createSshServer = ({
       .on('forward', async (requestId, { path: tunnelPath, access, meta }, accept, reject) => {
         const key = activeTunnelStoreKey(clientId, tunnelPath)
         if (await activeTunnelStore.has(key)) {
-          if (!tunnels.has(key)) {
-            reject(new Error(`duplicate path: ${key} for different ssh clients with the same ${clientId}`))
-          }
-          log.warn(`duplicate host created for the same client's ${key}`)
+          reject(new Error(`duplicate path: ${key}, client map contains path: ${tunnels.has(key)}`))
           return
         }
         const forward = await accept()
