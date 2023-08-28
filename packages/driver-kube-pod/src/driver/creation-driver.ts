@@ -43,7 +43,7 @@ const machineCreationDriver = (
   },
 
   ensureMachineSnapshot: async () => undefined,
-  getEnvMachineAndSpecDiff: async ({ envId }) => {
+  getMachineAndSpecDiff: async ({ envId }) => {
     const deployment = await client.findMostRecentDeployment({ envId, deleted: false })
     if (!deployment) {
       return undefined

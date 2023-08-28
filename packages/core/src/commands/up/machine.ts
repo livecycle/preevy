@@ -28,7 +28,7 @@ const ensureMachine = async ({
   debug: boolean
 }): Promise<{ machine: MachineBase; origin: Origin; connection: Promise<MachineConnection> }> => {
   log.debug('checking for existing machine')
-  const existingMachine = await machineCreationDriver.getEnvMachineAndSpecDiff({ envId })
+  const existingMachine = await machineCreationDriver.getMachineAndSpecDiff({ envId })
 
   let recreating = false
   if (existingMachine) {

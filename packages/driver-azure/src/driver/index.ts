@@ -107,7 +107,7 @@ const machineDriver = (
   return ({
     customizationScripts: CUSTOMIZE_BARE_MACHINE,
     friendlyName: 'Microsoft Azure',
-    getEnvMachine: async ({ envId }) => await cl.getInstance(envId).then(vm => machineFromVm(vm)),
+    getMachine: async ({ envId }) => await cl.getInstance(envId).then(vm => machineFromVm(vm)),
 
     listMachines,
     listDeletableResources: listMachines,
@@ -237,7 +237,7 @@ const machineCreationDriver = (
       })(),
     }),
     ensureMachineSnapshot: async () => undefined,
-    getEnvMachineAndSpecDiff: async ({ envId }) => {
+    getMachineAndSpecDiff: async ({ envId }) => {
       const vmInstance = await cl.getInstance(envId).catch((e: AzureErrorResponse) => {
         if (e.statusCode === 404) {
           return undefined

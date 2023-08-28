@@ -72,7 +72,7 @@ const machineDriver = (
   return ({
     friendlyName: 'Kubernetes single Pod',
 
-    getEnvMachine: async ({ envId }) => {
+    getMachine: async ({ envId }) => {
       const deployment = await client.findMostRecentDeployment({ envId, deleted: false })
       return deployment && machineFromDeployment(deployment)
     },

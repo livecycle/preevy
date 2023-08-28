@@ -55,7 +55,7 @@ const machineDriver = ({
     friendlyName: 'AWS Lightsail',
     customizationScripts: CUSTOMIZE_BARE_MACHINE,
 
-    getEnvMachine: async ({ envId }) => {
+    getMachine: async ({ envId }) => {
       const instance = await client.findInstance(envId)
       return instance && machineFromInstance(instance)
     },
@@ -201,7 +201,7 @@ const machineCreationDriver = (
 
   return ({
     metadata: { ...metadata, keyPairAlias: keyAlias, machineVersion: CURRENT_MACHINE_VERSION },
-    getEnvMachineAndSpecDiff: async ({ envId }) => {
+    getMachineAndSpecDiff: async ({ envId }) => {
       const instance = await client.findInstance(envId)
       return instance && {
         ...machineFromInstance(instance),

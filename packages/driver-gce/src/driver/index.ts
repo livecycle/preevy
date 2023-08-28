@@ -64,7 +64,7 @@ const machineDriver = ({ store, client }: DriverContext): MachineDriver<SshMachi
   return ({
     friendlyName: 'Google Cloud',
 
-    getEnvMachine: async ({ envId }) => {
+    getMachine: async ({ envId }) => {
       const instance = await client.findBestEnvInstance(envId)
       return instance && machineFromInstance(instance)
     },
@@ -193,7 +193,7 @@ const machineCreationDriver = (
     },
 
     ensureMachineSnapshot: async () => undefined,
-    getEnvMachineAndSpecDiff: async ({ envId }) => {
+    getMachineAndSpecDiff: async ({ envId }) => {
       const instance = await client.findBestEnvInstance(envId)
       if (!instance) {
         return undefined

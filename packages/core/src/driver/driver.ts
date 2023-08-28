@@ -34,7 +34,7 @@ export type MachineDriver<
   friendlyName: string
   resourcePlurals: Record<string, string>
 
-  getEnvMachine: (args: { envId: string }) => Promise<Machine | PartialMachine | undefined>
+  getMachine: (args: { envId: string }) => Promise<Machine | PartialMachine | undefined>
 
   connect: (machine: MachineBase, opts: { log: Logger; debug: boolean }) => Promise<MachineConnection>
   spawnRemoteCommand: (
@@ -62,7 +62,7 @@ export type MachineCreationDriver<Machine extends MachineBase = MachineBase> = {
   }) => Promise<MachineCreationResult<Machine>>
 
   ensureMachineSnapshot: (args: { providerId: string; envId: string; wait: boolean }) => Promise<void>
-  getEnvMachineAndSpecDiff: (
+  getMachineAndSpecDiff: (
     args: { envId: string },
   ) => Promise<(Machine & { specDiff: SpecDiffItem[] }) | PartialMachine | undefined>
 }
