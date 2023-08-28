@@ -24,7 +24,7 @@ export default class ImportProfile extends BaseCommand<typeof ImportProfile> {
       required: false,
     }),
     use: Flags.boolean({
-      description: 'use the new profile',
+      description: 'use the imported profile',
       required: false,
     }),
   }
