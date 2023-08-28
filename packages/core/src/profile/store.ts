@@ -1,7 +1,7 @@
 import path from 'path'
 import { formatPublicKey } from '@preevy/common'
 import { Profile } from './profile'
-import { Store } from '../store'
+import { Store, jsonReader } from '../store'
 
 export const profileStore = (store: Store) => {
   const profileDir = 'profile'
@@ -23,6 +23,13 @@ export const profileStore = (store: Store) => {
         return {}
       }
       return profile ?? {}
+    },
+    async updateDriver(driver: string) {
+      await store.transaction(profileDir, async ({ write, read }) => {
+        const profile = await jsonReader({ read }).readJsonOrThrow<Profile>('info.json')
+        profile.driver = driver
+        await write('info.json', JSON.stringify(profile))
+      })
     },
     setDefaultFlags: async (driver: string, flags: Record<string, string>) => {
       await store.transaction(profileDir, async ({ write }) => {

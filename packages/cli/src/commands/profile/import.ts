@@ -23,6 +23,10 @@ export default class ImportProfile extends BaseCommand<typeof ImportProfile> {
       description: 'name of the profile',
       required: false,
     }),
+    use: Flags.boolean({
+      description: 'use the new profile',
+      required: false,
+    }),
   }
 
   static args = {
@@ -43,5 +47,8 @@ export default class ImportProfile extends BaseCommand<typeof ImportProfile> {
     const { info } = await profileConfig.importExisting(alias, this.args.location)
     onProfileChange(info, alias, this.args.location)
     ux.info(`Profile ${info.id} imported successfully as ${alias}`)
+    if (this.flags.use) {
+      await profileConfig.setCurrent(alias)
+    }
   }
 }

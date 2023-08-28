@@ -11,6 +11,7 @@ import {
   machineDrivers,
 } from '../../../drivers'
 import ProfileCommand from '../../../profile-command'
+import DriverCommand from '../../../driver-command'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const removeDefaultFlagsDef = <T extends {[key: string]: Flag<any> } >(flags: T): T =>
@@ -29,6 +30,7 @@ export default class UpdateProfileConfig extends ProfileCommand<typeof UpdatePro
       ...flagsForAllDrivers,
       ...machineCreationflagsForAllDrivers,
     }),
+    driver: DriverCommand.baseFlags.driver,
     unset: Flags.string({
       description: 'Unset a configuration option',
       required: false,
@@ -42,7 +44,15 @@ export default class UpdateProfileConfig extends ProfileCommand<typeof UpdatePro
 
   async run(): Promise<void> {
     const pStore = profileStore(this.store)
-    const driver = this.profile.driver as DriverName
+    const profileDriver = this.profile.driver as DriverName | undefined
+    const driver:DriverName | undefined = (this.flags.driver || profileDriver)
+    if (!driver) {
+      ux.error('Missing driver configuration in profile, use the --driver flag to set the desired machine driver')
+    }
+    if (driver !== profileDriver) {
+      await pStore.updateDriver(driver)
+    }
+
     const origin = await pStore.defaultFlags(driver)
     let updated = origin
     if (this.flags.unset) {
@@ -55,7 +65,6 @@ export default class UpdateProfileConfig extends ProfileCommand<typeof UpdatePro
         // won't happen in practice, but we should address required flags in the future
         if ((allowedFlags[k as keyof typeof allowedFlags] as Flag<unknown>).required) {
           ux.error(`Cannot unset required configuration option ${k}`, { exit: 1 })
-          return
         }
       }
       const prefixRemover = (k:string) => stripDriverFlagNamePrefix(driver, k)

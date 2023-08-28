@@ -38,7 +38,7 @@ export default class Init extends BaseCommand {
     }
 
     if (this.flags.from) {
-      await this.config.runCommand('profile:import', [this.flags.from, '--name', profileAlias])
+      await this.config.runCommand('profile:import', [this.flags.from, '--name', profileAlias, '--use'])
     } else {
       if (profileExists) {
         if (profileAlias !== 'default') {
@@ -135,6 +135,7 @@ export default class Init extends BaseCommand {
       }
 
       await this.config.runCommand('profile:create', [
+        '--use',
         '--log-level', this.flags['log-level'] ?? 'info',
         profileAlias,
         location,

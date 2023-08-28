@@ -1,4 +1,4 @@
 export type Profile = {
     id: string
-    driver: string
+    driver?: string
 }
