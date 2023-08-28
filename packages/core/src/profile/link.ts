@@ -16,13 +16,13 @@ export const link = async ({
   lcUrl,
   logger,
   tunnelingKey,
-  promptUserWithChooseOrg,
+  selectOrg,
 }:{
   accessToken: string
   lcUrl: string
   logger: Logger
   tunnelingKey: Buffer
-  promptUserWithChooseOrg: (orgs: Org[]) => Promise<Org>
+  selectOrg: (orgs: Org[]) => Promise<Org>
 }) => {
   const orgsResponse = await fetch(
     `${lcUrl}/api/user/orgs`,
@@ -36,10 +36,8 @@ export const link = async ({
   let chosenOrg: Org
   if (orgs.length === 0) {
     throw new Error("Couldn't find any organization for current logged in user")
-  } else if (orgs.length === 1) {
-    [chosenOrg] = orgs
   } else {
-    chosenOrg = await promptUserWithChooseOrg(orgs)
+    chosenOrg = await selectOrg(orgs)
   }
 
   logger.info(`Linking to org "${chosenOrg.name}"`)
