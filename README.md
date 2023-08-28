@@ -19,7 +19,7 @@
 
 <br />
 
-![Terminal GIF](./terminal.gif)
+https://github.com/Pradumnasaraf/preevy/assets/51878265/a699a356-f524-48fc-9b6d-49f2e42e7ec7
 
 # Preevy
 
