@@ -1,6 +1,5 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
 import { MachineConnection, MachineDriver, isPartialMachine, profileStore } from '@preevy/core'
-import { BaseCommand } from '@preevy/cli-common'
 import { pickBy } from 'lodash'
 import { DriverFlags, DriverName, flagsForAllDrivers, machineDrivers, removeDriverPrefix } from './drivers'
 import ProfileCommand from './profile-command'
@@ -11,7 +10,7 @@ export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>
 
 abstract class DriverCommand<T extends typeof Command> extends ProfileCommand<T> {
   static baseFlags = {
-    ...BaseCommand.baseFlags,
+    ...ProfileCommand.baseFlags,
     driver: Flags.custom<DriverName>({
       description: 'Machine driver to use',
       char: 'd',
