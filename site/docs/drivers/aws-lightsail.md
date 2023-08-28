@@ -19,6 +19,10 @@ The simplest way is to use `aws configure` command or to set the `AWS_ACCESS_KEY
 
 In GitHub Actions, you can also use the [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials) action to setup credentials in a secure way.
 
+Also, you can check out the video below for a step-by-step guide on how to configure AWS credentials ans use them with Preevy.
+
+<p align="center"><iframe width="816" height="480" src="https://www.youtube.com/embed/LXOHlK5T7Ew?si=wPZlEi4mugQYL8GI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></p>
+
 ### Required AWS permissions
 
 Preevy requires the following IAM policy to be able to provision and manage Lightsail VMs:

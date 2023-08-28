@@ -2,7 +2,8 @@ import { Args, Flags, ux } from '@oclif/core'
 import {
   addBaseComposeTunnelAgentService,
   commands, findComposeTunnelAgentUrl,
-  findEnvId, findProjectName, getTunnelNamesToServicePorts, profileStore,
+  findEnvId,
+  findProjectName, getTunnelNamesToServicePorts, profileStore,
   telemetryEmitter,
   withSpinner,
 } from '@preevy/core'

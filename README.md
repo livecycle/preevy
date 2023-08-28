@@ -21,9 +21,7 @@
 
 > **If you're a Preevy user, we'd love to hear from you! Please take a few minutes to fill out this [form](https://forms.gle/x9YVuLo5MCULaGAL7) to help us understand your user experience and improve Preevy. As a token of appreciation for your effort, we'll send you some Amazon gift cards, Livecycle swag, or similar items! 🎉**
 
-<br>
-
-![Terminal GIF](./terminal.gif)
+https://github.com/Pradumnasaraf/preevy/assets/51878265/a699a356-f524-48fc-9b6d-49f2e42e7ec7
 
 # Preevy
 

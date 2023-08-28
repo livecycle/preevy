@@ -24,7 +24,7 @@ export { telemetryEmitter, registerEmitter, wireProcessExit, createTelemetryEmit
 export { fsTypeFromUrl, Store, VirtualFS, localFsFromUrl } from './store'
 export { localComposeClient, ComposeModel, resolveComposeFiles, getExposedTcpServicePorts, remoteUserModel, NoComposeFilesError } from './compose'
 export { withSpinner } from './spinner'
-export { findEnvId, findProjectName, findEnvIdByProjectName, normalize as normalizeEnvId } from './env-id'
+export { findEnvId, findProjectName, findEnvIdByProjectName, validateEnvId, normalize as normalizeEnvId, EnvId } from './env-id'
 export { sshKeysStore } from './state'
 export { truncateWithHash, truncatePrefix, randomString, alphabets } from './strings'
 export { connectSshClient, generateSshKeyPair, SshKeyPairType } from './ssh'
