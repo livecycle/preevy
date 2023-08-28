@@ -36,7 +36,7 @@ export default class Down extends DriverCommand<typeof Down> {
       userModel: () => this.ensureUserModel(),
     })
 
-    const machine = await driver.getMachine({ envId })
+    const machine = await driver.getEnvMachine({ envId })
     if (!machine) {
       if (!flags.force) {
         throw new Error(`No machine found for environment ${envId}`)

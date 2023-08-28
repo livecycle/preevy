@@ -11,7 +11,7 @@ const shell = async ({
   machineDriver: MachineDriver
   log: Logger
 }) => {
-  const machine = await machineDriver.getMachine({ envId })
+  const machine = await machineDriver.getEnvMachine({ envId })
   if (!machine || isPartialMachine(machine)) {
     throw new Error(`Machine ${envId} not found`)
   }

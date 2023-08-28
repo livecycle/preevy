@@ -76,7 +76,7 @@ abstract class DriverCommand<T extends typeof Command> extends ProfileCommand<T>
 
   async connect(envId: string) {
     const driver = await this.driver()
-    const machine = await driver.getMachine({ envId })
+    const machine = await driver.getEnvMachine({ envId })
     if (!machine || isPartialMachine(machine)) {
       throw new Error(`No machine found for envId ${envId}`)
     }

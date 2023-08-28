@@ -10,6 +10,7 @@ export {
   MachineCreationDriverFactory,
   MachineDriverFactory,
   MachineConnection,
+  PartialMachine,
   isPartialMachine,
   sshDriver,
   machineResourceType,

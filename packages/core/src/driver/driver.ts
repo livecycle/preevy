@@ -6,7 +6,7 @@ import { Profile } from '../profile'
 import { MachineBase, PartialMachine, Resource, SpecDiffItem } from './machine'
 import { Store } from '../store'
 import { Logger } from '../log'
-import { EnvDriverMetadata } from '../env-metadata'
+import { EnvMachineMetadata } from '../env-metadata'
 
 export type ForwardOutStreamLocal = {
   localSocket: string | AddressInfo
@@ -24,7 +24,7 @@ export type MachineConnection = {
   close: () => Promise<void>
 }
 
-export type MachineMetadata = Omit<EnvDriverMetadata, 'machineLocationDescription' | 'driver' | 'providerId'>
+export type MachineMetadata = Omit<EnvMachineMetadata, 'machineLocationDescription' | 'driver' | 'providerId'>
 
 export type MachineDriver<
   Machine extends MachineBase = MachineBase,
@@ -34,7 +34,7 @@ export type MachineDriver<
   friendlyName: string
   resourcePlurals: Record<string, string>
 
-  getMachine: (args: { envId: string }) => Promise<Machine | PartialMachine | undefined>
+  getEnvMachine: (args: { envId: string }) => Promise<Machine | PartialMachine | undefined>
 
   connect: (machine: MachineBase, opts: { log: Logger; debug: boolean }) => Promise<MachineConnection>
   spawnRemoteCommand: (
@@ -62,7 +62,7 @@ export type MachineCreationDriver<Machine extends MachineBase = MachineBase> = {
   }) => Promise<MachineCreationResult<Machine>>
 
   ensureMachineSnapshot: (args: { providerId: string; envId: string; wait: boolean }) => Promise<void>
-  getMachineAndSpecDiff: (
+  getEnvMachineAndSpecDiff: (
     args: { envId: string },
   ) => Promise<(Machine & { specDiff: SpecDiffItem[] }) | PartialMachine | undefined>
 }

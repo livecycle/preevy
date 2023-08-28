@@ -28,7 +28,7 @@ const ensureMachine = async ({
   debug: boolean
 }): Promise<{ machine: MachineBase; origin: Origin; connection: Promise<MachineConnection> }> => {
   log.debug('checking for existing machine')
-  const existingMachine = await machineCreationDriver.getMachineAndSpecDiff({ envId })
+  const existingMachine = await machineCreationDriver.getEnvMachineAndSpecDiff({ envId })
 
   let recreating = false
   if (existingMachine) {
@@ -83,11 +83,11 @@ const writeMetadata = async (
   connection: MachineConnection,
   userAndGroup: [string, string],
 ) => {
-  const metadata: Pick<EnvMetadata, 'driver'> = {
-    driver: {
+  const metadata: Pick<EnvMetadata, 'machine'> = {
+    machine: {
       creationTime: new Date(),
       providerId: machine.providerId,
-      machineLocationDescription: machine.locationDescription,
+      locationDescription: machine.locationDescription,
       driver: machineDriverName,
       opts: driverOpts,
     },

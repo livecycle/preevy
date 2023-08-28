@@ -14,18 +14,18 @@ export type EnvGitMetadata = {
 
 export const driverMetadataFilename = 'driver-metadata.json'
 
-export type EnvDriverMetadata = {
+export type EnvMachineMetadata = {
   driver: string
   providerId: string
   opts: Record<string, unknown>
-  machineLocationDescription: string
+  locationDescription: string
   creationTime: Date
 }
 
 export type EnvMetadata = {
   id: string
   git?: EnvGitMetadata
-  driver?: EnvDriverMetadata
+  machine?: EnvMachineMetadata
   lastDeployTime: Date
   version: string
 }
