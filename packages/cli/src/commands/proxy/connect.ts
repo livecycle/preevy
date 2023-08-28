@@ -16,8 +16,9 @@ export default class Connect extends ProfileCommand<typeof Connect> {
     ...tunnelServerFlags,
     ...urlFlags,
     ...ux.table.flags(),
-    'env-id': Flags.string({
-      description: 'specify environment id for this app',
+    id: Flags.string({
+      aliases: ['env-id'],
+      description: 'specify the environment ID for this app',
       required: false,
     }),
     'private-env': Flags.boolean({
@@ -53,7 +54,7 @@ export default class Connect extends ProfileCommand<typeof Connect> {
     }
     const composeProject = args['compose-project']
     const deviceId = (await machineId(this.config.dataDir)).substring(0, 2)
-    const envId = flags['env-id'] ? validateEnvId(flags['env-id']) : normalizeEnvId(`${composeProject}-dev-${deviceId}`)
+    const envId = flags.id ? validateEnvId(flags.id) : normalizeEnvId(`${composeProject}-dev-${deviceId}`)
     let client: SshConnection['client'] | undefined
     let hostKey: Buffer
     let preevyAgentUrl: string
