@@ -69,6 +69,7 @@ export const localProfilesConfig = (
       const tarSnapshotStore = await tarSnapshotFromUrl(locationUrl)
       const profileInfo = await profileStore(tarSnapshotStore).info()
       return {
+        location: locationUrl,
         info: profileInfo,
         store: tarSnapshotStore,
       }
@@ -115,7 +116,6 @@ export const localProfilesConfig = (
         id,
         location,
       }
-      list.current = alias
       await init(pStore)
       await localStore.write(profileListFileName, JSON.stringify(list))
       return {

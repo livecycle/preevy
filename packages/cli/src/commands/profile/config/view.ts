@@ -17,6 +17,10 @@ export default class ViewProfileConfig extends ProfileCommand<typeof ViewProfile
     const pStore = profileStore(this.store)
     const driver = this.profile.driver as DriverName
     const origin = await pStore.defaultFlags(driver)
+    if (!driver) {
+      ux.info('Missing driver configuration in profile, use preevy profile config update --driver flag to set the desired machine driver')
+      return
+    }
     ux.info(`Current configuration for ${driver}:`)
     ux.styledObject(origin)
   }

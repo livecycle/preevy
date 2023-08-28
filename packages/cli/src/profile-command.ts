@@ -35,6 +35,10 @@ export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>
 abstract class ProfileCommand<T extends typeof Command> extends BaseCommand<T> {
   static baseFlags = {
     ...BaseCommand.baseFlags,
+    profile: Flags.string({
+      description: 'Run in a specific profile context',
+      required: false,
+    }),
   }
 
   protected flags!: Flags<T>
@@ -43,13 +47,24 @@ abstract class ProfileCommand<T extends typeof Command> extends BaseCommand<T> {
   public async init(): Promise<void> {
     await super.init()
     const { profileConfig } = this
-    const currentProfile = await profileConfig.current()
-    const currentProfileInfo = currentProfile && await profileConfig.get(currentProfile.alias)
-    if (currentProfileInfo) {
-      this.#profile = currentProfileInfo.info
-      this.#store = currentProfileInfo.store
-      onProfileChange(currentProfileInfo.info, currentProfile.alias, currentProfile.location)
+    let profileAlias = this.flags.profile
+    if (!profileAlias) {
+      const currentProfile = await profileConfig.current()
+      if (currentProfile) {
+        profileAlias = currentProfile.alias
+      }
     }
+    if (!profileAlias) {
+      return
+    }
+    const currentProfileInfo = await profileConfig.get(profileAlias)
+    if (!currentProfileInfo) {
+      return
+    }
+
+    this.#profile = currentProfileInfo.info
+    this.#store = currentProfileInfo.store
+    onProfileChange(currentProfileInfo.info, profileAlias, currentProfileInfo.location)
   }
 
   #profileConfig: LocalProfilesConfig | undefined
