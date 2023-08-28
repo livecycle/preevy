@@ -2,6 +2,7 @@ import { detectCiProvider } from './ci-providers'
 import { gitBranchName } from './git'
 import { ComposeModel } from './compose'
 import { Logger } from './log'
+
 export type EnvId = string & {
   __tag: 'EnvId'
 }
