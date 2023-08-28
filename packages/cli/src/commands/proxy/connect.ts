@@ -1,5 +1,5 @@
 import { ux, Args, Flags } from '@oclif/core'
-import { jwkThumbprint, commands, profileStore, withSpinner, SshConnection, machineId, normalizeEnvId } from '@preevy/core'
+import { jwkThumbprint, commands, profileStore, withSpinner, SshConnection, machineId, validateEnvId, normalizeEnvId } from '@preevy/core'
 import { tunnelServerFlags, urlFlags } from '@preevy/cli-common'
 import { inspect } from 'util'
 import { formatPublicKey } from '@preevy/common'
@@ -16,6 +16,10 @@ export default class Connect extends ProfileCommand<typeof Connect> {
     ...tunnelServerFlags,
     ...urlFlags,
     ...ux.table.flags(),
+    'env-id': Flags.string({
+      description: 'specify environment id for this app',
+      required: false,
+    }),
     'private-env': Flags.boolean({
       description: 'Mark all services as private',
       default: false,
@@ -49,7 +53,7 @@ export default class Connect extends ProfileCommand<typeof Connect> {
     }
     const composeProject = args['compose-project']
     const deviceId = (await machineId(this.config.dataDir)).substring(0, 2)
-    const envId = normalizeEnvId(`${composeProject}-dev-${deviceId}`) // local+find_ambient_id_based on compose dir (?)
+    const envId = flags['env-id'] ? validateEnvId(flags['env-id']) : normalizeEnvId(`${composeProject}-dev-${deviceId}`)
     let client: SshConnection['client'] | undefined
     let hostKey: Buffer
     let preevyAgentUrl: string
