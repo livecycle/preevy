@@ -22,7 +22,7 @@ const wait = (timeInMs: number) => new Promise<void>(resolve => {
 
 const tokensResponseDataSchema = z.object({ access_token: z.string(), id_token: z.string() })
 
-export type TokesFileSchema = z.infer<typeof tokensResponseDataSchema>
+export type TokenFileSchema = z.infer<typeof tokensResponseDataSchema>
 
 const pollTokensFromAuthEndpoint = async (
   loginUrl: string,
@@ -94,11 +94,11 @@ const deviceFlow = async (loginUrl: string, logger: Logger, clientId: string) =>
   )
 }
 
-export const getTokensFromLocalFs = async (fs: VirtualFS) : Promise<TokesFileSchema | undefined> => {
+export const getTokensFromLocalFs = async (fs: VirtualFS) : Promise<TokenFileSchema | undefined> => {
   const tokensFile = await fs.read(PERSISTENT_TOKEN_FILE_NAME)
   if (tokensFile === undefined) return undefined
 
-  const tokens: TokesFileSchema = JSON.parse(tokensFile.toString())
+  const tokens: TokenFileSchema = JSON.parse(tokensFile.toString())
   const accessToken = jose.decodeJwt(tokens.access_token)
   if (accessToken.exp === undefined || (accessToken.exp < Math.floor(Date.now() / 1000))) {
     throw new TokenExpiredError()
@@ -108,7 +108,7 @@ export const getTokensFromLocalFs = async (fs: VirtualFS) : Promise<TokesFileSch
 
 export const login = async (dataDir: string, loginUrl: string, lcUrl: string, clientId: string, logger: Logger) => {
   const fs = localFs(dataDir)
-  let tokens: TokesFileSchema
+  let tokens: TokenFileSchema
   try {
     const tokensMaybe = await getTokensFromLocalFs(fs)
     if (tokensMaybe !== undefined) {
