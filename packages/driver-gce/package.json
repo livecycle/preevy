@@ -17,7 +17,7 @@
     "google-auth-library": "^8.7.0",
     "google-gax": "^3.6.0",
     "inquirer": "^8.0.0",
-    "iter-tools-es": "^7.5.1",
+    "iter-tools-es": "^7.5.3",
     "lodash": "^4.17.21"
   },
   "devDependencies": {

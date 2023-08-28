@@ -19,7 +19,7 @@
     "@oclif/core": "^2",
     "@preevy/core": "0.0.50",
     "inquirer": "^8.0.0",
-    "iter-tools-es": "^7.5.1",
+    "iter-tools-es": "^7.5.3",
     "lodash": "^4.17.21"
   },
   "devDependencies": {
