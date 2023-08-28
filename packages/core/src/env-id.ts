@@ -98,7 +98,7 @@ export async function findEnvId({ log, userSpecifiedEnvId, userSpecifiedProjectN
 }): Promise<EnvId> {
   if (userSpecifiedEnvId) {
     log.debug(`Using user specified environment ID ${userSpecifiedEnvId}`)
-    return validateUserSpecifiedValue({ value: userSpecifiedEnvId, fieldDescription: 'environment ID' })
+    return validateEnvId(userSpecifiedEnvId)
   }
 
   const { projectName, projectNameBasedOn } = userSpecifiedProjectName
