@@ -13,6 +13,7 @@ import { remoteProjectDir } from '../../remote-files'
 import { Logger } from '../../log'
 import { FileToCopy, uploadWithSpinner } from '../../upload-files'
 import { envMetadata } from '../../env-metadata'
+import { EnvId } from '../../env-id'
 
 const createCopiedFileInDataDir = (
   { projectLocalDataDir, filesToCopy } : {
@@ -95,7 +96,7 @@ const up = async ({
   cwd: string
   skipUnchangedFiles: boolean
   version: string
-  envId: string
+  envId: EnvId
   expectedServiceUrls: { name: string; port: number; url: string }[]
   projectName: string
 }): Promise<{ machine: MachineBase }> => {

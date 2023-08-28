@@ -2,7 +2,8 @@ import { Args, Flags, ux } from '@oclif/core'
 import {
   addBaseComposeTunnelAgentService,
   commands, findComposeTunnelAgentUrl,
-  findEnvIdByProjectName, findProjectName, getTunnelNamesToServicePorts, profileStore,
+  findEnvId,
+  findProjectName, getTunnelNamesToServicePorts, profileStore,
   telemetryEmitter,
   withSpinner,
 } from '@preevy/core'
@@ -47,15 +48,16 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
     const machineCreationDriver = await this.machineCreationDriver()
     const userModel = await this.ensureUserModel()
 
-    const { projectName, projectNameBasedOn } = await findProjectName({
+    const { projectName } = await findProjectName({
       userSpecifiedProjectName: flags.project,
       userModel,
     })
 
-    const envId = flags.id ?? await findEnvIdByProjectName({
+    const envId = await findEnvId({
       log: this.logger,
-      projectName,
-      projectNameBasedOn,
+      userSpecifiedEnvId: flags.id,
+      userSpecifiedProjectName: flags.project,
+      userModel,
     })
 
     const pStore = profileStore(this.store)

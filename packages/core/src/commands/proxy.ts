@@ -8,6 +8,7 @@ import { execPromiseStdout } from '../child-process'
 import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, COMPOSE_TUNNEL_AGENT_PORT, addComposeTunnelAgentService } from '../compose-tunnel-agent-client'
 import { ComposeModel } from '../compose'
 import { TunnelOpts } from '../ssh'
+import { EnvId } from '../env-id'
 
 export const agentServiceName = COMPOSE_TUNNEL_AGENT_SERVICE_NAME
 
@@ -53,7 +54,7 @@ export function inspectRunningComposeApp(projectName: string) {
 }
 
 export function initProxyComposeModel(opts: {
-  envId: string
+  envId: EnvId
   projectName: string
   tunnelOpts: TunnelOpts
   tunnelingKeyThumbprint: string

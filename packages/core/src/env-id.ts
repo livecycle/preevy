@@ -3,10 +3,14 @@ import { gitBranchName } from './git'
 import { ComposeModel } from './compose'
 import { Logger } from './log'
 
+export type EnvId = string & {
+  __tag: 'EnvId'
+}
+
 export const normalize = (s: string) => s
   .toLowerCase()
   .replace(/[^a-z0-9_-]/g, '-')
-  .replace(/^[^a-z]/, firstChar => `a${firstChar}`) // prepend alpha char if first char is not alpha
+  .replace(/^[^a-z]/, firstChar => `a${firstChar}`) as EnvId // prepend alpha char if first char is not alpha
 
 const envIdFromBranch = (branch: string) => normalize(branch)
 
@@ -28,8 +32,10 @@ const validateUserSpecifiedValue = (
   if (normalize(value) !== value) {
     throw new InvalidIdentifierError(value, fieldDescription)
   }
-  return value
+  return value as EnvId
 }
+
+export const validateEnvId = (envId:string) => validateUserSpecifiedValue({ value: envId, fieldDescription: 'environment ID' })
 
 const findAmbientEnvIdSuffix = async () => {
   const ciProvider = detectCiProvider()
@@ -81,7 +87,7 @@ export const findEnvIdByProjectName = async ({ log, projectName, projectNameBase
   ].join(' and ')
 
   log.info(`Using environment ID ${envId}, based on ${envIdBaseOn}`)
-  return envId
+  return envId as EnvId
 }
 
 export async function findEnvId({ log, userSpecifiedEnvId, userSpecifiedProjectName, userModel }: {
@@ -89,10 +95,10 @@ export async function findEnvId({ log, userSpecifiedEnvId, userSpecifiedProjectN
   userSpecifiedEnvId: string | undefined
   userSpecifiedProjectName: string | undefined
   userModel: ComposeModel | (() => Promise<ComposeModel>)
-}): Promise<string> {
+}): Promise<EnvId> {
   if (userSpecifiedEnvId) {
     log.debug(`Using user specified environment ID ${userSpecifiedEnvId}`)
-    return validateUserSpecifiedValue({ value: userSpecifiedEnvId, fieldDescription: 'environment ID' })
+    return validateEnvId(userSpecifiedEnvId)
   }
 
   const { projectName, projectNameBasedOn } = userSpecifiedProjectName

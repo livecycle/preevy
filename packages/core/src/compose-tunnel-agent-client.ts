@@ -11,6 +11,7 @@ import { withBasicAuthCredentials } from './credentials'
 import { EnvMetadata, driverMetadataFilename } from './env-metadata'
 import { REMOTE_DIR_BASE } from './remote-files'
 import { isPacked, pkgSnapshotDir } from './pkg'
+import { EnvId } from './env-id'
 
 export const COMPOSE_TUNNEL_AGENT_SERVICE_NAME = 'preevy_proxy'
 export const COMPOSE_TUNNEL_AGENT_PORT = 3000
@@ -65,7 +66,7 @@ export const addComposeTunnelAgentService = (
     knownServerPublicKeyPath: string
     debug: boolean
     user?: string
-    envId: string
+    envId: EnvId
     machineStatusCommand?: MachineStatusCommand
     envMetadata: EnvMetadata
     composeModelPath: string
