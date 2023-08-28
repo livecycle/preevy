@@ -12,8 +12,12 @@ import {
   machineResourceType,
   Logger,
   machineStatusNodeExporterCommand,
+  extractDefined,
+  PartialMachine,
 } from '@preevy/core'
-import createClient, { Client, Instance, availableRegions, defaultProjectId, shortResourceName } from './client'
+import { pick } from 'lodash'
+import createClient, { Client, Instance, availableRegions, defaultProjectId, instanceError, shortResourceName } from './client'
+import { deserializeMetadata, metadataKey } from './metadata'
 import { LABELS } from './labels'
 
 type DriverContext = {
@@ -23,10 +27,6 @@ type DriverContext = {
   store: Store
 }
 
-type MachineCreationDriverContext = DriverContext & {
-  machineType?: string
-}
-
 type ResourceType = typeof machineResourceType
 
 const SSH_KEYPAIR_ALIAS = 'preevy-gce'
@@ -34,9 +34,16 @@ const SSH_USERNAME = 'preevy'
 
 const DEFAULT_MACHINE_TYPE = 'e2-small'
 
+const envIdFromInstance = ({ metadata, labels }: Pick<Instance, 'metadata' | 'labels'>) => {
+  const metadataItemValue = metadata?.items?.find(({ key }) => key === metadataKey)?.value
+  return metadataItemValue
+    ? deserializeMetadata(metadataItemValue).envId
+    : extractDefined(labels ?? {}, LABELS.OLD_ENV_ID) // backwards compat
+}
+
 const machineFromInstance = (
   instance: Instance,
-): SshMachine & { envId: string } => {
+): (PartialMachine | SshMachine) & { envId: string } => {
   const publicIPAddress = instance.networkInterfaces?.[0].accessConfigs?.[0].natIP as string
   return {
     type: machineResourceType,
@@ -46,7 +53,8 @@ const machineFromInstance = (
     sshUsername: SSH_USERNAME,
     providerId: instance.name as string,
     version: '',
-    envId: instance.labels?.[LABELS.ENV_ID] as string,
+    envId: envIdFromInstance(instance),
+    ...instanceError(instance),
   }
 }
 
@@ -57,7 +65,7 @@ const machineDriver = ({ store, client }: DriverContext): MachineDriver<SshMachi
     friendlyName: 'Google Cloud',
 
     getMachine: async ({ envId }) => {
-      const instance = await client.findInstance(envId)
+      const instance = await client.findBestEnvInstance(envId)
       return instance && machineFromInstance(instance)
     },
 
@@ -126,13 +134,36 @@ const flagsFromAnswers = async (answers: Record<string, unknown>): Promise<FlagT
   zone: answers.zone as string,
 })
 
+const machineCreationFlags = {
+  ...flags,
+  'machine-type': Flags.string({
+    description: 'Machine type to be provisioned',
+    required: false,
+  }),
+} as const
+
+type MachineCreationFlagTypes = Omit<Interfaces.InferredFlags<typeof machineCreationFlags>, 'json'>
+
+const machineCreationContextFromFlags = (
+  fl: MachineCreationFlagTypes
+): ReturnType<typeof contextFromFlags> & { machineType?: string } => ({
+  ...contextFromFlags(fl),
+  machineType: fl['machine-type'],
+})
+
+type MachineCreationDriverContext = DriverContext & {
+  machineType?: string
+  metadata: MachineCreationFlagTypes
+}
+
 const machineCreationDriver = (
-  { machineType: specifiedMachineType, store, client, log, debug }: MachineCreationDriverContext,
+  { machineType: specifiedMachineType, store, client, log, debug, metadata }: MachineCreationDriverContext,
 ): MachineCreationDriver<SshMachine> => {
   const machineType = specifiedMachineType || DEFAULT_MACHINE_TYPE
   const ssh = sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) })
 
   return ({
+    metadata,
     createMachine: async ({ envId }) => {
       const startTime = new Date().getTime()
       telemetryEmitter().capture('google compute engine create machine start', { machine_type: machineType })
@@ -148,7 +179,7 @@ const machineCreationDriver = (
               username: SSH_USERNAME,
             })
             telemetryEmitter().capture('google compute engine create machine end', { machine_type: machineType, elapsed_sec: (new Date().getTime() - startTime) / 1000 })
-            const machine = machineFromInstance(instance)
+            const machine = machineFromInstance(instance) as SshMachine
             return {
               machine,
               connection: await ssh.connect(
@@ -163,14 +194,14 @@ const machineCreationDriver = (
 
     ensureMachineSnapshot: async () => undefined,
     getMachineAndSpecDiff: async ({ envId }) => {
-      const instance = await client.findInstance(envId)
+      const instance = await client.findBestEnvInstance(envId)
       if (!instance) {
         return undefined
       }
 
       const instanceMachineType = instance.machineType as string
 
-      return instance && {
+      return {
         ...machineFromInstance(instance),
         specDiff: specifiedMachineType && instanceMachineType !== client.normalizeMachineType(specifiedMachineType)
           ? [{ name: 'machine-type', old: shortResourceName(instanceMachineType), new: shortResourceName(specifiedMachineType) }]
@@ -179,21 +210,6 @@ const machineCreationDriver = (
     },
   })
 }
-
-const machineCreationFlags = {
-  ...flags,
-  'machine-type': Flags.string({
-    description: 'Machine type to be provisioned',
-    required: false,
-  }),
-} as const
-
-const machineCreationContextFromFlags = (
-  fl: Interfaces.InferredFlags<typeof machineCreationFlags>
-): ReturnType<typeof contextFromFlags> & { machineType?: string } => ({
-  ...contextFromFlags(fl),
-  machineType: fl['machine-type'],
-})
 
 const factory: MachineDriverFactory<
   Interfaces.InferredFlags<typeof flags>,
@@ -211,6 +227,7 @@ const machineCreationFactory: MachineCreationDriverFactory<
   Interfaces.InferredFlags<typeof machineCreationFlags>,
   SshMachine
 > = ({ flags: f, profile: { id: profileId }, store, log, debug }) => machineCreationDriver({
+  metadata: pick(f, Object.keys(machineCreationFlags)) as MachineCreationFlagTypes, // filter out non-driver flags
   log,
   debug,
   ...machineCreationContextFromFlags(f),

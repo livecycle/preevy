@@ -1,9 +1,9 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
-import { MachineDriver, profileStore } from '@preevy/core'
+import { MachineConnection, MachineDriver, isPartialMachine, profileStore } from '@preevy/core'
 import { BaseCommand } from '@preevy/cli-common'
 import { pickBy } from 'lodash'
-import ProfileCommand from './profile-command'
 import { DriverFlags, DriverName, flagsForAllDrivers, machineDrivers, removeDriverPrefix } from './drivers'
+import ProfileCommand from './profile-command'
 
 // eslint-disable-next-line no-use-before-define
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof DriverCommand['baseFlags'] & T['flags']>
@@ -60,6 +60,29 @@ abstract class DriverCommand<T extends typeof Command> extends ProfileCommand<T>
       debug: this.flags.debug,
     })
     return this.#driver as MachineDriver
+  }
+
+  async withConnection<RT>(
+    envId: string,
+    f: (connection: MachineConnection) => Promise<RT>,
+  ) {
+    const connection = await this.connect(envId)
+    try {
+      return await f(connection)
+    } finally {
+      await connection.close()
+    }
+  }
+
+  async connect(envId: string) {
+    const driver = await this.driver()
+    const machine = await driver.getMachine({ envId })
+    if (!machine || isPartialMachine(machine)) {
+      throw new Error(`No machine found for envId ${envId}`)
+    }
+    // eslint false positive here on case-sensitive filesystems due to unknown type
+    // eslint-disable-next-line @typescript-eslint/return-await
+    return await driver.connect(machine, { log: this.logger, debug: this.flags.debug })
   }
 }
 

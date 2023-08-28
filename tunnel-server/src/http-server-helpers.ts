@@ -2,6 +2,7 @@ import { Logger } from 'pino'
 import http from 'node:http'
 import stream from 'node:stream'
 import { inspect } from 'node:util'
+import internal from 'node:stream'
 
 export const respond = (res: http.ServerResponse, content: string, type = 'text/plain', status = 200) => {
   res.writeHead(status, { 'Content-Type': type })
@@ -60,10 +61,33 @@ export class BadGatewayError extends HttpError {
 export class BadRequestError extends HttpError {
   static status = 400
   static defaultMessage = 'Bad request'
-  constructor(reason?: string) {
-    super(BadGatewayError.status, reason ? `${BadRequestError.defaultMessage}: ${reason}` : BadRequestError.defaultMessage)
+  constructor(reason?: string, cause?: unknown) {
+    super(BadGatewayError.status, reason ? `${BadRequestError.defaultMessage}: ${reason}` : BadRequestError.defaultMessage, cause)
   }
 }
+
+export class UnauthorizedError extends HttpError {
+  static status = 401
+  static defaultMessage = 'Unauthorized'
+  constructor(readonly responseHeaders?: Record<string, string>) {
+    super(UnauthorizedError.status, UnauthorizedError.defaultMessage, undefined, responseHeaders)
+  }
+}
+
+export class BasicAuthUnauthorizedError extends UnauthorizedError {
+  constructor() {
+    super({ 'WWW-Authenticate': 'Basic realm="Secure Area"' })
+  }
+}
+
+export class RedirectError extends HttpError {
+  constructor(readonly status: 302 | 307, readonly location: string) {
+    super(status, 'Redirected', undefined, { location })
+  }
+}
+
+export type HttpUpgradeHandler = (req: http.IncomingMessage, socket: internal.Duplex, head: Buffer) => Promise<void>
+export type HttpHandler = (req: http.IncomingMessage, res: http.ServerResponse) => Promise<void>
 
 export const errorHandler = (
   log: Logger,
@@ -82,7 +106,7 @@ export const errorHandler = (
 
 export const tryHandler = (
   { log }: { log: Logger },
-  f: (req: http.IncomingMessage, res: http.ServerResponse) => Promise<void>
+  f: HttpHandler
 ) => async (req: http.IncomingMessage, res: http.ServerResponse) => {
   try {
     await f(req, res)
@@ -107,7 +131,7 @@ export const errorUpgradeHandler = (
 
 export const tryUpgradeHandler = (
   { log }: { log: Logger },
-  f: (req: http.IncomingMessage, socket: stream.Duplex, head: Buffer) => Promise<void>
+  f: HttpUpgradeHandler
 ) => async (req: http.IncomingMessage, socket: stream.Duplex, head: Buffer) => {
   try {
     await f(req, socket, head)

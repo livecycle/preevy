@@ -30,7 +30,7 @@ export function cookieSessionStore<T>(opts: {domain: string; schema: z.ZodSchema
         currentUser = user
       },
       save: () => {
-        cookies.set(`preevy-${thumbprint}`, JSON.stringify(currentUser), { domain: opts.domain, signed: true })
+        cookies.set(`preevy-${thumbprint}`, JSON.stringify(currentUser), { domain: opts.domain, sameSite: 'none', signed: true })
       },
     }
   }

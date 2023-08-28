@@ -5,10 +5,9 @@ import path from 'path'
 import ssh2, { ParsedKey, SocketBindInfo } from 'ssh2'
 import { inspect } from 'util'
 import EventEmitter from 'node:events'
-import { Writable } from 'node:stream'
-import { ForwardRequest, parseForwardRequest } from './forward-request'
+import { ForwardRequest, parseForwardRequest } from '../forward-request'
 
-const idFromPublicSsh = (key: Buffer) =>
+const clientIdFromPublicSsh = (key: Buffer) =>
   crypto.createHash('sha1').update(key).digest('base64url').replace(/[_-]/g, '')
     .slice(0, 8)
     .toLowerCase()
@@ -33,7 +32,7 @@ export interface ClientForward extends EventEmitter {
   on: (event: 'close', listener: () => void) => this
 }
 
-export interface SshClient extends EventEmitter {
+export interface BaseSshClient extends EventEmitter {
   envId: string
   clientId: string
   publicKey: ParsedKey
@@ -49,9 +48,11 @@ export interface SshClient extends EventEmitter {
     ) => this
   ) & (
     (
-      event: 'hello',
+      event: 'exec',
       listener: (
-        channel: { stdout: Writable; exit: (status?: number) => void },
+        command: string,
+        respondWithJson: (content: unknown) => void,
+        reject: () => void,
       ) => void
     ) => this
   ) & (
@@ -62,13 +63,13 @@ export interface SshClient extends EventEmitter {
   )
 }
 
-export interface SshServer extends EventEmitter {
+export interface BaseSshServer extends EventEmitter {
   close: ssh2.Server['close']
   listen: ssh2.Server['listen']
   on: (
     (
       event: 'client',
-      listener: (client: SshClient) => void,
+      listener: (client: BaseSshClient) => void,
     ) => this
   ) & (
     (
@@ -78,7 +79,7 @@ export interface SshServer extends EventEmitter {
   )
 }
 
-export const sshServer = (
+export const baseSshServer = (
   {
     log,
     sshPrivateKey,
@@ -88,8 +89,8 @@ export const sshServer = (
     sshPrivateKey: string
     socketDir: string
   }
-): SshServer => {
-  const serverEmitter = new EventEmitter() as Omit<SshServer, 'close' | 'listen'>
+): BaseSshServer => {
+  const serverEmitter = new EventEmitter() as Omit<BaseSshServer, 'close' | 'listen'>
   const server = new ssh2.Server(
     {
       // debug: x => log.debug(x),
@@ -98,7 +99,7 @@ export const sshServer = (
       hostKeys: [sshPrivateKey],
     },
     client => {
-      let preevySshClient: SshClient
+      let preevySshClient: BaseSshClient
       const socketServers = new Map<string, net.Server>()
 
       client
@@ -126,7 +127,7 @@ export const sshServer = (
 
           preevySshClient = Object.assign(new EventEmitter(), {
             publicKey: keyOrError,
-            clientId: idFromPublicSsh(keyOrError.getPublicSSH()),
+            clientId: clientIdFromPublicSsh(keyOrError.getPublicSSH()),
             envId: ctx.username,
           })
           log.debug('accepting clientId %j envId %j', preevySshClient.clientId, preevySshClient.envId)
@@ -175,6 +176,8 @@ export const sshServer = (
             reject?.()
             return
           }
+
+          log.debug('emitting forward: %j', res)
 
           preevySshClient.emit(
             'forward',
@@ -239,26 +242,27 @@ export const sshServer = (
 
           session.on('exec', async (acceptExec, rejectExec, info) => {
             log.debug('exec %j', info)
-            if (info.command !== 'hello') {
-              log.error('invalid exec command %j', info.command)
-              rejectExec()
-              return
-            }
-
-            const channel = acceptExec()
-            preevySshClient.emit('hello', {
-              stdout: channel.stdout,
-              exit: (status: number) => {
-                channel.stdout.exit(status)
+            preevySshClient.emit(
+              'exec',
+              info.command,
+              (content: unknown) => {
+                const channel = acceptExec()
+                channel.stdout.write(JSON.stringify(content))
+                channel.stdout.write('\r\n')
+                channel.stdout.exit(0)
                 if (socketServers.size === 0) {
                   channel.close()
                 }
               },
-            })
+              rejectExec,
+            )
           })
         })
     }
   )
+    .on('error', (err: unknown) => {
+      log.error('ssh server error: %j', err)
+    })
 
   return Object.assign(serverEmitter, {
     close: server.close.bind(server),

@@ -2,8 +2,11 @@ import Docker from 'dockerode'
 import { tryParseJson, Logger } from '@preevy/common'
 import { throttle } from 'lodash'
 
+const targetComposeProject = process.env.COMPOSE_PROJECT
+const defaultAccess = process.env.DEFAULT_ACCESS_LEVEL === 'private' ? 'private' : 'public'
+
 const composeFilter = {
-  label: ['com.docker.compose.project'],
+  label: targetComposeProject ? [`com.docker.compose.project=${targetComposeProject}`] : ['com.docker.compose.project'],
 }
 
 export type RunningService = {
@@ -30,14 +33,24 @@ const client = ({
         ...composeFilter,
       },
     })
-  ).map(x => ({
-    project: x.Labels['com.docker.compose.project'],
-    name: x.Labels['com.docker.compose.service'],
-    access: (x.Labels['preevy.access'] || 'public') as ('private' | 'public'),
-    networks: Object.keys(x.NetworkSettings.Networks),
-    // ports may have both IPv6 and IPv4 addresses, ignoring
-    ports: [...new Set(x.Ports.filter(p => p.Type === 'tcp').map(p => p.PrivatePort))],
-  }))
+  ).map(x => {
+    let portFilter : (p: Docker.Port)=> boolean
+    if (x.Labels['preevy.expose']) {
+      const exposedPorts = new Set((x.Labels['preevy.expose']).split(',').map(n => parseInt(n, 10)).filter(n => !Number.isNaN(n)))
+      portFilter = p => exposedPorts.has(p.PrivatePort)
+    } else {
+      portFilter = p => !!p.PublicPort
+    }
+
+    return ({
+      project: x.Labels['com.docker.compose.project'],
+      name: x.Labels['com.docker.compose.service'],
+      access: (x.Labels['preevy.access'] || defaultAccess) as ('private' | 'public'),
+      networks: Object.keys(x.NetworkSettings.Networks),
+      // ports may have both IPv6 and IPv4 addresses, ignoring
+      ports: [...new Set(x.Ports.filter(p => p.Type === 'tcp' && portFilter(p)).map(p => p.PrivatePort))],
+    })
+  })
 
   return {
     getRunningServices,

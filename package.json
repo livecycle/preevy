@@ -8,6 +8,8 @@
     "lerna": "^6.6.2",
     "lint-staged": "^13.1.2",
     "lodash": "^4.17.21",
+    "patch-package": "^8.0.0",
+    "postinstall-postinstall": "^2.1.0",
     "syncpack": "^9.8.4",
     "typescript": "^5.0.4"
   },
@@ -19,11 +21,12 @@
   "scripts": {
     "test": "yarn -s run lerna -- run test --",
     "lint": "yarn -s run lerna -- run lint --parallel --",
-    "clean": "yarn lerna run -- clean --parallel --",
     "build": "yarn -s run lerna run build --",
+    "clean": "yarn -s run lerna -- run clean --parallel --",
     "check-mismatches": "syncpack list-mismatches",
     "fix-mismatches": "syncpack fix-mismatches",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "postinstall": "patch-package"
   },
   "version": "0.0.33"
 }

@@ -1,9 +1,10 @@
 import { InstancesClient, ImagesClient, ZoneOperationsClient, RegionsClient } from '@google-cloud/compute'
 import { GoogleError, Status, operationsProtos, CallOptions } from 'google-gax'
-import { asyncFirst } from 'iter-tools-es'
+import { asyncFirst, asyncToArray } from 'iter-tools-es'
 import { randomBytes } from 'crypto'
-import { LABELS } from './labels'
+import { LABELS, isValidLabel, normalizeLabel } from './labels'
 import { readCloudConfig } from '../static'
+import { metadataKey, serializeMetadata } from './metadata'
 
 type Operation = operationsProtos.google.longrunning.IOperation
 
@@ -17,6 +18,14 @@ const ignoreNotFound = (e: Error) => {
 
 const callOpts: CallOptions = { retry: { retryCodes: ['ECONNRESET'] as unknown as number[] } }
 const MAX_INSTANCE_NAME_LENGTH = 62
+
+// eslint-disable-next-line no-use-before-define
+export const instanceError = (instance: Instance) => {
+  if (instance.status === 'RUNNING') {
+    return undefined
+  }
+  return { error: `Instance is in status ${instance.status}` }
+}
 
 const client = ({
   zone,
@@ -40,12 +49,19 @@ const client = ({
     }
   }
 
+  const orFilter = (...conditions: string[]) => `${conditions.map(cond => `(${cond})`).join(' OR ')}`
   const labelFilter = (key: string, value: string) => `labels.${key} = "${value}"`
-  const baseFilter = labelFilter(LABELS.PROFILE_ID, profileId)
-  const envIdFilter = (envId: string) => labelFilter(LABELS.ENV_ID, envId)
-  const filter = (envId?: string) => [baseFilter, ...(envId ? [envIdFilter(envId)] : [])]
+  const profileFilter = orFilter(...[
+    labelFilter(LABELS.PROFILE_ID, normalizeLabel(profileId)),
+    ...isValidLabel(profileId) ? [labelFilter(LABELS.OLD_PROFILE_ID, profileId)] : [], // backwards compat
+  ])
+  const envIdFilter = (envId: string) => orFilter(...[
+    labelFilter(LABELS.ENV_ID, normalizeLabel(envId)),
+    ...isValidLabel(envId) ? [labelFilter(LABELS.OLD_ENV_ID, envId)] : [], // backwards compat
+  ])
+  const filter = (envId?: string) => [profileFilter, ...(envId ? [envIdFilter(envId)] : [])]
     .map(s => `(${s})`)
-    .join(' ')
+    .join(' AND ')
 
   const instanceName = (envId: string) => {
     const prefix = 'preevy-'
@@ -61,15 +77,24 @@ const client = ({
       : `https://www.googleapis.com/compute/v1/projects/${projectId}/zones/${zone}/machineTypes/${machineType}`
   )
 
-  return {
-    getInstance: async (instance: string) =>
-      (await ic.get({ instance, zone, project: projectId }, callOpts).catch(ignoreNotFound))?.[0],
+  const getInstance = async (
+    instance: string,
+  ) => (await ic.get({ instance, zone, project: projectId }, callOpts))?.[0]
 
-    findInstance: (
-      envId: string,
-    ) => asyncFirst(
-      ic.listAsync({ zone, project: projectId, filter: filter(envId), maxResults: 1 }, callOpts),
-    ),
+  const findEnvInstances = (
+    envId: string,
+  ) => ic.listAsync({ zone, project: projectId, filter: filter(envId) }, callOpts)
+
+  return {
+    getInstance: async (instance: string) => await getInstance(instance).catch(ignoreNotFound),
+
+    findEnvInstances,
+    findBestEnvInstance: async (
+      envId: string
+    ) => {
+      const instances = await asyncToArray(findEnvInstances(envId))
+      return instances.find(i => !instanceError(i)) ?? instances[0]
+    },
 
     listInstances: () => ic.listAsync({ zone, project: projectId, filter: filter() }, callOpts),
 
@@ -103,8 +128,8 @@ const client = ({
         instanceResource: {
           name,
           labels: {
-            [LABELS.ENV_ID]: envId,
-            [LABELS.PROFILE_ID]: profileId,
+            [LABELS.ENV_ID]: normalizeLabel(envId),
+            [LABELS.PROFILE_ID]: normalizeLabel(profileId),
           },
           machineType,
           disks: [{
@@ -120,8 +145,8 @@ const client = ({
           metadata: {
             items: [
               { key: 'ssh-keys', value: `${username}:${sshPublicKey}` },
-              // { key: 'startup-script', value: await readStartupScript() },
               { key: 'user-data', value: await readCloudConfig() },
+              { key: metadataKey, value: serializeMetadata({ envId, profileId }) },
             ],
           },
           networkInterfaces: [
@@ -140,7 +165,7 @@ const client = ({
 
       await waitForOperation(operation)
 
-      return (await ic.get({ zone, project: projectId, instance: name }, callOpts))?.[0]
+      return await getInstance(name)
     },
 
     deleteInstance: async (name: string, wait: boolean) => {
@@ -155,7 +180,7 @@ const client = ({
 }
 
 export type Client = ReturnType<typeof client>
-export type Instance = NonNullable<Awaited<ReturnType<Client['findInstance']>>>
+export type Instance = NonNullable<Awaited<ReturnType<Client['getInstance']>>>
 
 export default client
 

@@ -4,11 +4,17 @@ on:
     types:
       - opened
       - synchronize
+    paths:
+      - packages/**
+  push:
+    branches: [main]
+    paths:
+      - packages/**
 
 jobs:
   publish-packages:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.owner.login == 'livecycle'
+    if: github.event.pull_request.head.repo.owner.login == 'livecycle' || github.event.repository.owner.login == 'livecycle'
 
     steps:
     - uses: actions/checkout@v3
@@ -20,14 +26,45 @@ jobs:
 
     - run: yarn
 
-    - name: npm publish
+    - name: Set NPM token
       env:
         NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: |
+        echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> .npmrc
+
+    - name: Set git identity
+      run: |
+        # version git commit is not pushed, so this just needs to be configured
+        git config user.email "$(git log -1 --format='%ae')"
+        git config user.name "$(git log -1 --format='%an')"
+
+    - name: npm publish
       run: |
         set -eou pipefail
         set -x
 
-        echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > .npmrc
+        REF="${{ github.head_ref }}"
+        if [[ -z "$REF" ]]; then
+          REF="${{ github.ref_name }}"
+        fi
 
-        BRANCH=$(echo "${{ github.head_ref }}" | sed 's/[^a-zA-Z0-9_-]/_/g')
-        yarn lerna publish --no-private -y --loglevel debug --canary --preid="${BRANCH}" --dist-tag="${BRANCH}"
+        # this will be the NPM dist-tag
+        GIT_ID=$(echo "${REF}" | sed 's/[^a-zA-Z0-9_-]/-/g')
+
+        # run 'lerna version' to get get next prerelease
+        yarn -s lerna version prerelease --no-git-tag-version --preid $GIT_ID --ignore-scripts --exact --yes
+
+        # modify the prerelease to include the git commit hash
+        VERSION=$(jq -r .version lerna.json | sed -E "s/[^.]+$/$(git rev-parse --short HEAD)/")
+
+        # run 'lerna version' again to actually set the version with the commit hash
+        yarn -s lerna version $VERSION --no-git-tag-version --preid $GIT_ID --ignore-scripts --exact --yes
+
+        # commit that goes nowhere
+        git commit -m "canary version $VERSION" lerna.json packages/*/package.json
+
+        # publish
+        yarn -s lerna publish from-package --pre-dist-tag $GIT_ID --yes
+
+        # undo the commit
+        git reset --hard HEAD^1

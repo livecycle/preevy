@@ -7,7 +7,14 @@ import { rimraf } from 'rimraf'
 import pino from 'pino'
 import pinoPretty from 'pino-pretty'
 import { EOL } from 'os'
-import { ConnectionCheckResult, requiredEnv, checkConnection, formatPublicKey, parseSshUrl, SshConnectionConfig, tunnelNameResolver, MachineStatusCommand } from '@preevy/common'
+import {
+  requiredEnv,
+  formatPublicKey,
+  parseSshUrl,
+  SshConnectionConfig,
+  tunnelNameResolver,
+  MachineStatusCommand,
+} from '@preevy/common'
 import createDockerClient from './src/docker'
 import createApiServerHandler from './src/http/api-server'
 import { sshClient as createSshClient } from './src/ssh'
@@ -15,28 +22,11 @@ import { createDockerProxyHandlers } from './src/http/docker-proxy'
 import { tryHandler, tryUpgradeHandler } from './src/http/http-server-helpers'
 import { httpServerHandlers } from './src/http'
 import { runMachineStatusCommand } from './src/machine-status'
+import { envMetadata } from './src/metadata'
+import { readAllFiles } from './src/files'
 
 const homeDir = process.env.HOME || '/root'
 const dockerSocket = '/var/run/docker.sock'
-
-const readDir = async (dir: string) => {
-  try {
-    return ((await fs.promises.readdir(dir, { withFileTypes: true })) ?? [])
-      .filter(d => d.isFile()).map(f => f.name)
-  } catch (e) {
-    if ((e as { code: string }).code === 'ENOENT') {
-      return []
-    }
-    throw e
-  }
-}
-
-const readAllFiles = async (dir: string) => {
-  const files = await readDir(dir)
-  return await Promise.all(
-    files.map(file => fs.promises.readFile(path.join(dir, file), { encoding: 'utf8' }))
-  )
-}
 
 const sshConnectionConfigFromEnv = async (): Promise<{ connectionConfig: SshConnectionConfig; sshUrl: string }> => {
   const sshUrl = requiredEnv('SSH_URL')
@@ -54,7 +44,7 @@ const sshConnectionConfigFromEnv = async (): Promise<{ connectionConfig: SshConn
     connectionConfig: {
       ...parsed,
       clientPrivateKey,
-      username: process.env.PREEVY_ENV_ID ?? 'foo',
+      username: requiredEnv('PREEVY_ENV_ID'),
       knownServerPublicKeys,
       insecureSkipVerify: Boolean(process.env.INSECURE_SKIP_VERIFY),
       tlsServerName: process.env.TLS_SERVERNAME || undefined,
@@ -62,26 +52,10 @@ const sshConnectionConfigFromEnv = async (): Promise<{ connectionConfig: SshConn
   }
 }
 
-const formatConnectionCheckResult = (
-  r: ConnectionCheckResult,
-) => {
-  if ('unverifiedHostKey' in r) {
-    return { unverifiedHostKey: formatPublicKey(r.unverifiedHostKey) }
-  }
-  if ('error' in r) {
-    return { error: r.error.message || r.error.toString(), stack: r.error.stack, details: inspect(r.error) }
-  }
-  return r
-}
-
 const writeLineToStdout = (s: string) => [s, EOL].forEach(d => process.stdout.write(d))
 
 const machineStatusCommand = process.env.MACHINE_STATUS_COMMAND
   ? JSON.parse(process.env.MACHINE_STATUS_COMMAND) as MachineStatusCommand
-  : undefined
-
-const envMetadata = process.env.ENV_METADATA
-  ? JSON.parse(process.env.ENV_METADATA) as Record<string, unknown>
   : undefined
 
 const log = pino({
@@ -97,22 +71,13 @@ const main = async () => {
     clientPublicKey: formatPublicKey(connectionConfig.clientPrivateKey),
   })
 
-  if (process.env.SSH_CHECK_ONLY || process.argv.includes('check')) {
-    const result = await checkConnection({
-      connectionConfig,
-      log: log.child({ name: 'ssh' }, { level: 'warn' }),
-    })
-    writeLineToStdout(JSON.stringify(formatConnectionCheckResult(result)))
-    process.exit(0)
-  }
-
   const docker = new Docker({ socketPath: dockerSocket })
   const dockerClient = createDockerClient({ log: log.child({ name: 'docker' }), docker, debounceWait: 500 })
 
   const sshLog = log.child({ name: 'ssh' })
   const sshClient = await createSshClient({
     connectionConfig,
-    tunnelNameResolver: tunnelNameResolver({ userDefinedSuffix: process.env.TUNNEL_URL_SUFFIX }),
+    tunnelNameResolver: tunnelNameResolver({ envId: requiredEnv('PREEVY_ENV_ID') }),
     log: sshLog,
     onError: err => {
       log.error(err)
@@ -143,7 +108,8 @@ const main = async () => {
       machineStatus: machineStatusCommand
         ? async () => await runMachineStatusCommand({ log, docker })(machineStatusCommand)
         : undefined,
-      envMetadata,
+      envMetadata: await envMetadata({ env: process.env, log }),
+      composeModelPath: '/preevy/docker-compose.yaml',
     }),
     dockerProxyHandlers: createDockerProxyHandlers({
       log: log.child({ name: 'docker-proxy' }),

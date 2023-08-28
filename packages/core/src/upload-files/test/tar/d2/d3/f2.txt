@@ -1,2 +1,0 @@
-this is another text file
-with multiple lines

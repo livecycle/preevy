@@ -1,6 +1,6 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
 import { BaseCommand, envIdFlags } from '@preevy/cli-common'
-import { findAmbientEnvId } from '@preevy/core'
+import { findEnvId } from '@preevy/core'
 import { ParsedFlags, flagsDef } from '../../flags'
 import { PluginConfig, githubConfigFromFlags, loadGithubConfig } from '../../config'
 
@@ -24,11 +24,12 @@ abstract class BaseGithubPrCommand<T extends typeof Command> extends BaseCommand
   }
 
   protected async getEnvId() {
-    const log = this.logger
-    const projectName = (await this.ensureUserModel()).name
-    log.debug(`project: ${projectName}`)
-    const envId = this.flags.id || await findAmbientEnvId(projectName)
-    log.debug(`envId: ${envId}`)
+    const envId = await findEnvId({
+      userSpecifiedEnvId: this.flags.id,
+      userSpecifiedProjectName: this.flags.project,
+      userModel: await this.ensureUserModel(),
+      log: this.logger,
+    })
     return envId
   }
 

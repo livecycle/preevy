@@ -150,7 +150,7 @@ export const flags = {
     env: 'KUBECONFIG',
   }),
   context: Flags.string({
-    description: 'Path to kubeconfig context (will load config from defaults if not specified)',
+    description: 'kubeconfig context name (will load config from defaults if not specified)',
     required: false,
     env: 'KUBE_CONTEXT',
   }),

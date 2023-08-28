@@ -1,41 +1,45 @@
 import retry from 'p-retry'
 import { generateBasicAuthCredentials, jwtGenerator } from '../credentials'
-import { queryTunnels } from '../compose-tunnel-agent-client'
-import { flattenTunnels, tunnelUrlsForEnv } from '../tunneling'
+import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, queryTunnels } from '../compose-tunnel-agent-client'
+import { FlatTunnel, flattenTunnels } from '../tunneling'
+
+const tunnelFilter = ({ serviceAndPort, showPreevyService }: {
+  serviceAndPort?: { service: string; port?: number }
+  showPreevyService: boolean
+}): ((tunnel: FlatTunnel) => boolean) => {
+  if (serviceAndPort) {
+    return ({ service, port }) => service === serviceAndPort.service
+      && (!serviceAndPort.port || port === serviceAndPort.port)
+  }
+  if (!showPreevyService) {
+    return ({ service }) => service !== COMPOSE_TUNNEL_AGENT_SERVICE_NAME
+  }
+  return () => true
+}
 
 export const urls = async ({
-  envId,
-  rootUrl,
-  clientId,
   serviceAndPort,
   tunnelingKey,
   includeAccessCredentials,
   retryOpts,
   showPreevyService,
+  composeTunnelServiceUrl,
 }: {
-  envId: string
-  rootUrl: string
-  clientId: string
   serviceAndPort?: { service: string; port?: number }
   tunnelingKey: string | Buffer
-  includeAccessCredentials: boolean
+  includeAccessCredentials: false | 'browser' | 'api'
   retryOpts: retry.Options
   showPreevyService: boolean
+  composeTunnelServiceUrl: string
 }) => {
-  const tunnelUrlsForService = tunnelUrlsForEnv({ envId, rootUrl: new URL(rootUrl), clientId })
-
   const credentials = await generateBasicAuthCredentials(jwtGenerator(tunnelingKey))
 
-  const { tunnels } = await queryTunnels({
-    tunnelUrlsForService,
+  const tunnels = await queryTunnels({
+    composeTunnelServiceUrl,
     retryOpts,
     credentials,
     includeAccessCredentials,
-    showPreevyService,
   })
 
-  return flattenTunnels(tunnels)
-    .filter(tunnel => !serviceAndPort || (
-      tunnel.service === serviceAndPort.service && (!serviceAndPort.port || tunnel.port === serviceAndPort.port)
-    ))
+  return flattenTunnels(tunnels).filter(tunnelFilter({ serviceAndPort, showPreevyService }))
 }

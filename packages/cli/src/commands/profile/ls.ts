@@ -13,6 +13,9 @@ export default class ListProfile extends ProfileCommand<typeof ListProfile> {
     const currentProfile = await this.profileConfig.current()
     const profiles = await this.profileConfig.list()
 
+    if (this.flags.json) {
+      return profiles
+    }
     ux.table(profiles, {
       alias: {
         header: 'Alias',
@@ -24,7 +27,7 @@ export default class ListProfile extends ProfileCommand<typeof ListProfile> {
       location: {
         header: 'Location',
       },
-    })
+    }, this.flags)
 
     return undefined
   }

@@ -3,7 +3,8 @@ import { detectCiProvider } from './ci-providers'
 
 export type GitAuthor = { name: string; email: string }
 
-export type GitMetadata = {
+export type EnvGitMetadata = {
+  ciProvider?: string
   branch?: string
   commit: string
   author: GitAuthor
@@ -11,11 +12,25 @@ export type GitMetadata = {
   pullRequestNumber?: number
 }
 
-export type EnvMetadata = {
-  git?: GitMetadata
+export const driverMetadataFilename = 'driver-metadata.json'
+
+export type EnvMachineMetadata = {
+  driver: string
+  providerId: string
+  opts: Record<string, unknown>
+  locationDescription: string
+  creationTime: Date
 }
 
-const detectGitMetadata = async (): Promise<GitMetadata | undefined> => {
+export type EnvMetadata = {
+  id: string
+  git?: EnvGitMetadata
+  machine?: EnvMachineMetadata
+  lastDeployTime: Date
+  version: string
+}
+
+const detectGitMetadata = async (): Promise<EnvGitMetadata | undefined> => {
   const ciProvider = detectCiProvider()
   const branch = await git.gitBranchName()
   if (!branch) {
@@ -24,6 +39,7 @@ const detectGitMetadata = async (): Promise<GitMetadata | undefined> => {
   const commit = ciProvider?.gitCommit() ?? await git.gitCommit() as string
 
   return {
+    ciProvider: ciProvider?.id,
     branch: ciProvider?.branchName() ?? branch,
     commit,
     author: await git.gitAuthor(commit) as GitAuthor,
@@ -32,6 +48,9 @@ const detectGitMetadata = async (): Promise<GitMetadata | undefined> => {
   }
 }
 
-export const detectEnvMetadata = async (): Promise<EnvMetadata> => ({
+export const envMetadata = async ({ envId, version }: { envId: string; version: string }): Promise<Omit<EnvMetadata, 'driver'>> => ({
+  id: envId,
   git: await detectGitMetadata(),
+  lastDeployTime: new Date(),
+  version,
 })
