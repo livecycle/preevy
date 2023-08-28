@@ -6,7 +6,7 @@ import { Profile } from '../profile'
 import { MachineBase, PartialMachine, Resource, SpecDiffItem } from './machine'
 import { Store } from '../store'
 import { Logger } from '../log'
-import { EnvDriverMetadata } from '../env-metadata'
+import { EnvMachineMetadata } from '../env-metadata'
 
 export type ForwardOutStreamLocal = {
   localSocket: string | AddressInfo
@@ -24,7 +24,7 @@ export type MachineConnection = {
   close: () => Promise<void>
 }
 
-export type MachineMetadata = Omit<EnvDriverMetadata, 'machineLocationDescription' | 'driver' | 'providerId'>
+export type MachineMetadata = Omit<EnvMachineMetadata, 'machineLocationDescription' | 'driver' | 'providerId'>
 
 export type MachineDriver<
   Machine extends MachineBase = MachineBase,

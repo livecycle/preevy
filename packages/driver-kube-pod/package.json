@@ -17,7 +17,7 @@
     "fast-safe-stringify": "^2.1.1",
     "inquirer": "^8.0.0",
     "is-stream": "^2.0.1",
-    "iter-tools-es": "^7.5.1",
+    "iter-tools-es": "^7.5.3",
     "lodash": "^4.17.21",
     "nunjucks": "^3.2.4",
     "p-retry": "^4.6.2",

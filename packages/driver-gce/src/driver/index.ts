@@ -13,9 +13,10 @@ import {
   Logger,
   machineStatusNodeExporterCommand,
   extractDefined,
+  PartialMachine,
 } from '@preevy/core'
 import { pick } from 'lodash'
-import createClient, { Client, Instance, availableRegions, defaultProjectId, shortResourceName } from './client'
+import createClient, { Client, Instance, availableRegions, defaultProjectId, instanceError, shortResourceName } from './client'
 import { deserializeMetadata, metadataKey } from './metadata'
 import { LABELS } from './labels'
 
@@ -42,7 +43,7 @@ const envIdFromInstance = ({ metadata, labels }: Pick<Instance, 'metadata' | 'la
 
 const machineFromInstance = (
   instance: Instance,
-): SshMachine & { envId: string } => {
+): (PartialMachine | SshMachine) & { envId: string } => {
   const publicIPAddress = instance.networkInterfaces?.[0].accessConfigs?.[0].natIP as string
   return {
     type: machineResourceType,
@@ -53,6 +54,7 @@ const machineFromInstance = (
     providerId: instance.name as string,
     version: '',
     envId: envIdFromInstance(instance),
+    ...instanceError(instance),
   }
 }
 
@@ -63,7 +65,7 @@ const machineDriver = ({ store, client }: DriverContext): MachineDriver<SshMachi
     friendlyName: 'Google Cloud',
 
     getMachine: async ({ envId }) => {
-      const instance = await client.findInstance(envId)
+      const instance = await client.findBestEnvInstance(envId)
       return instance && machineFromInstance(instance)
     },
 
@@ -177,7 +179,7 @@ const machineCreationDriver = (
               username: SSH_USERNAME,
             })
             telemetryEmitter().capture('google compute engine create machine end', { machine_type: machineType, elapsed_sec: (new Date().getTime() - startTime) / 1000 })
-            const machine = machineFromInstance(instance)
+            const machine = machineFromInstance(instance) as SshMachine
             return {
               machine,
               connection: await ssh.connect(
@@ -192,14 +194,14 @@ const machineCreationDriver = (
 
     ensureMachineSnapshot: async () => undefined,
     getMachineAndSpecDiff: async ({ envId }) => {
-      const instance = await client.findInstance(envId)
+      const instance = await client.findBestEnvInstance(envId)
       if (!instance) {
         return undefined
       }
 
       const instanceMachineType = instance.machineType as string
 
-      return instance && {
+      return {
         ...machineFromInstance(instance),
         specDiff: specifiedMachineType && instanceMachineType !== client.normalizeMachineType(specifiedMachineType)
           ? [{ name: 'machine-type', old: shortResourceName(instanceMachineType), new: shortResourceName(specifiedMachineType) }]
