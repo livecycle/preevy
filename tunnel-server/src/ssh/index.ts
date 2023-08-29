@@ -40,7 +40,7 @@ export const createSshServer = ({
         const forward = await accept()
         const pk = createPublicKey(publicKey.getPublicPEM())
 
-        log.debug('creating tunnel %s for localSocket %s', key, forward.localSocketPath)
+        log.info('creating tunnel %s for localSocket %s', key, forward.localSocketPath)
         await activeTunnelStore.set(key, {
           tunnelPath,
           envId,
@@ -56,7 +56,7 @@ export const createSshServer = ({
         tunnelsGauge.inc({ clientId })
 
         forward.on('close', () => {
-          log.debug('deleting tunnel %s', key)
+          log.info('deleting tunnel %s', key)
           tunnels.delete(requestId)
           void activeTunnelStore.delete(key)
           tunnelsGauge.dec({ clientId })
