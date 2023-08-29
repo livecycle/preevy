@@ -27,7 +27,7 @@ export const inMemoryActiveTunnelStore = ({ log }: { log: Logger }): ActiveTunne
   const pkThumbprintToTunnel = new Map<string, ActiveTunnel[]>()
   const removeFromIndex = (key: string, publicKeyThumbprint: string) => {
     const tunnelsForPk = pkThumbprintToTunnel.get(publicKeyThumbprint) ?? []
-    const newTunnelsForPk = tunnelsForPk.filter(x => x.hostname === key)
+    const newTunnelsForPk = tunnelsForPk.filter(x => x.hostname !== key)
     if (newTunnelsForPk.length === 0) {
       pkThumbprintToTunnel.delete(publicKeyThumbprint)
     } else {
