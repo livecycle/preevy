@@ -6,7 +6,7 @@ T extends Record<string, unknown>
 >(requestUrl: string, defaultValues: Partial<T> = {}) => {
   const { search } = url.parse(requestUrl)
   const queryParams = new URLSearchParams(search || '')
-  return defaults(Object.fromEntries(queryParams), defaultValues)
+  return { search: queryParams, obj: defaults(Object.fromEntries(queryParams), defaultValues) }
 }
 
 export const queryParamBoolean = (v: string | boolean | undefined, defaultValue = false): boolean => {

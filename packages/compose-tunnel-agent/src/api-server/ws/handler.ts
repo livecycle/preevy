@@ -2,13 +2,14 @@ import http from 'node:http'
 import { Logger } from 'pino'
 import WebSocket from 'ws'
 import Dockerode from 'dockerode'
+import { DockerFilterClient } from '../../docker'
 
-type Context = { log: Logger; docker: Dockerode }
+type Context = { log: Logger; docker: Dockerode; dockerFilter: DockerFilterClient }
 export type WsHandlerFunc = (
   ws: WebSocket,
   req: http.IncomingMessage,
   match: RegExpMatchArray,
-  { log, docker }: Context,
+  context: Context,
 ) => Promise<void>
 
 export type WsHandler = {

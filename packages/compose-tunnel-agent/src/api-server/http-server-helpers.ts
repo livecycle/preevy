@@ -2,8 +2,9 @@ import { Logger } from '@preevy/common'
 import http from 'node:http'
 import stream from 'node:stream'
 import { inspect } from 'node:util'
+import { WebSocket } from 'ws'
 
-export const respond = (res: http.ServerResponse, content: string, type = 'text/plain', status = 200) => {
+export const respond = (res: http.ServerResponse, content: string | Buffer, type = 'text/plain', status = 200) => {
   res.writeHead(status, { 'Content-Type': type })
   res.end(content)
 }
@@ -105,13 +106,43 @@ export const errorUpgradeHandler = (
   log.warn('caught error: %j in upgrade %s %s', inspect(err), req.method || '', req.url || '')
 }
 
+export type UpgradeHandler = (req: http.IncomingMessage, socket: stream.Duplex, head: Buffer) => Promise<void>
+
 export const tryUpgradeHandler = (
   { log }: { log: Logger },
-  f: (req: http.IncomingMessage, socket: stream.Duplex, head: Buffer) => Promise<void>
+  f: UpgradeHandler,
 ) => async (req: http.IncomingMessage, socket: stream.Duplex, head: Buffer) => {
   try {
     await f(req, socket, head)
   } catch (err) {
     errorUpgradeHandler(log, err, req, socket)
+  }
+}
+
+export const errorWsHandler = (
+  log: Logger,
+  err: unknown,
+  ws: WebSocket,
+  req: http.IncomingMessage,
+) => {
+  const [code, message]: [number, string] = err instanceof HttpError
+    ? [err.status, err.clientMessage]
+    : [500, InternalError.defaultMessage]
+
+  const wsCode = 4000 + code // https://github.com/websockets/ws/issues/715#issuecomment-504702511
+  ws.close(wsCode, message)
+  log.warn('caught error: %j in ws %s %s', inspect(err), req.method || '', req.url || '')
+}
+
+export type WsHandler = (ws: WebSocket, req: http.IncomingMessage) => Promise<void>
+
+export const tryWsHandler = (
+  { log }: { log: Logger },
+  f: WsHandler,
+) => async (ws: WebSocket, req: http.IncomingMessage) => {
+  try {
+    await f(ws, req)
+  } catch (err) {
+    errorWsHandler(log, err, ws, req)
   }
 }

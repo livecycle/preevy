@@ -1,9 +1,10 @@
 import yaml from 'yaml'
 import { Args, Flags, Interfaces } from '@oclif/core'
 import {
-  COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addBaseComposeTunnelAgentService,
+  addBaseComposeTunnelAgentService,
   localComposeClient, wrapWithDockerSocket, findEnvId, MachineConnection, ComposeModel, remoteUserModel,
 } from '@preevy/core'
+import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME } from '@preevy/common'
 import DriverCommand from '../driver-command'
 import { envIdFlags } from '../common-flags'
 

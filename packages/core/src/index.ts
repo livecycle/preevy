@@ -40,7 +40,6 @@ export {
   CommandError, CommandExecuter, checkResult, commandWith, execResultFromOrderedOutput, ExecResult,
 } from './command-executer'
 export {
-  COMPOSE_TUNNEL_AGENT_SERVICE_NAME,
   addBaseComposeTunnelAgentService,
   queryTunnels,
   findComposeTunnelAgentUrl,

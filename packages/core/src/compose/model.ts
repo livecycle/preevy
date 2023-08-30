@@ -56,6 +56,7 @@ export type ComposeService = {
 
 export type ComposeModel = {
   name: string
+  version?: string
   secrets?: Record<string, ComposeSecretOrConfig>
   configs?: Record<string, ComposeSecretOrConfig>
   services?: Record<string, ComposeService>
@@ -75,7 +76,7 @@ export const fixModelForRemote = async (
     remoteBaseDir: string
   },
   model: ComposeModel,
-): Promise<{ model: Required<Omit<ComposeModel, 'x-preevy'>>; filesToCopy: FileToCopy[] }> => {
+): Promise<{ model: Required<Omit<ComposeModel, 'x-preevy' | 'version'>>; filesToCopy: FileToCopy[] }> => {
   const filesToCopy: FileToCopy[] = []
 
   const remotePath = (absolutePath: string) => {

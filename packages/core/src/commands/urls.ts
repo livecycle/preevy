@@ -1,6 +1,7 @@
 import retry from 'p-retry'
+import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME } from '@preevy/common'
 import { generateBasicAuthCredentials, jwtGenerator } from '../credentials'
-import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, queryTunnels } from '../compose-tunnel-agent-client'
+import { queryTunnels } from '../compose-tunnel-agent-client'
 import { FlatTunnel, flattenTunnels } from '../tunneling'
 
 const tunnelFilter = ({ serviceAndPort, showPreevyService }: {

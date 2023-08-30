@@ -1,13 +1,17 @@
 import { inspect } from 'util'
 import { createWebSocketStream } from 'ws'
-import { parseQueryParams, queryParamBoolean } from '../../../query-params'
+import { parseQueryParams, queryParamBoolean } from '../../query-params'
 import { wsHandler } from '../handler'
+import { NotFoundError } from '../../http-server-helpers'
 
 const handler = wsHandler(
-  /^\/containers\/([^/?]+)\/logs($|\?)/,
-  async (ws, req, match, { log, docker }) => {
+  /^\/container\/([^/?]+)\/logs($|\?)/,
+  async (ws, req, match, { log, docker, dockerFilter }) => {
     const id = match[1]
-    const { stdout, stderr, since, until, timestamps, tail } = parseQueryParams(req.url ?? '')
+    if (!await dockerFilter.inspectContainer(id)) {
+      throw new NotFoundError()
+    }
+    const { stdout, stderr, since, until, timestamps, tail } = parseQueryParams(req.url ?? '').obj
     const abort = new AbortController()
     const logStream = await docker.getContainer(id).logs({
       stdout: queryParamBoolean(stdout),

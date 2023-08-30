@@ -1,6 +1,6 @@
 import http from 'node:http'
 import net from 'node:net'
-import { describe, expect, beforeAll, afterAll, test, jest, it } from '@jest/globals'
+import { describe, expect, beforeAll, afterAll, jest, it } from '@jest/globals'
 import { ChildProcess, spawn, exec } from 'child_process'
 import pino from 'pino'
 import pinoPretty from 'pino-pretty'
@@ -10,13 +10,18 @@ import { inspect, promisify } from 'node:util'
 import waitForExpect from 'wait-for-expect'
 import WebSocket from 'ws'
 import stripAnsi from 'strip-ansi'
-import { createDockerProxyHandlers } from '.'
+import createApiServerHandlers from '.'
+import { filteredClient } from '../docker'
+import { SshState } from '../ssh'
+import { COMPOSE_PROJECT_LABEL } from '../docker/labels'
+
+const TEST_COMPOSE_PROJECT = 'my-project'
 
 const setupDockerContainer = () => {
   let dockerProcess: ChildProcess
   let containerName: string
   let output: Buffer[]
-  jest.setTimeout(100000)
+  jest.setTimeout(20000)
 
   beforeAll(() => {
     containerName = `test-docker-proxy-${Math.random().toString(36).substring(2, 9)}`
@@ -24,7 +29,7 @@ const setupDockerContainer = () => {
     dockerProcess = spawn(
       'docker',
       [
-        ...`run --rm --name ${containerName} busybox sh -c`.split(' '),
+        ...`run --rm --name ${containerName} --label ${COMPOSE_PROJECT_LABEL}=${TEST_COMPOSE_PROJECT} busybox sh -c`.split(' '),
         'while true; do echo "hello stdout"; >&2 echo "hello stderr"; sleep 0.1; done',
       ]
     )
@@ -50,7 +55,7 @@ const setupDockerContainer = () => {
   }
 }
 
-const setupDockerProxy = () => {
+const setupApiServer = () => {
   const log = pino({
     level: 'debug',
   }, pinoPretty({ destination: pino.destination(process.stderr) }))
@@ -60,7 +65,13 @@ const setupDockerProxy = () => {
 
   beforeAll(async () => {
     const docker = new Dockerode()
-    const handlers = createDockerProxyHandlers({ log, docker, dockerSocket: '/var/run/docker.sock' })
+    const handlers = createApiServerHandlers({
+      log,
+      docker,
+      dockerFilter: filteredClient({ docker, composeProject: TEST_COMPOSE_PROJECT }),
+      composeModelPath: '',
+      currentSshState: () => Promise.resolve({} as unknown as SshState),
+    })
     server = http.createServer(handlers.handler).on('upgrade', handlers.upgradeHandler)
 
     const serverPort = await new Promise<number>(resolve => {
@@ -121,14 +132,14 @@ const openWebSocket = (url: string) => new Promise<OpenWebSocket>((resolve, reje
     })
 })
 
-describe('docker proxy', () => {
+describe('docker api', () => {
   const { containerName } = setupDockerContainer()
-  const { serverBaseUrl } = setupDockerProxy()
+  const { serverBaseUrl } = setupApiServer()
 
   const waitForContainerId = async () => {
     let containerId = ''
     await waitForExpect(async () => {
-      const containers = await fetchJson(`http://${serverBaseUrl()}/containers/json`) as { Id: string; Names: string[] }[]
+      const containers = await fetchJson(`http://${serverBaseUrl()}/containers`) as { Id: string; Names: string[] }[]
       const container = containers.find(({ Names: names }) => names.includes(`/${containerName()}`))
       expect(container).toBeDefined()
       containerId = container?.Id as string
@@ -136,30 +147,7 @@ describe('docker proxy', () => {
     return containerId
   }
 
-  test('use the docker API', async () => {
-    expect(await waitForContainerId()).toBeDefined()
-  })
-
   describe('exec', () => {
-    const createExec = async (containerId: string, tty: boolean) => {
-      const { Id: execId } = await fetchJson(`http://${serverBaseUrl()}/containers/${containerId}/exec`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          AttachStdin: true,
-          AttachStdout: true,
-          AttachStderr: true,
-          Tty: tty,
-          Cmd: ['sh'],
-        }),
-      })
-
-      return execId
-    }
-
-    let execId: string
     let containerId: string
 
     beforeAll(async () => {
@@ -167,12 +155,8 @@ describe('docker proxy', () => {
     })
 
     describe('tty=true', () => {
-      beforeAll(async () => {
-        execId = await createExec(containerId, true)
-      })
-
       it('should communicate via websocket', async () => {
-        const { receivedBuffers, send, close } = await openWebSocket(`ws://${serverBaseUrl()}/exec/${execId}/start`)
+        const { receivedBuffers, send, close } = await openWebSocket(`ws://${serverBaseUrl()}/container/${containerId}/exec`)
         await waitForExpect(() => expect(receivedBuffers.length).toBeGreaterThan(0))
         await send('ls \n')
         await waitForExpect(() => {
@@ -186,12 +170,8 @@ describe('docker proxy', () => {
     })
 
     describe('tty=false', () => {
-      beforeAll(async () => {
-        execId = await createExec(containerId, false)
-      })
-
       it('should communicate via websocket', async () => {
-        const { receivedBuffers, send, close } = await openWebSocket(`ws://${serverBaseUrl()}/exec/${execId}/start`)
+        const { receivedBuffers, send, close } = await openWebSocket(`ws://${serverBaseUrl()}/container/${containerId}/exec`)
         await waitForExpect(async () => {
           await send('ls\n')
           const received = Buffer.concat(receivedBuffers).toString('utf-8')
@@ -214,7 +194,7 @@ describe('docker proxy', () => {
     const testStream = (...s: LogStream[]) => {
       describe(`${s.join(' and ')}`, () => {
         it(`should show the ${s.join(' and ')} logs via websocket`, async () => {
-          const { receivedBuffers, close } = await openWebSocket(`ws://${serverBaseUrl()}/containers/${containerId}/logs?${s.map(st => `${st}=true`).join('&')}`)
+          const { receivedBuffers, close } = await openWebSocket(`ws://${serverBaseUrl()}/container/${containerId}/logs?${s.map(st => `${st}=true`).join('&')}`)
           await waitForExpect(() => expect(receivedBuffers.length).toBeGreaterThan(0))
           const length1 = receivedBuffers.length
           await waitForExpect(() => {
@@ -240,7 +220,7 @@ describe('docker proxy', () => {
 
     describe('timestamps', () => {
       it('should show the logs with a timestamp', async () => {
-        const { receivedBuffers, close } = await openWebSocket(`ws://${serverBaseUrl()}/containers/${containerId}/logs?stdout=true&timestamps=true`)
+        const { receivedBuffers, close } = await openWebSocket(`ws://${serverBaseUrl()}/container/${containerId}/logs?stdout=true&timestamps=true`)
         await waitForExpect(() => expect(receivedBuffers.length).toBeGreaterThan(0))
         const received = Buffer.concat(receivedBuffers).toString('utf-8')
         expect(received).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d*Z/)
