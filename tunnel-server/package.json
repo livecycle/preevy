@@ -7,7 +7,12 @@
   "dependencies": {
     "@fastify/request-context": "^5.0.0",
     "cookies": "^0.8.0",
+    "content-type": "^1.0.5",
     "fastify": "^4.22.2",
+    "dom-serializer": "^2.0.0",
+    "domhandler": "^5.0.3",
+    "domutils": "^3.1.0",
+    "htmlparser2": "^9.0.0",
     "http-proxy": "^1.18.1",
     "jose": "^4.14.4",
     "lodash": "^4.17.21",
@@ -21,6 +26,7 @@
   },
   "devDependencies": {
     "@jest/globals": "^29.5.0",
+    "@types/content-type": "^1.1.5",
     "@types/cookies": "^0.7.7",
     "@types/http-proxy": "^1.17.9",
     "@types/lodash": "^4.14.192",

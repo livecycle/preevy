@@ -1,4 +1,4 @@
-import { baseSshClient, HelloResponse, SshClientOpts, TunnelNameResolver } from '@preevy/common'
+import { baseSshClient, HelloResponse, ScriptInjection, SshClientOpts, TunnelNameResolver } from '@preevy/common'
 import net from 'net'
 import plimit from 'p-limit'
 import { inspect } from 'util'
@@ -22,6 +22,13 @@ export type SshState = {
   clientId: string
   tunnels: Tunnel[]
 }
+
+const stringifiableInject = (inject: ScriptInjection) => ({
+  ...inject,
+  ...(inject.pathRegex && { pathRegex: inject.pathRegex.source }),
+})
+
+const encodedJson = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url')
 
 export const sshClient = async ({
   log,
@@ -134,16 +141,20 @@ export const sshClient = async ({
     clientId, tunnels: tunnelsFromHelloResponse(tunnels),
   })
 
-  const stringifyForwardRequests = (service: {name: string; project: string; ports: number[]; access: 'private' | 'public'}) => {
+  const stringifyForwardRequests = (service: RunningService) => {
     const tunnels = tunnelNameResolver({ ...service })
     return tunnels.map(({ port, tunnel }) => {
       const args: Record<string, string> = {
         ...(service.access === 'private' ? { access: 'private' } : {}),
-        meta: Buffer.from(JSON.stringify({
+        meta: encodedJson({
           service: service.name,
           project: service.project,
           port,
-        })).toString('base64url'),
+        }),
+        ...(service.inject?.length
+          ? { inject: encodedJson(service.inject.map(stringifiableInject)) }
+          : {}
+        ),
       }
       const argsStr = Object.entries(args).map(([k, v]) => `${k}=${v}`).join(';')
       return ({ port, requestId: `/${tunnel}#${argsStr}` })

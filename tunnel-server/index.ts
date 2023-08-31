@@ -15,7 +15,6 @@ import { editUrl } from './src/url'
 import { cookieSessionStore } from './src/session'
 import { claimsSchema } from './src/auth'
 import { createSshServer } from './src/ssh'
-import { truncateWithHash } from './src/strings'
 
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 

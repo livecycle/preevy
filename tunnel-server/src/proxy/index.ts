@@ -1,16 +1,18 @@
 import httpProxy from 'http-proxy'
 import { IncomingMessage, ServerResponse } from 'http'
 import net from 'net'
-import internal from 'stream'
 import type { Logger } from 'pino'
 import { inspect } from 'util'
 import { KeyObject } from 'crypto'
+import stream from 'stream'
 import { ActiveTunnel, ActiveTunnelStore } from '../tunnel-store'
 import { requestsCounter } from '../metrics'
 import { Claims, jwtAuthenticator, AuthenticationResult, AuthError, createGetVerificationData } from '../auth'
 import { SessionStore } from '../session'
 import { BadGatewayError, BadRequestError, BasicAuthUnauthorizedError, RedirectError, UnauthorizedError, errorHandler, errorUpgradeHandler, tryHandler, tryUpgradeHandler } from '../http-server-helpers'
 import { TunnelFinder, proxyRouter } from './router'
+import { injectScripts } from './html-manipulation'
+import { INJECT_SCRIPTS_HEADER } from './common'
 
 const loginRedirectUrl = (loginUrl: string) => ({ env, returnPath }: { env: string; returnPath?: string }) => {
   const url = new URL(loginUrl)
@@ -42,6 +44,8 @@ export const proxy = ({
   jwtSaasIssuer: string
 }) => {
   const theProxy = httpProxy.createProxy({})
+  theProxy.on('proxyRes', injectScripts)
+
   const loginRedirectUrlForRequest = loginRedirectUrl(loginUrl)
 
   const validatePrivateTunnelRequest = async (
@@ -131,6 +135,15 @@ export const proxy = ({
     log.debug('proxying to %j', { target: activeTunnel.target, url: req.url })
     requestsCounter.inc({ clientId: activeTunnel.clientId })
 
+    const injectUrls = activeTunnel.inject
+      ?.filter(({ pathRegex }) => !pathRegex || pathRegex.test(mutatedReq.url || ''))
+      ?.map(({ url }) => url)
+
+    const shouldInject = Boolean(injectUrls?.length)
+    if (shouldInject) {
+      mutatedReq.headers[INJECT_SCRIPTS_HEADER] = injectUrls as string[]
+    }
+
     return theProxy.web(
       mutatedReq,
       res,
@@ -140,6 +153,7 @@ export const proxy = ({
         target: {
           socketPath: activeTunnel.target,
         },
+        selfHandleResponse: shouldInject,
       },
       err => errorHandler(log, err, req, res)
     )
@@ -147,7 +161,7 @@ export const proxy = ({
 
   const upgradeHandler = (tunnelFinder: TunnelFinder) => tryUpgradeHandler(
     { log },
-    async (req: IncomingMessage, socket: internal.Duplex, head: Buffer) => {
+    async (req: IncomingMessage, socket: stream.Duplex, head: Buffer) => {
       const { req: mutatedReq, activeTunnel } = await validateProxyRequest(
         tunnelFinder,
         req,

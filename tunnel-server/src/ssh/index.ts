@@ -33,7 +33,7 @@ export const createSshServer = ({
     const tunnels = new Map<string, string>()
     const jwkThumbprint = (async () => await calculateJwkThumbprintUri(await exportJWK(pk)))()
     client
-      .on('forward', async (requestId, { path: tunnelPath, access, meta }, accept, reject) => {
+      .on('forward', async (requestId, { path: tunnelPath, access, meta, inject: injectScripts }, accept, reject) => {
         const key = activeTunnelStoreKey(clientId, tunnelPath)
         if (await activeTunnelStore.has(key)) {
           reject(new Error(`duplicate path: ${key}, client map contains path: ${tunnels.has(key)}`))
@@ -63,6 +63,7 @@ export const createSshServer = ({
           hostname: key,
           publicKeyThumbprint: thumbprint,
           meta,
+          inject: injectScripts,
         })
         tunnels.set(requestId, tunnelUrl(clientId, tunnelPath))
         tunnelsGauge.inc({ clientId })

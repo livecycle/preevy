@@ -2,6 +2,11 @@ import { KeyObject } from 'crypto'
 import { Logger } from 'pino'
 import { truncateWithHash } from './strings'
 
+export type ScriptInjection = {
+  pathRegex?: RegExp
+  url: string
+}
+
 export type ActiveTunnel = {
   envId: string
   clientId: string
@@ -12,6 +17,7 @@ export type ActiveTunnel = {
   publicKeyThumbprint: string
   access: 'private' | 'public'
   meta: Record<string, unknown>
+  inject?: ScriptInjection[]
 }
 
 export type ActiveTunnelStore = {
