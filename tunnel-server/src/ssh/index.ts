@@ -37,10 +37,19 @@ export const createSshServer = ({
           reject(new Error(`duplicate path: ${key}, client map contains path: ${tunnels.has(key)}`))
           return
         }
-        const forward = await accept()
         const pk = createPublicKey(publicKey.getPublicPEM())
-
+        const publicKeyThumbprint = await calculateJwkThumbprintUri(await exportJWK(pk))
+        const forward = await accept()
+        
+        forward.on('close', () => {
+          log.info('deleting tunnel %s', key)
+          tunnels.delete(requestId)
+          void activeTunnelStore.delete(key)
+          tunnelsGauge.dec({ clientId })
+        })
         log.info('creating tunnel %s for localSocket %s', key, forward.localSocketPath)
+        tunnels.set(requestId, tunnelUrl(clientId, tunnelPath))
+        tunnelsGauge.inc({ clientId })
         await activeTunnelStore.set(key, {
           tunnelPath,
           envId,
@@ -49,17 +58,8 @@ export const createSshServer = ({
           publicKey: pk,
           access,
           hostname: key,
-          publicKeyThumbprint: await calculateJwkThumbprintUri(await exportJWK(pk)),
+          publicKeyThumbprint,
           meta,
-        })
-        tunnels.set(requestId, tunnelUrl(clientId, tunnelPath))
-        tunnelsGauge.inc({ clientId })
-
-        forward.on('close', () => {
-          log.info('deleting tunnel %s', key)
-          tunnels.delete(requestId)
-          void activeTunnelStore.delete(key)
-          tunnelsGauge.dec({ clientId })
         })
       })
       .on('error', err => { log.warn('client error %j: %j', clientId, inspect(err)) })
