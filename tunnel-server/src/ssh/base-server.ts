@@ -225,6 +225,7 @@ export const baseSshServer = (
                 })
 
               client.once('close', closeSocketServer)
+              client.once('end', closeSocketServer)
             }),
             (reason: Error) => {
               log.error('streamlocal-forward@openssh.com: rejecting %j, reason: %j', request, inspect(reason))

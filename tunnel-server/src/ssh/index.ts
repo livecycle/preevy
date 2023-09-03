@@ -29,7 +29,9 @@ export const createSshServer = ({
 })
   .on('client', client => {
     const { clientId, publicKey, envId } = client
+    const pk = createPublicKey(publicKey.getPublicPEM())
     const tunnels = new Map<string, string>()
+    const jwkThumbprint = (async () => await calculateJwkThumbprintUri(await exportJWK(pk)))()
     client
       .on('forward', async (requestId, { path: tunnelPath, access, meta }, accept, reject) => {
         const key = activeTunnelStoreKey(clientId, tunnelPath)
@@ -37,9 +39,19 @@ export const createSshServer = ({
           reject(new Error(`duplicate path: ${key}, client map contains path: ${tunnels.has(key)}`))
           return
         }
+        const thumbprint = await jwkThumbprint
         const forward = await accept()
-        const pk = createPublicKey(publicKey.getPublicPEM())
-
+        const closeTunnel = () => {
+          log.info('deleting tunnel %s', key)
+          tunnels.delete(requestId)
+          void activeTunnelStore.delete(key)
+          tunnelsGauge.dec({ clientId })
+        }
+        let isClosed = false
+        forward.on('close', () => {
+          isClosed = true
+          closeTunnel()
+        })
         log.info('creating tunnel %s for localSocket %s', key, forward.localSocketPath)
         await activeTunnelStore.set(key, {
           tunnelPath,
@@ -49,18 +61,14 @@ export const createSshServer = ({
           publicKey: pk,
           access,
           hostname: key,
-          publicKeyThumbprint: await calculateJwkThumbprintUri(await exportJWK(pk)),
+          publicKeyThumbprint: thumbprint,
           meta,
         })
         tunnels.set(requestId, tunnelUrl(clientId, tunnelPath))
         tunnelsGauge.inc({ clientId })
-
-        forward.on('close', () => {
-          log.info('deleting tunnel %s', key)
-          tunnels.delete(requestId)
-          void activeTunnelStore.delete(key)
-          tunnelsGauge.dec({ clientId })
-        })
+        if (isClosed) {
+          closeTunnel()
+        }
       })
       .on('error', err => { log.warn('client error %j: %j', clientId, inspect(err)) })
       .on('exec', (command, respondWithJson, reject) => {
