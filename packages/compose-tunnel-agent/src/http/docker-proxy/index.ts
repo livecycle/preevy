@@ -36,6 +36,20 @@ export const createDockerProxyHandlers = (
   })
 
   const handler = tryHandler({ log }, async (req, res) => {
+    if (req.method === 'options') {
+      res.setHeader('Access-Control-Allow-Origin', '*')
+      res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,PATCH,PUT')
+      res.setHeader('Access-Control-Allow-Headers', 'Authorization,Content-Type')
+      res.statusCode = 200
+      res.end()
+      return
+    }
+
+    proxy.on('proxyRes', (_, __, pRes) => {
+      pRes.setHeader('Access-Control-Allow-Origin', '*')
+      pRes.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,PATCH,PUT')
+      pRes.setHeader('Access-Control-Allow-Headers', 'Authorization,Content-Type')
+    })
     proxy.web(req, res)
   })
 
