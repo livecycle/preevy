@@ -1,5 +1,5 @@
 import Docker from 'dockerode'
-import { tryParseJson, Logger, COMPOSE_TUNNEL_AGENT_SERVICE_LABELS as LABELS, ScriptInjection } from '@preevy/common'
+import { tryParseJson, Logger, COMPOSE_TUNNEL_AGENT_SERVICE_LABELS as LABELS, ScriptInjection, tryParseYaml } from '@preevy/common'
 import { throttle } from 'lodash'
 import { filters, portFilter } from './filters'
 import { COMPOSE_PROJECT_LABEL, COMPOSE_SERVICE_LABEL } from './labels'
@@ -10,8 +10,22 @@ export type RunningService = {
   networks: string[]
   ports: number[]
   access: 'private' | 'public'
-  inject?: ScriptInjection[]
+  inject: ScriptInjection[]
 }
+
+const reviveScriptInjection = ({ pathRegex, ...v }: ScriptInjection) => ({
+  ...pathRegex && { pathRegex: new RegExp(pathRegex) },
+  ...v,
+})
+
+const scriptInjectionFromLabels = ({
+  [LABELS.INJECT_SCRIPTS]: scriptsText,
+  [LABELS.INJECT_SCRIPT_SRC]: src,
+  [LABELS.INJECT_SCRIPT_PATH_REGEX]: pathRegex,
+} : Record<string, string>): ScriptInjection[] => [
+  ...(scriptsText ? (tryParseJson(scriptsText) || tryParseYaml(scriptsText) || []) : []),
+  ...src ? [{ src, ...pathRegex && { pathRegex } }] : [],
+].map(reviveScriptInjection)
 
 export const eventsClient = ({
   log,
@@ -35,14 +49,7 @@ export const eventsClient = ({
     networks: Object.keys(c.NetworkSettings.Networks),
     // ports may have both IPv6 and IPv4 addresses, ignoring
     ports: [...new Set(c.Ports.filter(p => p.Type === 'tcp').filter(portFilter(c)).map(p => p.PrivatePort))],
-    inject: c.Labels[LABELS.INJECT_SCRIPT_URL]
-      ? [{
-        url: c.Labels[LABELS.INJECT_SCRIPT_URL],
-        ...c.Labels[LABELS.INJECT_SCRIPT_PATH_REGEX] && {
-          pathRegex: new RegExp(c.Labels[LABELS.INJECT_SCRIPT_PATH_REGEX]),
-        },
-      }]
-      : undefined,
+    inject: scriptInjectionFromLabels(c.Labels),
   })
 
   const getRunningServices = async (): Promise<RunningService[]> => (await listContainers()).map(containerToService)

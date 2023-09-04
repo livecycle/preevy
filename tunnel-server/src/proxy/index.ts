@@ -135,13 +135,13 @@ export const proxy = ({
     log.debug('proxying to %j', { target: activeTunnel.target, url: req.url })
     requestsCounter.inc({ clientId: activeTunnel.clientId })
 
-    const injectUrls = activeTunnel.inject
+    const injects = activeTunnel.inject
       ?.filter(({ pathRegex }) => !pathRegex || pathRegex.test(mutatedReq.url || ''))
-      ?.map(({ url }) => url)
+      ?.map(({ src, defer, async }) => ({ src, defer, async }))
 
-    const shouldInject = Boolean(injectUrls?.length)
+    const shouldInject = Boolean(injects?.length)
     if (shouldInject) {
-      mutatedReq.headers[INJECT_SCRIPTS_HEADER] = injectUrls as string[]
+      mutatedReq.headers[INJECT_SCRIPTS_HEADER] = JSON.stringify(injects)
     }
 
     return theProxy.web(

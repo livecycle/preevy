@@ -4,7 +4,9 @@ import { truncateWithHash } from './strings'
 
 export type ScriptInjection = {
   pathRegex?: RegExp
-  url: string
+  src: string
+  async?: boolean
+  defer?: boolean
 }
 
 export type ActiveTunnel = {
@@ -59,7 +61,7 @@ export const inMemoryActiveTunnelStore = ({ log }: { log: Logger }): ActiveTunne
       }
       return keyToTunnel.delete(key)
     },
-  };
+  }
 }
 
 const MAX_DNS_LABEL_LENGTH = 63

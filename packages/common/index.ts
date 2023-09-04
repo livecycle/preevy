@@ -18,6 +18,7 @@ export {
 } from './src/files'
 export { hasPropertyDefined, RequiredProperties } from './src/ts-utils'
 export { tryParseJson, dateReplacer } from './src/json'
+export { tryParseYaml } from './src/yaml'
 export { Logger } from './src/log'
 export { requiredEnv, numberFromEnv } from './src/env'
 export { tunnelNameResolver, TunnelNameResolver } from './src/tunnel-name'
