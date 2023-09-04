@@ -23,8 +23,11 @@ const createApiServerHandler = ({ log, currentSshState, machineStatus, envMetada
     return
   }
 
-  if (req.method === 'GET' && path === '/machine-status' && machineStatus) {
+  if ((req.method === 'GET' || req.method === 'OPTIONS') && path === '/machine-status' && machineStatus) {
     const { data, contentType } = await machineStatus()
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,PATCH,PUT')
+    res.setHeader('Access-Control-Allow-Headers', 'Authorization,Content-Type')
     res.setHeader('Content-Type', contentType)
     res.end(data)
     return
