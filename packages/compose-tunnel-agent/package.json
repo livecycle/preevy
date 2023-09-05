@@ -12,8 +12,10 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
+    "@fastify/request-context": "^5.0.0",
     "@preevy/common": "0.0.50",
     "dockerode": "^3.3.4",
+    "fastify": "^4.22.2",
     "http-proxy": "^1.18.1",
     "lodash": "^4.17.21",
     "p-limit": "^3.1.0",
