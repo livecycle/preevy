@@ -111,7 +111,7 @@ export const proxy = ({
 
     req.url = path ?? '/'
 
-    if (activeTunnel.access === 'private') {
+    if (activeTunnel.access === 'private' && req.method !== 'OPTIONS') {
       return {
         req: await validatePrivateTunnelRequest(req, activeTunnel, session(activeTunnel.publicKeyThumbprint)),
         activeTunnel,

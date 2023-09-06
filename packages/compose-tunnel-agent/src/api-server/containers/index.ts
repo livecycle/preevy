@@ -8,6 +8,11 @@ import exec from './exec'
 import logs from './logs'
 import { inspectFilteredContainer } from './filter'
 
+const containerIdActionSchema = z.object({
+  containerId: z.string(),
+  action: z.union([z.literal('stop'), z.literal('start'), z.literal('restart')]),
+})
+
 export const containers: FastifyPluginAsync<{
   docker: Dockerode
   dockerFilter: DockerFilterClient
@@ -20,10 +25,16 @@ export const containers: FastifyPluginAsync<{
     schema: {
       params: containerIdSchema,
     },
-  }, async ({ params: { containerId } }, res) => {
-    const container = await inspectFilteredContainer(dockerFilter, containerId)
-    void res.send(container)
-  })
+  }, async ({ params: { containerId } }) => await inspectFilteredContainer(dockerFilter, containerId))
+
+  app.post<{
+    Params: z.infer<typeof containerIdActionSchema>
+  }>('/:containerId/:action', {
+    schema: {
+      params: containerIdActionSchema,
+    },
+    preValidation: async ({ params: { containerId } }) => await inspectFilteredContainer(dockerFilter, containerId),
+  }, async ({ params: { containerId, action } }) => await docker.getContainer(containerId)[action]())
 
   await app.register(fastifyWebsocket)
   await app.register(exec, { docker, dockerFilter })
