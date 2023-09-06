@@ -236,6 +236,7 @@ export const baseSshServer = (
         .on('error', err => {
           log.error('client error: %j', inspect(err))
           preevySshClient?.emit('error', err)
+          client.end()
         })
         .on('session', accept => {
           log.debug('session')
