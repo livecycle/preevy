@@ -1,11 +1,10 @@
-import { tunnelNameResolver } from '@preevy/common'
+import { COMPOSE_TUNNEL_AGENT_PORT, COMPOSE_TUNNEL_AGENT_SERVICE_NAME, tunnelNameResolver } from '@preevy/common'
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { tmpdir } from 'node:os'
-import { set } from 'lodash'
 import { Connection } from '../tunneling'
 import { execPromiseStdout } from '../child-process'
-import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, COMPOSE_TUNNEL_AGENT_PORT, addComposeTunnelAgentService } from '../compose-tunnel-agent-client'
+import { addComposeTunnelAgentService } from '../compose-tunnel-agent-client'
 import { ComposeModel } from '../compose'
 import { TunnelOpts } from '../ssh'
 import { EnvId } from '../env-id'
@@ -62,10 +61,18 @@ export function initProxyComposeModel(opts: {
   networks: ComposeModel['networks']
   version: string
 }) {
-  const compose = {
+  const compose: ComposeModel = {
     version: '3.8',
     name: opts.projectName,
     networks: opts.networks,
+  }
+
+  const privateMode = Boolean(opts.privateMode)
+  const envMetadata = {
+    id: opts.envId,
+    lastDeployTime: new Date(),
+    version: opts.version,
+    profileThumbprint: opts.tunnelingKeyThumbprint,
   }
 
   const newComposeModel = addComposeTunnelAgentService({
@@ -73,17 +80,14 @@ export function initProxyComposeModel(opts: {
     envId: opts.envId,
     debug: true,
     composeModelPath: './docker-compose.yml',
-    envMetadata: { id: opts.envId, lastDeployTime: new Date(), version: opts.version },
+    envMetadata,
     knownServerPublicKeyPath: './tunnel_server_public_key',
     sshPrivateKeyPath: './tunneling_key',
+    composeProject: opts.projectName,
+    profileThumbprint: opts.tunnelingKeyThumbprint,
+    privateMode,
+    defaultAccess: privateMode ? 'private' : 'public',
   }, compose)
-
-  set(newComposeModel, ['services', agentServiceName, 'environment', 'COMPOSE_PROJECT'], opts.projectName)
-  set(newComposeModel, ['services', agentServiceName, 'labels', 'preevy.profile_thumbprint'], opts.tunnelingKeyThumbprint)
-  if (opts.privateMode) {
-    set(newComposeModel, ['services', agentServiceName, 'environment', 'DEFAULT_ACCESS_LEVEL'], 'private')
-    set(newComposeModel, ['services', agentServiceName, 'labels', 'preevy.private_mode'], 'true')
-  }
 
   return {
     data: newComposeModel,

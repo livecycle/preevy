@@ -3,7 +3,7 @@ import fetch from 'node-fetch'
 import retry from 'p-retry'
 import util from 'util'
 import { mapValues, merge } from 'lodash'
-import { MachineStatusCommand, dateReplacer } from '@preevy/common'
+import { COMPOSE_TUNNEL_AGENT_PORT, COMPOSE_TUNNEL_AGENT_SERVICE_LABELS, COMPOSE_TUNNEL_AGENT_SERVICE_NAME, MachineStatusCommand, dateReplacer } from '@preevy/common'
 import { ComposeModel, ComposeService, composeModelFilename } from './compose/model'
 import { TunnelOpts } from './ssh/url'
 import { Tunnel } from './tunneling'
@@ -13,8 +13,6 @@ import { REMOTE_DIR_BASE } from './remote-files'
 import { isPacked, pkgSnapshotDir } from './pkg'
 import { EnvId } from './env-id'
 
-export const COMPOSE_TUNNEL_AGENT_SERVICE_NAME = 'preevy_proxy'
-export const COMPOSE_TUNNEL_AGENT_PORT = 3000
 const COMPOSE_TUNNEL_AGENT_DIR = path.join(path.dirname(require.resolve('@preevy/compose-tunnel-agent')), '..')
 
 const baseDockerProxyService = () => {
@@ -32,7 +30,7 @@ const baseDockerProxyService = () => {
       },
     ],
     labels: {
-      'preevy.access': 'private',
+      [COMPOSE_TUNNEL_AGENT_SERVICE_LABELS.ACCESS]: 'private',
     },
   } as ComposeService
 }
@@ -60,6 +58,10 @@ export const addComposeTunnelAgentService = (
     machineStatusCommand,
     envMetadata,
     composeModelPath,
+    composeProject,
+    profileThumbprint,
+    privateMode,
+    defaultAccess,
   }: {
     tunnelOpts: TunnelOpts
     sshPrivateKeyPath: string
@@ -70,6 +72,10 @@ export const addComposeTunnelAgentService = (
     machineStatusCommand?: MachineStatusCommand
     envMetadata: EnvMetadata
     composeModelPath: string
+    composeProject: string
+    profileThumbprint?: string
+    privateMode: boolean
+    defaultAccess: 'private' | 'public'
   },
   model: ComposeModel,
 ): ComposeModel => ({
@@ -117,7 +123,10 @@ export const addComposeTunnelAgentService = (
         ],
         user,
         labels: {
-          'preevy.env_id': envId,
+          [COMPOSE_TUNNEL_AGENT_SERVICE_LABELS.ENV_ID]: envId,
+          [COMPOSE_TUNNEL_AGENT_SERVICE_LABELS.PRIVATE_MODE]: privateMode,
+          ...profileThumbprint ? { [COMPOSE_TUNNEL_AGENT_SERVICE_LABELS.PROFILE_THUMBPRINT]: profileThumbprint } : {},
+          [COMPOSE_TUNNEL_AGENT_SERVICE_LABELS.PRIVATE_MODE]: privateMode.toString(),
         },
         environment: {
           SSH_URL: tunnelOpts.url,
@@ -129,6 +138,8 @@ export const addComposeTunnelAgentService = (
           ENV_METADATA_FILES: `${metadataDirectory}/${driverMetadataFilename}`,
           ...debug ? { DEBUG: '1' } : {},
           HOME: '/preevy',
+          COMPOSE_PROJECT: composeProject,
+          DEFAULT_ACCESS_LEVEL: defaultAccess,
         },
       }),
   },

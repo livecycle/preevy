@@ -1,12 +1,9 @@
 import fs from 'fs'
 import path from 'path'
 import Docker from 'dockerode'
-import { inspect } from 'node:util'
-import http from 'node:http'
 import { rimraf } from 'rimraf'
 import pino from 'pino'
 import pinoPretty from 'pino-pretty'
-import { EOL } from 'os'
 import {
   requiredEnv,
   formatPublicKey,
@@ -14,19 +11,20 @@ import {
   SshConnectionConfig,
   tunnelNameResolver,
   MachineStatusCommand,
+  COMPOSE_TUNNEL_AGENT_PORT,
 } from '@preevy/common'
-import createDockerClient from './src/docker'
-import createApiServerHandler from './src/http/api-server'
+import { createApp } from './src/api-server'
 import { sshClient as createSshClient } from './src/ssh'
-import { createDockerProxyHandlers } from './src/http/docker-proxy'
-import { tryHandler, tryUpgradeHandler } from './src/http/http-server-helpers'
-import { httpServerHandlers } from './src/http'
 import { runMachineStatusCommand } from './src/machine-status'
 import { envMetadata } from './src/metadata'
 import { readAllFiles } from './src/files'
+import { eventsClient as dockerEventsClient, filteredClient as dockerFilteredClient } from './src/docker'
 
 const homeDir = process.env.HOME || '/root'
 const dockerSocket = '/var/run/docker.sock'
+
+const targetComposeProject = process.env.COMPOSE_PROJECT
+const defaultAccess = process.env.DEFAULT_ACCESS_LEVEL === 'private' ? 'private' : 'public'
 
 const sshConnectionConfigFromEnv = async (): Promise<{ connectionConfig: SshConnectionConfig; sshUrl: string }> => {
   const sshUrl = requiredEnv('SSH_URL')
@@ -52,7 +50,15 @@ const sshConnectionConfigFromEnv = async (): Promise<{ connectionConfig: SshConn
   }
 }
 
-const writeLineToStdout = (s: string) => [s, EOL].forEach(d => process.stdout.write(d))
+const fastifyListenArgsFromEnv = async () => {
+  const portOrPath = process.env.PORT ?? COMPOSE_TUNNEL_AGENT_PORT
+  const portNumber = Number(portOrPath)
+  if (typeof portOrPath === 'string' && Number.isNaN(portNumber)) {
+    await rimraf(portOrPath)
+    return { path: portOrPath }
+  }
+  return { port: portNumber, host: '0.0.0.0' }
+}
 
 const machineStatusCommand = process.env.MACHINE_STATUS_COMMAND
   ? JSON.parse(process.env.MACHINE_STATUS_COMMAND) as MachineStatusCommand
@@ -72,7 +78,13 @@ const main = async () => {
   })
 
   const docker = new Docker({ socketPath: dockerSocket })
-  const dockerClient = createDockerClient({ log: log.child({ name: 'docker' }), docker, debounceWait: 500 })
+  const dockerClient = dockerEventsClient({
+    log: log.child({ name: 'docker' }),
+    docker,
+    debounceWait: 500,
+    defaultAccess,
+    composeProject: targetComposeProject,
+  })
 
   const sshLog = log.child({ name: 'ssh' })
   const sshClient = await createSshClient({
@@ -91,52 +103,23 @@ const main = async () => {
   void dockerClient.startListening({
     onChange: async services => {
       currentTunnels = sshClient.updateTunnels(services)
-      void currentTunnels.then(ssh => writeLineToStdout(JSON.stringify(ssh)))
     },
   })
 
-  const apiListenAddress = process.env.PORT ?? 3000
-  if (typeof apiListenAddress === 'string' && Number.isNaN(Number(apiListenAddress))) {
-    await rimraf(apiListenAddress)
-  }
-
-  const { handler, upgradeHandler } = httpServerHandlers({
-    log: log.child({ name: 'http' }),
-    apiHandler: createApiServerHandler({
-      log: log.child({ name: 'api' }),
-      currentSshState: async () => (await currentTunnels),
-      machineStatus: machineStatusCommand
-        ? async () => await runMachineStatusCommand({ log, docker })(machineStatusCommand)
-        : undefined,
-      envMetadata: await envMetadata({ env: process.env, log }),
-      composeModelPath: '/preevy/docker-compose.yaml',
-    }),
-    dockerProxyHandlers: createDockerProxyHandlers({
-      log: log.child({ name: 'docker-proxy' }),
-      dockerSocket,
-      docker,
-    }),
-    dockerProxyPrefix: '/docker/',
+  const app = await createApp({
+    log: log.child({ name: 'api' }),
+    currentSshState: async () => (await currentTunnels),
+    machineStatus: machineStatusCommand
+      ? async () => await runMachineStatusCommand({ log, docker })(machineStatusCommand)
+      : undefined,
+    envMetadata: await envMetadata({ env: process.env, log }),
+    composeModelPath: '/preevy/docker-compose.yaml',
+    docker,
+    dockerFilter: dockerFilteredClient({ docker, composeProject: targetComposeProject }),
   })
 
-  const httpLog = log.child({ name: 'http' })
-
-  const httpServer = http.createServer(tryHandler({ log: httpLog }, async (req, res) => {
-    httpLog.debug('request %s %s', req.method, req.url)
-    return await handler(req, res)
-  }))
-    .on('upgrade', tryUpgradeHandler({ log: httpLog }, async (req, socket, head) => {
-      httpLog.debug('upgrade %s %s', req.method, req.url)
-      return await upgradeHandler(req, socket, head)
-    }))
-    .listen(apiListenAddress, () => {
-      httpLog.info(`API server listening on ${inspect(httpServer.address())}`)
-    })
-    .on('error', err => {
-      httpLog.error(err)
-      process.exit(1)
-    })
-    .unref()
+  void app.listen({ ...await fastifyListenArgsFromEnv() })
+  app.server.unref()
 }
 
 void main();

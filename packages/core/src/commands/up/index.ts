@@ -1,4 +1,4 @@
-import { formatPublicKey, readOrUndefined } from '@preevy/common'
+import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, formatPublicKey, readOrUndefined } from '@preevy/common'
 import fs from 'fs'
 import path from 'path'
 import { rimraf } from 'rimraf'
@@ -7,7 +7,7 @@ import { TunnelOpts } from '../../ssh'
 import { composeModelFilename, fixModelForRemote, localComposeClient, resolveComposeFiles } from '../../compose'
 import { ensureCustomizedMachine } from './machine'
 import { wrapWithDockerSocket } from '../../docker'
-import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, addComposeTunnelAgentService } from '../../compose-tunnel-agent-client'
+import { addComposeTunnelAgentService } from '../../compose-tunnel-agent-client'
 import { MachineCreationDriver, MachineDriver, MachineBase } from '../../driver'
 import { remoteProjectDir } from '../../remote-files'
 import { Logger } from '../../log'
@@ -146,6 +146,9 @@ const up = async ({
       machineStatusCommand: await machineDriver.machineStatusCommand(machine),
       envMetadata: await envMetadata({ envId, version }),
       composeModelPath: path.join(remoteDir, composeModelFilename),
+      privateMode: false,
+      defaultAccess: 'public',
+      composeProject: projectName,
     }, fixedModel)
 
     const modelStr = yaml.stringify(remoteModel)

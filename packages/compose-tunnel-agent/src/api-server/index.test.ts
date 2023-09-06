@@ -1,6 +1,5 @@
-import http from 'node:http'
-import net from 'node:net'
-import { describe, expect, beforeAll, afterAll, test, jest, it } from '@jest/globals'
+import { AddressInfo } from 'node:net'
+import { describe, expect, beforeAll, afterAll, jest, it } from '@jest/globals'
 import { ChildProcess, spawn, exec } from 'child_process'
 import pino from 'pino'
 import pinoPretty from 'pino-pretty'
@@ -10,13 +9,18 @@ import { inspect, promisify } from 'node:util'
 import waitForExpect from 'wait-for-expect'
 import WebSocket from 'ws'
 import stripAnsi from 'strip-ansi'
-import { createDockerProxyHandlers } from '.'
+import { createApp } from '.'
+import { filteredClient } from '../docker'
+import { SshState } from '../ssh'
+import { COMPOSE_PROJECT_LABEL } from '../docker/labels'
+
+const TEST_COMPOSE_PROJECT = 'my-project'
 
 const setupDockerContainer = () => {
   let dockerProcess: ChildProcess
   let containerName: string
   let output: Buffer[]
-  jest.setTimeout(100000)
+  jest.setTimeout(20000)
 
   beforeAll(() => {
     containerName = `test-docker-proxy-${Math.random().toString(36).substring(2, 9)}`
@@ -24,7 +28,7 @@ const setupDockerContainer = () => {
     dockerProcess = spawn(
       'docker',
       [
-        ...`run --rm --name ${containerName} busybox sh -c`.split(' '),
+        ...`run --rm --name ${containerName} --label ${COMPOSE_PROJECT_LABEL}=${TEST_COMPOSE_PROJECT} busybox sh -c`.split(' '),
         'while true; do echo "hello stdout"; >&2 echo "hello stderr"; sleep 0.1; done',
       ]
     )
@@ -50,29 +54,30 @@ const setupDockerContainer = () => {
   }
 }
 
-const setupDockerProxy = () => {
+const setupApiServer = () => {
   const log = pino({
     level: 'debug',
   }, pinoPretty({ destination: pino.destination(process.stderr) }))
 
-  let server: http.Server
+  let app: Awaited<ReturnType<typeof createApp>>
   let serverBaseUrl: string
 
   beforeAll(async () => {
     const docker = new Dockerode()
-    const handlers = createDockerProxyHandlers({ log, docker, dockerSocket: '/var/run/docker.sock' })
-    server = http.createServer(handlers.handler).on('upgrade', handlers.upgradeHandler)
-
-    const serverPort = await new Promise<number>(resolve => {
-      server.listen(0, () => {
-        resolve((server.address() as net.AddressInfo).port)
-      })
+    app = await createApp({
+      log,
+      docker,
+      dockerFilter: filteredClient({ docker, composeProject: TEST_COMPOSE_PROJECT }),
+      composeModelPath: '',
+      currentSshState: () => Promise.resolve({} as unknown as SshState),
     })
-    serverBaseUrl = `localhost:${serverPort}`
+    await app.listen({ port: 0 })
+    const { port } = app.server.address() as AddressInfo
+    serverBaseUrl = `localhost:${port}`
   })
 
   afterAll(async () => {
-    await promisify(server.close.bind(server))()
+    await app.close()
   })
 
   return {
@@ -121,14 +126,14 @@ const openWebSocket = (url: string) => new Promise<OpenWebSocket>((resolve, reje
     })
 })
 
-describe('docker proxy', () => {
+describe('docker api', () => {
   const { containerName } = setupDockerContainer()
-  const { serverBaseUrl } = setupDockerProxy()
+  const { serverBaseUrl } = setupApiServer()
 
   const waitForContainerId = async () => {
     let containerId = ''
     await waitForExpect(async () => {
-      const containers = await fetchJson(`http://${serverBaseUrl()}/containers/json`) as { Id: string; Names: string[] }[]
+      const containers = await fetchJson(`http://${serverBaseUrl()}/containers`) as { Id: string; Names: string[] }[]
       const container = containers.find(({ Names: names }) => names.includes(`/${containerName()}`))
       expect(container).toBeDefined()
       containerId = container?.Id as string
@@ -136,30 +141,7 @@ describe('docker proxy', () => {
     return containerId
   }
 
-  test('use the docker API', async () => {
-    expect(await waitForContainerId()).toBeDefined()
-  })
-
   describe('exec', () => {
-    const createExec = async (containerId: string, tty: boolean) => {
-      const { Id: execId } = await fetchJson(`http://${serverBaseUrl()}/containers/${containerId}/exec`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          AttachStdin: true,
-          AttachStdout: true,
-          AttachStderr: true,
-          Tty: tty,
-          Cmd: ['sh'],
-        }),
-      })
-
-      return execId
-    }
-
-    let execId: string
     let containerId: string
 
     beforeAll(async () => {
@@ -167,12 +149,8 @@ describe('docker proxy', () => {
     })
 
     describe('tty=true', () => {
-      beforeAll(async () => {
-        execId = await createExec(containerId, true)
-      })
-
       it('should communicate via websocket', async () => {
-        const { receivedBuffers, send, close } = await openWebSocket(`ws://${serverBaseUrl()}/exec/${execId}/start`)
+        const { receivedBuffers, send, close } = await openWebSocket(`ws://${serverBaseUrl()}/containers/${containerId}/exec`)
         await waitForExpect(() => expect(receivedBuffers.length).toBeGreaterThan(0))
         await send('ls \n')
         await waitForExpect(() => {
@@ -186,12 +164,8 @@ describe('docker proxy', () => {
     })
 
     describe('tty=false', () => {
-      beforeAll(async () => {
-        execId = await createExec(containerId, false)
-      })
-
       it('should communicate via websocket', async () => {
-        const { receivedBuffers, send, close } = await openWebSocket(`ws://${serverBaseUrl()}/exec/${execId}/start`)
+        const { receivedBuffers, send, close } = await openWebSocket(`ws://${serverBaseUrl()}/containers/${containerId}/exec`)
         await waitForExpect(async () => {
           await send('ls\n')
           const received = Buffer.concat(receivedBuffers).toString('utf-8')

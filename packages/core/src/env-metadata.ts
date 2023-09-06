@@ -28,6 +28,7 @@ export type EnvMetadata = {
   machine?: EnvMachineMetadata
   lastDeployTime: Date
   version: string
+  profileThumbprint?: string
 }
 
 const detectGitMetadata = async (): Promise<EnvGitMetadata | undefined> => {
@@ -48,9 +49,14 @@ const detectGitMetadata = async (): Promise<EnvGitMetadata | undefined> => {
   }
 }
 
-export const envMetadata = async ({ envId, version }: { envId: string; version: string }): Promise<Omit<EnvMetadata, 'driver'>> => ({
+export const envMetadata = async ({
+  envId,
+  version,
+  profileThumbprint,
+}: { envId: string; version: string; profileThumbprint?: string }): Promise<Omit<EnvMetadata, 'driver'>> => ({
   id: envId,
   git: await detectGitMetadata(),
   lastDeployTime: new Date(),
   version,
+  profileThumbprint,
 })
