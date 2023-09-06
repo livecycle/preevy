@@ -6,11 +6,9 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@fastify/request-context": "^5.0.0",
-    "cookies": "^0.8.0",
     "content-type": "^1.0.5",
-    "dom-serializer": "^2.0.0",
-    "domhandler": "^5.0.3",
-    "domutils": "^3.1.0",
+    "cookies": "^0.8.0",
+    "fastify": "^4.22.2",
     "htmlparser2": "^9.0.0",
     "http-proxy": "^1.18.1",
     "iconv-lite": "^0.6.3",
