@@ -30,14 +30,14 @@ export const parseForwardRequest = (request: string) => {
       try {
         forwardRequest.meta = decodeJson(v)
       } catch (e) {
-        throw new Error(`invalid meta in request: ${v}`)
+        throw new Error(`invalid meta in request: ${v}`, { cause: e })
       }
     } else if (k === 'inject') {
       try {
         forwardRequest.inject = (decodeJson(v) as SerializedScriptInjection[])
           .map(o => ({ ...o, pathRegex: o.pathRegex ? new RegExp(o.pathRegex) : undefined }))
       } catch (e) {
-        throw new Error(`invalid inject in request: ${v}`)
+        throw new Error(`invalid inject in request: ${v}`, { cause: e })
       }
     } else {
       throw new Error(`invalid param "${k}" in request "${request}"`)

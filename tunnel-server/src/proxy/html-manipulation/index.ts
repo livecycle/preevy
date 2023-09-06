@@ -28,19 +28,17 @@ export const injectScripts = async (
   req: Pick<IncomingMessage, 'headers'>,
   res: stream.Writable & Pick<ServerResponse<IncomingMessage>, 'writeHead'>,
 ) => {
-  const headerValue = req.headers[INJECT_SCRIPTS_HEADER] as string | undefined
-  if (!headerValue) {
+  const injectsStr = req.headers[INJECT_SCRIPTS_HEADER] as string | undefined
+  if (!injectsStr) {
     return undefined
   }
-
-  const injects = JSON.parse(headerValue) as Omit<ScriptInjection, 'pathRegex'>[]
 
   const {
     type: contentType,
     parameters: { charset: reqCharset },
   } = parseContentType(proxyRes)
 
-  if (!contentType.includes('text/html')) {
+  if (contentType !== 'text/html') {
     return undefined
   }
 
@@ -52,6 +50,7 @@ export const injectScripts = async (
     ? [proxyRes.pipe(compress[0]), res.pipe(compress[1])]
     : [proxyRes, res]
 
+  const injects = JSON.parse(injectsStr) as Omit<ScriptInjection, 'pathRegex'>[]
   const transform = new InjectHtmlScriptTransform(injects)
 
   input
