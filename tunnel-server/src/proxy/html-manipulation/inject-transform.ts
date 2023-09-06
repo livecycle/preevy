@@ -1,54 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 import stream from 'stream'
 import { Parser } from 'htmlparser2'
-import { inspect } from 'util'
 import { ScriptInjection } from '../../tunnel-store'
-
-export class InjectTransform extends stream.Transform {
-  public offsetToInject: number | undefined
-  private currentOffset = 0
-  public injected = false
-
-  constructor(
-    protected chunkToInject: string | Buffer,
-    protected readonly encoding: BufferEncoding = 'utf-8',
-    opts?: stream.TransformOptions
-  ) {
-    super(opts)
-  }
-
-  // eslint-disable-next-line no-underscore-dangle
-  _transform(chunk: string | Buffer, _encoding: BufferEncoding | 'buffer', callback: stream.TransformCallback): void {
-    console.log('_transform', chunk, this.currentOffset)
-    if (typeof chunk !== 'string' && !Buffer.isBuffer(chunk)) {
-      callback(new Error(`Invalid chunk: ${chunk}`))
-      return undefined
-    }
-
-    const chunkIndexToInject = this.offsetToInject !== undefined
-      ? this.offsetToInject - this.currentOffset
-      : NaN
-
-    if (this.injected || Number.isNaN(chunkIndexToInject) || chunkIndexToInject > chunk.length) {
-      this.currentOffset += chunk.length
-      callback(null, chunk)
-      return undefined
-    }
-
-    if (chunkIndexToInject < 0 && !this.injected) {
-      callback(new Error(`Stream at position ${this.currentOffset}, already passed the index to inject: ${this.offsetToInject}`))
-      return undefined
-    }
-
-    this.push(chunk.slice(0, chunkIndexToInject))
-    this.push(this.chunkToInject, this.encoding)
-    this.push(chunk.slice(chunkIndexToInject))
-    this.currentOffset += chunk.length
-    this.injected = true
-    callback(null)
-    return undefined
-  }
-}
 
 const positions = ['head-content-start', 'before-body-tag', 'html-content-end'] as const
 type Position = typeof positions[number]
@@ -82,7 +35,7 @@ const htmlDetector = (): HtmlDetector => {
       ) {
         detected = { position: 'html-content-end', offset: parser.startIndex }
       }
-    }
+    },
   }, { decodeEntities: false, lowerCaseTags: true })
 
   return {
@@ -122,7 +75,7 @@ export class InjectHtmlScriptTransform extends stream.Transform {
     return `<head>${this.scriptTags()}</head>`
   }
 
-  private injectStr(position: Position) {
+  private stringToInject(position: Position) {
     if (position === 'head-content-start') {
       return this.scriptTags()
     }
@@ -153,7 +106,7 @@ export class InjectHtmlScriptTransform extends stream.Transform {
     }
 
     this.pushNonEmpty(this.stringSoFar.slice(0, detected.offset))
-    this.push(this.injectStr(detected.position))
+    this.push(this.stringToInject(detected.position))
     this.pushNonEmpty(this.stringSoFar.slice(detected.offset))
 
     this.stringSoFar = ''

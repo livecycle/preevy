@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from '@jest/globals'
 import stream from 'node:stream'
 import { StringDecoder } from 'node:string_decoder'
 import { promisify } from 'node:util'
-import { InjectHtmlScriptTransform, InjectTransform } from './inject-transform'
+import { InjectHtmlScriptTransform } from './inject-transform'
 
 // taken from: https://nodejs.org/api/stream.html#decoding-buffers-in-a-writable-stream
 class StringWritable extends stream.Writable {
@@ -27,65 +27,6 @@ class StringWritable extends stream.Writable {
     callback()
   }
 }
-
-// describe('InjectTransform', () => {
-//   const inject = async (toInject: string, indexToInject: number, ...source: string[]) => {
-//     const t = new InjectTransform(toInject)
-//     t.offsetToInject = indexToInject
-//     const s = new StringWritable()
-//     await promisify(stream.pipeline)(stream.Readable.from(source), t, s)
-//     return s.data
-//   }
-
-//   describe('when the injection is at offset 0', () => {
-//     let result: string
-
-//     beforeEach(async () => {
-//       result = await inject('<injected>', 0, 'abc', 'def')
-//     })
-
-//     it('should inject', () => {
-//       expect(result).toBe('<injected>abcdef')
-//     })
-//   })
-
-//   describe('when the injection is at a middle offset', () => {
-//     let result: string
-
-//     beforeEach(async () => {
-//       result = await inject('<injected>', 2, 'abc', 'def')
-//     })
-
-//     it('should inject', () => {
-//       expect(result).toBe('ab<injected>cdef')
-//     })
-//   })
-
-//   describe('when the injection is at the end', () => {
-//     let result: string
-
-//     beforeEach(async () => {
-//       result = await inject('<injected>', 6, 'abc', 'def')
-//     })
-
-//     it('should inject', () => {
-//       expect(result).toBe('abcdef<injected>')
-//     })
-//   })
-
-//   describe('when the injection index is set too late', () => {
-//     it('should throw', async () => {
-//       const t = new InjectTransform('<injected>')
-//       t.on('data', () => { t.offsetToInject = 0 })
-//       const s = new StringWritable()
-//       return await expect(() => promisify(stream.pipeline)(
-//         stream.Readable.from(['abc', 'def']),
-//         t,
-//         s,
-//       )).rejects.toThrow('Stream at position 3, already passed the index to inject: 0')
-//     })
-//   })
-// })
 
 describe('InjectHtmlScriptTransform', () => {
   const inject = async (...sourceChunks: string[]) => {
