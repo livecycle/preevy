@@ -1,12 +1,9 @@
 import fs from 'fs'
 import path from 'path'
 import Docker from 'dockerode'
-import { inspect } from 'node:util'
-import http from 'node:http'
 import { rimraf } from 'rimraf'
 import pino from 'pino'
 import pinoPretty from 'pino-pretty'
-import { EOL } from 'os'
 import {
   requiredEnv,
   formatPublicKey,
@@ -16,9 +13,8 @@ import {
   MachineStatusCommand,
   COMPOSE_TUNNEL_AGENT_PORT,
 } from '@preevy/common'
-import createApiServerHandler from './src/api-server'
+import { createApp } from './src/api-server'
 import { sshClient as createSshClient } from './src/ssh'
-import { tryHandler, tryUpgradeHandler } from './src/api-server/http-server-helpers'
 import { runMachineStatusCommand } from './src/machine-status'
 import { envMetadata } from './src/metadata'
 import { readAllFiles } from './src/files'
@@ -54,7 +50,15 @@ const sshConnectionConfigFromEnv = async (): Promise<{ connectionConfig: SshConn
   }
 }
 
-const writeLineToStdout = (s: string) => [s, EOL].forEach(d => process.stdout.write(d))
+const fastifyListenArgsFromEnv = async () => {
+  const portOrPath = process.env.PORT ?? COMPOSE_TUNNEL_AGENT_PORT
+  const portNumber = Number(portOrPath)
+  if (typeof portOrPath === 'string' && Number.isNaN(portNumber)) {
+    await rimraf(portOrPath)
+    return { path: portOrPath }
+  }
+  return { port: portNumber, host: '0.0.0.0' }
+}
 
 const machineStatusCommand = process.env.MACHINE_STATUS_COMMAND
   ? JSON.parse(process.env.MACHINE_STATUS_COMMAND) as MachineStatusCommand
@@ -99,16 +103,10 @@ const main = async () => {
   void dockerClient.startListening({
     onChange: async services => {
       currentTunnels = sshClient.updateTunnels(services)
-      void currentTunnels.then(ssh => writeLineToStdout(JSON.stringify(ssh)))
     },
   })
 
-  const apiListenAddress = process.env.PORT ?? COMPOSE_TUNNEL_AGENT_PORT
-  if (typeof apiListenAddress === 'string' && Number.isNaN(Number(apiListenAddress))) {
-    await rimraf(apiListenAddress)
-  }
-
-  const { handler, upgradeHandler } = createApiServerHandler({
+  const app = await createApp({
     log: log.child({ name: 'api' }),
     currentSshState: async () => (await currentTunnels),
     machineStatus: machineStatusCommand
@@ -120,24 +118,8 @@ const main = async () => {
     dockerFilter: dockerFilteredClient({ docker, composeProject: targetComposeProject }),
   })
 
-  const httpLog = log.child({ name: 'http' })
-
-  const httpServer = http.createServer(tryHandler({ log: httpLog }, async (req, res) => {
-    httpLog.debug('request %s %s', req.method, req.url)
-    return await handler(req, res)
-  }))
-    .on('upgrade', tryUpgradeHandler({ log: httpLog }, async (req, socket, head) => {
-      httpLog.debug('upgrade %s %s', req.method, req.url)
-      return await upgradeHandler(req, socket, head)
-    }))
-    .listen(apiListenAddress, () => {
-      httpLog.info(`API server listening on ${inspect(httpServer.address())}`)
-    })
-    .on('error', err => {
-      httpLog.error(err)
-      process.exit(1)
-    })
-    .unref()
+  void app.listen({ ...await fastifyListenArgsFromEnv() })
+  app.server.unref()
 }
 
 void main();

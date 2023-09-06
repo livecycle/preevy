@@ -1,17 +1,14 @@
-import fs from 'node:fs'
-import url from 'node:url'
-import { WebSocketServer } from 'ws'
 import { Logger } from 'pino'
 import Dockerode from 'dockerode'
+import fastify from 'fastify'
+import cors from '@fastify/cors'
+import { validatorCompiler, serializerCompiler, ZodTypeProvider } from 'fastify-type-provider-zod'
 import { SshState } from '../ssh'
-import { NotFoundError, respond, respondAccordingToAccept, respondJson, tryHandler, tryUpgradeHandler, tryWsHandler } from './http-server-helpers'
 import { DockerFilterClient } from '../docker'
-import { findHandler as findWsHandler, handlers as wsHandlers } from './ws'
-import { ContainerNotFoundError, MissingContainerIdError } from './errors'
+import { containers } from './containers'
+import { env } from './env'
 
-// const pathRe = /^\/(?<resourceType>[^/]+)(\/(?<resourceId>[^/]+)(?<action>\/[^/]+)?)?$/
-
-const createApiServerHandlers = ({
+export const createApp = async ({
   log,
   currentSshState,
   machineStatus,
@@ -28,77 +25,22 @@ const createApiServerHandlers = ({
   dockerFilter: DockerFilterClient
   docker: Dockerode
 }) => {
-  const handler = tryHandler({ log }, async (req, res) => {
-    const { pathname: path } = url.parse(req.url || '')
+  const app = await fastify({ logger: log })
+  app.setValidatorCompiler(validatorCompiler)
+  app.setSerializerCompiler(serializerCompiler)
 
-    if (req.method === 'GET' && path === '/healthz') {
-      respondAccordingToAccept(req, res, 'OK')
-      return
-    }
+  app.withTypeProvider<ZodTypeProvider>()
 
-    if (req.method === 'GET' && path === '/tunnels') {
-      respondJson(res, await currentSshState())
-      return
-    }
-
-    if (req.method === 'GET' && path === '/machine-status' && machineStatus) {
-      const { data, contentType } = await machineStatus()
-      respond(res, data, contentType)
-      return
-    }
-
-    if (req.method === 'GET' && path === '/metadata' && envMetadata) {
-      respondJson(res, envMetadata)
-      return
-    }
-
-    if (req.method === 'GET' && path === '/compose-model') {
-      respond(res, await fs.promises.readFile(composeModelPath, { encoding: 'utf-8' }), 'application/x-yaml')
-      return
-    }
-
-    if (req.method === 'GET' && path === '/containers') {
-      respondJson(res, await dockerFilter.listContainers())
-      return
-    }
-
-    if (req.method === 'GET' && path?.startsWith('/container/')) {
-      const containerId = path.substring('/container/'.length)
-      if (!containerId) {
-        throw new MissingContainerIdError()
-      }
-      const container = await dockerFilter.inspectContainer(containerId)
-      if (!container) {
-        throw new ContainerNotFoundError(containerId)
-      }
-      respondJson(res, container)
-      return
-    }
-
-    throw new NotFoundError()
+  await app.register(cors, {
+    allowedHeaders: ['Authorization', 'Content-Type', 'Accept'],
+    origin: '*',
+    methods: '*',
   })
 
-  const wss = new WebSocketServer({ noServer: true })
+  app.get('/healthz', { logLevel: 'warn' }, async () => 'OK')
 
-  wss.on('connection', tryWsHandler({ log }, async (ws, req) => {
-    const foundHandler = findWsHandler(wsHandlers, req)
-    if (!foundHandler) {
-      throw new NotFoundError()
-    }
-    await foundHandler.handler.handler(ws, req, foundHandler.match, { log, docker, dockerFilter })
-  }))
+  await app.register(env, { composeModelPath, currentSshState, envMetadata, machineStatus })
+  await app.register(containers, { docker, dockerFilter, prefix: '/containers' })
 
-  const upgradeHandler = tryUpgradeHandler({ log }, async (req, socket, head) => {
-    if (req.headers.upgrade?.toLowerCase() !== 'websocket') {
-      throw new NotFoundError()
-    }
-
-    wss.handleUpgrade(req, socket, head, client => {
-      wss.emit('connection', client, req)
-    })
-  })
-
-  return { handler, upgradeHandler }
+  return app
 }
-
-export default createApiServerHandlers

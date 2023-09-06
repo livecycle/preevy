@@ -1,5 +1,4 @@
-import http from 'node:http'
-import net from 'node:net'
+import { AddressInfo } from 'node:net'
 import { describe, expect, beforeAll, afterAll, jest, it } from '@jest/globals'
 import { ChildProcess, spawn, exec } from 'child_process'
 import pino from 'pino'
@@ -10,7 +9,7 @@ import { inspect, promisify } from 'node:util'
 import waitForExpect from 'wait-for-expect'
 import WebSocket from 'ws'
 import stripAnsi from 'strip-ansi'
-import createApiServerHandlers from '.'
+import { createApp } from '.'
 import { filteredClient } from '../docker'
 import { SshState } from '../ssh'
 import { COMPOSE_PROJECT_LABEL } from '../docker/labels'
@@ -60,30 +59,25 @@ const setupApiServer = () => {
     level: 'debug',
   }, pinoPretty({ destination: pino.destination(process.stderr) }))
 
-  let server: http.Server
+  let app: Awaited<ReturnType<typeof createApp>>
   let serverBaseUrl: string
 
   beforeAll(async () => {
     const docker = new Dockerode()
-    const handlers = createApiServerHandlers({
+    app = await createApp({
       log,
       docker,
       dockerFilter: filteredClient({ docker, composeProject: TEST_COMPOSE_PROJECT }),
       composeModelPath: '',
       currentSshState: () => Promise.resolve({} as unknown as SshState),
     })
-    server = http.createServer(handlers.handler).on('upgrade', handlers.upgradeHandler)
-
-    const serverPort = await new Promise<number>(resolve => {
-      server.listen(0, () => {
-        resolve((server.address() as net.AddressInfo).port)
-      })
-    })
-    serverBaseUrl = `localhost:${serverPort}`
+    await app.listen({ port: 0 })
+    const { port } = app.server.address() as AddressInfo
+    serverBaseUrl = `localhost:${port}`
   })
 
   afterAll(async () => {
-    await promisify(server.close.bind(server))()
+    await app.close()
   })
 
   return {
@@ -156,7 +150,7 @@ describe('docker api', () => {
 
     describe('tty=true', () => {
       it('should communicate via websocket', async () => {
-        const { receivedBuffers, send, close } = await openWebSocket(`ws://${serverBaseUrl()}/container/${containerId}/exec`)
+        const { receivedBuffers, send, close } = await openWebSocket(`ws://${serverBaseUrl()}/containers/${containerId}/exec`)
         await waitForExpect(() => expect(receivedBuffers.length).toBeGreaterThan(0))
         await send('ls \n')
         await waitForExpect(() => {
@@ -171,7 +165,7 @@ describe('docker api', () => {
 
     describe('tty=false', () => {
       it('should communicate via websocket', async () => {
-        const { receivedBuffers, send, close } = await openWebSocket(`ws://${serverBaseUrl()}/container/${containerId}/exec`)
+        const { receivedBuffers, send, close } = await openWebSocket(`ws://${serverBaseUrl()}/containers/${containerId}/exec`)
         await waitForExpect(async () => {
           await send('ls\n')
           const received = Buffer.concat(receivedBuffers).toString('utf-8')
@@ -194,7 +188,7 @@ describe('docker api', () => {
     const testStream = (...s: LogStream[]) => {
       describe(`${s.join(' and ')}`, () => {
         it(`should show the ${s.join(' and ')} logs via websocket`, async () => {
-          const { receivedBuffers, close } = await openWebSocket(`ws://${serverBaseUrl()}/container/${containerId}/logs?${s.map(st => `${st}=true`).join('&')}`)
+          const { receivedBuffers, close } = await openWebSocket(`ws://${serverBaseUrl()}/containers/${containerId}/logs?${s.map(st => `${st}=true`).join('&')}`)
           await waitForExpect(() => expect(receivedBuffers.length).toBeGreaterThan(0))
           const length1 = receivedBuffers.length
           await waitForExpect(() => {
@@ -220,7 +214,7 @@ describe('docker api', () => {
 
     describe('timestamps', () => {
       it('should show the logs with a timestamp', async () => {
-        const { receivedBuffers, close } = await openWebSocket(`ws://${serverBaseUrl()}/container/${containerId}/logs?stdout=true&timestamps=true`)
+        const { receivedBuffers, close } = await openWebSocket(`ws://${serverBaseUrl()}/containers/${containerId}/logs?stdout=true&timestamps=true`)
         await waitForExpect(() => expect(receivedBuffers.length).toBeGreaterThan(0))
         const received = Buffer.concat(receivedBuffers).toString('utf-8')
         expect(received).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d*Z/)
