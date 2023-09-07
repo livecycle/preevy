@@ -2,7 +2,6 @@ import { Logger } from 'pino'
 import http from 'node:http'
 import stream from 'node:stream'
 import { inspect } from 'node:util'
-import internal from 'node:stream'
 
 export const respond = (res: http.ServerResponse, content: string, type = 'text/plain', status = 200) => {
   res.writeHead(status, { 'Content-Type': type })
@@ -86,7 +85,7 @@ export class RedirectError extends HttpError {
   }
 }
 
-export type HttpUpgradeHandler = (req: http.IncomingMessage, socket: internal.Duplex, head: Buffer) => Promise<void>
+export type HttpUpgradeHandler = (req: http.IncomingMessage, socket: stream.Duplex, head: Buffer) => Promise<void>
 export type HttpHandler = (req: http.IncomingMessage, res: http.ServerResponse) => Promise<void>
 
 export const errorHandler = (

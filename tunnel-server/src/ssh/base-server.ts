@@ -94,8 +94,8 @@ export const baseSshServer = (
   const server = new ssh2.Server(
     {
       // debug: x => log.debug(x),
-      // keepaliveInterval: 1000,
-      // keepaliveCountMax: 5,
+      keepaliveInterval: 5000,
+      keepaliveCountMax: 3,
       hostKeys: [sshPrivateKey],
     },
     client => {

@@ -2,6 +2,13 @@ import { KeyObject } from 'crypto'
 import { Logger } from 'pino'
 import { truncateWithHash } from './strings'
 
+export type ScriptInjection = {
+  pathRegex?: RegExp
+  src: string
+  async?: boolean
+  defer?: boolean
+}
+
 export type ActiveTunnel = {
   envId: string
   clientId: string
@@ -12,6 +19,7 @@ export type ActiveTunnel = {
   publicKeyThumbprint: string
   access: 'private' | 'public'
   meta: Record<string, unknown>
+  inject?: ScriptInjection[]
 }
 
 export type ActiveTunnelStore = {
@@ -53,7 +61,7 @@ export const inMemoryActiveTunnelStore = ({ log }: { log: Logger }): ActiveTunne
       }
       return keyToTunnel.delete(key)
     },
-  };
+  }
 }
 
 const MAX_DNS_LABEL_LENGTH = 63

@@ -1,10 +1,10 @@
 /* eslint-disable jest/no-standalone-expect */
-import { it, describe, expect, } from '@jest/globals'
+import { it, describe, expect } from '@jest/globals'
 import { createHash } from 'crypto'
 import { activeTunnelStoreKey } from './tunnel-store'
 
 describe('tunnel store key formatting', () => {
-  it('should create the format {envId}-{clientId', () => {
+  it('should create the format {envId}-{clientId}', () => {
     const tunnelName = activeTunnelStoreKey('my-client', '/test-some-env')
     expect(tunnelName).toBe('test-some-env-my-client')
   })
@@ -45,8 +45,8 @@ describe('tunnel store key formatting', () => {
   })
 
   it('should throw error for invalid client id', () => {
-    const invalidClient = "ab`!@3"
-    expect(()=> activeTunnelStoreKey(invalidClient, 'test')).toThrow()
+    const invalidClient = 'ab`!@3'
+    expect(() => activeTunnelStoreKey(invalidClient, 'test')).toThrow()
   })
 
   it('should maintain uniqueness in different characters', () => {

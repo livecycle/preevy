@@ -1,3 +1,5 @@
+import { ScriptInjection } from './tunnel-store'
+
 export const access = ['private', 'public'] as const
 
 export type Accesss = typeof access[number]
@@ -6,7 +8,12 @@ export type ForwardRequest = {
   path: string
   access: Accesss
   meta: Record<string, unknown>
+  inject?: ScriptInjection[]
 }
+
+type SerializedScriptInjection = Omit<ScriptInjection, 'pathRegex'> & { pathRegex?: string }
+
+const decodeJson = (s: string) => JSON.parse(Buffer.from(s, 'base64url').toString('utf-8'))
 
 export const parseForwardRequest = (request: string) => {
   const [path, paramStr] = request.split('#')
@@ -21,9 +28,16 @@ export const parseForwardRequest = (request: string) => {
       forwardRequest.access = v as Accesss
     } else if (k === 'meta') {
       try {
-        forwardRequest.meta = JSON.parse(Buffer.from(v, 'base64url').toString('utf-8'))
+        forwardRequest.meta = decodeJson(v)
       } catch (e) {
-        throw new Error(`invalid meta in request: ${v}`)
+        throw new Error(`invalid meta in request: ${v}`, { cause: e })
+      }
+    } else if (k === 'inject') {
+      try {
+        forwardRequest.inject = (decodeJson(v) as SerializedScriptInjection[])
+          .map(o => ({ ...o, pathRegex: o.pathRegex ? new RegExp(o.pathRegex) : undefined }))
+      } catch (e) {
+        throw new Error(`invalid inject in request: ${v}`, { cause: e })
       }
     } else {
       throw new Error(`invalid param "${k}" in request "${request}"`)
