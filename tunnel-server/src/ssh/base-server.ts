@@ -42,6 +42,7 @@ export interface BaseSshClient extends EventEmitter {
       listener: (
         requestId: string,
         request: ForwardRequest,
+        localSocketPath: string,
         accept: () => Promise<ClientForward>,
         reject: (reason: Error) => void,
       ) => void
@@ -179,10 +180,13 @@ export const baseSshServer = (
 
           log.debug('emitting forward: %j', res)
 
+          const socketPath = path.join(socketDir, `s_${preevySshClient.clientId}_${randomBytes(16).toString('hex')}`)
+
           preevySshClient.emit(
             'forward',
             request,
             parsed,
+            socketPath,
             () => new Promise<ClientForward>((resolveForward, rejectForward) => {
               const socketServer = net.createServer(socket => {
                 log.debug('socketServer connected')
@@ -201,8 +205,6 @@ export const baseSshServer = (
                   }
                 )
               })
-
-              const socketPath = path.join(socketDir, `s_${preevySshClient.clientId}_${randomBytes(16).toString('hex')}`)
 
               const closeSocketServer = () => socketServer.close()
 
