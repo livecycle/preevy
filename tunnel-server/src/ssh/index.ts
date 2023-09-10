@@ -65,12 +65,18 @@ export const createSshServer = ({
           return undefined
         }
         tunnels.set(requestId, tunnelUrl(clientId, tunnelPath))
-        forward.on('close', () => {
-          log.info('deleting tunnel %s', key)
+        const onForwardClose = (event: 'close' | 'error') => (err?: Error) => {
+          if (err) {
+            log.info('%s: deleting tunnel %s due to forward server error: %j', event, key, inspect(err))
+          } else {
+            log.info('%s: deleting tunnel %s', event, key)
+          }
           tunnels.delete(requestId)
           void activeTunnelStore.delete(key, setTx)
           tunnelsGauge.dec({ clientId })
-        })
+        }
+        forward.on('close', onForwardClose('close'))
+        forward.on('error', onForwardClose('error'))
         tunnelsGauge.inc({ clientId })
         return undefined
       })

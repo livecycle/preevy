@@ -28,8 +28,11 @@ const parseForwardRequestFromSocketBindInfo = (
 }
 
 export interface ClientForward extends EventEmitter {
-  localSocketPath: string
-  on: (event: 'close', listener: () => void) => this
+  on: (
+    (event: 'close', listener: () => void) => this
+  ) & (
+    (event: 'error', listener: (err: Error) => void) => this
+  )
 }
 
 export interface BaseSshClient extends EventEmitter {
@@ -196,9 +199,6 @@ export const baseSshServer = (
                     if (err) {
                       log.error('error forwarding request %j: %s', request, inspect(err))
                       socket.end()
-                      socketServer.close(closeErr => {
-                        log.error('error closing socket server for request %j: %j', request, inspect(closeErr))
-                      })
                       return
                     }
                     upstream.pipe(socket).pipe(upstream)
@@ -213,7 +213,7 @@ export const baseSshServer = (
                   log.debug('streamlocal-forward@openssh.com: request %j calling accept: %j', request, accept)
                   accept?.()
                   socketServers.set(request, socketServer)
-                  resolveForward(Object.assign(socketServer, { localSocketPath: socketPath }))
+                  resolveForward(socketServer)
                 })
                 .on('error', (err: unknown) => {
                   log.error('socketServer request %j error: %j', request, err)
