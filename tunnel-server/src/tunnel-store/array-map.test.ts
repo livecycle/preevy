@@ -17,7 +17,7 @@ describe('arrayMap', () => {
   })
 
   describe('when the key exists', () => {
-    let values: { x: number }[] | undefined
+    let values: readonly { x: number }[] | undefined
     beforeEach(() => {
       values = a.get('foo')
     })
