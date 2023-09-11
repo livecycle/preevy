@@ -39,12 +39,12 @@ export type ActiveTunnelStore = {
   delete: (key: string, tx?: TransactionDescriptor) => Promise<void>
 }
 
-const txIdGenerator = () => {
-  let nextTxId = 0
+const idGenerator = () => {
+  let nextId = 0
   return {
     next: () => {
-      const result = nextTxId
-      nextTxId += 1
+      const result = nextId
+      nextId += 1
       return result
     },
   }
@@ -53,7 +53,7 @@ const txIdGenerator = () => {
 export const inMemoryActiveTunnelStore = ({ log }: { log: Logger }): ActiveTunnelStore => {
   const keyToTunnel = new Map<string, ActiveTunnel & { txId: number }>()
   const pkThumbprintToTunnel = arrayMap<string, ActiveTunnel>()
-  const txIdGen = txIdGenerator()
+  const txIdGen = idGenerator()
   return {
     get: async key => keyToTunnel.get(key),
     getByPkThumbprint: async pkThumbprint => pkThumbprintToTunnel.get(pkThumbprint),
@@ -62,7 +62,7 @@ export const inMemoryActiveTunnelStore = ({ log }: { log: Logger }): ActiveTunne
         throw new KeyAlreadyExistsError(key)
       }
       const txId = txIdGen.next()
-      log.debug('setting tunnel %s: %j', key, txId, value)
+      log.debug('setting tunnel key %s id %s: %j', key, txId, value)
       keyToTunnel.set(key, Object.assign(value, { txId }))
       pkThumbprintToTunnel.add(value.publicKeyThumbprint, value)
       return { txId }
