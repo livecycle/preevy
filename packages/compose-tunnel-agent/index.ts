@@ -13,13 +13,13 @@ import {
   MachineStatusCommand,
   COMPOSE_TUNNEL_AGENT_PORT,
 } from '@preevy/common'
+import { inspect } from 'util'
 import { createApp } from './src/api-server'
 import { sshClient as createSshClient } from './src/ssh'
 import { runMachineStatusCommand } from './src/machine-status'
 import { envMetadata } from './src/metadata'
 import { readAllFiles } from './src/files'
 import { eventsClient as dockerEventsClient, filteredClient as dockerFilteredClient } from './src/docker'
-import { inspect } from 'util'
 
 const homeDir = process.env.HOME || '/root'
 const dockerSocket = '/var/run/docker.sock'
@@ -143,12 +143,20 @@ const main = async () => {
   return { end }
 }
 
+const SHUTDOWN_TIMEOUT = 5000
+
 void main().then(
   ({ end }) => {
     ['SIGTERM', 'SIGINT'].forEach(signal => {
       process.once(signal, async () => {
         log.info(`shutting down on ${signal}`)
-        await end()
+        const endResult = await Promise.race([
+          end().then(() => true),
+          new Promise<void>(resolve => { setTimeout(resolve, SHUTDOWN_TIMEOUT) }),
+        ])
+        if (!endResult) {
+          log.error(`timed out while waiting ${SHUTDOWN_TIMEOUT}ms for server to close, exiting`)
+        }
         process.exit(0)
       })
     })
