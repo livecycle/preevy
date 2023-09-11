@@ -4,7 +4,7 @@ import { calculateJwkThumbprintUri, exportJWK } from 'jose'
 import { inspect } from 'util'
 import { Gauge } from 'prom-client'
 import { baseSshServer } from './base-server'
-import { ActiveTunnelStore, activeTunnelStoreKey } from '../tunnel-store'
+import { ActiveTunnelStore, KeyAlreadyExistsError, activeTunnelStoreKey } from '../tunnel-store'
 
 export const createSshServer = ({
   log,
@@ -33,43 +33,52 @@ export const createSshServer = ({
     const tunnels = new Map<string, string>()
     const jwkThumbprint = (async () => await calculateJwkThumbprintUri(await exportJWK(pk)))()
     client
-      .on('forward', async (requestId, { path: tunnelPath, access, meta, inject }, accept, reject) => {
+      .on('forward', async (requestId, { path: tunnelPath, access, meta, inject }, localSocketPath, accept, reject) => {
         const key = activeTunnelStoreKey(clientId, tunnelPath)
-        if (await activeTunnelStore.has(key)) {
-          reject(new Error(`duplicate path: ${key}, client map contains path: ${tunnels.has(key)}`))
-          return
-        }
-        const thumbprint = await jwkThumbprint
-        const forward = await accept()
-        const closeTunnel = () => {
-          log.info('deleting tunnel %s', key)
-          tunnels.delete(requestId)
-          void activeTunnelStore.delete(key)
-          tunnelsGauge.dec({ clientId })
-        }
-        let isClosed = false
-        forward.on('close', () => {
-          isClosed = true
-          closeTunnel()
-        })
-        log.info('creating tunnel %s for localSocket %s', key, forward.localSocketPath)
-        await activeTunnelStore.set(key, {
+        log.info('creating tunnel %s for localSocket %s', key, localSocketPath)
+        const setTx = await activeTunnelStore.set(key, {
           tunnelPath,
           envId,
-          target: forward.localSocketPath,
+          target: localSocketPath,
           clientId,
           publicKey: pk,
           access,
           hostname: key,
-          publicKeyThumbprint: thumbprint,
+          publicKeyThumbprint: await jwkThumbprint,
           meta,
           inject,
+        }).catch(e => {
+          reject(
+            e instanceof KeyAlreadyExistsError
+              ? new Error(`duplicate path: ${key}, client map contains path: ${tunnels.has(key)}`)
+              : new Error(`error setting tunnel ${key}: ${e}`, { cause: e }),
+          )
         })
-        tunnels.set(requestId, tunnelUrl(clientId, tunnelPath))
-        tunnelsGauge.inc({ clientId })
-        if (isClosed) {
-          closeTunnel()
+        if (!setTx) {
+          return undefined
         }
+        const forward = await accept().catch(async e => {
+          log.warn('error accepting forward %j: %j', requestId, inspect(e))
+          await activeTunnelStore.delete(key, setTx)
+        })
+        if (!forward) {
+          return undefined
+        }
+        tunnels.set(requestId, tunnelUrl(clientId, tunnelPath))
+        const onForwardClose = (event: 'close' | 'error') => (err?: Error) => {
+          if (err) {
+            log.info('%s: deleting tunnel %s due to forward server error: %j', event, key, inspect(err))
+          } else {
+            log.info('%s: deleting tunnel %s', event, key)
+          }
+          tunnels.delete(requestId)
+          void activeTunnelStore.delete(key, setTx)
+          tunnelsGauge.dec({ clientId })
+        }
+        forward.on('close', onForwardClose('close'))
+        forward.on('error', onForwardClose('error'))
+        tunnelsGauge.inc({ clientId })
+        return undefined
       })
       .on('error', err => { log.warn('client error %j: %j', clientId, inspect(err)) })
       .on('exec', (command, respondWithJson, reject) => {
