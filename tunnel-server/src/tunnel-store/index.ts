@@ -52,11 +52,12 @@ const idGenerator = () => {
 
 export const inMemoryActiveTunnelStore = ({ log }: { log: Logger }): ActiveTunnelStore => {
   const keyToTunnel = new Map<string, ActiveTunnel & { txId: number }>()
-  const pkThumbprintToTunnel = arrayMap<string, ActiveTunnel>()
+  const pkThumbprintToTunnel = arrayMap<string, string>()
   const txIdGen = idGenerator()
   return {
     get: async key => keyToTunnel.get(key),
-    getByPkThumbprint: async pkThumbprint => pkThumbprintToTunnel.get(pkThumbprint),
+    getByPkThumbprint: async pkThumbprint => pkThumbprintToTunnel.get(pkThumbprint)
+      ?.map(key => keyToTunnel.get(key) as ActiveTunnel),
     set: async (key, value) => {
       if (keyToTunnel.has(key)) {
         throw new KeyAlreadyExistsError(key)
@@ -64,13 +65,13 @@ export const inMemoryActiveTunnelStore = ({ log }: { log: Logger }): ActiveTunne
       const txId = txIdGen.next()
       log.debug('setting tunnel key %s id %s: %j', key, txId, value)
       keyToTunnel.set(key, Object.assign(value, { txId }))
-      pkThumbprintToTunnel.add(value.publicKeyThumbprint, value)
+      pkThumbprintToTunnel.add(value.publicKeyThumbprint, key)
       return { txId }
     },
     delete: async (key, tx) => {
       const tunnel = keyToTunnel.get(key)
       if (tunnel && (tx === undefined || tunnel.txId === tx.txId)) {
-        pkThumbprintToTunnel.delete(tunnel.publicKeyThumbprint, ({ hostname }) => hostname === key)
+        pkThumbprintToTunnel.delete(tunnel.publicKeyThumbprint, k => k === key)
         keyToTunnel.delete(key)
       }
     },
