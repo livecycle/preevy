@@ -18,7 +18,7 @@ export type HostKeySignatureConfirmer = (
 ) => Promise<boolean>
 
 export type Connection = {
-  client: Pick<BaseSshClient, 'execHello' | 'execTunnelUrl' | 'close'>
+  client: Pick<BaseSshClient, 'execHello' | 'execTunnelUrl' | 'end'>
   hostKey: Buffer
 }
 

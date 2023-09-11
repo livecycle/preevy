@@ -19,6 +19,7 @@ import { runMachineStatusCommand } from './src/machine-status'
 import { envMetadata } from './src/metadata'
 import { readAllFiles } from './src/files'
 import { eventsClient as dockerEventsClient, filteredClient as dockerFilteredClient } from './src/docker'
+import { inspect } from 'util'
 
 const homeDir = process.env.HOME || '/root'
 const dockerSocket = '/var/run/docker.sock'
@@ -69,6 +70,7 @@ const log = pino({
 }, pinoPretty({ destination: pino.destination(process.stderr) }))
 
 const main = async () => {
+  let endRequested = false
   const { connectionConfig, sshUrl } = await sshConnectionConfigFromEnv()
 
   log.debug('ssh config: %j', {
@@ -91,10 +93,19 @@ const main = async () => {
     connectionConfig,
     tunnelNameResolver: tunnelNameResolver({ envId: requiredEnv('PREEVY_ENV_ID') }),
     log: sshLog,
-    onError: err => {
-      log.error(err)
+  })
+
+  sshClient.ssh.on('error', async err => {
+    log.error('ssh client error: %j', inspect(err))
+    await sshClient.end()
+  })
+
+  sshClient.ssh.on('close', () => {
+    if (!endRequested) {
+      log.error('ssh client closed unexpectedly')
       process.exit(1)
-    },
+    }
+    log.info('ssh client closed')
   })
 
   sshLog.info('ssh client connected to %j', sshUrl)
@@ -120,13 +131,30 @@ const main = async () => {
 
   void app.listen({ ...await fastifyListenArgsFromEnv() })
   app.server.unref()
+
+  const end = async () => {
+    endRequested = true
+    await Promise.all([
+      app.close(),
+      sshClient.end(),
+    ])
+  }
+
+  return { end }
 }
 
-void main();
-
-['SIGTERM', 'SIGINT'].forEach(signal => {
-  process.once(signal, async () => {
-    log.info(`shutting down on ${signal}`)
-    process.exit(0)
-  })
-})
+void main().then(
+  ({ end }) => {
+    ['SIGTERM', 'SIGINT'].forEach(signal => {
+      process.once(signal, async () => {
+        log.info(`shutting down on ${signal}`)
+        await end()
+        process.exit(0)
+      })
+    })
+  },
+  err => {
+    log.error(err)
+    process.exit(1)
+  }
+)

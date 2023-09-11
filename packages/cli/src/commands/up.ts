@@ -97,7 +97,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
       this.logger.debug('Tunnel server details: %j', { clientId, expectedTunnelUrls })
 
-      tunnelServerSshClient.close()
+      void tunnelServerSshClient.end()
 
       telemetryEmitter().group({ type: 'profile' }, { proxy_client_id: clientId })
 

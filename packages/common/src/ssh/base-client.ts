@@ -1,3 +1,4 @@
+import events from 'events'
 import tls, { TLSSocket } from 'tls'
 import ssh2, { ParsedKey } from 'ssh2'
 import { promisify } from 'util'
@@ -72,7 +73,6 @@ export const knownKeyHostVerifier = (serverPublicKeys: (string | Buffer)[]) => {
 export type SshClientOpts = {
   log: Logger
   connectionConfig: SshConnectionConfig
-  onError?: (err: Error) => void
   onHostKey?: (key: Buffer, isVerified: boolean) => void
 }
 
@@ -81,9 +81,11 @@ type ReadStream = {
 }
 
 export const baseSshClient = async (
-  { log, onError, connectionConfig, onHostKey }: SshClientOpts,
+  { log, connectionConfig, onHostKey }: SshClientOpts,
 ) => {
+  let ended = false
   const ssh = new ssh2.Client()
+  ssh.once('end', () => { ended = true })
 
   const tryParseJsonChunks = <T>(
     channel: { stdout: ReadStream; close: () => void },
@@ -109,7 +111,12 @@ export const baseSshClient = async (
 
   const result = {
     ssh,
-    close: () => ssh.end(),
+    end: async () => {
+      if (!ended) {
+        ssh.end()
+        await events.once(ssh, 'end')
+      }
+    },
     execHello: () => exec<HelloResponse>('hello'),
     execTunnelUrl: <T extends string>(tunnels: T[]) => exec<Record<T, string>>(`tunnel-url ${tunnels.join(' ')}`),
   }
@@ -133,7 +140,6 @@ export const baseSshClient = async (
     ssh.on('ready', () => resolve(result))
     ssh.on('error', err => {
       reject(err)
-      onError?.(err)
     })
     ssh.connect({
       debug: msg => log.debug(msg),
