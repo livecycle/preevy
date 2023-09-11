@@ -1,10 +1,10 @@
-export type ArrayMap<K, V> = {
+export type MultiMap<K, V> = {
   get: (key: K) => readonly V[] | undefined
   add: (key: K, value: V) => void
   delete: (key: K, pred: (value: V) => boolean) => void
 }
 
-export const arrayMap = <K, V>(): ArrayMap<K, V> => {
+export const multimap = <K, V>(): MultiMap<K, V> => {
   const map = new Map<K, V[]>()
   return {
     get: (key: K) => map.get(key),

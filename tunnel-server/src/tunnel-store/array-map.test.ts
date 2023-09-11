@@ -1,18 +1,18 @@
 import { describe, expect, it, beforeEach } from '@jest/globals'
-import { ArrayMap, arrayMap } from './array-map'
+import { MultiMap, multimap } from './array-map'
 
-describe('arrayMap', () => {
-  let a: ArrayMap<string, { x: number }>
+describe('multimap', () => {
+  let a: MultiMap<string, { x: number }>
   const expectedValues = [{ x: 12 }, { x: 13 }] as const
   beforeEach(() => {
-    a = arrayMap()
+    a = multimap()
     a.add('foo', expectedValues[0])
     a.add('foo', expectedValues[1])
   })
 
   describe('when the key does not exist', () => {
     it('returns undefined', () => {
-      expect(arrayMap().get('bar')).toBeUndefined()
+      expect(multimap().get('bar')).toBeUndefined()
     })
   })
 

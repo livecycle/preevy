@@ -3,8 +3,8 @@ import { createPublicKey } from 'crypto'
 import { calculateJwkThumbprintUri, exportJWK } from 'jose'
 import { inspect } from 'util'
 import { Gauge } from 'prom-client'
-import { ClientForward, baseSshServer } from './base-server'
-import { ActiveTunnelStore, KeyAlreadyExistsError, TransactionDescriptor, activeTunnelStoreKey } from '../tunnel-store'
+import { baseSshServer } from './base-server'
+import { ActiveTunnelStore, KeyAlreadyExistsError, activeTunnelStoreKey } from '../tunnel-store'
 
 export const createSshServer = ({
   log,

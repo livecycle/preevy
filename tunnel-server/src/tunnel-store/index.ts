@@ -1,6 +1,6 @@
 import { KeyObject } from 'crypto'
 import { Logger } from 'pino'
-import { arrayMap } from './array-map'
+import { multimap } from './array-map'
 
 export { activeTunnelStoreKey } from './key'
 
@@ -52,7 +52,7 @@ const idGenerator = () => {
 
 export const inMemoryActiveTunnelStore = ({ log }: { log: Logger }): ActiveTunnelStore => {
   const keyToTunnel = new Map<string, ActiveTunnel & { txId: number }>()
-  const pkThumbprintToTunnel = arrayMap<string, string>()
+  const pkThumbprintToTunnel = multimap<string, string>()
   const txIdGen = idGenerator()
   return {
     get: async key => keyToTunnel.get(key),
