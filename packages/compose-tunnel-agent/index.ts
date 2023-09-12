@@ -13,6 +13,7 @@ import {
   MachineStatusCommand,
   COMPOSE_TUNNEL_AGENT_PORT,
 } from '@preevy/common'
+import { inspect } from 'util'
 import { createApp } from './src/api-server'
 import { sshClient as createSshClient } from './src/ssh'
 import { runMachineStatusCommand } from './src/machine-status'
@@ -69,6 +70,7 @@ const log = pino({
 }, pinoPretty({ destination: pino.destination(process.stderr) }))
 
 const main = async () => {
+  let endRequested = false
   const { connectionConfig, sshUrl } = await sshConnectionConfigFromEnv()
 
   log.debug('ssh config: %j', {
@@ -91,10 +93,19 @@ const main = async () => {
     connectionConfig,
     tunnelNameResolver: tunnelNameResolver({ envId: requiredEnv('PREEVY_ENV_ID') }),
     log: sshLog,
-    onError: err => {
-      log.error(err)
+  })
+
+  sshClient.ssh.on('error', async err => {
+    log.error('ssh client error: %j', inspect(err))
+    await sshClient.end()
+  })
+
+  sshClient.ssh.on('close', () => {
+    if (!endRequested) {
+      log.error('ssh client closed unexpectedly')
       process.exit(1)
-    },
+    }
+    log.info('ssh client closed')
   })
 
   sshLog.info('ssh client connected to %j', sshUrl)
@@ -120,13 +131,38 @@ const main = async () => {
 
   void app.listen({ ...await fastifyListenArgsFromEnv() })
   app.server.unref()
+
+  const end = async () => {
+    endRequested = true
+    await Promise.all([
+      app.close(),
+      sshClient.end(),
+    ])
+  }
+
+  return { end }
 }
 
-void main();
+const SHUTDOWN_TIMEOUT = 5000
 
-['SIGTERM', 'SIGINT'].forEach(signal => {
-  process.once(signal, async () => {
-    log.info(`shutting down on ${signal}`)
-    process.exit(0)
-  })
-})
+void main().then(
+  ({ end }) => {
+    ['SIGTERM', 'SIGINT'].forEach(signal => {
+      process.once(signal, async () => {
+        log.info(`shutting down on ${signal}`)
+        const endResult = await Promise.race([
+          end().then(() => true),
+          new Promise<void>(resolve => { setTimeout(resolve, SHUTDOWN_TIMEOUT) }),
+        ])
+        if (!endResult) {
+          log.error(`timed out while waiting ${SHUTDOWN_TIMEOUT}ms for server to close, exiting`)
+        }
+        process.exit(0)
+      })
+    })
+  },
+  err => {
+    log.error(err)
+    process.exit(1)
+  }
+)

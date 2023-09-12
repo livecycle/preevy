@@ -79,7 +79,7 @@ export default class Urls extends ProfileCommand<typeof Urls> {
     )
     const expectedTunnelUrls = await tunnelServerSshClient.execTunnelUrl(Object.keys(expectedTunnels))
 
-    tunnelServerSshClient.close()
+    void tunnelServerSshClient.end()
 
     const expectedServiceUrls = Object.entries(expectedTunnels)
       .map(([tunnel, { name, port }]) => ({ name, port, url: expectedTunnelUrls[tunnel] }))

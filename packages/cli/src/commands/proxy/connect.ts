@@ -65,17 +65,17 @@ export default class Connect extends ProfileCommand<typeof Connect> {
     let hostKey: Buffer
     let preevyAgentUrl: string
     try {
-      const connnection = (await connectToTunnelServerSsh({
+      const connnection = await connectToTunnelServerSsh({
         tunnelOpts,
         knownServerPublicKeys: pStore.knownServerPublicKeys,
         tunnelingKey,
         log: this.logger,
-      }))
+      })
       client = connnection.client
       hostKey = connnection.hostKey
       preevyAgentUrl = await commands.proxy.getPreevyAgentUrl(client, envId)
     } finally {
-      client?.close()
+      void client?.end()
     }
     const tunnelServerPublicKey = formatPublicKey(hostKey)
 

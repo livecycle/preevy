@@ -34,17 +34,14 @@ export const sshClient = async ({
   log,
   connectionConfig,
   tunnelNameResolver,
-  onError,
-}: Pick<SshClientOpts, 'connectionConfig' | 'onError' | 'log'> & {
+}: Pick<SshClientOpts, 'connectionConfig' | 'log'> & {
   tunnelNameResolver: TunnelNameResolver
 }) => {
-  const { ssh, execHello } = await baseSshClient({
+  const { ssh, execHello, end } = await baseSshClient({
     log,
     connectionConfig,
-    onError,
   })
 
-  ssh.on('close', () => onError?.(new Error('ssh connection closed')))
   const currentForwards = new Map<string, Forward>()
 
   ssh.on('unix connection', ({ socketPath: forwardRequestId }, accept, reject) => {
@@ -197,5 +194,7 @@ export const sshClient = async ({
 
       return state
     }),
+    end,
+    ssh,
   }
 }
