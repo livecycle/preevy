@@ -17,29 +17,24 @@ jobs:
   bump-version:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app_id: ${{ secrets.PREEVY_AUTOMATION_APP_ID }}
+          private_key: ${{ secrets.PREEVY_AUTOMATION_PRIVATE_KEY }}
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          persist-credentials: false
+          token: ${{ steps.app-token.outputs.token }}
       - uses: actions/setup-node@v3
         with:
           node-version: '18.x'
           cache: yarn
       - run: yarn
       - run: yarn build
-      - id: gh_app_token
-        uses: tibdex/github-app-token@v1
-        with:
-          app_id: ${{ secrets.PREEVY_AUTOMATION_APP_ID }}
-          private_key: ${{ secrets.PREEVY_AUTOMATION_PRIVATE_KEY }}
-
-      - env:
-          GITHUB_TOKEN: ${{ steps.gh_app_token.outputs.token }}
+      - 
         run: |
           git config --global user.name 'Preevy Automation'
           git config --global user.email 'preevy-automation@livecycle.dev'
-          git remote set-url origin https://x-access-token:$GITHUB_TOKEN@github.com/livecycle/preevy.git
         
       - run: yarn lerna version ${{ github.event.inputs.bump }} --exact --yes  
-
-      
