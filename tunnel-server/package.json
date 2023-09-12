@@ -14,13 +14,19 @@
     "iconv-lite": "^0.6.3",
     "jose": "^4.14.4",
     "lodash": "^4.17.21",
+    "node-fetch": "2.6.9",
+    "p-timeout": "^6.1.2",
     "pino": "^8.11.0",
     "pino-pretty": "^9.4.0",
     "prom-client": "^14.2.0",
     "ssh2": "^1.12.0",
     "ts-node": "^10.9.1",
     "ts-pattern": "^5.0.4",
+    "tseep": "^1.1.1",
     "zod": "^3.21.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "devDependencies": {
     "@jest/globals": "^29.5.0",
@@ -29,6 +35,7 @@
     "@types/http-proxy": "^1.17.9",
     "@types/lodash": "^4.14.192",
     "@types/node": "18",
+    "@types/node-fetch": "^2.6.4",
     "@types/ssh2": "^1.11.8",
     "@typescript-eslint/eslint-plugin": "^5.55.0",
     "@typescript-eslint/parser": "^5.55.0",
@@ -40,7 +47,7 @@
     "wait-for-expect": "^3.0.2"
   },
   "scripts": {
-    "test": "yarn jest",
+    "test": "yarn node --experimental-vm-modules $(yarn bin jest)",
     "start": "ts-node ./index.ts",
     "build": "tsc --noEmit",
     "dev": "DEBUG=1 yarn nodemon ./index.ts",

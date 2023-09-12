@@ -1,6 +1,7 @@
 import { KeyObject } from 'crypto'
 import { Logger } from 'pino'
-import { multimap } from './array-map'
+import { multimap } from '../multimap'
+import { Store, TransactionDescriptor, inMemoryStore } from '../memory-store'
 
 export { activeTunnelStoreKey } from './key'
 
@@ -22,58 +23,35 @@ export type ActiveTunnel = {
   access: 'private' | 'public'
   meta: Record<string, unknown>
   inject?: ScriptInjection[]
+  client: unknown
 }
 
-export class KeyAlreadyExistsError extends Error {
-  constructor(readonly key: string) {
-    super(`key already exists: "${key}"`)
-  }
-}
-
-export type TransactionDescriptor = { txId: number }
-
-export type ActiveTunnelStore = {
-  get: (key: string) => Promise<ActiveTunnel | undefined>
+export type ActiveTunnelStore = Store<ActiveTunnel> & {
   getByPkThumbprint: (pkThumbprint: string) => Promise<readonly ActiveTunnel[] | undefined>
-  set: (key: string, value: ActiveTunnel) => Promise<TransactionDescriptor>
-  delete: (key: string, tx?: TransactionDescriptor) => Promise<void>
-}
-
-const idGenerator = () => {
-  let nextId = 0
-  return {
-    next: () => {
-      const result = nextId
-      nextId += 1
-      return result
-    },
-  }
 }
 
 export const inMemoryActiveTunnelStore = ({ log }: { log: Logger }): ActiveTunnelStore => {
-  const keyToTunnel = new Map<string, ActiveTunnel & { txId: number }>()
-  const pkThumbprintToTunnel = multimap<string, string>()
-  const txIdGen = idGenerator()
-  return {
-    get: async key => keyToTunnel.get(key),
-    getByPkThumbprint: async pkThumbprint => pkThumbprintToTunnel.get(pkThumbprint)
-      ?.map(key => keyToTunnel.get(key) as ActiveTunnel),
-    set: async (key, value) => {
-      if (keyToTunnel.has(key)) {
-        throw new KeyAlreadyExistsError(key)
-      }
-      const txId = txIdGen.next()
-      log.debug('setting tunnel key %s id %s: %j', key, txId, value)
-      keyToTunnel.set(key, Object.assign(value, { txId }))
-      pkThumbprintToTunnel.add(value.publicKeyThumbprint, key)
-      return { txId }
+  const keyToTunnel = inMemoryStore<ActiveTunnel>({ log })
+  const pkThumbprintToTunnel = multimap<string, { key: string; tx: TransactionDescriptor }>()
+  const { set: storeSet } = keyToTunnel
+  return Object.assign(keyToTunnel, {
+    getByPkThumbprint: async (pkThumbprint: string) => {
+      const entries = pkThumbprintToTunnel.get(pkThumbprint) ?? []
+      const result = (
+        await Promise.all(entries.map(async ({ key }) => (await keyToTunnel.get(key))?.value))
+      ).filter(Boolean) as ActiveTunnel[]
+      return result.length ? result : undefined
     },
-    delete: async (key, tx) => {
-      const tunnel = keyToTunnel.get(key)
-      if (tunnel && (tx === undefined || tunnel.txId === tx.txId)) {
-        pkThumbprintToTunnel.delete(tunnel.publicKeyThumbprint, k => k === key)
-        keyToTunnel.delete(key)
-      }
+    set: async (key: string, value: ActiveTunnel) => {
+      const result = await storeSet(key, value)
+      pkThumbprintToTunnel.add(value.publicKeyThumbprint, { key, tx: result.tx })
+      result.watcher.once('delete', () => {
+        pkThumbprintToTunnel.delete(
+          value.publicKeyThumbprint,
+          entry => entry.key === key && entry.tx.txId === result.tx.txId,
+        )
+      })
+      return result
     },
-  }
+  })
 }

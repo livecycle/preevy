@@ -140,6 +140,7 @@ export const baseSshClient = async (
     ssh.on('ready', () => resolve(result))
     ssh.on('error', err => {
       reject(err)
+      ssh.end()
     })
     ssh.connect({
       debug: msg => log.debug(msg),

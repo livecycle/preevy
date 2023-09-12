@@ -45,17 +45,17 @@ const saasPublicKey = createPublicKey(SAAS_PUBLIC_KEY)
 const SAAS_JWT_ISSUER = process.env.SAAS_JWT_ISSUER ?? 'app.livecycle.run'
 
 const activeTunnelStore = inMemoryActiveTunnelStore({ log })
-const appSessionStore = cookieSessionStore({ domain: BASE_URL.hostname, schema: claimsSchema, keys: process.env.COOKIE_SECRETS?.split(' ') })
+const sessionStore = cookieSessionStore({ domain: BASE_URL.hostname, schema: claimsSchema, keys: process.env.COOKIE_SECRETS?.split(' ') })
 const loginUrl = new URL('/login', editUrl(BASE_URL, { hostname: `auth.${BASE_URL.hostname}` })).toString()
 const app = createApp({
-  sessionStore: appSessionStore,
+  sessionStore,
   activeTunnelStore,
   baseUrl: BASE_URL,
   proxy: proxy({
     activeTunnelStore,
     log,
     loginUrl,
-    sessionStore: appSessionStore,
+    sessionStore,
     saasPublicKey,
     jwtSaasIssuer: SAAS_JWT_ISSUER,
     baseHostname: BASE_URL.hostname,
@@ -65,7 +65,6 @@ const app = createApp({
   jwtSaasIssuer: SAAS_JWT_ISSUER,
   saasPublicKey,
 })
-const sshLogger = log.child({ name: 'ssh_server' })
 
 const tunnelUrl = (
   rootUrl: URL,
@@ -74,7 +73,7 @@ const tunnelUrl = (
 ) => editUrl(rootUrl, { hostname: `${activeTunnelStoreKey(clientId, tunnel)}.${rootUrl.hostname}` }).toString()
 
 const sshServer = createSshServer({
-  log: sshLogger,
+  log: log.child({ name: 'ssh_server' }),
   sshPrivateKey,
   socketDir: '/tmp', // TODO
   activeTunnelStore,

@@ -1,13 +1,13 @@
 import { Logger } from 'pino'
-import { createPublicKey } from 'crypto'
-import { calculateJwkThumbprintUri, exportJWK } from 'jose'
 import { inspect } from 'util'
 import { Gauge } from 'prom-client'
-import { baseSshServer } from './base-server'
-import { ActiveTunnelStore, KeyAlreadyExistsError, activeTunnelStoreKey } from '../tunnel-store'
+import { BaseSshClient, baseSshServer } from './base-server'
+import { ActiveTunnelStore, activeTunnelStoreKey } from '../tunnel-store'
+import { KeyAlreadyExistsError } from '../memory-store'
+import { onceWithTimeout } from '../events'
 
 export const createSshServer = ({
-  log,
+  log: serverLog,
   sshPrivateKey,
   socketDir,
   activeTunnelStore,
@@ -22,41 +22,54 @@ export const createSshServer = ({
   tunnelUrl: (clientId: string, remotePath: string) => string
   helloBaseResponse: Record<string, unknown>
   tunnelsGauge: Pick<Gauge, 'inc' | 'dec'>
-}) => baseSshServer({
-  log,
-  sshPrivateKey,
-  socketDir,
-})
-  .on('client', client => {
-    const { clientId, publicKey, envId } = client
-    const pk = createPublicKey(publicKey.getPublicPEM())
+}) => {
+  const storeKeyToClient = new Map<string, BaseSshClient>()
+  const onClient = (client: BaseSshClient) => {
+    const { clientId, publicKey, envId, connectionId, publicKeyThumbprint, log } = client
     const tunnels = new Map<string, string>()
-    const jwkThumbprint = (async () => await calculateJwkThumbprintUri(await exportJWK(pk)))()
     client
       .on('forward', async (requestId, { path: tunnelPath, access, meta, inject }, localSocketPath, accept, reject) => {
         const key = activeTunnelStoreKey(clientId, tunnelPath)
+
         log.info('creating tunnel %s for localSocket %s', key, localSocketPath)
-        const setTx = await activeTunnelStore.set(key, {
+        const set = async (): ReturnType<typeof activeTunnelStore['set']> => await activeTunnelStore.set(key, {
           tunnelPath,
           envId,
           target: localSocketPath,
           clientId,
-          publicKey: pk,
+          publicKey,
           access,
           hostname: key,
-          publicKeyThumbprint: await jwkThumbprint,
+          publicKeyThumbprint,
           meta,
           inject,
-        }).catch(e => {
-          reject(
-            e instanceof KeyAlreadyExistsError
-              ? new Error(`duplicate path: ${key}, client map contains path: ${tunnels.has(key)}`)
-              : new Error(`error setting tunnel ${key}: ${e}`, { cause: e }),
-          )
+          client,
+        }).catch(async e => {
+          if (!(e instanceof KeyAlreadyExistsError)) {
+            throw e
+          }
+          const existingEntry = await activeTunnelStore.get(key)
+          if (!existingEntry) {
+            return await set() // retry
+          }
+          const otherClient = existingEntry.value.client as BaseSshClient
+          if (otherClient.connectionId === connectionId) {
+            throw new Error(`duplicate path: ${key}, from same connection ${connectionId}`)
+          }
+          if (!await otherClient.ping(5000)) {
+            const existingDelete = onceWithTimeout(existingEntry.watcher, 'delete', { milliseconds: 2000 })
+            void otherClient.end()
+            await existingDelete
+            return await set() // retry
+          }
+          throw new Error(`duplicate path: ${key}, from different connection ${connectionId}`)
         })
-        if (!setTx) {
+
+        const setResult = await set().catch(err => { reject(err) })
+        if (!setResult) {
           return undefined
         }
+        const { tx: setTx } = setResult
         const forward = await accept().catch(async e => {
           log.warn('error accepting forward %j: %j', requestId, inspect(e))
           await activeTunnelStore.delete(key, setTx)
@@ -64,6 +77,7 @@ export const createSshServer = ({
         if (!forward) {
           return undefined
         }
+        storeKeyToClient.set(key, client)
         tunnels.set(requestId, tunnelUrl(clientId, tunnelPath))
         const onForwardClose = (event: 'close' | 'error') => (err?: Error) => {
           if (err) {
@@ -72,6 +86,7 @@ export const createSshServer = ({
             log.info('%s: deleting tunnel %s', event, key)
           }
           tunnels.delete(requestId)
+          storeKeyToClient.delete(key)
           void activeTunnelStore.delete(key, setTx)
           tunnelsGauge.dec({ clientId })
         }
@@ -106,4 +121,11 @@ export const createSshServer = ({
         reject()
         return undefined
       })
-  })
+  }
+
+  return baseSshServer({
+    log: serverLog,
+    sshPrivateKey,
+    socketDir,
+  }).on('client', onClient)
+}
