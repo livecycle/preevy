@@ -6,6 +6,7 @@ import ssh2, { ParsedKey, SocketBindInfo } from 'ssh2'
 import { inspect } from 'util'
 import EventEmitter from 'node:events'
 import { ForwardRequest, parseForwardRequest } from '../forward-request'
+import { createDestroy } from '../destroy-server'
 
 const clientIdFromPublicSsh = (key: Buffer) =>
   crypto.createHash('sha1').update(key).digest('base64url').replace(/[_-]/g, '')
@@ -94,7 +95,7 @@ export const baseSshServer = (
     socketDir: string
   }
 ): BaseSshServer => {
-  const serverEmitter = new EventEmitter() as Omit<BaseSshServer, 'close' | 'listen'>
+  const serverEmitter = new EventEmitter({ captureRejections: true }) as Omit<BaseSshServer, 'close' | 'listen'>
   const server = new ssh2.Server(
     {
       // debug: x => log.debug(x),
@@ -129,7 +130,7 @@ export const baseSshServer = (
             return
           }
 
-          preevySshClient = Object.assign(new EventEmitter(), {
+          preevySshClient = Object.assign(new EventEmitter({ captureRejections: true }), {
             publicKey: keyOrError,
             clientId: clientIdFromPublicSsh(keyOrError.getPublicSSH()),
             envId: ctx.username,
@@ -206,7 +207,7 @@ export const baseSshServer = (
                 )
               })
 
-              const closeSocketServer = () => socketServer.close()
+              const destroySocketServer = createDestroy(socketServer)
 
               socketServer
                 .listen(socketPath, () => {
@@ -217,17 +218,17 @@ export const baseSshServer = (
                 })
                 .on('error', (err: unknown) => {
                   log.error('socketServer request %j error: %j', request, err)
-                  socketServer.close()
+                  destroySocketServer()
                   rejectForward(err)
                 })
                 .on('close', () => {
                   log.debug('socketServer close: %j', socketPath)
                   socketServers.delete(request)
-                  client.removeListener('close', closeSocketServer)
+                  client.removeListener('close', destroySocketServer)
                 })
 
-              client.once('close', closeSocketServer)
-              client.once('end', closeSocketServer)
+              client.once('close', destroySocketServer)
+              client.once('end', destroySocketServer)
             }),
             (reason: Error) => {
               log.error('streamlocal-forward@openssh.com: rejecting %j, reason: %j', request, inspect(reason))
