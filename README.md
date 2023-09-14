@@ -221,7 +221,7 @@ See the [included GitHub PR Link Plugin](packages/plugin-github-pr-link) for an 
 
 Read about Preevy's components and learn how to use them in our [documentation](https://preevy.dev/).
 
-Ask a question or join our [Slack community](https://join.slack.com/t/preevyusers/shared_invite/zt-1shi7t2dy-~glGUC5pWCtGrH19bKNXrQ) to get support.
+Ask a question or join our [Livecycle Community](https://community.livecycle.io) to get support.
 
 ## Telemetry
 
