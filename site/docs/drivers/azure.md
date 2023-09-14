@@ -18,10 +18,10 @@ Microsoft Azure also offers free 12 months for new users which is suited for try
 Preevy uses the Microsoft Azure SDK which can obtain the application [default credentials](https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/identity/identity#defaultazurecredential).
 The simplest way is to use `az login` command.
 
+Also, you can check out the video below for a step-by-step guide on how to configure Azure credentials ans use them with Preevy.
+
+<p align="center"><iframe width="816" height="480" src="https://www.youtube.com/embed/AdoAzHuyzb0?si=0Yz5qSs-vpDDmz1k" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></p>
+
 ### Required Azure permissions
 
 TBD
-
-
-
-
