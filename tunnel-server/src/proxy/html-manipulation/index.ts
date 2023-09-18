@@ -23,7 +23,7 @@ const compressionsForContentEncoding = (contentEncoding: string) => {
   throw new Error(`unsupported content encoding: "${contentEncoding}"`)
 }
 
-export const injectScripts = async (
+export const injectScripts = (
   proxyRes: stream.Readable & Pick<IncomingMessage, 'headers' | 'statusCode'>,
   req: Pick<IncomingMessage, 'headers'>,
   res: stream.Writable & Pick<ServerResponse<IncomingMessage>, 'writeHead'>,
