@@ -18,8 +18,8 @@ jobs:
         arch: [x64,arm64]
         platform: [linux,macos,win]
         exclude:
-          - platform: win # need to debug it
-
+          - platform: win
+            arch: arm64
           
     steps:
       - name: Checkout
