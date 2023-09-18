@@ -139,8 +139,7 @@ export const proxy = ({
       ?.filter(({ pathRegex }) => !pathRegex || pathRegex.test(mutatedReq.url || ''))
       ?.map(({ src, defer, async }) => ({ src, defer, async }))
 
-    const shouldInject = Boolean(injects?.length)
-    if (shouldInject) {
+    if (injects?.length) {
       mutatedReq.headers[INJECT_SCRIPTS_HEADER] = JSON.stringify(injects)
     }
 
@@ -153,7 +152,7 @@ export const proxy = ({
         target: {
           socketPath: activeTunnel.target,
         },
-        selfHandleResponse: shouldInject,
+        selfHandleResponse: true, // handled by the injectScripts onProxyRes hook
       },
       err => errorHandler(log, err, req, res)
     )

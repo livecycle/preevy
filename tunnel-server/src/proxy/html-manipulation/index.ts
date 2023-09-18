@@ -23,26 +23,30 @@ const compressionsForContentEncoding = (contentEncoding: string) => {
   throw new Error(`unsupported content encoding: "${contentEncoding}"`)
 }
 
-export const injectScripts = async (
+export const injectScripts = (
   proxyRes: stream.Readable & Pick<IncomingMessage, 'headers' | 'statusCode'>,
   req: Pick<IncomingMessage, 'headers'>,
   res: stream.Writable & Pick<ServerResponse<IncomingMessage>, 'writeHead'>,
 ) => {
+  res.writeHead(proxyRes.statusCode as number, proxyRes.headers)
+
   const injectsStr = req.headers[INJECT_SCRIPTS_HEADER] as string | undefined
-  if (!injectsStr) {
+  const contentTypeHeader = proxyRes.headers['content-type']
+
+  if (!injectsStr || !contentTypeHeader) {
+    proxyRes.pipe(res)
     return undefined
   }
 
   const {
     type: contentType,
     parameters: { charset: reqCharset },
-  } = parseContentType(proxyRes)
+  } = parseContentType(contentTypeHeader)
 
   if (contentType !== 'text/html') {
+    proxyRes.pipe(res)
     return undefined
   }
-
-  res.writeHead(proxyRes.statusCode as number, proxyRes.headers)
 
   const compress = compressionsForContentEncoding(proxyRes.headers['content-encoding'] || 'identity')
 
