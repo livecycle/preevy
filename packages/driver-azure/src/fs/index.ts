@@ -1,4 +1,5 @@
 import { BlobServiceClient, ContainerClient, BlobDeleteOptions, BlobDeleteIfExistsResponse } from '@azure/storage-blob'
+import { DefaultAzureCredential } from '@azure/identity'
 import { VirtualFS } from '@preevy/core'
 
 export const defaultBucketName = (
@@ -17,13 +18,20 @@ const ensureBucketExists = async (blobServiceClient: BlobServiceClient, containe
 
 export const parseAzureBlobUrl = (azureBlobUrl: string) => {
   const url = new URL(azureBlobUrl)
-  if (url.protocol !== 'azblob:') {
-    throw new Error('Azure Blob urls must start with azblob://')
+
+  if (!(url.protocol === 'https:')) {
+    throw new Error('Azure Blob urls must start with https:')
   }
+
+  const accountName = url.hostname.split('.')[0]
+
+  const pathSegments = url.pathname.split('/')
+  const containerName = pathSegments[1]
+
   return {
     url,
-    containerName: url.hostname,
-    path: url.pathname,
+    accountName,
+    containerName,
   }
 }
 
@@ -41,9 +49,14 @@ async function streamToBuffer(readableStream: NodeJS.ReadableStream) {
 }
 
 export const azureStorageBlobFs = async (azureBlobUrl: string): Promise<VirtualFS> => {
-  const { path, containerName } = parseAzureBlobUrl(azureBlobUrl)
+  const { accountName, containerName } = parseAzureBlobUrl(azureBlobUrl)
 
-  const blobServiceClient = BlobServiceClient.fromConnectionString(path)
+  const defaultAzureCredential = new DefaultAzureCredential()
+
+  const blobServiceClient = new BlobServiceClient(
+    `https://${accountName}.blob.core.windows.net`,
+    defaultAzureCredential
+  )
   const containerClient = blobServiceClient.getContainerClient(containerName)
 
   await ensureBucketExists(blobServiceClient, containerName)
