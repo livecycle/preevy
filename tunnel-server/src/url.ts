@@ -2,13 +2,14 @@ import lodash from 'lodash'
 
 export const editUrl = (
   url: URL | string,
-  { hostname, queryParams, username, password }: Partial<{
+  { hostname, queryParams, username, password, path }: Partial<{
     hostname: string
     queryParams: Record<string, string>
     username: string
     password: string
+    path: string
   }>,
-) => {
+): URL => {
   const u = new URL(url.toString())
   return Object.assign(u, {
     ...hostname ? { hostname } : {},
@@ -17,5 +18,6 @@ export const editUrl = (
     } : {},
     ...username ? { username } : {},
     ...password ? { password } : {},
+    ...path ? { pathname: path } : {},
   })
 }

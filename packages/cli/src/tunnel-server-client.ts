@@ -33,7 +33,7 @@ export const connectToTunnelServerSsh = async ({ tunnelOpts, log, tunnelingKey, 
     log,
     tunnelOpts,
     clientPrivateKey: tunnelingKey,
-    username: process.env.USER || 'preview',
+    username: process.env.USER || 'preevy',
     confirmHostFingerprint: async (...args) => {
       spinner?.stop()
       return await confirmHostFingerprint(...args)
