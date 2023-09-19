@@ -3,24 +3,40 @@ import zlib from 'zlib'
 import stream from 'stream'
 import { parse as parseContentType } from 'content-type'
 import iconv from 'iconv-lite'
+import { inspect } from 'node:util'
 import { INJECT_SCRIPTS_HEADER } from '../common'
 import { InjectHtmlScriptTransform } from './inject-transform'
 import { ScriptInjection } from '../../tunnel-store'
 
-const compressionsForContentEncoding = (contentEncoding: string) => {
-  if (contentEncoding === 'gzip') {
-    return [zlib.createGunzip(), zlib.createGzip()] as const
-  }
-  if (contentEncoding === 'deflate') {
-    return [zlib.createInflate(), zlib.createDeflate()] as const
-  }
-  if (contentEncoding === 'br') {
-    return [zlib.createBrotliDecompress(), zlib.createBrotliCompress()] as const
-  }
-  if (contentEncoding === 'identity') {
+const compressionsForContentEncoding = (
+  contentEncoding: string | undefined,
+): [stream.Transform, stream.Transform] | undefined => {
+  if (!contentEncoding || contentEncoding === 'identity') {
     return undefined
   }
-  throw new Error(`unsupported content encoding: "${contentEncoding}"`)
+  if (contentEncoding === 'gzip') {
+    return [zlib.createGunzip(), zlib.createGzip()]
+  }
+  if (contentEncoding === 'deflate') {
+    return [zlib.createInflate(), zlib.createDeflate()]
+  }
+  if (contentEncoding === 'br') {
+    return [zlib.createBrotliDecompress(), zlib.createBrotliCompress()]
+  }
+  throw new Error(`unsupported content encoding: ${inspect(contentEncoding)}`)
+}
+
+const streamsForContentEncoding = (
+  contentEncoding: string | undefined,
+  input: stream.Readable,
+  output: stream.Writable,
+): [stream.Readable, stream.Writable] => {
+  const compress = compressionsForContentEncoding(contentEncoding)
+  if (!compress) {
+    return [input, output]
+  }
+  compress[1].pipe(output)
+  return [input.pipe(compress[0]), compress[1]]
 }
 
 export const injectScripts = (
@@ -28,12 +44,11 @@ export const injectScripts = (
   req: Pick<IncomingMessage, 'headers'>,
   res: stream.Writable & Pick<ServerResponse<IncomingMessage>, 'writeHead'>,
 ) => {
-  res.writeHead(proxyRes.statusCode as number, proxyRes.headers)
-
   const injectsStr = req.headers[INJECT_SCRIPTS_HEADER] as string | undefined
   const contentTypeHeader = proxyRes.headers['content-type']
 
   if (!injectsStr || !contentTypeHeader) {
+    res.writeHead(proxyRes.statusCode as number, proxyRes.headers)
     proxyRes.pipe(res)
     return undefined
   }
@@ -44,15 +59,14 @@ export const injectScripts = (
   } = parseContentType(contentTypeHeader)
 
   if (contentType !== 'text/html') {
+    res.writeHead(proxyRes.statusCode as number, proxyRes.headers)
     proxyRes.pipe(res)
     return undefined
   }
 
-  const compress = compressionsForContentEncoding(proxyRes.headers['content-encoding'] || 'identity')
+  res.writeHead(proxyRes.statusCode as number, { ...proxyRes.headers, 'transfer-encoding': '' })
 
-  const [input, output] = compress
-    ? [proxyRes.pipe(compress[0]), res.pipe(compress[1])]
-    : [proxyRes, res]
+  const [input, output] = streamsForContentEncoding(proxyRes.headers['content-encoding'], proxyRes, res)
 
   const injects = JSON.parse(injectsStr) as Omit<ScriptInjection, 'pathRegex'>[]
   const transform = new InjectHtmlScriptTransform(injects)

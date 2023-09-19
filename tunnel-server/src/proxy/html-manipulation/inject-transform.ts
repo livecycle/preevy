@@ -85,7 +85,7 @@ export class InjectHtmlScriptTransform extends stream.Transform {
   override _transform(chunk: string, _encoding: BufferEncoding | 'buffer', callback: stream.TransformCallback): void {
     if (typeof chunk !== 'string') {
       // chunk must be string rather than Buffer so htmlDetector offsets would be in character units, not bytes
-      throw new Error(`Invalid chunk, expected string, received ${typeof chunk}: ${chunk}`)
+      throw new Error(`Invalid chunk, expected string, received ${Buffer.isBuffer(chunk) ? 'Buffer' : typeof chunk}: ${chunk}`)
     }
 
     if (this.injected) {
