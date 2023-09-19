@@ -7,7 +7,7 @@ import { inspect } from 'node:util'
 import { Logger } from 'pino'
 import { INJECT_SCRIPTS_HEADER } from '../common'
 import { InjectHtmlScriptTransform } from './inject-transform'
-import { ScriptInjection } from '../../tunnel-store'
+import { ScriptInjectionBase, ScriptInjection } from '../../tunnel-store'
 
 const compressionsForContentEncoding = (
   contentEncoding: string | undefined,
@@ -67,32 +67,27 @@ const proxyWithoutInjection = (
   proxyRes.pipe(res)
 }
 
-export const proxyResHandler = ({ log }: { log: Logger }) => (
+export const proxyResHandler = (
+  { log, injectsMap }: { log: Logger; injectsMap: Pick<WeakMap<object, ScriptInjectionBase[]>, 'get' | 'delete'> },
+) => (
   proxyRes: stream.Readable & Pick<IncomingMessage, 'headers' | 'statusCode'>,
-  req: Pick<IncomingMessage, 'headers'>,
+  req: Pick<IncomingMessage, never>,
   res: stream.Writable & Pick<ServerResponse<IncomingMessage>, 'writeHead'>,
 ) => {
-  const injectsStr = req.headers[INJECT_SCRIPTS_HEADER] as string | undefined
+  const injects = injectsMap.get(req)
+  if (!injects) {
+    return proxyWithoutInjection(proxyRes, res)
+  }
+  injectsMap.delete(req)
+
   const contentTypeHeader = proxyRes.headers['content-type']
 
-  if (!injectsStr || !contentTypeHeader) {
+  if (!contentTypeHeader) {
     return proxyWithoutInjection(proxyRes, res)
   }
 
-  const {
-    type: contentType,
-    parameters: { charset },
-  } = parseContentType(contentTypeHeader)
-
+  const { type: contentType, parameters: { charset } } = parseContentType(contentTypeHeader)
   if (contentType !== 'text/html') {
-    return proxyWithoutInjection(proxyRes, res)
-  }
-
-  let injects: Omit<ScriptInjection, 'pathRegex'>[]
-  try {
-    injects = JSON.parse(injectsStr)
-  } catch (e) {
-    log.warn(`invalid JSON in ${INJECT_SCRIPTS_HEADER} header: ${inspect(e)}`)
     return proxyWithoutInjection(proxyRes, res)
   }
 

@@ -4,11 +4,14 @@ import { multimap } from './array-map'
 
 export { activeTunnelStoreKey } from './key'
 
-export type ScriptInjection = {
-  pathRegex?: RegExp
+export type ScriptInjectionBase = {
   src: string
   async?: boolean
   defer?: boolean
+}
+
+export type ScriptInjection = ScriptInjectionBase & {
+  pathRegex?: RegExp
 }
 
 export type ActiveTunnel = {

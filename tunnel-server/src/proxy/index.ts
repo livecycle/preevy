@@ -5,7 +5,7 @@ import type { Logger } from 'pino'
 import { inspect } from 'util'
 import { KeyObject } from 'crypto'
 import stream from 'stream'
-import { ActiveTunnel, ActiveTunnelStore } from '../tunnel-store'
+import { ActiveTunnel, ActiveTunnelStore, ScriptInjectionBase } from '../tunnel-store'
 import { requestsCounter } from '../metrics'
 import { Claims, jwtAuthenticator, AuthenticationResult, AuthError, createGetVerificationData } from '../auth'
 import { SessionStore } from '../session'
@@ -44,7 +44,8 @@ export const proxy = ({
   jwtSaasIssuer: string
 }) => {
   const theProxy = httpProxy.createProxy({})
-  theProxy.on('proxyRes', proxyResHandler({ log }))
+  const injectsMap = new WeakMap<IncomingMessage, ScriptInjectionBase[]>()
+  theProxy.on('proxyRes', proxyResHandler({ log, injectsMap }))
 
   const loginRedirectUrlForRequest = loginRedirectUrl(loginUrl)
 
@@ -136,11 +137,11 @@ export const proxy = ({
     requestsCounter.inc({ clientId: activeTunnel.clientId })
 
     const injects = activeTunnel.inject
-      ?.filter(({ pathRegex }) => !pathRegex || pathRegex.test(mutatedReq.url || ''))
+      ?.filter(({ pathRegex }) => !pathRegex || (mutatedReq.url && pathRegex.test(mutatedReq.url)))
       ?.map(({ src, defer, async }) => ({ src, defer, async }))
 
     if (injects?.length) {
-      mutatedReq.headers[INJECT_SCRIPTS_HEADER] = JSON.stringify(injects)
+      injectsMap.set(mutatedReq, injects)
     }
 
     return theProxy.web(

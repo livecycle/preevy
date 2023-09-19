@@ -51,7 +51,7 @@ export class InjectHtmlScriptTransform extends stream.Transform {
   injected = false
 
   constructor(readonly injects: Omit<ScriptInjection, 'pathRegex'>[]) {
-    super({ decodeStrings: false })
+    super({ decodeStrings: false, encoding: 'utf-8' })
   }
 
   // avoid pushing an empty string: https://nodejs.org/api/stream.html#readablepush
