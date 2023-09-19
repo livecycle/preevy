@@ -17,23 +17,17 @@ const htmlDetector = (): HtmlDetector => {
   const parser = new Parser({
     onopentag: name => {
       if (name === 'head') {
-        detected = { position: 'head-content-start', offset: parser.endIndex + 1 }
+        detected ||= { position: 'head-content-start', offset: parser.endIndex + 1 }
       }
     },
     onopentagname: name => {
-      if (
-        name === 'body'
-        && !detected // do not set if head already detected
-      ) {
-        detected = { position: 'before-body-tag', offset: parser.startIndex }
+      if (name === 'body') {
+        detected ||= { position: 'before-body-tag', offset: parser.startIndex }
       }
     },
     onclosetag: name => {
-      if (
-        name === 'html'
-        && !detected // do not set if head already detected
-      ) {
-        detected = { position: 'html-content-end', offset: parser.startIndex }
+      if (name === 'html') {
+        detected ||= { position: 'html-content-end', offset: parser.startIndex }
       }
     },
   }, { decodeEntities: false, lowerCaseTags: true })
@@ -85,11 +79,11 @@ export class InjectHtmlScriptTransform extends stream.Transform {
   override _transform(chunk: string, _encoding: BufferEncoding | 'buffer', callback: stream.TransformCallback): void {
     if (typeof chunk !== 'string') {
       // chunk must be string rather than Buffer so htmlDetector offsets would be in character units, not bytes
-      throw new Error(`Invalid chunk, expected string, received ${typeof chunk}: ${chunk}`)
+      throw new Error(`Invalid chunk, expected string, received ${Buffer.isBuffer(chunk) ? 'Buffer' : typeof chunk}: ${chunk}`)
     }
 
     if (this.injected) {
-      // pass chunks through as-is after the injection
+      // after the injection happened, pass chunks through as-is
       this.pushNonEmpty(chunk)
       callback(null)
       return undefined
