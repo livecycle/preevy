@@ -17,23 +17,17 @@ const htmlDetector = (): HtmlDetector => {
   const parser = new Parser({
     onopentag: name => {
       if (name === 'head') {
-        detected = { position: 'head-content-start', offset: parser.endIndex + 1 }
+        detected ||= { position: 'head-content-start', offset: parser.endIndex + 1 }
       }
     },
     onopentagname: name => {
-      if (
-        name === 'body'
-        && !detected // do not set if head already detected
-      ) {
-        detected = { position: 'before-body-tag', offset: parser.startIndex }
+      if (name === 'body') {
+        detected ||= { position: 'before-body-tag', offset: parser.startIndex }
       }
     },
     onclosetag: name => {
-      if (
-        name === 'html'
-        && !detected // do not set if head already detected
-      ) {
-        detected = { position: 'html-content-end', offset: parser.startIndex }
+      if (name === 'html') {
+        detected ||= { position: 'html-content-end', offset: parser.startIndex }
       }
     },
   }, { decodeEntities: false, lowerCaseTags: true })
@@ -57,7 +51,7 @@ export class InjectHtmlScriptTransform extends stream.Transform {
   injected = false
 
   constructor(readonly injects: Omit<ScriptInjection, 'pathRegex'>[]) {
-    super({ decodeStrings: false, encoding: 'utf-8' })
+    super({ decodeStrings: false })
   }
 
   // avoid pushing an empty string: https://nodejs.org/api/stream.html#readablepush
@@ -89,7 +83,7 @@ export class InjectHtmlScriptTransform extends stream.Transform {
     }
 
     if (this.injected) {
-      // pass chunks through as-is after the injection
+      // after the injection happened, pass chunks through as-is
       this.pushNonEmpty(chunk)
       callback(null)
       return undefined

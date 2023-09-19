@@ -4,6 +4,7 @@ import stream from 'stream'
 import { parse as parseContentType } from 'content-type'
 import iconv from 'iconv-lite'
 import { inspect } from 'node:util'
+import { Logger } from 'pino'
 import { INJECT_SCRIPTS_HEADER } from '../common'
 import { InjectHtmlScriptTransform } from './inject-transform'
 import { ScriptInjection } from '../../tunnel-store'
@@ -39,7 +40,34 @@ const streamsForContentEncoding = (
   return [input.pipe(compress[0]), compress[1]]
 }
 
-export const injectScripts = (
+const proxyWithInjection = (
+  proxyRes: stream.Readable & Pick<IncomingMessage, 'headers' | 'statusCode'>,
+  res: stream.Writable & Pick<ServerResponse<IncomingMessage>, 'writeHead'>,
+  injects: Omit<ScriptInjection, 'pathRegex'>[],
+  charset = 'utf-8',
+) => {
+  res.writeHead(proxyRes.statusCode as number, { ...proxyRes.headers, 'transfer-encoding': '' })
+
+  const [input, output] = streamsForContentEncoding(proxyRes.headers['content-encoding'], proxyRes, res)
+
+  const transform = new InjectHtmlScriptTransform(injects)
+
+  input
+    .pipe(iconv.decodeStream(charset))
+    .pipe(transform)
+    .pipe(iconv.encodeStream(charset))
+    .pipe(output)
+}
+
+const proxyWithoutInjection = (
+  proxyRes: stream.Readable & Pick<IncomingMessage, 'headers' | 'statusCode'>,
+  res: stream.Writable & Pick<ServerResponse<IncomingMessage>, 'writeHead'>,
+) => {
+  res.writeHead(proxyRes.statusCode as number, proxyRes.headers)
+  proxyRes.pipe(res)
+}
+
+export const proxyResHandler = ({ log }: { log: Logger }) => (
   proxyRes: stream.Readable & Pick<IncomingMessage, 'headers' | 'statusCode'>,
   req: Pick<IncomingMessage, 'headers'>,
   res: stream.Writable & Pick<ServerResponse<IncomingMessage>, 'writeHead'>,
@@ -48,34 +76,31 @@ export const injectScripts = (
   const contentTypeHeader = proxyRes.headers['content-type']
 
   if (!injectsStr || !contentTypeHeader) {
-    res.writeHead(proxyRes.statusCode as number, proxyRes.headers)
-    proxyRes.pipe(res)
-    return undefined
+    return proxyWithoutInjection(proxyRes, res)
   }
 
   const {
     type: contentType,
-    parameters: { charset: reqCharset },
+    parameters: { charset },
   } = parseContentType(contentTypeHeader)
 
   if (contentType !== 'text/html') {
-    res.writeHead(proxyRes.statusCode as number, proxyRes.headers)
-    proxyRes.pipe(res)
-    return undefined
+    return proxyWithoutInjection(proxyRes, res)
   }
 
-  res.writeHead(proxyRes.statusCode as number, { ...proxyRes.headers, 'transfer-encoding': '' })
+  let injects: Omit<ScriptInjection, 'pathRegex'>[]
+  try {
+    injects = JSON.parse(injectsStr)
+  } catch (e) {
+    log.warn(`invalid JSON in ${INJECT_SCRIPTS_HEADER} header: ${inspect(e)}`)
+    return proxyWithoutInjection(proxyRes, res)
+  }
 
-  const [input, output] = streamsForContentEncoding(proxyRes.headers['content-encoding'], proxyRes, res)
+  try {
+    return proxyWithInjection(proxyRes, res, injects, charset)
+  } catch (e) {
+    log.warn(`error trying to inject scripts: ${inspect(e)}`)
+  }
 
-  const injects = JSON.parse(injectsStr) as Omit<ScriptInjection, 'pathRegex'>[]
-  const transform = new InjectHtmlScriptTransform(injects)
-
-  input
-    .pipe(iconv.decodeStream(reqCharset || 'utf-8'))
-    .pipe(transform)
-    .pipe(iconv.encodeStream(reqCharset || 'utf-8'))
-    .pipe(output)
-
-  return undefined
+  return proxyWithoutInjection(proxyRes, res)
 }

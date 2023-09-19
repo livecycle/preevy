@@ -11,7 +11,7 @@ import { Claims, jwtAuthenticator, AuthenticationResult, AuthError, createGetVer
 import { SessionStore } from '../session'
 import { BadGatewayError, BadRequestError, BasicAuthUnauthorizedError, RedirectError, UnauthorizedError, errorHandler, errorUpgradeHandler, tryHandler, tryUpgradeHandler } from '../http-server-helpers'
 import { TunnelFinder, proxyRouter } from './router'
-import { injectScripts } from './html-manipulation'
+import { proxyResHandler } from './html-manipulation'
 import { INJECT_SCRIPTS_HEADER } from './common'
 
 const loginRedirectUrl = (loginUrl: string) => ({ env, returnPath }: { env: string; returnPath?: string }) => {
@@ -44,7 +44,7 @@ export const proxy = ({
   jwtSaasIssuer: string
 }) => {
   const theProxy = httpProxy.createProxy({})
-  theProxy.on('proxyRes', injectScripts)
+  theProxy.on('proxyRes', proxyResHandler({ log }))
 
   const loginRedirectUrlForRequest = loginRedirectUrl(loginUrl)
 
@@ -152,7 +152,7 @@ export const proxy = ({
         target: {
           socketPath: activeTunnel.target,
         },
-        selfHandleResponse: true, // handled by the injectScripts onProxyRes hook
+        selfHandleResponse: true, // handled by the onProxyRes hook
       },
       err => errorHandler(log, err, req, res)
     )
