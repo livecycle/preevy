@@ -1,7 +1,7 @@
 import { defaults } from 'lodash'
 import fs from 'fs'
 import { Config as OclifConfig } from '@oclif/core'
-import { Logger, detectCiProvider, git } from '@preevy/core'
+import { Logger, detectCiProvider, gitContext } from '@preevy/core'
 import { tryParseRepo, tryParseUrlToRepo } from './repo'
 import { ParsedFlags, flagsDef, prefixedFlagsDef } from './flags'
 import { defaultCommentTemplate } from './lib/github-comment'
@@ -47,7 +47,7 @@ const ambientGithubConfig = async ({ log }: { log: Logger }): Promise<Partial<Gi
 
   log.debug('ambientGithubConfig, ciProvider: %j', ciProvider?.name)
 
-  const repoUrlStr = ciProvider?.repoUrl() ?? await git.gitRemoteTrackingBranchUrl().catch(() => undefined)
+  const repoUrlStr = ciProvider?.repoUrl() ?? await gitContext().remoteTrackingBranchUrl().catch(() => undefined)
 
   log.debug('ambientGithubConfig, repoUrlStr: %j', repoUrlStr)
 

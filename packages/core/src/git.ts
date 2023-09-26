@@ -1,24 +1,34 @@
 import { execPromiseStdout } from './child-process'
 
-export const gitBranchName = async () => await execPromiseStdout('git rev-parse --abbrev-ref HEAD')
-  .catch(() => undefined)
+export function gitContext(cwd: string = process.cwd()) {
+  const execGit = async (command: string) => await execPromiseStdout(`git ${command}`, { cwd })
+  const branchName = async () => await execGit('rev-parse --abbrev-ref HEAD')
+    .catch(() => undefined)
 
-export const gitCommit = async () => await execPromiseStdout('git rev-parse HEAD')
-  .catch(() => undefined)
+  const head = async () => await execGit('rev-parse HEAD')
+    .catch(() => undefined)
 
-export const gitAuthor = async (commit?: string) => {
-  const [email, name] = await Promise.all([
-    `git log -1 ${commit} --pretty=format:'%ae'`,
-    `git log -1 ${commit} --pretty=format:'%an'`,
-  ].map(cmd => execPromiseStdout(cmd).catch(() => undefined)))
-  return email === undefined || name === undefined ? undefined : { name, email }
-}
-
-export const gitRemoteTrackingBranchUrl = async (localBranch?: string) => {
-  const b = localBranch ?? (await execPromiseStdout('git rev-parse --abbrev-ref HEAD'))
-  const trackingRemote = await execPromiseStdout(`git config branch.${b}.remote || true`)
-  if (!trackingRemote) {
-    return undefined
+  const author = async (commit?: string) => {
+    const [email, name] = await Promise.all([
+      `log -1 ${commit} --pretty=format:'%ae'`,
+      `log -1 ${commit} --pretty=format:'%an'`,
+    ].map(cmd => execGit(cmd).catch(() => undefined)))
+    return email === undefined || name === undefined ? undefined : { name, email }
   }
-  return await execPromiseStdout(`git config remote.${trackingRemote}.url`)
+
+  const remoteTrackingBranchUrl = async (localBranch?: string) => {
+    const b = localBranch ?? (await execGit('rev-parse --abbrev-ref HEAD'))
+    const trackingRemote = await execGit(`config branch.${b}.remote || true`)
+    if (!trackingRemote) {
+      return undefined
+    }
+    return await execGit(`config remote.${trackingRemote}.url`)
+  }
+
+  return {
+    branchName,
+    commit: head,
+    author,
+    remoteTrackingBranchUrl,
+  }
 }
