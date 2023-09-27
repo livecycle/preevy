@@ -12,7 +12,6 @@ import { SessionStore } from '../session'
 import { BadGatewayError, BadRequestError, BasicAuthUnauthorizedError, RedirectError, UnauthorizedError, errorHandler, errorUpgradeHandler, tryHandler, tryUpgradeHandler } from '../http-server-helpers'
 import { TunnelFinder, proxyRouter } from './router'
 import { proxyResHandler } from './html-manipulation'
-import { INJECT_SCRIPTS_HEADER } from './common'
 
 const loginRedirectUrl = (loginUrl: string) => ({ env, returnPath }: { env: string; returnPath?: string }) => {
   const url = new URL(loginUrl)

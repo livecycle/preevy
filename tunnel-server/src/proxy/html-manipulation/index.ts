@@ -5,7 +5,6 @@ import { parse as parseContentType } from 'content-type'
 import iconv from 'iconv-lite'
 import { inspect } from 'node:util'
 import { Logger } from 'pino'
-import { INJECT_SCRIPTS_HEADER } from '../common'
 import { InjectHtmlScriptTransform } from './inject-transform'
 import { ScriptInjectionBase, ScriptInjection } from '../../tunnel-store'
 
