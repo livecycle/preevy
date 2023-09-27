@@ -54,7 +54,7 @@ describe('onceWithTimeout', () => {
     })
 
     describe('when a fallback is specified', () => {
-      let p: Promise<12>
+      let p: Promise<12 | void>
       beforeEach(() => {
         p = onceWithTimeout(emitter, 'foo', { milliseconds: 10, fallback: async () => 12 as const })
         jest.advanceTimersByTime(10)

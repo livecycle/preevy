@@ -60,7 +60,7 @@ export interface BaseSshClient extends IEventEmitter<BaseSshClientEvents> {
   publicKey: crypto.KeyObject
   publicKeyThumbprint: string
   end: () => Promise<void>
-  ping: (timeoutMs: number) => Promise<boolean>
+  ping: () => Promise<boolean>
   connectionId: string
   log: FastifyBaseLogger
 }
@@ -102,20 +102,23 @@ export const baseSshServer = (
       let ended = false
       const end = async () => {
         if (!ended) {
-          client.end()
-          await events.once(client, 'end')
+          await new Promise(resolve => {
+            client.once('end', resolve)
+            client.end()
+          })
         }
       }
 
       let authContext: ssh2.AuthContext
       let key: ssh2.ParsedKey
 
-      const PING_TIMEOUT = 5000
+      const REKEY_TIMEOUT = 5000
       const ping = memoizeForDuration(async () => {
-        const result = onceWithTimeout(client, 'rekey', { milliseconds: PING_TIMEOUT, fallback: () => 'timeout' as const })
+        const result = onceWithTimeout(client, 'rekey', { milliseconds: REKEY_TIMEOUT })
+          .then(() => 'pong' as const, () => 'error' as const)
         client.rekey()
-        return (await result) !== 'timeout'
-      }, PING_TIMEOUT)
+        return (await result) === 'pong'
+      }, REKEY_TIMEOUT)
 
       client
         .on('authentication', async ctx => {

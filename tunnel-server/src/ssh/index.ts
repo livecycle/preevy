@@ -56,7 +56,7 @@ export const createSshServer = ({
           if (otherClient.connectionId === connectionId) {
             throw new Error(`duplicate path: ${key}, from same connection ${connectionId}`)
           }
-          if (!await otherClient.ping(5000)) {
+          if (!await otherClient.ping()) {
             const existingDelete = onceWithTimeout(existingEntry.watcher, 'delete', { milliseconds: 2000 })
             void otherClient.end()
             await existingDelete

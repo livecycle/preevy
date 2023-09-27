@@ -14,7 +14,7 @@ export async function onceWithTimeout <T = unknown>(
   target: NodeEventTarget,
   event: string | symbol,
   opts: { milliseconds: number; fallback: () => T | Promise<T> },
-): Promise<T>
+): Promise<T | void>
 export async function onceWithTimeout <T = unknown>(
   target: NodeEventTarget,
   event: string | symbol,
