@@ -2,7 +2,6 @@ import crypto, { createPublicKey, randomBytes } from 'crypto'
 import { FastifyBaseLogger } from 'fastify/types/logger'
 import net from 'net'
 import path from 'path'
-import events from 'events'
 import ssh2, { SocketBindInfo } from 'ssh2'
 import { inspect } from 'util'
 import { EventEmitter, IEventEmitter } from 'tseep'
@@ -10,6 +9,7 @@ import { calculateJwkThumbprintUri, exportJWK } from 'jose'
 import { ForwardRequest, parseForwardRequest } from '../forward-request'
 import { createDestroy } from '../destroy-server'
 import { onceWithTimeout } from '../events'
+import { memoizeForDuration } from '../memoize'
 
 const clientIdFromPublicSsh = (key: Buffer) =>
   crypto.createHash('sha1').update(key).digest('base64url').replace(/[_-]/g, '')
@@ -59,7 +59,7 @@ export interface BaseSshClient extends IEventEmitter<BaseSshClientEvents> {
   publicKey: crypto.KeyObject
   publicKeyThumbprint: string
   end: () => Promise<void>
-  ping: (timeoutMs: number) => Promise<boolean>
+  ping: () => Promise<boolean>
   connectionId: string
   log: FastifyBaseLogger
 }
@@ -101,19 +101,23 @@ export const baseSshServer = (
       let ended = false
       const end = async () => {
         if (!ended) {
-          client.end()
-          await events.once(client, 'end')
+          await new Promise(resolve => {
+            client.once('end', resolve)
+            client.end()
+          })
         }
       }
 
       let authContext: ssh2.AuthContext
       let key: ssh2.ParsedKey
 
-      const ping = async (milliseconds: number) => {
-        const result = onceWithTimeout(client, 'rekey', { milliseconds, fallback: () => 'timeout' as const })
+      const REKEY_TIMEOUT = 5000
+      const ping = memoizeForDuration(async () => {
+        const result = onceWithTimeout(client, 'rekey', { milliseconds: REKEY_TIMEOUT })
+          .then(() => 'pong' as const, () => 'error' as const)
         client.rekey()
-        return await result !== 'timeout'
-      }
+        return (await result) === 'pong'
+      }, REKEY_TIMEOUT)
 
       client
         .on('authentication', async ctx => {
