@@ -10,6 +10,7 @@ import { calculateJwkThumbprintUri, exportJWK } from 'jose'
 import { ForwardRequest, parseForwardRequest } from '../forward-request'
 import { createDestroy } from '../destroy-server'
 import { onceWithTimeout } from '../events'
+import { memoizeForDuration } from '../memoize'
 
 const clientIdFromPublicSsh = (key: Buffer) =>
   crypto.createHash('sha1').update(key).digest('base64url').replace(/[_-]/g, '')
@@ -109,11 +110,12 @@ export const baseSshServer = (
       let authContext: ssh2.AuthContext
       let key: ssh2.ParsedKey
 
-      const ping = async (milliseconds: number) => {
-        const result = onceWithTimeout(client, 'rekey', { milliseconds, fallback: () => 'timeout' as const })
+      const PING_TIMEOUT = 5000
+      const ping = memoizeForDuration(async () => {
+        const result = onceWithTimeout(client, 'rekey', { milliseconds: PING_TIMEOUT, fallback: () => 'timeout' as const })
         client.rekey()
-        return await result !== 'timeout'
-      }
+        return (await result) !== 'timeout'
+      }, PING_TIMEOUT)
 
       client
         .on('authentication', async ctx => {
