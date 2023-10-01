@@ -7,7 +7,7 @@ import { KeyObject } from 'crypto'
 import stream from 'stream'
 import { ActiveTunnel, ActiveTunnelStore } from '../tunnel-store'
 import { requestsCounter } from '../metrics'
-import { Claims, jwtAuthenticator, AuthenticationResult, AuthError, saasIdentityProvider } from '../auth'
+import { Claims, jwtAuthenticator, AuthenticationResult, AuthError, saasIdentityProvider, cliIdentityProvider } from '../auth'
 import { SessionStore } from '../session'
 import { BadGatewayError, BadRequestError, BasicAuthUnauthorizedError, RedirectError, UnauthorizedError, errorHandler, errorUpgradeHandler, tryHandler, tryUpgradeHandler } from '../http-server-helpers'
 import { TunnelFinder, proxyRouter } from './router'
@@ -62,7 +62,7 @@ export const proxy = ({
 
       const authenticate = jwtAuthenticator(
         tunnel.publicKeyThumbprint,
-        [saasIdp]
+        [saasIdp, cliIdentityProvider(tunnel.publicKey, tunnel.publicKeyThumbprint)]
       )
 
       let authResult: AuthenticationResult
