@@ -14,10 +14,10 @@ export function cookieSessionStore<T>(opts: {domain: string; schema: z.ZodSchema
   const keys = opts.keys ?? [generateInsecureSecret()]
   return function getSession(
     req: IncomingMessage,
-    res: ServerResponse<IncomingMessage>,
+    res: ServerResponse<IncomingMessage> | undefined,
     thumbprint: string
   ) {
-    const cookies = new Cookies(req, res, {
+    const cookies = new Cookies(req, res ?? new ServerResponse(req), {
       secure: true,
       keys,
     })

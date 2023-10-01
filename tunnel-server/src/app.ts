@@ -4,7 +4,7 @@ import http from 'http'
 import { Logger } from 'pino'
 import { KeyObject } from 'crypto'
 import { SessionStore } from './session'
-import { Claims, createGetVerificationData, jwtAuthenticator } from './auth'
+import { Claims, cliIdentityProvider, jwtAuthenticator, saasIdentityProvider } from './auth'
 import { ActiveTunnelStore } from './tunnel-store'
 import { editUrl } from './url'
 import { Proxy } from './proxy'
@@ -21,8 +21,9 @@ export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, logi
   proxy: Proxy
   saasPublicKey: KeyObject
   jwtSaasIssuer: string
-}) =>
-  Fastify({
+}) => {
+  const saasIdp = saasIdentityProvider(jwtSaasIssuer, saasPublicKey)
+  return Fastify({
     serverFactory: handler => {
       const baseHostname = baseUrl.hostname
       const authHostname = `auth.${baseHostname}`
@@ -83,7 +84,7 @@ export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, logi
       if (!session.user) {
         const auth = jwtAuthenticator(
           activeTunnel.publicKeyThumbprint,
-          createGetVerificationData(saasPublicKey, jwtSaasIssuer)(activeTunnel.publicKey)
+          [saasIdp, cliIdentityProvider(activeTunnel.publicKey, activeTunnel.publicKeyThumbprint)]
         )
         const result = await auth(req.raw)
         if (!result.isAuthenticated) {
@@ -108,7 +109,7 @@ export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, logi
 
       const auth = jwtAuthenticator(
         profileId,
-        createGetVerificationData(saasPublicKey, jwtSaasIssuer)(tunnels[0].publicKey)
+        [saasIdp, cliIdentityProvider(tunnels[0].publicKey, tunnels[0].publicKeyThumbprint)]
       )
 
       const result = await auth(req.raw)
@@ -127,3 +128,4 @@ export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, logi
     })
 
     .get('/healthz', { logLevel: 'warn' }, async () => 'OK')
+}
