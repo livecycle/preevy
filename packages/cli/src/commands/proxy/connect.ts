@@ -81,8 +81,8 @@ export default class Connect extends ProfileCommand<typeof Connect> {
 
     const inspector = commands.proxy.inspectRunningComposeApp(composeProject)
     const networks = await inspector.getComposeNetworks()
-
-    const model = commands.proxy.initProxyComposeModel({
+    const projectDirectory = await inspector.getWorkingDirectory()
+    const model = await commands.proxy.initProxyComposeModel({
       version: this.config.version,
       envId,
       projectName: composeProject,
@@ -90,6 +90,7 @@ export default class Connect extends ProfileCommand<typeof Connect> {
       networks,
       privateMode: flags['private-env'],
       tunnelingKeyThumbprint: await jwkThumbprint(tunnelingKey),
+      projectDirectory,
     })
 
     const composeTmpDir = await model.write({ tunnelingKey, knownServerPublicKey: tunnelServerPublicKey })

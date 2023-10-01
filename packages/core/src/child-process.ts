@@ -1,5 +1,5 @@
 import { ProcessOutputBuffers, orderedOutput } from '@preevy/common'
-import childProcess, { ChildProcess } from 'child_process'
+import childProcess, { ChildProcess, ExecOptions } from 'child_process'
 import { Readable, Writable } from 'stream'
 import { promisify } from 'util'
 
@@ -69,7 +69,7 @@ export const spawnPromise = async (
 
 export const execPromise = promisify(childProcess.exec)
 
-export const execPromiseStdout = async (command: string) => (await execPromise(command)).stdout.trim()
+export const execPromiseStdout = async (command: string, opts?: Pick<ExecOptions, 'cwd'>) => (await execPromise(command, { cwd: opts?.cwd })).stdout.trim()
 
 export type PartialStdioStringOption = 'inherit' | 'ignore'
 export type PartialStdioOptions = PartialStdioStringOption
