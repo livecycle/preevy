@@ -42,7 +42,7 @@ export const proxy = ({
   saasPublicKey: KeyObject
   jwtSaasIssuer: string
 }) => {
-  const theProxy = httpProxy.createProxy({})
+  const theProxy = httpProxy.createProxyServer({ xfwd: true })
   const injectsMap = new WeakMap<IncomingMessage, ScriptInjectionBase[]>()
   theProxy.on('proxyRes', proxyResHandler({ log, injectsMap }))
 
