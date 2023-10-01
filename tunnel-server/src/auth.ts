@@ -44,7 +44,7 @@ export type BearerAuthorizationHeader = {
 }
 
 export type AuthorizationHeader = BasicAuthorizationHeader | BearerAuthorizationHeader
-export type JWTIssuer = {
+export type IdentityProvider = {
   issuer: string
   publicKey: KeyObject
   mapClaims: (issuer: JWTPayload, context: { pkThumbprint: string }) => Claims
@@ -86,7 +86,7 @@ const extractAuthorizationHeader = (req: IncomingMessage): AuthorizationHeader |
 
 export const jwtAuthenticator = (
   publicKeyThumbprint: string,
-  issuers: JWTIssuer[]
+  identityProviders: IdentityProvider[]
 ) : Authenticator => async req => {
   const authHeader = extractAuthorizationHeader(req)
   const jwt = match(authHeader)
@@ -101,12 +101,12 @@ export const jwtAuthenticator = (
   const parsedJwt = decodeJwt(jwt)
   if (parsedJwt.iss === undefined) throw new AuthError('Could not find issuer in JWT')
 
-  const jwtIssuer = issuers.find(x => x.issuer === parsedJwt.iss)
-  if (!jwtIssuer) {
+  const idp = identityProviders.find(x => x.issuer === parsedJwt.iss)
+  if (!idp) {
     return { isAuthenticated: false }
   }
 
-  const { publicKey, mapClaims } = jwtIssuer
+  const { publicKey, mapClaims } = idp
 
   let token: JWTVerifyResult
   try {
@@ -124,7 +124,7 @@ export const jwtAuthenticator = (
   }
 }
 
-export const saasJWTIssuer = (sassIssuer:string, saasPublicKey: KeyObject): JWTIssuer => ({
+export const saasIdentityProvider = (sassIssuer:string, saasPublicKey: KeyObject): IdentityProvider => ({
   issuer: sassIssuer,
   publicKey: saasPublicKey,
   mapClaims: (token, { pkThumbprint: profile }) => {
@@ -149,7 +149,7 @@ export const saasJWTIssuer = (sassIssuer:string, saasPublicKey: KeyObject): JWTI
   },
 })
 
-export const cliTokenIssuer = (publicKey: KeyObject, publicKeyThumbprint:string): JWTIssuer => ({
+export const cliIdentityProvider = (publicKey: KeyObject, publicKeyThumbprint:string): IdentityProvider => ({
   issuer: `preevy://${publicKeyThumbprint}`,
   publicKey,
   mapClaims: (token, { pkThumbprint: profile }) => ({
@@ -160,13 +160,3 @@ export const cliTokenIssuer = (publicKey: KeyObject, publicKeyThumbprint:string)
     sub: `preevy-profile:${profile}`,
   }),
 })
-
-/* not really in use, can be if we support non-jwt authenticators
-export const combineAuthenticators = (authenticators: Authenticator[]) =>
-  async (req: IncomingMessage):Promise<AuthenticationResult> => {
-    const authInfos = (await Promise.all(authenticators.map(authn => authn(req))))
-    const found = authInfos.find(info => info.isAuthenticated)
-    if (found !== undefined) return found
-    return { isAuthenticated: false }
-  }
-*/

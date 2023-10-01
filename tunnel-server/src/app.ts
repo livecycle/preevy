@@ -4,7 +4,7 @@ import http from 'http'
 import { Logger } from 'pino'
 import { KeyObject } from 'crypto'
 import { SessionStore } from './session'
-import { Claims, cliTokenIssuer, jwtAuthenticator, saasJWTIssuer } from './auth'
+import { Claims, cliIdentityProvider, jwtAuthenticator, saasIdentityProvider } from './auth'
 import { ActiveTunnelStore } from './tunnel-store'
 import { editUrl } from './url'
 import { Proxy } from './proxy'
@@ -22,7 +22,7 @@ export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, logi
   saasPublicKey: KeyObject
   jwtSaasIssuer: string
 }) => {
-  const saasIssuer = saasJWTIssuer(jwtSaasIssuer, saasPublicKey)
+  const saasIdp = saasIdentityProvider(jwtSaasIssuer, saasPublicKey)
   return Fastify({
     serverFactory: handler => {
       const baseHostname = baseUrl.hostname
@@ -83,7 +83,7 @@ export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, logi
       if (!session.user) {
         const auth = jwtAuthenticator(
           activeTunnel.publicKeyThumbprint,
-          [saasIssuer, cliTokenIssuer(activeTunnel.publicKey, activeTunnel.publicKeyThumbprint)]
+          [saasIdp, cliIdentityProvider(activeTunnel.publicKey, activeTunnel.publicKeyThumbprint)]
         )
         const result = await auth(req.raw)
         if (!result.isAuthenticated) {
@@ -108,7 +108,7 @@ export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, logi
 
       const auth = jwtAuthenticator(
         profileId,
-        [saasIssuer, cliTokenIssuer(tunnels[0].publicKey, tunnels[0].publicKeyThumbprint)]
+        [saasIdp, cliIdentityProvider(tunnels[0].publicKey, tunnels[0].publicKeyThumbprint)]
       )
 
       const result = await auth(req.raw)
