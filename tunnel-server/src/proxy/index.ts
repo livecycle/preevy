@@ -7,7 +7,7 @@ import { KeyObject } from 'crypto'
 import stream from 'stream'
 import { ActiveTunnel, ActiveTunnelStore } from '../tunnel-store'
 import { requestsCounter } from '../metrics'
-import { Claims, jwtAuthenticator, AuthenticationResult, AuthError, createGetVerificationData } from '../auth'
+import { Claims, jwtAuthenticator, AuthenticationResult, AuthError, saasJWTIssuer } from '../auth'
 import { SessionStore } from '../session'
 import { BadGatewayError, BadRequestError, BasicAuthUnauthorizedError, RedirectError, UnauthorizedError, errorHandler, errorUpgradeHandler, tryHandler, tryUpgradeHandler } from '../http-server-helpers'
 import { TunnelFinder, proxyRouter } from './router'
@@ -47,6 +47,7 @@ export const proxy = ({
   theProxy.on('proxyRes', injectScripts)
 
   const loginRedirectUrlForRequest = loginRedirectUrl(loginUrl)
+  const saasIssuer = saasJWTIssuer(jwtSaasIssuer, saasPublicKey)
 
   const validatePrivateTunnelRequest = async (
     req: IncomingMessage,
@@ -61,7 +62,7 @@ export const proxy = ({
 
       const authenticate = jwtAuthenticator(
         tunnel.publicKeyThumbprint,
-        createGetVerificationData(saasPublicKey, jwtSaasIssuer)(tunnel.publicKey)
+        [saasIssuer]
       )
 
       let authResult: AuthenticationResult
@@ -149,6 +150,7 @@ export const proxy = ({
       {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
+
         target: {
           socketPath: activeTunnel.target,
         },
@@ -164,7 +166,7 @@ export const proxy = ({
       const { req: mutatedReq, activeTunnel } = await validateProxyRequest(
         tunnelFinder,
         req,
-        pkThumbprint => sessionStore(req, undefined as unknown as ServerResponse, pkThumbprint),
+        pkThumbprint => sessionStore(req, new ServerResponse(req), pkThumbprint),
       )
 
       const upgrade = mutatedReq.headers.upgrade?.toLowerCase()

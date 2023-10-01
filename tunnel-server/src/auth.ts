@@ -1,5 +1,5 @@
 import { IncomingMessage, ServerResponse } from 'http'
-import { JWTPayload, JWTVerifyResult, jwtVerify, errors, decodeJwt } from 'jose'
+import { JWTVerifyResult, jwtVerify, errors, decodeJwt, JWTPayload } from 'jose'
 import { match } from 'ts-pattern'
 import { ZodError, z } from 'zod'
 import Cookies from 'cookies'
@@ -30,6 +30,8 @@ export type AuthenticationResult = {
   claims: Claims
 } | { isAuthenticated: false }
 
+export type Authenticator = (req: IncomingMessage)=> Promise<AuthenticationResult>
+
 export type BasicAuthorizationHeader = {
   scheme: 'Basic'
   username: string
@@ -42,15 +44,13 @@ export type BearerAuthorizationHeader = {
 }
 
 export type AuthorizationHeader = BasicAuthorizationHeader | BearerAuthorizationHeader
-
-const cookieName = 'preevy-saas-jwt'
-
-type VerificationData = {
-  pk: KeyObject
-  extractClaims: (token: JWTPayload, thumbprint: string) => Claims
+export type JWTIssuer = {
+  issuer: string
+  publicKey: KeyObject
+  mapClaims: (issuer: JWTPayload, context: { pkThumbprint: string }) => Claims
 }
 
-// export const SAAS_JWT_ISSUER = process.env.SAAS_JWT_ISSUER ?? 'app.livecycle.run'
+const cookieName = 'preevy-saas-jwt'
 
 export const saasJWTSchema = z.object({
   iss: z.string(),
@@ -86,8 +86,8 @@ const extractAuthorizationHeader = (req: IncomingMessage): AuthorizationHeader |
 
 export const jwtAuthenticator = (
   publicKeyThumbprint: string,
-  getVerificationData: (issuer: string, publicKeyThumbprint: string) => VerificationData
-) => async (req: IncomingMessage): Promise<AuthenticationResult> => {
+  issuers: JWTIssuer[]
+) : Authenticator => async req => {
   const authHeader = extractAuthorizationHeader(req)
   const jwt = match(authHeader)
     .with({ scheme: 'Basic', username: 'x-preevy-profile-key' }, ({ password }) => password)
@@ -101,23 +101,18 @@ export const jwtAuthenticator = (
   const parsedJwt = decodeJwt(jwt)
   if (parsedJwt.iss === undefined) throw new AuthError('Could not find issuer in JWT')
 
-  let verificationData: VerificationData
-  try {
-    verificationData = getVerificationData(parsedJwt.iss, publicKeyThumbprint)
-  } catch (e) {
-    if (e instanceof AuthError) return { isAuthenticated: false }
-
-    throw e
+  const jwtIssuer = issuers.find(x => x.issuer === parsedJwt.iss)
+  if (!jwtIssuer) {
+    return { isAuthenticated: false }
   }
 
-  const { pk, extractClaims } = verificationData
+  const { publicKey, mapClaims } = jwtIssuer
 
   let token: JWTVerifyResult
   try {
-    token = await jwtVerify(jwt, pk,)
+    token = await jwtVerify(jwt, publicKey)
   } catch (e) {
     if (e instanceof errors.JOSEError) throw new AuthError(`Could not verify JWT. ${e.message}`, { cause: e })
-
     throw e
   }
 
@@ -125,67 +120,53 @@ export const jwtAuthenticator = (
     method: { type: 'header', header: 'authorization' },
     isAuthenticated: true,
     login: isBrowser(req) && authHeader?.scheme !== 'Bearer',
-    claims: extractClaims(token.payload, publicKeyThumbprint),
+    claims: mapClaims(token.payload, { pkThumbprint: publicKeyThumbprint }),
   }
 }
 
-export const authenticator = (authenticators: ((req: IncomingMessage)=> Promise<AuthenticationResult>)[]) =>
+export const saasJWTIssuer = (sassIssuer:string, saasPublicKey: KeyObject): JWTIssuer => ({
+  issuer: sassIssuer,
+  publicKey: saasPublicKey,
+  mapClaims: (token, { pkThumbprint: profile }) => {
+    let parsedToken: SaasJWTSchema
+    try {
+      parsedToken = saasJWTSchema.parse(token)
+    } catch (e) {
+      if (e instanceof ZodError) {
+        throw new AuthError(`JWT schema is incorrect. ${e.message}`, { cause: e })
+      }
+      throw e
+    }
+
+    return {
+      exp: parsedToken.exp,
+      iat: parsedToken.iat,
+      sub: parsedToken.sub,
+      role: parsedToken.profiles.includes(profile) ? 'admin' : 'guest',
+      type: 'profile',
+      scopes: parsedToken.profiles.includes(profile) ? ['admin'] : [],
+    }
+  },
+})
+
+export const cliTokenIssuer = (publicKey: KeyObject, publicKeyThumbprint:string): JWTIssuer => ({
+  issuer: `preevy://${publicKeyThumbprint}`,
+  publicKey,
+  mapClaims: (token, { pkThumbprint: profile }) => ({
+    role: 'admin',
+    type: 'profile',
+    exp: token.exp,
+    scopes: ['admin'],
+    sub: `preevy-profile:${profile}`,
+  }),
+})
+
+/* not really in use, can be if we support non-jwt authenticators
+export const combineAuthenticators = (authenticators: Authenticator[]) =>
   async (req: IncomingMessage):Promise<AuthenticationResult> => {
     const authInfos = (await Promise.all(authenticators.map(authn => authn(req))))
     const found = authInfos.find(info => info.isAuthenticated)
     if (found !== undefined) return found
     return { isAuthenticated: false }
   }
-
-export const createGetVerificationData = (saasPublicKey: KeyObject, jwtSaasIssuer: string) => {
-  const getSaasTokenVerificationData = (): VerificationData => ({
-    pk: saasPublicKey,
-    extractClaims: (token, thumbprint) => {
-      let parsedToken: SaasJWTSchema
-      try {
-        parsedToken = saasJWTSchema.parse(token)
-      } catch (e) {
-        if (e instanceof ZodError) {
-          throw new AuthError(`JWT schema is incorrect. ${e.message}`, { cause: e })
-        }
-        throw e
-      }
-
-      return {
-        exp: parsedToken.exp,
-        iat: parsedToken.iat,
-        sub: parsedToken.sub,
-        role: parsedToken.profiles.includes(thumbprint) ? 'admin' : 'guest',
-        type: 'profile',
-        scopes: parsedToken.profiles.includes(thumbprint) ? ['admin'] : [],
-      }
-    },
-  })
-
-  const getCliTokenVerificationData = (pk: KeyObject,) =>
-    (): VerificationData => ({
-      pk,
-      extractClaims: (token, thumbprint) => ({
-        role: 'admin',
-        type: 'profile',
-        exp: token.exp,
-        scopes: ['admin'],
-        sub: `preevy-profile:${thumbprint}`,
-      }),
-    })
-
-  const getCliIssuerFromPk = (publicKeyThumbprint: string) => `preevy://${publicKeyThumbprint}`
-
-  return (publicKey: KeyObject) =>
-    (issuer: string, publicKeyThumbprint: string) => {
-      if (issuer === jwtSaasIssuer) {
-        return getSaasTokenVerificationData()
-      }
-
-      if (issuer === getCliIssuerFromPk(publicKeyThumbprint)) {
-        return getCliTokenVerificationData(publicKey)()
-      }
-
-      throw new AuthError(`Unsupported issuer ${issuer}`)
-    }
-}
+*/
