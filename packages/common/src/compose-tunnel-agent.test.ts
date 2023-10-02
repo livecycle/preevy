@@ -7,7 +7,6 @@ describe('parse script injection labels', () => {
     const labels = {
       'preevy.inject_script.widget.src': 'https://my-script',
       'preevy.inject_script.widget.defer': 'true',
-      'preevy.inject_script.widget.async': 'false',
       'preevy.inject_script.widget.path_regex': 't.*t',
     }
     const scriptInjections = scriptInjectionFromLabels(labels)
@@ -16,7 +15,7 @@ describe('parse script injection labels', () => {
     expect(script).toMatchObject({
       src: 'https://my-script',
       defer: true,
-      async: false,
+      async: true,
       pathRegex: expect.any(RegExp),
     })
   })
@@ -48,20 +47,26 @@ describe('parse script injection labels', () => {
   test('should support multiple scripts', () => {
     const labels = {
       'preevy.inject_script.widget.src': 'https://my-script',
+      'preevy.inject_script.widget.defer': '1',
       'preevy.inject_script.widget2.src': 'https://my-script2',
+      'preevy.inject_script.widget2.defer': 'false',
       'preevy.inject_script.widget3.src': 'https://my-script3',
+      'preevy.inject_script.widget3.defer': '0',
     }
     const scripts = scriptInjectionFromLabels(labels)
     expect(scripts).toHaveLength(3)
     expect(scripts).toMatchObject([
       {
         src: 'https://my-script',
+        defer: true
       },
       {
         src: 'https://my-script2',
+        defer: false,
       },
       {
         src: 'https://my-script3',
+        defer: false,
       },
     ])
   })
