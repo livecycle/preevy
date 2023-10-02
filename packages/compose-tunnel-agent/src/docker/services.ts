@@ -12,6 +12,9 @@ export type RunningService = {
   inject: ScriptInjection[]
 }
 
+const GLOBAL_INJECT_SCRIPTS = process.env.GLOBAL_INJECT_SCRIPTS
+  ? JSON.parse(process.env.GLOBAL_INJECT_SCRIPTS) as ScriptInjection[] : []
+
 export const containerToService = ({
   container,
   defaultAccess,
@@ -22,5 +25,5 @@ export const containerToService = ({
   networks: Object.keys(container.NetworkSettings.Networks),
   // ports may have both IPv6 and IPv4 addresses, ignoring
   ports: [...new Set(container.Ports.filter(p => p.Type === 'tcp').filter(portFilter(container)).map(p => p.PrivatePort))],
-  inject: scriptInjectionFromLabels(container.Labels),
+  inject: [...scriptInjectionFromLabels(container.Labels), ...GLOBAL_INJECT_SCRIPTS],
 })
