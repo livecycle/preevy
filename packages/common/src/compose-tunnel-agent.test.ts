@@ -7,6 +7,7 @@ describe('parse script injection labels', () => {
     const labels = {
       'preevy.inject_script.widget.src': 'https://my-script',
       'preevy.inject_script.widget.defer': 'true',
+      'preevy.inject_script.widget.async': 'false',
       'preevy.inject_script.widget.path_regex': 't.*t',
     }
     const scriptInjections = scriptInjectionFromLabels(labels)
@@ -15,7 +16,7 @@ describe('parse script injection labels', () => {
     expect(script).toMatchObject({
       src: 'https://my-script',
       defer: true,
-      async: true,
+      async: false,
       pathRegex: expect.any(RegExp),
     })
   })

@@ -1,14 +1,12 @@
 import { set, camelCase, snakeCase } from 'lodash'
 
 export const extractSectionsFromLabels = <T>(prefix: string, labels: Record<string, string>) => {
-  const re = new RegExp(`^${prefix.replace(/\./g, '\\.')}\\.(?<id>.+?)\\.(?<key>[^.]+)$`)
   const sections:{[id:string]: T } = {}
-  for (const [label, value] of Object.entries(labels)) {
-    const match = label.match(re)?.groups
-    if (match) {
-      set(sections, [match.id, camelCase(match.key)], value)
-    }
-  }
+  const normalizedPrefix = prefix.endsWith('.') ? prefix : `${prefix}.`
+  Object.entries(labels)
+    .filter(([key]) => key.startsWith(normalizedPrefix))
+    .map(([key, value]) => [...key.substring(normalizedPrefix.length).split('.'), value])
+    .forEach(([id, prop, value]) => set(sections, [id, camelCase(prop)], value))
   return sections
 }
 
