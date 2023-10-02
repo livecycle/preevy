@@ -9,6 +9,7 @@ import { widgetScriptInjector } from '../compose/script-injection'
 import { ComposeModel } from '../compose'
 import { TunnelOpts } from '../ssh'
 import { EnvId } from '../env-id'
+import { EnvMetadata, detectGitMetadata } from '../env-metadata'
 
 export const agentServiceName = COMPOSE_TUNNEL_AGENT_SERVICE_NAME
 
@@ -31,29 +32,41 @@ export function inspectRunningComposeApp(projectName: string) {
     const getNetworkName = (labels: string) => labels.split(',').map(l => l.split('=')).find(l => l[0] === 'com.docker.compose.network')?.[1]
     return Object.fromEntries(composeNetworks.map(x => ([getNetworkName(x.Labels), { name: x.Name }])))
   }
+
+  function parseJSONContainer(s: string) {
+    const ctr = JSON.parse(s) as {Names: string; ID: string; Labels: string }
+    return { names: ctr.Names, id: ctr.ID, labels: Object.fromEntries(ctr.Labels.split(',').map(l => l.split('='))) as Record<string, string> }
+  }
+
   const getPreevyAgentContainer = async () => {
-    const agentContainerId = await dockerCmd(`ps --filter ${projectFilter} --filter label=com.docker.compose.service=${agentServiceName} -q`)
-    if (!agentContainerId) {
+    const agentContainer = await dockerCmd(`ps --filter ${projectFilter} --filter label=com.docker.compose.service=${agentServiceName} --format json`)
+    if (!agentContainer) {
       return null
     }
-    return agentContainerId
+    return parseJSONContainer(agentContainer)
   }
 
   const getEnvId = async () => {
-    const agentContainerId = await getPreevyAgentContainer()
-    if (agentContainerId) {
-      return await dockerCmd(`inspect ${agentContainerId}  --format '{{ index .Config.Labels "preevy.env_id"}}'`)
-    }
-    return null
+    const agentContainer = await getPreevyAgentContainer()
+    return agentContainer?.labels['preevy.env_id']
+  }
+
+  const listAllContainers = async () => ((await dockerCmd(`ps -a --filter ${projectFilter} --format json`)).split('\n') ?? [])
+    .map(parseJSONContainer)
+
+  const getWorkingDirectory = async () => {
+    const containers = await listAllContainers()
+    return containers.find(x => x.labels['com.docker.compose.service'] !== agentServiceName)?.labels['com.docker.compose.project.working_dir']
   }
   return {
     getComposeNetworks,
     getPreevyAgentContainer,
     getEnvId,
+    getWorkingDirectory,
   }
 }
 
-export function initProxyComposeModel(opts: {
+export async function initProxyComposeModel(opts: {
   envId: EnvId
   projectName: string
   tunnelOpts: TunnelOpts
@@ -72,11 +85,12 @@ export function initProxyComposeModel(opts: {
   }
 
   const privateMode = Boolean(opts.privateMode)
-  const envMetadata = {
+  const envMetadata:EnvMetadata = {
     id: opts.envId,
     lastDeployTime: new Date(),
     version: opts.version,
     profileThumbprint: opts.tunnelingKeyThumbprint,
+    git: opts.projectDirectory ? await detectGitMetadata(opts.projectDirectory) : undefined,
   }
 
   let newComposeModel = addComposeTunnelAgentService({

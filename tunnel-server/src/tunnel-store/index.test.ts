@@ -1,27 +1,36 @@
-import { describe, it, expect, beforeEach } from '@jest/globals'
+import { describe, it, expect, beforeEach, jest } from '@jest/globals'
 import pinoPretty from 'pino-pretty'
 import { Logger, pino } from 'pino'
-import { ActiveTunnel, ActiveTunnelStore, TransactionDescriptor, inMemoryActiveTunnelStore } from '.'
+import { nextTick } from 'process'
+import { ActiveTunnel, ActiveTunnelStore, inMemoryActiveTunnelStore } from '.'
+import { EntryWatcher, TransactionDescriptor } from '../memory-store'
 
 describe('inMemoryActiveTunnelStore', () => {
   let store: ActiveTunnelStore
   let log: Logger
 
   beforeEach(() => {
-    log = pino({ level: 'debug' }, pinoPretty())
+    log = pino({ level: 'silent' }, pinoPretty())
     store = inMemoryActiveTunnelStore({ log })
   })
 
   describe('when setting a new key', () => {
-    let desc: TransactionDescriptor
+    let tx: TransactionDescriptor
     let val: ActiveTunnel
+    let watcher: EntryWatcher
     beforeEach(async () => {
       val = { publicKeyThumbprint: 'pk1' } as ActiveTunnel
-      desc = await store.set('foo', val)
+      const setResult = await store.set('foo', val)
+      tx = setResult.tx
+      watcher = setResult.watcher
     })
 
     it('returns a descriptor', async () => {
-      expect(desc).toBeDefined()
+      expect(tx).toBeDefined()
+    })
+
+    it('returns a watcher', async () => {
+      expect(watcher).toBeDefined()
     })
 
     describe('when getting a non-existant key', () => {
@@ -43,12 +52,19 @@ describe('inMemoryActiveTunnelStore', () => {
 
     describe('when getting the key', () => {
       let gotVal: ActiveTunnel | undefined
+      let gotWatcher: EntryWatcher | undefined
       beforeEach(async () => {
-        gotVal = await store.get('foo')
+        const getResult = await store.get('foo')
+        gotVal = getResult?.value
+        gotWatcher = getResult?.watcher
       })
 
       it('returns the value', () => {
         expect(gotVal).toBe(val)
+      })
+
+      it('returns a watcher', () => {
+        expect(gotWatcher).toBeDefined()
       })
     })
 
@@ -65,8 +81,13 @@ describe('inMemoryActiveTunnelStore', () => {
     })
 
     describe('when deleting a non-existant value', () => {
+      let deleteResult: boolean
       beforeEach(async () => {
-        await store.delete('bar')
+        deleteResult = await store.delete('bar')
+      })
+
+      it('returns false', () => {
+        expect(deleteResult).toBe(false)
       })
 
       describe('when getting a non-existing value by thumbprint', () => {
@@ -94,8 +115,13 @@ describe('inMemoryActiveTunnelStore', () => {
     })
 
     describe('when deleting an existing value without a tx arg', () => {
+      let deleteResult: boolean
       beforeEach(async () => {
-        await store.delete('foo')
+        deleteResult = await store.delete('foo')
+      })
+
+      it('returns true', () => {
+        expect(deleteResult).toBe(true)
       })
 
       describe('when getting the deleted key', () => {
@@ -117,8 +143,13 @@ describe('inMemoryActiveTunnelStore', () => {
     })
 
     describe('when deleting an existing value with a correct tx arg', () => {
+      let deleteResult: boolean
       beforeEach(async () => {
-        await store.delete('foo', desc)
+        deleteResult = await store.delete('foo', tx)
+      })
+
+      it('returns true', () => {
+        expect(deleteResult).toBe(true)
       })
 
       describe('when getting the deleted key', () => {
@@ -140,14 +171,19 @@ describe('inMemoryActiveTunnelStore', () => {
     })
 
     describe('when deleting an existing value with an incorrect tx arg', () => {
+      let deleteResult: boolean
       beforeEach(async () => {
-        await store.delete('foo', { txId: -1 })
+        deleteResult = await store.delete('foo', { txId: -1 })
+      })
+
+      it('returns false', () => {
+        expect(deleteResult).toBe(false)
       })
 
       describe('when getting the key', () => {
         let gotVal: ActiveTunnel | undefined
         beforeEach(async () => {
-          gotVal = await store.get('foo')
+          gotVal = (await store.get('foo'))?.value
         })
 
         it('returns the value', () => {
@@ -164,6 +200,42 @@ describe('inMemoryActiveTunnelStore', () => {
         it('returns the value', () => {
           expect(gotValAr).toHaveLength(1)
           expect(gotValAr).toContain(val)
+        })
+      })
+    })
+
+    describe('when watching an item', () => {
+      let deleteListener: jest.Mock<() => void>
+      beforeEach(() => {
+        deleteListener = jest.fn<() => void>()
+        watcher.once('delete', deleteListener)
+      })
+
+      describe('when deleting the item', () => {
+        beforeEach(async () => {
+          await store.delete('foo')
+          await new Promise(nextTick)
+        })
+
+        it('calls the delete listener on the next tick', () => {
+          expect(deleteListener).toHaveBeenCalled()
+        })
+      })
+
+      describe('when another item is in the store', () => {
+        beforeEach(async () => {
+          await store.set('bar', { publicKeyThumbprint: 'pk2' } as ActiveTunnel)
+        })
+
+        describe('when deleting the other item', () => {
+          beforeEach(async () => {
+            await store.delete('bar')
+            await new Promise(nextTick)
+          })
+
+          it("does not call the first item's delete listener on the next tick", () => {
+            expect(deleteListener).not.toHaveBeenCalled()
+          })
         })
       })
     })

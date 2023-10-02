@@ -91,8 +91,8 @@ export default class Connect extends ProfileCommand<typeof Connect> {
 
     const inspector = commands.proxy.inspectRunningComposeApp(composeProject)
     const networks = await inspector.getComposeNetworks()
-
-    const model = commands.proxy.initProxyComposeModel({
+    const projectDirectory = await inspector.getWorkingDirectory()
+    const model = await commands.proxy.initProxyComposeModel({
       version: this.config.version,
       envId,
       debug: this.flags.debug,
@@ -102,6 +102,7 @@ export default class Connect extends ProfileCommand<typeof Connect> {
       privateMode: flags['private-env'],
       injectLivecycleScript: flags['disable-widget'] ? undefined : flags['livecycle-widget-url'],
       tunnelingKeyThumbprint: await jwkThumbprint(tunnelingKey),
+      projectDirectory,
     })
 
     const composeTmpDir = await model.write({ tunnelingKey, knownServerPublicKey: tunnelServerPublicKey })

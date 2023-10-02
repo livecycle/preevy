@@ -74,11 +74,12 @@ export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, logi
         res.statusCode = 400
         return { error: 'returnPath must be a relative path' }
       }
-      const activeTunnel = await activeTunnelStore.get(envId)
-      if (!activeTunnel) {
+      const activeTunnelEntry = await activeTunnelStore.get(envId)
+      if (!activeTunnelEntry) {
         res.statusCode = 404
         return { error: 'unknown envId' }
       }
+      const { value: activeTunnel } = activeTunnelEntry
       const session = sessionStore(req.raw, res.raw, activeTunnel.publicKeyThumbprint)
       if (!session.user) {
         const auth = jwtAuthenticator(

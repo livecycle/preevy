@@ -1,5 +1,5 @@
 import { detectCiProvider } from './ci-providers'
-import { gitBranchName } from './git'
+import { gitContext } from './git'
 import { ComposeModel } from './compose'
 import { Logger } from './log'
 
@@ -45,7 +45,7 @@ const findAmbientEnvIdSuffix = async () => {
       return { value: envIdFromBranch(branch), basedOn: 'CI branch' }
     }
   }
-  const branch = await gitBranchName()
+  const branch = await gitContext().branchName()
   if (branch) {
     return { value: envIdFromBranch(branch), basedOn: 'local git branch' }
   }

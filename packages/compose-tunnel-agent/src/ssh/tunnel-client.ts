@@ -42,6 +42,11 @@ export const sshClient = async ({
     connectionConfig,
   })
 
+  ssh.on('error', err => {
+    log.error('ssh client error: %j', inspect(err))
+    // baseSshClient calls end
+  })
+
   const currentForwards = new Map<string, Forward>()
 
   ssh.on('unix connection', ({ socketPath: forwardRequestId }, accept, reject) => {

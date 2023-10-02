@@ -1,12 +1,15 @@
-import crypto, { randomBytes } from 'crypto'
+import crypto, { createPublicKey, randomBytes } from 'crypto'
 import { FastifyBaseLogger } from 'fastify/types/logger'
 import net from 'net'
 import path from 'path'
-import ssh2, { ParsedKey, SocketBindInfo } from 'ssh2'
+import ssh2, { SocketBindInfo } from 'ssh2'
 import { inspect } from 'util'
-import EventEmitter from 'node:events'
+import { EventEmitter, IEventEmitter } from 'tseep'
+import { calculateJwkThumbprintUri, exportJWK } from 'jose'
 import { ForwardRequest, parseForwardRequest } from '../forward-request'
 import { createDestroy } from '../destroy-server'
+import { onceWithTimeout } from '../events'
+import { memoizeForDuration } from '../memoize'
 
 const clientIdFromPublicSsh = (key: Buffer) =>
   crypto.createHash('sha1').update(key).digest('base64url').replace(/[_-]/g, '')
@@ -28,65 +31,52 @@ const parseForwardRequestFromSocketBindInfo = (
   }
 }
 
-export interface ClientForward extends EventEmitter {
-  on: (
-    (event: 'close', listener: () => void) => this
-  ) & (
-    (event: 'error', listener: (err: Error) => void) => this
-  )
+export type ClientForward = IEventEmitter<{
+  close: () => void
+  error: (err: Error) => void
+}>
+
+export type BaseSshClientEvents = {
+  forward: (
+    requestId: string,
+    request: ForwardRequest,
+    localSocketPath: string,
+    accept: () => Promise<ClientForward>,
+    reject: (reason: Error) => void,
+  ) => void
+  exec: (
+    command: string,
+    respondWithJson: (content: unknown) => void,
+    reject: () => void,
+  ) => void
+  error: (err: Error) => void
+  end: () => void
 }
 
-export interface BaseSshClient extends EventEmitter {
+export interface BaseSshClient extends IEventEmitter<BaseSshClientEvents> {
   envId: string
   clientId: string
-  publicKey: ParsedKey
-  on: (
-    (
-      event: 'forward',
-      listener: (
-        requestId: string,
-        request: ForwardRequest,
-        localSocketPath: string,
-        accept: () => Promise<ClientForward>,
-        reject: (reason: Error) => void,
-      ) => void
-    ) => this
-  ) & (
-    (
-      event: 'exec',
-      listener: (
-        command: string,
-        respondWithJson: (content: unknown) => void,
-        reject: () => void,
-      ) => void
-    ) => this
-  ) & (
-    (
-      event: 'error',
-      listener: (err: Error) => void,
-    ) => this
-  )
+  publicKey: crypto.KeyObject
+  publicKeyThumbprint: string
+  end: () => Promise<void>
+  ping: () => Promise<boolean>
+  connectionId: string
+  log: FastifyBaseLogger
 }
 
-export interface BaseSshServer extends EventEmitter {
+type BaseSshServerEvents = {
+  client: (client: BaseSshClient) => void
+  error: (err: Error) => void
+}
+
+export interface BaseSshServer extends IEventEmitter<BaseSshServerEvents> {
   close: ssh2.Server['close']
   listen: ssh2.Server['listen']
-  on: (
-    (
-      event: 'client',
-      listener: (client: BaseSshClient) => void,
-    ) => this
-  ) & (
-    (
-      event: 'error',
-      listener: (err: Error) => void,
-    ) => this
-  )
 }
 
 export const baseSshServer = (
   {
-    log,
+    log: serverLog,
     sshPrivateKey,
     socketDir,
   }: {
@@ -95,7 +85,7 @@ export const baseSshServer = (
     socketDir: string
   }
 ): BaseSshServer => {
-  const serverEmitter = new EventEmitter({ captureRejections: true }) as Omit<BaseSshServer, 'close' | 'listen'>
+  const serverEmitter = new EventEmitter<BaseSshServerEvents>()
   const server = new ssh2.Server(
     {
       // debug: x => log.debug(x),
@@ -105,10 +95,32 @@ export const baseSshServer = (
     },
     client => {
       let preevySshClient: BaseSshClient
+      const connectionId = `ssh-client-${Math.random().toString(36).substring(2, 9)}`
+      let log = serverLog.child({ connectionId })
       const socketServers = new Map<string, net.Server>()
+      let ended = false
+      const end = async () => {
+        if (!ended) {
+          await new Promise(resolve => {
+            client.once('end', resolve)
+            client.end()
+          })
+        }
+      }
+
+      let authContext: ssh2.AuthContext
+      let key: ssh2.ParsedKey
+
+      const REKEY_TIMEOUT = 5000
+      const ping = memoizeForDuration(async () => {
+        const result = onceWithTimeout(client, 'rekey', { milliseconds: REKEY_TIMEOUT })
+          .then(() => 'pong' as const, () => 'error' as const)
+        client.rekey()
+        return (await result) === 'pong'
+      }, REKEY_TIMEOUT)
 
       client
-        .on('authentication', ctx => {
+        .on('authentication', async ctx => {
           log.debug('authentication: %j', ctx)
           if (ctx.method !== 'publickey') {
             ctx.reject(['publickey'])
@@ -130,13 +142,28 @@ export const baseSshServer = (
             return
           }
 
-          preevySshClient = Object.assign(new EventEmitter({ captureRejections: true }), {
-            publicKey: keyOrError,
-            clientId: clientIdFromPublicSsh(keyOrError.getPublicSSH()),
-            envId: ctx.username,
-          })
-          log.debug('accepting clientId %j envId %j', preevySshClient.clientId, preevySshClient.envId)
+          authContext = ctx
+          key = keyOrError
+          log.debug('accepting connection')
           ctx.accept()
+        })
+        .on('ready', async () => {
+          const publicKey = createPublicKey(key.getPublicPEM())
+          const envId = authContext.username
+          const clientId = clientIdFromPublicSsh(key.getPublicSSH())
+          log = serverLog.child({ clientId, envId, connectionId })
+
+          preevySshClient = Object.assign(new EventEmitter<BaseSshClientEvents>(), {
+            connectionId,
+            clientId,
+            envId,
+            publicKey,
+            publicKeyThumbprint: await calculateJwkThumbprintUri(await exportJWK(publicKey)),
+            end,
+            ping,
+            log,
+          })
+
           serverEmitter.emit('client', preevySshClient)
         })
         .on('request', async (accept, reject, name, info) => {
@@ -214,7 +241,7 @@ export const baseSshServer = (
                   log.debug('streamlocal-forward@openssh.com: request %j calling accept: %j', request, accept)
                   accept?.()
                   socketServers.set(request, socketServer)
-                  resolveForward(socketServer)
+                  resolveForward(socketServer as ClientForward)
                 })
                 .on('error', (err: unknown) => {
                   log.error('socketServer request %j error: %j', request, err)
@@ -241,6 +268,11 @@ export const baseSshServer = (
           preevySshClient?.emit('error', err)
           client.end()
         })
+        .once('end', () => {
+          log.debug('client end')
+          ended = true
+          preevySshClient?.emit('end')
+        })
         .on('session', accept => {
           log.debug('session')
           const session = accept()
@@ -266,7 +298,7 @@ export const baseSshServer = (
     }
   )
     .on('error', (err: unknown) => {
-      log.error('ssh server error: %j', err)
+      serverLog.error('ssh server error: %j', err)
     })
 
   return Object.assign(serverEmitter, {
