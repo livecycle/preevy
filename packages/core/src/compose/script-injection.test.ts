@@ -16,7 +16,7 @@ describe('script injection', () => {
       },
     }
 
-  const injector = scriptInjector('test', { src: 'https://mydomain.com/myscript.ts', async: true, pathRegex: /.*/ })
+    const injector = scriptInjector('test', { src: 'https://mydomain.com/myscript.ts', async: true, pathRegex: /.*/ })
     const newModel = injector.inject(model)
     expect(newModel.services?.frontend1?.labels).toMatchObject({ 'preevy.inject_script.test.src': 'https://mydomain.com/myscript.ts', 'preevy.inject_script.test.async': 'true', 'preevy.inject_script.test.path_regex': '.*' })
     expect(newModel.services?.frontend2?.labels).toMatchObject({ other: 'value', 'preevy.inject_script.test.src': 'https://mydomain.com/myscript.ts', 'preevy.inject_script.test.async': 'true', 'preevy.inject_script.test.path_regex': '.*' })

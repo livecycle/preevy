@@ -29,7 +29,7 @@ export default class Connect extends ProfileCommand<typeof Connect> {
       required: true,
       hidden: true,
       env: 'LIVECYCLE_WIDGET_URL',
-      default: 'https://app.livecycle.run/widget/widget-bootstrap.js'
+      default: 'https://app.livecycle.run/widget/widget-bootstrap.js',
     }),
     'private-env': Flags.boolean({
       description: 'Mark all services as private',

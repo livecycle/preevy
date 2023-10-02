@@ -1,6 +1,6 @@
 import Docker from 'dockerode'
 import { tryParseJson, Logger, ScriptInjection } from '@preevy/common'
-import { set, throttle } from 'lodash'
+import { throttle } from 'lodash'
 import { filters } from './filters'
 import { containerToService } from './services'
 
@@ -11,23 +11,6 @@ export type RunningService = {
   ports: number[]
   access: 'private' | 'public'
   inject: ScriptInjection[]
-}
-
-const reviveScriptInjection = ({ pathRegex, ...v }: ScriptInjection) => ({
-  ...pathRegex && { pathRegex: new RegExp(pathRegex) },
-  ...v,
-})
-
-export const scriptInjectionFromLabels = (labels : Record<string, string>): ScriptInjection[] => {
-  const re = /^preevy\.inject_script\.(?<id>.+?)\.(?<key>[^.]+)$/
-  const scripts:{[id:string]: Partial<ScriptInjection> } = {}
-  for (const [label, value] of Object.entries(labels)) {
-    const match = label.match(re)?.groups
-    if (match) {
-      set(scripts, [match.id, match.attribute], value)
-    }
-  }
-  return (Object.values(scripts).filter(x => !!x.src) as ScriptInjection[]).map(reviveScriptInjection)
 }
 
 export const eventsClient = ({

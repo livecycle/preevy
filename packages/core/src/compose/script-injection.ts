@@ -35,4 +35,4 @@ export const scriptInjector = (id : string, script: ScriptInjection) => {
   }
 }
 
-export const widgetScriptInjector = (url:string) => scriptInjector('preevy-widget', {src: url})
+export const widgetScriptInjector = (url:string) => scriptInjector('preevy-widget', { src: url })
