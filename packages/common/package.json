@@ -1,6 +1,6 @@
 {
   "name": "@preevy/common",
-  "version": "0.0.50",
+  "version": "0.0.52",
   "description": "",
   "main": "dist/index.js",
   "files": [
