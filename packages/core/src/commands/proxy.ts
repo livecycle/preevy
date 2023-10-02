@@ -74,7 +74,6 @@ export async function initProxyComposeModel(opts: {
   tunnelingKeyThumbprint: string
   debug?: boolean
   privateMode?: boolean
-  serviceNames: string[]
   networks: ComposeModel['networks']
   version: string
   injectLivecycleScript?: string

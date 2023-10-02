@@ -4,7 +4,6 @@ import { tunnelServerFlags, urlFlags } from '@preevy/cli-common'
 import { inspect } from 'util'
 import { formatPublicKey } from '@preevy/common'
 import { spawn } from 'child_process'
-import { COMPOSE_SERVICE_LABEL } from '@preevy/compose-tunnel-agent/src/docker/labels'
 import { connectToTunnelServerSsh } from '../../tunnel-server-client'
 import ProfileCommand from '../../profile-command'
 import { filterUrls, printUrls } from '../urls'
@@ -93,7 +92,6 @@ export default class Connect extends ProfileCommand<typeof Connect> {
 
     const inspector = commands.proxy.inspectRunningComposeApp(composeProject)
     const networks = await inspector.getComposeNetworks()
-    const serviceNames = (await inspector.listAllContainers()).map(x => x.labels[COMPOSE_SERVICE_LABEL])
     const projectDirectory = await inspector.getWorkingDirectory()
     const thumbprint = await jwkThumbprint(tunnelingKey)
     const model = await commands.proxy.initProxyComposeModel({
@@ -103,7 +101,6 @@ export default class Connect extends ProfileCommand<typeof Connect> {
       projectName: composeProject,
       tunnelOpts,
       networks,
-      serviceNames,
       privateMode: flags['private-env'],
       injectLivecycleScript: flags['disable-widget'] ? undefined : `${flags['livecycle-widget-url']}?profile=${thumbprint}&env=${envId}`,
       tunnelingKeyThumbprint: thumbprint,
