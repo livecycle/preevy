@@ -1,8 +1,8 @@
 import Docker from 'dockerode'
-import { tryParseJson, Logger, COMPOSE_TUNNEL_AGENT_SERVICE_LABELS as LABELS, ScriptInjection, tryParseYaml } from '@preevy/common'
-import { throttle } from 'lodash'
-import { filters, portFilter } from './filters'
-import { COMPOSE_PROJECT_LABEL, COMPOSE_SERVICE_LABEL } from './labels'
+import { tryParseJson, Logger, ScriptInjection } from '@preevy/common'
+import { set, throttle } from 'lodash'
+import { filters } from './filters'
+import { containerToService } from './services'
 
 export type RunningService = {
   project: string
@@ -18,14 +18,17 @@ const reviveScriptInjection = ({ pathRegex, ...v }: ScriptInjection) => ({
   ...v,
 })
 
-const scriptInjectionFromLabels = ({
-  [LABELS.INJECT_SCRIPTS]: scriptsText,
-  [LABELS.INJECT_SCRIPT_SRC]: src,
-  [LABELS.INJECT_SCRIPT_PATH_REGEX]: pathRegex,
-} : Record<string, string>): ScriptInjection[] => [
-  ...(scriptsText ? (tryParseJson(scriptsText) || tryParseYaml(scriptsText) || []) : []),
-  ...src ? [{ src, ...pathRegex && { pathRegex } }] : [],
-].map(reviveScriptInjection)
+export const scriptInjectionFromLabels = (labels : Record<string, string>): ScriptInjection[] => {
+  const re = /^preevy\.inject_script\.(?<id>.+?)\.(?<key>[^.]+)$/
+  const scripts:{[id:string]: Partial<ScriptInjection> } = {}
+  for (const [label, value] of Object.entries(labels)) {
+    const match = label.match(re)?.groups
+    if (match) {
+      set(scripts, [match.id, match.attribute], value)
+    }
+  }
+  return (Object.values(scripts).filter(x => !!x.src) as ScriptInjection[]).map(reviveScriptInjection)
+}
 
 export const eventsClient = ({
   log,
@@ -42,17 +45,8 @@ export const eventsClient = ({
 }) => {
   const { listContainers, apiFilter } = filters({ docker, composeProject })
 
-  const containerToService = (c: Docker.ContainerInfo): RunningService => ({
-    project: c.Labels[COMPOSE_PROJECT_LABEL],
-    name: c.Labels[COMPOSE_SERVICE_LABEL],
-    access: (c.Labels[LABELS.ACCESS] || defaultAccess) as ('private' | 'public'),
-    networks: Object.keys(c.NetworkSettings.Networks),
-    // ports may have both IPv6 and IPv4 addresses, ignoring
-    ports: [...new Set(c.Ports.filter(p => p.Type === 'tcp').filter(portFilter(c)).map(p => p.PrivatePort))],
-    inject: scriptInjectionFromLabels(c.Labels),
-  })
-
-  const getRunningServices = async (): Promise<RunningService[]> => (await listContainers()).map(containerToService)
+  const toService = (container: Docker.ContainerInfo) => containerToService({ container, defaultAccess })
+  const getRunningServices = async (): Promise<RunningService[]> => (await listContainers()).map(toService)
 
   const startListening = async ({ onChange }: { onChange: (services: RunningService[]) => void }) => {
     const handler = throttle(async (data?: Buffer) => {
