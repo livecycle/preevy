@@ -21,10 +21,9 @@ export default class Connect extends ProfileCommand<typeof Connect> {
       description: 'specify the environment ID for this app',
       required: false,
     }),
-    'disable-widget': Flags.boolean({
-      default: true,
+    'enable-widget': Flags.boolean({
+      default: false,
       hidden: true,
-      allowNo: true,
     }),
     'livecycle-widget-url': Flags.string({
       required: true,
@@ -102,7 +101,7 @@ export default class Connect extends ProfileCommand<typeof Connect> {
       tunnelOpts,
       networks,
       privateMode: flags['private-env'],
-      injectLivecycleScript: flags['disable-widget'] ? undefined : `${flags['livecycle-widget-url']}?profile=${thumbprint}&env=${envId}`,
+      injectLivecycleScript: flags['enable-widget'] ? `${flags['livecycle-widget-url']}?profile=${thumbprint}&env=${envId}` : undefined,
       tunnelingKeyThumbprint: thumbprint,
       projectDirectory,
     })
