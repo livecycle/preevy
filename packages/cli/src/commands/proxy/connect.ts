@@ -21,8 +21,8 @@ export default class Connect extends ProfileCommand<typeof Connect> {
       description: 'specify the environment ID for this app',
       required: false,
     }),
-    'disable-widget': Flags.boolean({
-      default: true,
+    'enable-widget': Flags.boolean({
+      default: false,
       hidden: true,
     }),
     'livecycle-widget-url': Flags.string({
@@ -92,6 +92,7 @@ export default class Connect extends ProfileCommand<typeof Connect> {
     const inspector = commands.proxy.inspectRunningComposeApp(composeProject)
     const networks = await inspector.getComposeNetworks()
     const projectDirectory = await inspector.getWorkingDirectory()
+    const thumbprint = await jwkThumbprint(tunnelingKey)
     const model = await commands.proxy.initProxyComposeModel({
       version: this.config.version,
       envId,
@@ -100,8 +101,8 @@ export default class Connect extends ProfileCommand<typeof Connect> {
       tunnelOpts,
       networks,
       privateMode: flags['private-env'],
-      injectLivecycleScript: flags['disable-widget'] ? undefined : flags['livecycle-widget-url'],
-      tunnelingKeyThumbprint: await jwkThumbprint(tunnelingKey),
+      injectLivecycleScript: flags['enable-widget'] ? `${flags['livecycle-widget-url']}?profile=${thumbprint}&env=${envId}` : undefined,
+      tunnelingKeyThumbprint: thumbprint,
       projectDirectory,
     })
 

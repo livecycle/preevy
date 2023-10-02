@@ -2,10 +2,10 @@ import { COMPOSE_TUNNEL_AGENT_PORT, COMPOSE_TUNNEL_AGENT_SERVICE_NAME, tunnelNam
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { tmpdir } from 'node:os'
+import { set } from 'lodash'
 import { Connection } from '../tunneling'
 import { execPromiseStdout } from '../child-process'
 import { addComposeTunnelAgentService } from '../compose-tunnel-agent-client'
-import { widgetScriptInjector } from '../compose/script-injection'
 import { ComposeModel } from '../compose'
 import { TunnelOpts } from '../ssh'
 import { EnvId } from '../env-id'
@@ -63,6 +63,7 @@ export function inspectRunningComposeApp(projectName: string) {
     getPreevyAgentContainer,
     getEnvId,
     getWorkingDirectory,
+    listAllContainers,
   }
 }
 
@@ -93,7 +94,7 @@ export async function initProxyComposeModel(opts: {
     git: opts.projectDirectory ? await detectGitMetadata(opts.projectDirectory) : undefined,
   }
 
-  let newComposeModel = addComposeTunnelAgentService({
+  const newComposeModel = addComposeTunnelAgentService({
     tunnelOpts: opts.tunnelOpts,
     envId: opts.envId,
     debug: !!opts.debug,
@@ -108,8 +109,9 @@ export async function initProxyComposeModel(opts: {
   }, compose)
 
   if (opts.injectLivecycleScript) {
-    const { inject } = widgetScriptInjector(opts.injectLivecycleScript)
-    newComposeModel = inject(newComposeModel)
+    set(newComposeModel, ['services', COMPOSE_TUNNEL_AGENT_SERVICE_NAME, 'environment', 'GLOBAL_INJECT_SCRIPTS'], JSON.stringify([{
+      src: opts.injectLivecycleScript,
+    }]))
   }
 
   return {
