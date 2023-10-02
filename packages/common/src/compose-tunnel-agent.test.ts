@@ -58,7 +58,7 @@ describe('parse script injection labels', () => {
     expect(scripts).toMatchObject([
       {
         src: 'https://my-script',
-        defer: true
+        defer: true,
       },
       {
         src: 'https://my-script2',
