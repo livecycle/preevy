@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { Connection } from '../tunneling'
 import { execPromiseStdout } from '../child-process'
 import { addComposeTunnelAgentService } from '../compose-tunnel-agent-client'
+import { widgetScriptInjector } from '../compose/script-injection'
 import { ComposeModel } from '../compose'
 import { TunnelOpts } from '../ssh'
 import { EnvId } from '../env-id'
@@ -70,9 +71,11 @@ export async function initProxyComposeModel(opts: {
   projectName: string
   tunnelOpts: TunnelOpts
   tunnelingKeyThumbprint: string
+  debug?: boolean
   privateMode?: boolean
   networks: ComposeModel['networks']
   version: string
+  injectLivecycleScript?: string
   projectDirectory?: string
 }) {
   const compose: ComposeModel = {
@@ -90,10 +93,10 @@ export async function initProxyComposeModel(opts: {
     git: opts.projectDirectory ? await detectGitMetadata(opts.projectDirectory) : undefined,
   }
 
-  const newComposeModel = addComposeTunnelAgentService({
+  let newComposeModel = addComposeTunnelAgentService({
     tunnelOpts: opts.tunnelOpts,
     envId: opts.envId,
-    debug: true,
+    debug: !!opts.debug,
     composeModelPath: './docker-compose.yml',
     envMetadata,
     knownServerPublicKeyPath: './tunnel_server_public_key',
@@ -103,6 +106,11 @@ export async function initProxyComposeModel(opts: {
     privateMode,
     defaultAccess: privateMode ? 'private' : 'public',
   }, compose)
+
+  if (opts.injectLivecycleScript) {
+    const { inject } = widgetScriptInjector(opts.injectLivecycleScript)
+    newComposeModel = inject(newComposeModel)
+  }
 
   return {
     data: newComposeModel,
