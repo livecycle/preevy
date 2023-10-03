@@ -8,14 +8,14 @@ import { LC_API_URL } from '../../defaults'
 export default class Link extends ProfileCommand<typeof Link> {
   static flags = {
     'lc-api-url': Flags.string({ required: false, default: LC_API_URL, env: 'LC_API_URL', description: "The Livecycle API URL'" }),
-    access_token: Flags.string({ required: false, env: 'LC_TOKEN', description: "Livecycle's Access Token" }),
+    'access-token': Flags.string({ required: false, env: 'LC_TOKEN', description: "Livecycle's Access Token" }),
     org: Flags.string({ required: false, description: 'Target organization slug for linking the profile' }),
   }
 
   static description = "Link the profile to the logged in user's organization"
 
   async run(): Promise<unknown> {
-    let accessToken = this.flags.access_token
+    let accessToken = this.flags['access-token']
     if (!accessToken) {
       try {
         accessToken = (await getLivecycleTokensFromLocalFs(localFs(this.config.dataDir)))?.access_token
