@@ -1,5 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 import stream from 'stream'
+import fnv1a from '@sindresorhus/fnv1a'
 import { Parser } from 'htmlparser2'
 import { ScriptInjection } from '../../tunnel-store'
 
@@ -49,6 +50,7 @@ export class InjectHtmlScriptTransform extends stream.Transform {
   stringSoFar = ''
   currentChunkOffset = 0
   injected = false
+  private cachedScriptTags: string | undefined
 
   constructor(readonly injects: Omit<ScriptInjection, 'pathRegex'>[]) {
     super({ decodeStrings: false, encoding: 'utf-8' })
@@ -61,8 +63,15 @@ export class InjectHtmlScriptTransform extends stream.Transform {
     }
   }
 
+  public scriptTagsEtag() {
+    return fnv1a(this.scriptTags(), { size: 32 }).toString(36)
+  }
+
   private scriptTags() {
-    return this.injects.map(scriptTag).join('')
+    if (this.cachedScriptTags === undefined) {
+      this.cachedScriptTags = this.injects.map(scriptTag).join('')
+    }
+    return this.cachedScriptTags
   }
 
   private headWithScriptTags() {

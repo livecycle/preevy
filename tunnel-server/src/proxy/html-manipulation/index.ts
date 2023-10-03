@@ -1,4 +1,4 @@
-import { IncomingMessage, ServerResponse } from 'http'
+import { IncomingMessage, ServerResponse, OutgoingHttpHeaders, IncomingHttpHeaders } from 'http'
 import zlib from 'zlib'
 import stream from 'stream'
 import { parse as parseContentType } from 'content-type'
@@ -7,6 +7,22 @@ import { inspect } from 'node:util'
 import { Logger } from 'pino'
 import { InjectHtmlScriptTransform } from './inject-transform'
 import { ScriptInjectionBase, ScriptInjection } from '../../tunnel-store'
+
+const incomingEtagHeaders = ['if-none-match', 'if-match'] as const
+export const removeEtagSuffix = (headers: IncomingHttpHeaders) => {
+  for (const header of incomingEtagHeaders) {
+    const value = headers[header]
+    if (value) {
+      headers[header] = value.replace(/\+preevy:[^"]+/, '')
+    }
+  }
+}
+
+const addEtagSuffix = (headers: OutgoingHttpHeaders, added: string) => {
+  if (headers.etag && typeof headers.etag === 'string') {
+    headers.etag = headers.etag.replace(/"$/, `+preevy:${added}"`)
+  }
+}
 
 const compressionsForContentEncoding = (
   contentEncoding: string | undefined,
@@ -45,11 +61,22 @@ const proxyWithInjection = (
   injects: Omit<ScriptInjection, 'pathRegex'>[],
   charset = 'utf-8',
 ) => {
-  res.writeHead(proxyRes.statusCode as number, { ...proxyRes.headers, 'transfer-encoding': '' })
+  const resHeaders = { ...proxyRes.headers }
 
-  const [input, output] = streamsForContentEncoding(proxyRes.headers['content-encoding'], proxyRes, res)
+  // enable default node chunked encoding when possible
+  delete resHeaders['transfer-encoding']
+  delete resHeaders['content-length']
+  delete resHeaders.connection
+
+  // ranges not compatible with injection
+  delete resHeaders['accept-ranges']
 
   const transform = new InjectHtmlScriptTransform(injects)
+  addEtagSuffix(resHeaders, transform.scriptTagsEtag())
+
+  res.writeHead(proxyRes.statusCode as number, resHeaders)
+
+  const [input, output] = streamsForContentEncoding(proxyRes.headers['content-encoding'], proxyRes, res)
 
   input
     .pipe(iconv.decodeStream(charset))

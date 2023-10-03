@@ -6,6 +6,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@fastify/request-context": "^5.0.0",
+    "@sindresorhus/fnv1a": "^3.0.0",
     "content-type": "^1.0.5",
     "cookies": "^0.8.0",
     "fastify": "^4.22.2",

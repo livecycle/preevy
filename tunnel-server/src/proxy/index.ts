@@ -11,7 +11,7 @@ import { Claims, jwtAuthenticator, AuthenticationResult, AuthError, saasIdentity
 import { SessionStore } from '../session'
 import { BadGatewayError, BadRequestError, BasicAuthUnauthorizedError, RedirectError, UnauthorizedError, errorHandler, errorUpgradeHandler, tryHandler, tryUpgradeHandler } from '../http-server-helpers'
 import { TunnelFinder, proxyRouter } from './router'
-import { proxyResHandler } from './html-manipulation'
+import { proxyResHandler, removeEtagSuffix } from './html-manipulation'
 
 const loginRedirectUrl = (loginUrl: string) => ({ env, returnPath }: { env: string; returnPath?: string }) => {
   const url = new URL(loginUrl)
@@ -142,6 +142,7 @@ export const proxy = ({
 
     if (injects?.length) {
       injectsMap.set(mutatedReq, injects)
+      removeEtagSuffix(mutatedReq.headers)
     }
 
     return theProxy.web(
