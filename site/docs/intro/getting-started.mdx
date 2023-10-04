@@ -31,7 +31,8 @@ You can read more about the Preevy [origin story and motivation](/intro/motivati
 
 ## Prerequisites
 
--  Docker and Docker Compose V2 installed.
+- Node.js installed.
+- Docker and Docker Compose V2 installed.
 
 ## Getting Started
 
@@ -66,7 +67,9 @@ Preevy is designed to be easy to use, with an API smiliar to [Docker Compose](ht
   ```bash
   preevy up
   ```
-<br />
+
+**Note:** Preevy uses the git repo at the current directory to calculate a stable environment ID for your project. Make sure a git repo is initialized (with at least one commit), or add the `--id` flag to explicitly specify the environment ID.
+
 
 :::info Cloud provider credentials
 Managing and provisioning preview environments in Preevy, requires access and credentials to a cloud provider or Kubernetes cluster. Currently AWS, GCP, Azure and Kubernetes are supported, but more providers are [coming soon](/roadmap#more-cloud-drivers).
