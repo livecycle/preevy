@@ -68,7 +68,7 @@ Preevy is designed to be easy to use, with an API smiliar to [Docker Compose](ht
   preevy up
   ```
 
-**Note:** Make sure the repo/project you are working and running the `preevy up` command is a git initialized repo and at least one commit has been made. This is required for Preevy to create a unique preview environment name.
+**Note:** Preevy uses the git repo at the current directory to calculate a stable environment ID for your project. Make sure a git repo is initialized (with at least one commit), or add the `--id` flag to explicitly specify the environment ID.
 
 
 :::info Cloud provider credentials
