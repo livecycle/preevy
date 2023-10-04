@@ -3,6 +3,7 @@ import stream from 'node:stream'
 import { StringDecoder } from 'node:string_decoder'
 import { promisify } from 'node:util'
 import { InjectHtmlScriptTransform } from './inject-transform'
+import { injectedContentFromSpec } from './injected-content'
 
 // taken from: https://nodejs.org/api/stream.html#decoding-buffers-in-a-writable-stream
 class StringWritable extends stream.Writable {
@@ -30,7 +31,9 @@ class StringWritable extends stream.Writable {
 
 describe('InjectHtmlScriptTransform', () => {
   const inject = async (...sourceChunks: string[]) => {
-    const t = new InjectHtmlScriptTransform([{ src: '1.js' }, { src: '2.js', defer: true, async: true }])
+    const t = new InjectHtmlScriptTransform(
+      injectedContentFromSpec([{ src: '1.js' }, { src: '2.js', defer: true, async: true }]).scriptElements
+    )
     const s = new StringWritable()
     await promisify(stream.pipeline)(stream.Readable.from(sourceChunks), t, s)
     return s.data

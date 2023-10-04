@@ -2,18 +2,9 @@ import { KeyObject } from 'crypto'
 import { Logger } from 'pino'
 import { multimap } from '../multimap'
 import { Store, TransactionDescriptor, inMemoryStore } from '../memory-store'
+import { ScriptInjectionSpec } from '../proxy/injection'
 
 export { activeTunnelStoreKey } from './key'
-
-export type ScriptInjectionBase = {
-  src: string
-  async?: boolean
-  defer?: boolean
-}
-
-export type ScriptInjection = ScriptInjectionBase & {
-  pathRegex?: RegExp
-}
 
 export type ActiveTunnel = {
   envId: string
@@ -25,7 +16,7 @@ export type ActiveTunnel = {
   publicKeyThumbprint: string
   access: 'private' | 'public'
   meta: Record<string, unknown>
-  inject?: ScriptInjection[]
+  inject?: ScriptInjectionSpec[]
   client: unknown
 }
 

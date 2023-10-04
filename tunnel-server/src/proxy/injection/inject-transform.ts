@@ -1,8 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 import stream from 'stream'
-import fnv1a from '@sindresorhus/fnv1a'
 import { Parser } from 'htmlparser2'
-import { ScriptInjection } from '../../tunnel-store'
 
 const positions = ['head-content-start', 'before-body-tag', 'html-content-end'] as const
 type Position = typeof positions[number]
@@ -41,18 +39,13 @@ const htmlDetector = (): HtmlDetector => {
   }
 }
 
-const scriptTag = (
-  { src, async, defer }: Omit<ScriptInjection, 'pathRegex'>,
-) => `<script ${[`src="${src}"`, async && 'async', defer && 'defer'].filter(Boolean).join(' ')}></script>`
-
 export class InjectHtmlScriptTransform extends stream.Transform {
   readonly detector = htmlDetector()
   stringSoFar = ''
   currentChunkOffset = 0
   injected = false
-  private cachedScriptTags: string | undefined
 
-  constructor(readonly injects: Omit<ScriptInjection, 'pathRegex'>[]) {
+  constructor(readonly scriptTags: string) {
     super({ decodeStrings: false, encoding: 'utf-8' })
   }
 
@@ -63,24 +56,13 @@ export class InjectHtmlScriptTransform extends stream.Transform {
     }
   }
 
-  public scriptTagsEtag() {
-    return fnv1a(this.scriptTags(), { size: 32 }).toString(36)
-  }
-
-  private scriptTags() {
-    if (this.cachedScriptTags === undefined) {
-      this.cachedScriptTags = this.injects.map(scriptTag).join('')
-    }
-    return this.cachedScriptTags
-  }
-
   private headWithScriptTags() {
-    return `<head>${this.scriptTags()}</head>`
+    return `<head>${this.scriptTags}</head>`
   }
 
   private stringToInject(position: Position) {
     if (position === 'head-content-start') {
-      return this.scriptTags()
+      return this.scriptTags
     }
     return this.headWithScriptTags()
   }

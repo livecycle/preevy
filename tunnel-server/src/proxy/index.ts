@@ -5,13 +5,13 @@ import type { Logger } from 'pino'
 import { inspect } from 'util'
 import { KeyObject } from 'crypto'
 import stream from 'stream'
-import { ActiveTunnel, ActiveTunnelStore, ScriptInjectionBase } from '../tunnel-store'
+import { ActiveTunnel, ActiveTunnelStore } from '../tunnel-store'
 import { requestsCounter } from '../metrics'
 import { Claims, jwtAuthenticator, AuthenticationResult, AuthError, saasIdentityProvider, cliIdentityProvider } from '../auth'
 import { SessionStore } from '../session'
 import { BadGatewayError, BadRequestError, BasicAuthUnauthorizedError, RedirectError, UnauthorizedError, errorHandler, errorUpgradeHandler, tryHandler, tryUpgradeHandler } from '../http-server-helpers'
 import { TunnelFinder, proxyRouter } from './router'
-import { proxyResHandler, removeEtagSuffix } from './html-manipulation'
+import { proxyInjectionHandlers } from './injection'
 
 const loginRedirectUrl = (loginUrl: string) => ({ env, returnPath }: { env: string; returnPath?: string }) => {
   const url = new URL(loginUrl)
@@ -43,8 +43,9 @@ export const proxy = ({
   jwtSaasIssuer: string
 }) => {
   const theProxy = httpProxy.createProxyServer({ xfwd: true })
-  const injectsMap = new WeakMap<IncomingMessage, ScriptInjectionBase[]>()
-  theProxy.on('proxyRes', proxyResHandler({ log, injectsMap }))
+  const injectionHandlers = proxyInjectionHandlers({ log })
+  theProxy.on('proxyRes', injectionHandlers.proxyResHandler)
+  theProxy.on('proxyReq', injectionHandlers.proxyReqHandler)
 
   const loginRedirectUrlForRequest = loginRedirectUrl(loginUrl)
   const saasIdp = saasIdentityProvider(jwtSaasIssuer, saasPublicKey)
@@ -136,14 +137,7 @@ export const proxy = ({
     log.debug('proxying to %j', { target: activeTunnel.target, url: req.url })
     requestsCounter.inc({ clientId: activeTunnel.clientId })
 
-    const injects = activeTunnel.inject
-      ?.filter(({ pathRegex }) => !pathRegex || (mutatedReq.url && pathRegex.test(mutatedReq.url)))
-      ?.map(({ src, defer, async }) => ({ src, defer, async }))
-
-    if (injects?.length) {
-      injectsMap.set(mutatedReq, injects)
-      removeEtagSuffix(mutatedReq.headers)
-    }
+    injectionHandlers.setInjectsForReq(mutatedReq, activeTunnel.inject)
 
     return theProxy.web(
       mutatedReq,
@@ -151,7 +145,6 @@ export const proxy = ({
       {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-
         target: {
           socketPath: activeTunnel.target,
         },
