@@ -32,7 +32,7 @@
     "@typescript-eslint/parser": "^5.55.0",
     "eslint": "^8.36.0",
     "eslint-config-airbnb": "^19.0.4",
-    "eslint-config-oclif": "^4",
+    "eslint-config-oclif": "^5",
     "eslint-config-oclif-typescript": "^1.0.3",
     "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-jest": "^27.2.1",
