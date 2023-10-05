@@ -19,7 +19,8 @@
 
 <br />
 
-> **If you're a Preevy user, we'd love to hear from you! Please take a few minutes to fill out this [form](https://forms.gle/x9YVuLo5MCULaGAL7) to help us understand your user experience and improve Preevy. As a token of appreciation for your effort, we'll send you some Amazon gift cards, Livecycle swag, or similar items! 🎉**
+> **We recently launched [Livecycle Docker Extension](https://open.docker.com/extensions/marketplace?extensionId=livecycle/docker-extension). Now you can share local environments instantly. Get feedback while your code is still in flight. Check it out [here](https://open.docker.com/extensions/marketplace?extensionId=livecycle/docker-extension)
+
 
 https://github.com/Pradumnasaraf/preevy/assets/51878265/a699a356-f524-48fc-9b6d-49f2e42e7ec7
 
