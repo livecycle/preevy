@@ -54,7 +54,8 @@ export default class Init extends BaseCommand {
       }
 
       const { driver } = await inquirer.prompt<{
-          driver: DriverName
+        // eslint-disable-next-line no-use-before-define
+        driver: DriverName
         }>([
           {
             type: 'list',
@@ -73,6 +74,7 @@ export default class Init extends BaseCommand {
       const driverAnswers = await inquirer.prompt<Record<string, unknown>>(await driverStatic.questions())
       const driverFlags = await driverStatic.flagsFromAnswers(driverAnswers) as Record<string, unknown>
 
+      // eslint-disable-next-line no-use-before-define
       const { locationType } = await inquirer.prompt<{ locationType: string }>([
         {
           type: 'list',
@@ -89,6 +91,7 @@ export default class Init extends BaseCommand {
 
       let location: string
       if (locationType === 's3') {
+        // eslint-disable-next-line no-use-before-define
         const { region, bucket } = await inquirer.prompt<{ region: string; bucket: string }>([
           {
             type: 'list',
@@ -112,6 +115,7 @@ export default class Init extends BaseCommand {
 
         location = `s3://${bucket}?region=${region}`
       } else if (locationType === 'gs') {
+        // eslint-disable-next-line no-use-before-define
         const { project, bucket } = await inquirer.prompt<{ project: string; bucket: string }>([
           {
             type: 'input',
