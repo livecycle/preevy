@@ -1467,10 +1467,10 @@ cookies@^0.8.0:
     depd "~2.0.0"
     keygrip "~1.1.0"
 
-cpu-features@~0.0.7:
-  version "0.0.7"
-  resolved "https://registry.yarnpkg.com/cpu-features/-/cpu-features-0.0.7.tgz#81ba93e1d0a729fd25132a54c3ff689c37b542f7"
-  integrity sha512-fjzFmsUKKCrC9GrM1eQTvQx18e+kjXFzjRLvJPNEDjk31+bJ6ZiV6uchv/hzbzXVIgbWdrEyyX1IFKwse65+8w==
+cpu-features@~0.0.8:
+  version "0.0.9"
+  resolved "https://registry.yarnpkg.com/cpu-features/-/cpu-features-0.0.9.tgz#5226b92f0f1c63122b0a3eb84cb8335a4de499fc"
+  integrity sha512-AKjgn2rP2yJyfbepsmLfiYcmtNn/2eUvocUyM/09yB0YDiz39HteK/5/T4Onf0pmdYDMgkBoGvRLvEguzyL7wQ==
   dependencies:
     buildcheck "~0.0.6"
     nan "^2.17.0"
@@ -3489,14 +3489,14 @@ sprintf-js@~1.0.2:
   integrity sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g==
 
 ssh2@^1.12.0:
-  version "1.13.0"
-  resolved "https://registry.yarnpkg.com/ssh2/-/ssh2-1.13.0.tgz#9b53a07534fa72283ada471b82395a3b3c875934"
-  integrity sha512-CIZBFRRY1y9mAZSqBGFE4EB4dNJad2ysT2PqO8OpkiI3UTB/gUZwE5EaN16qVyQ6s/M7EgC/iaV/MnjdlvnuzA==
+  version "1.14.0"
+  resolved "https://registry.yarnpkg.com/ssh2/-/ssh2-1.14.0.tgz#8f68440e1b768b66942c9e4e4620b2725b3555bb"
+  integrity sha512-AqzD1UCqit8tbOKoj6ztDDi1ffJZ2rV2SwlgrVVrHPkV5vWqGJOVp5pmtj18PunkPJAuKQsnInyKV+/Nb2bUnA==
   dependencies:
     asn1 "^0.2.6"
     bcrypt-pbkdf "^1.0.2"
   optionalDependencies:
-    cpu-features "~0.0.7"
+    cpu-features "~0.0.8"
     nan "^2.17.0"
 
 stack-utils@^2.0.3:
