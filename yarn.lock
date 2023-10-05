@@ -4788,31 +4788,21 @@
     form-data "^3.0.0"
 
 "@types/node-forge@^1.3.1":
-  version "1.3.1"
-  resolved "https://registry.yarnpkg.com/@types/node-forge/-/node-forge-1.3.1.tgz#49e44432c306970b4e900c3b214157c480af19fa"
-  integrity sha512-hvQ7Wav8I0j9amPXJtGqI/Yx70zeF62UKlAYq8JPm0nHzjKKzZvo9iR3YI2MiOghZRlOI+tQ2f6D+G6vVf4V2Q==
+  version "1.3.6"
+  resolved "https://registry.yarnpkg.com/@types/node-forge/-/node-forge-1.3.6.tgz#06f798ec59e8395a24e91839abbde8d3f871a5b6"
+  integrity sha512-rOLL54+BcPO1BV0ogdKCtfmohdL3WW3ODCbnh8gA8ZWPYfHM0aVFyXQljme5DoICH29/2JZOXqgkS9CEd/NmSQ==
   dependencies:
     "@types/node" "*"
 
-"@types/node@*", "@types/node@18", "@types/node@^18.11.18":
-  version "18.14.2"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-18.14.2.tgz#c076ed1d7b6095078ad3cf21dfeea951842778b1"
-  integrity sha512-1uEQxww3DaghA0RxqHx0O0ppVlo43pJhepY51OxuQIKHpjbnYLA7vcdwioNPzIqmC2u3I/dmylcqjlh0e7AyUA==
-
-"@types/node@>=12.12.47", "@types/node@>=13.7.0":
-  version "18.15.11"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-18.15.11.tgz#b3b790f09cb1696cffcec605de025b088fa4225f"
-  integrity sha512-E5Kwq2n4SbMzQOn6wnmBjuK9ouqlURrcZDVfbo9ftDDTFt3nk7ZKK4GMOzoYgnpQJKcxwQw+lGaBvvlMo0qN/Q==
+"@types/node@*", "@types/node@18", "@types/node@>=12.12.47", "@types/node@>=13.7.0", "@types/node@^18.11.17", "@types/node@^18.11.18":
+  version "18.16.18"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-18.16.18.tgz#85da09bafb66d4bc14f7c899185336d0c1736390"
+  integrity sha512-/aNaQZD0+iSBAGnvvN2Cx92HqE5sZCPZtx2TsK+4nvV23fFe09jVDvpArXr2j9DnYlzuU9WuoykDDc6wqvpNcw==
 
 "@types/node@^15.6.2":
   version "15.14.9"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-15.14.9.tgz#bc43c990c3c9be7281868bbc7b8fdd6e2b57adfa"
   integrity sha512-qjd88DrCxupx/kJD5yQgZdcYKZKSIGBVDIBE1/LTGcNm3d2Np/jxojkdePDdfnBHJc5W7vSMpbJ1aB7p/Py69A==
-
-"@types/node@^18.11.17":
-  version "18.16.18"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-18.16.18.tgz#85da09bafb66d4bc14f7c899185336d0c1736390"
-  integrity sha512-/aNaQZD0+iSBAGnvvN2Cx92HqE5sZCPZtx2TsK+4nvV23fFe09jVDvpArXr2j9DnYlzuU9WuoykDDc6wqvpNcw==
 
 "@types/normalize-package-data@^2.4.0":
   version "2.4.1"
