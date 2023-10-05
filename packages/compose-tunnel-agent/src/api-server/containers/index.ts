@@ -34,7 +34,10 @@ export const containers: FastifyPluginAsync<{
       params: containerIdActionSchema,
     },
     preValidation: async ({ params: { containerId } }) => await inspectFilteredContainer(dockerFilter, containerId),
-  }, async ({ params: { containerId, action } }) => await docker.getContainer(containerId)[action]())
+  }, async ({ params: { containerId, action } }) => {
+    const container = docker.getContainer(containerId)
+    await (container[action] as () => Promise<void>)()
+  })
 
   await app.register(fastifyWebsocket)
   await app.register(exec, { docker, dockerFilter })
