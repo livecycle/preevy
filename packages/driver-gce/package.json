@@ -10,12 +10,12 @@
   ],
   "license": "Apache-2.0",
   "dependencies": {
-    "@google-cloud/compute": "^3.9.1",
+    "@google-cloud/compute": "^4.0.1",
     "@google-cloud/storage": "^6.9.5",
     "@oclif/core": "^2",
     "@preevy/core": "0.0.53",
     "google-auth-library": "^8.7.0",
-    "google-gax": "^3.6.0",
+    "google-gax": "^4.0.4",
     "inquirer": "^8.0.0",
     "iter-tools-es": "^7.5.3",
     "lodash": "^4.17.21"
