@@ -19,7 +19,7 @@
 
 <br />
 
-> **We recently launched [Livecycle Docker Extension](https://open.docker.com/extensions/marketplace?extensionId=livecycle/docker-extension). Now you can share local environments instantly. Get feedback while your code is still in flight. Check it out [here](https://open.docker.com/extensions/marketplace?extensionId=livecycle/docker-extension)
+> **We recently launched the [Livecycle Docker Extension](https://open.docker.com/extensions/marketplace?extensionId=livecycle/docker-extension). Now you can share local environments instantly. Get feedback while your code is still in flight. Check it out [here](https://open.docker.com/extensions/marketplace?extensionId=livecycle/docker-extension)
 
 https://github.com/Pradumnasaraf/preevy/assets/51878265/a699a356-f524-48fc-9b6d-49f2e42e7ec7
 
