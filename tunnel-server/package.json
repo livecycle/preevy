@@ -35,7 +35,7 @@
     "@types/cookies": "^0.7.8",
     "@types/http-proxy": "^1.17.9",
     "@types/lodash": "^4.14.192",
-    "@types/node": "18",
+    "@types/node": "20",
     "@types/node-fetch": "^2.6.4",
     "@types/ssh2": "^1.11.8",
     "@typescript-eslint/eslint-plugin": "^5.55.0",
