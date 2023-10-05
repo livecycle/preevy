@@ -23,7 +23,7 @@ jobs:
           app_id: ${{ secrets.PREEVY_AUTOMATION_APP_ID }}
           private_key: ${{ secrets.PREEVY_AUTOMATION_PRIVATE_KEY }}
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{ steps.app-token.outputs.token }}
       - uses: actions/setup-node@v3
