@@ -10,7 +10,7 @@
   ],
   "license": "Apache-2.0",
   "dependencies": {
-    "@azure/arm-compute": "^20.0.0",
+    "@azure/arm-compute": "^21.2.0",
     "@azure/arm-network": "^30.2.0",
     "@azure/arm-resources": "^5.2.0",
     "@azure/arm-storage": "^18.1.0",
