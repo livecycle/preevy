@@ -44,7 +44,7 @@ export const proxyRouter = (
     return async activeTunnelStore => {
       const activeTunnel = await activeTunnelStore.get(parsed.firstLabel)
       return activeTunnel
-        ? { path: url as string, activeTunnel }
+        ? { path: url as string, activeTunnel: activeTunnel.value }
         : undefined
     }
   }
@@ -66,7 +66,7 @@ export const proxyRouter = (
     return async activeTunnelStore => {
       const activeTunnel = await activeTunnelStore.get(tunnel)
       return activeTunnel
-        ? { path: path as string, activeTunnel }
+        ? { path: path as string, activeTunnel: activeTunnel.value }
         : undefined
     }
   }

@@ -1,4 +1,4 @@
-import { ScriptInjection } from './tunnel-store'
+import { ScriptInjectionSpec } from './proxy/injection'
 
 export const access = ['private', 'public'] as const
 
@@ -8,10 +8,10 @@ export type ForwardRequest = {
   path: string
   access: Accesss
   meta: Record<string, unknown>
-  inject?: ScriptInjection[]
+  inject?: ScriptInjectionSpec[]
 }
 
-type SerializedScriptInjection = Omit<ScriptInjection, 'pathRegex'> & { pathRegex?: string }
+type SerializedScriptInjection = Omit<ScriptInjectionSpec, 'pathRegex'> & { pathRegex?: string }
 
 const decodeJson = (s: string) => JSON.parse(Buffer.from(s, 'base64url').toString('utf-8'))
 

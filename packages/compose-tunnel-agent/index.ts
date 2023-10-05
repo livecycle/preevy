@@ -95,11 +95,6 @@ const main = async () => {
     log: sshLog,
   })
 
-  sshClient.ssh.on('error', async err => {
-    log.error('ssh client error: %j', inspect(err))
-    await sshClient.end()
-  })
-
   sshClient.ssh.on('close', () => {
     if (!endRequested) {
       log.error('ssh client closed unexpectedly')
@@ -147,9 +142,10 @@ const SHUTDOWN_TIMEOUT = 5000
 
 void main().then(
   ({ end }) => {
-    ['SIGTERM', 'SIGINT'].forEach(signal => {
-      process.once(signal, async () => {
-        log.info(`shutting down on ${signal}`)
+    ['SIGTERM', 'SIGINT', 'uncaughtException'].forEach(signal => {
+      process.once(signal, async (...args) => {
+        const argsStr = args ? args.map(arg => inspect(arg)).join(', ') : undefined
+        log.warn(`shutting down on ${[signal, argsStr].filter(Boolean).join(': ')}`)
         const endResult = await Promise.race([
           end().then(() => true),
           new Promise<void>(resolve => { setTimeout(resolve, SHUTDOWN_TIMEOUT) }),
@@ -157,7 +153,7 @@ void main().then(
         if (!endResult) {
           log.error(`timed out while waiting ${SHUTDOWN_TIMEOUT}ms for server to close, exiting`)
         }
-        process.exit(0)
+        process.exit(1)
       })
     })
   },

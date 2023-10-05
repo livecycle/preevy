@@ -6,7 +6,7 @@
   "devDependencies": {
     "husky": "^8.0.0",
     "lerna": "^6.6.2",
-    "lint-staged": "^13.1.2",
+    "lint-staged": "^14.0.1",
     "lodash": "^4.17.21",
     "patch-package": "^8.0.0",
     "postinstall-postinstall": "^2.1.0",

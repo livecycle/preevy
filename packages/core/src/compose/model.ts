@@ -51,7 +51,7 @@ export type ComposeService = {
   ports?: ComposePort[]
   environment?: Record<string, string | undefined> | EnvString[]
   user?: string
-  labels?: Record<string, string> | `${string}=${string}`[]
+  labels?: Record<string, string>
 }
 
 export type ComposeModel = {

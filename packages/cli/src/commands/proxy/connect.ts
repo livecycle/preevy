@@ -21,6 +21,16 @@ export default class Connect extends ProfileCommand<typeof Connect> {
       description: 'specify the environment ID for this app',
       required: false,
     }),
+    'enable-widget': Flags.boolean({
+      default: false,
+      hidden: true,
+    }),
+    'livecycle-widget-url': Flags.string({
+      required: true,
+      hidden: true,
+      env: 'LIVECYCLE_WIDGET_URL',
+      default: 'https://app.livecycle.run/widget/widget-bootstrap.js',
+    }),
     'private-env': Flags.boolean({
       description: 'Mark all services as private',
       default: false,
@@ -81,15 +91,19 @@ export default class Connect extends ProfileCommand<typeof Connect> {
 
     const inspector = commands.proxy.inspectRunningComposeApp(composeProject)
     const networks = await inspector.getComposeNetworks()
-
-    const model = commands.proxy.initProxyComposeModel({
+    const projectDirectory = await inspector.getWorkingDirectory()
+    const thumbprint = await jwkThumbprint(tunnelingKey)
+    const model = await commands.proxy.initProxyComposeModel({
       version: this.config.version,
       envId,
+      debug: this.flags.debug,
       projectName: composeProject,
       tunnelOpts,
       networks,
       privateMode: flags['private-env'],
-      tunnelingKeyThumbprint: await jwkThumbprint(tunnelingKey),
+      injectLivecycleScript: flags['enable-widget'] ? `${flags['livecycle-widget-url']}?profile=${thumbprint}&env=${envId}` : undefined,
+      tunnelingKeyThumbprint: thumbprint,
+      projectDirectory,
     })
 
     const composeTmpDir = await model.write({ tunnelingKey, knownServerPublicKey: tunnelServerPublicKey })

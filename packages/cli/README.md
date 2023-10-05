@@ -19,7 +19,7 @@ $ npm install -g preevy
 $ preevy COMMAND
 running command...
 $ preevy (--version)
-preevy/0.0.50 linux-x64 node-v18.17.1
+preevy/0.0.53 darwin-arm64 node-v18.17.1
 $ preevy --help [COMMAND]
 USAGE
   $ preevy COMMAND
@@ -55,7 +55,7 @@ Delete preview environments
 
 ```
 USAGE
-  $ preevy down [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [-d
+  $ preevy down [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>] [-d
     lightsail|gce|azure|kube-pod] [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southea
     st-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1]
     [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
@@ -67,6 +67,7 @@ FLAGS
                          <options: lightsail|gce|azure|kube-pod>
   --force                Do not error if the environment is not found
   --id=<value>           Environment id - affects created URLs. If not specified, will try to detect automatically
+  --profile=<value>      Run in a specific profile context
   --wait                 Wait for resource deletion to complete. If false (the default), the deletion will be started
                          but not waited for
 
@@ -101,7 +102,7 @@ DESCRIPTION
   Delete preview environments
 ```
 
-_See code: [dist/commands/down.ts](https://github.com/livecycle/preevy/blob/v0.0.50/dist/commands/down.ts)_
+_See code: [dist/commands/down.ts](https://github.com/livecycle/preevy/blob/v0.0.53/dist/commands/down.ts)_
 
 ## `preevy help [COMMANDS]`
 
@@ -147,7 +148,7 @@ DESCRIPTION
   Initialize or import a new profile
 ```
 
-_See code: [dist/commands/init.ts](https://github.com/livecycle/preevy/blob/v0.0.50/dist/commands/init.ts)_
+_See code: [dist/commands/init.ts](https://github.com/livecycle/preevy/blob/v0.0.53/dist/commands/init.ts)_
 
 ## `preevy login`
 
@@ -173,7 +174,7 @@ DESCRIPTION
   Login to the Livecycle SaaS
 ```
 
-_See code: [dist/commands/login.ts](https://github.com/livecycle/preevy/blob/v0.0.50/dist/commands/login.ts)_
+_See code: [dist/commands/login.ts](https://github.com/livecycle/preevy/blob/v0.0.53/dist/commands/login.ts)_
 
 ## `preevy logs [SERVICES]`
 
@@ -181,9 +182,9 @@ Show logs for an existing environment
 
 ```
 USAGE
-  $ preevy logs [SERVICES] [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [-d
-    lightsail|gce|azure|kube-pod] [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southea
-    st-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1]
+  $ preevy logs [SERVICES] [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile
+    <value>] [-d lightsail|gce|azure|kube-pod] [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast
+    -2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1]
     [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
     [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template
     <value>] [--id <value>] [--follow] [--tail <value>] [--no-log-prefix] [--timestamps] [--since <value>] [--until
@@ -198,6 +199,7 @@ FLAGS
   --follow               Follow log output
   --id=<value>           Environment id - affects created URLs. If not specified, will try to detect automatically
   --no-log-prefix        Don't print log prefix in logs
+  --profile=<value>      Run in a specific profile context
   --since=<value>        Show logs since timestamp
   --tail=<value>         Number of lines to show from the end of the logs for each container (default: all)
   --timestamps           Show timestamps
@@ -233,7 +235,7 @@ DESCRIPTION
   Show logs for an existing environment
 ```
 
-_See code: [dist/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.50/dist/commands/logs.ts)_
+_See code: [dist/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.53/dist/commands/logs.ts)_
 
 ## `preevy ls`
 
@@ -241,7 +243,7 @@ List preview environments
 
 ```
 USAGE
-  $ preevy ls [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [-d
+  $ preevy ls [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>] [-d
     lightsail|gce|azure|kube-pod] [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southea
     st-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1]
     [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
@@ -260,6 +262,7 @@ FLAGS
   --no-truncate          do not truncate output to fit screen
   --output=<option>      output in a more machine friendly format
                          <options: csv|json|yaml>
+  --profile=<value>      Run in a specific profile context
   --sort=<value>         property to sort by (prepend '-' for descending)
 
 GLOBAL FLAGS
@@ -293,7 +296,7 @@ DESCRIPTION
   List preview environments
 ```
 
-_See code: [dist/commands/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.50/dist/commands/ls.ts)_
+_See code: [dist/commands/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.53/dist/commands/ls.ts)_
 
 ## `preevy profile config update`
 
@@ -301,17 +304,21 @@ View and update profile configuration
 
 ```
 USAGE
-  $ preevy profile config update [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--lightsail-region
-    us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu
-    -central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>] [--gce-zone <value>] [--azure-region
-    <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>]
-    [--kube-pod-context <value>] [--kube-pod-template <value>] [--lightsail-availability-zone <value>]
-    [--lightsail-bundle-id nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0] [--gce-machine-type
-    <value>] [--azure-vm-size <value>] [--azure-resource-group-name <value>] [--kube-pod-server-side-apply] [--unset
-    <value>] [--json]
+  $ preevy profile config update [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>]
+    [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northea
+    st-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>] [--gce-zone
+    <value>] [--azure-region <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>]
+    [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template <value>]
+    [--lightsail-availability-zone <value>] [--lightsail-bundle-id
+    nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0] [--gce-machine-type <value>]
+    [--azure-vm-size <value>] [--azure-resource-group-name <value>] [--kube-pod-server-side-apply] [-d
+    lightsail|gce|azure|kube-pod] [--unset <value>] [--json]
 
 FLAGS
-  --unset=<value>...  Unset a configuration option
+  -d, --driver=<option>  Machine driver to use
+                         <options: lightsail|gce|azure|kube-pod>
+  --profile=<value>      Run in a specific profile context
+  --unset=<value>...     Unset a configuration option
 
 GLOBAL FLAGS
   -D, --debug                       Enable debug logging
@@ -358,7 +365,11 @@ View profile configuration
 
 ```
 USAGE
-  $ preevy profile config view [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--json]
+  $ preevy profile config view [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>]
+  [--json]
+
+FLAGS
+  --profile=<value>  Run in a specific profile context
 
 GLOBAL FLAGS
   -D, --debug                       Enable debug logging
@@ -377,22 +388,25 @@ Create a new profile
 
 ```
 USAGE
-  $ preevy profile create NAME URL -d lightsail|gce|azure|kube-pod [-D] [-f <value>] [--system-compose-file <value>]
-    [-p <value>] [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast
-    -2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>]
+  $ preevy profile create NAME URL [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile
+    <value>] [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|a
+    p-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>]
     [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>]
     [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template <value>]
     [--lightsail-availability-zone <value>] [--lightsail-bundle-id
     nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0] [--gce-machine-type <value>]
-    [--azure-vm-size <value>] [--azure-resource-group-name <value>] [--kube-pod-server-side-apply] [--json]
+    [--azure-vm-size <value>] [--azure-resource-group-name <value>] [--kube-pod-server-side-apply] [-d
+    lightsail|gce|azure|kube-pod] [--use] [--json]
 
 ARGUMENTS
   NAME  name of the new profile
   URL   url of the new profile store
 
 FLAGS
-  -d, --driver=<option>  (required) Machine driver to use
+  -d, --driver=<option>  Machine driver to use
                          <options: lightsail|gce|azure|kube-pod>
+  --profile=<value>      Run in a specific profile context
+  --use                  use the new profile
 
 GLOBAL FLAGS
   -D, --debug                       Enable debug logging
@@ -440,7 +454,10 @@ Display current profile in use
 
 ```
 USAGE
-  $ preevy profile current [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--json]
+  $ preevy profile current [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>] [--json]
+
+FLAGS
+  --profile=<value>  Run in a specific profile context
 
 GLOBAL FLAGS
   -D, --debug                       Enable debug logging
@@ -460,13 +477,14 @@ Import an existing profile
 ```
 USAGE
   $ preevy profile import LOCATION [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--name <value>]
-    [--json]
+    [--use] [--json]
 
 ARGUMENTS
   LOCATION  location of the profile
 
 FLAGS
   --name=<value>  name of the profile
+  --use           use the imported profile
 
 GLOBAL FLAGS
   -D, --debug                       Enable debug logging
@@ -485,10 +503,14 @@ Show profile key
 
 ```
 USAGE
-  $ preevy profile key [TYPE] [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--json]
+  $ preevy profile key [TYPE] [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>]
+    [--json]
 
 ARGUMENTS
   TYPE  (private|public-pem|public-ssh|thumbprint|thumbprint-uri) [default: thumbprint-uri] type of the key to show
+
+FLAGS
+  --profile=<value>  Run in a specific profile context
 
 GLOBAL FLAGS
   -D, --debug                       Enable debug logging
@@ -507,10 +529,14 @@ Link the profile to the logged in user's organization
 
 ```
 USAGE
-  $ preevy profile link [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--lc-api-url <value>]
+  $ preevy profile link [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>]
+    [--lc-api-url <value>] [--access_token <value>] [--org <value>]
 
 FLAGS
-  --lc-api-url=<value>  [default: https://app.livecycle.run] The Livecycle API URL'
+  --access_token=<value>  Livecycle's Access Token
+  --lc-api-url=<value>    [default: https://app.livecycle.run] The Livecycle API URL'
+  --org=<value>           Target organization slug for linking the profile
+  --profile=<value>       Run in a specific profile context
 
 GLOBAL FLAGS
   -D, --debug                       Enable debug logging
@@ -528,7 +554,10 @@ Lists profiles
 
 ```
 USAGE
-  $ preevy profile ls [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--json]
+  $ preevy profile ls [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>] [--json]
+
+FLAGS
+  --profile=<value>  Run in a specific profile context
 
 GLOBAL FLAGS
   -D, --debug                       Enable debug logging
@@ -547,10 +576,14 @@ Remove a profile
 
 ```
 USAGE
-  $ preevy profile rm NAME [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--json]
+  $ preevy profile rm NAME [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>]
+    [--json]
 
 ARGUMENTS
   NAME  name of the profile to remove
+
+FLAGS
+  --profile=<value>  Run in a specific profile context
 
 GLOBAL FLAGS
   -D, --debug                       Enable debug logging
@@ -569,10 +602,14 @@ Set current profile
 
 ```
 USAGE
-  $ preevy profile use NAME [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--json]
+  $ preevy profile use NAME [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>]
+    [--json]
 
 ARGUMENTS
   NAME  name of the profile to use
+
+FLAGS
+  --profile=<value>  Run in a specific profile context
 
 GLOBAL FLAGS
   -D, --debug                       Enable debug logging
@@ -591,7 +628,7 @@ Delete all cloud provider machines, and potentially other resources
 
 ```
 USAGE
-  $ preevy purge [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [-d
+  $ preevy purge [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>] [-d
     lightsail|gce|azure|kube-pod] [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southea
     st-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1]
     [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
@@ -603,6 +640,7 @@ FLAGS
                          <options: lightsail|gce|azure|kube-pod>
   --all                  Remove all resources types (snapshots, keypairs, and other resource types)
   --force                Do not ask for confirmation
+  --profile=<value>      Run in a specific profile context
   --type=<value>...      [default: machine] Resource type(s) to delete
   --wait                 Wait for resource deletion to complete. If false (the default), the deletion will be started
                          but not waited for
@@ -638,7 +676,7 @@ DESCRIPTION
   Delete all cloud provider machines, and potentially other resources
 ```
 
-_See code: [dist/commands/purge.ts](https://github.com/livecycle/preevy/blob/v0.0.50/dist/commands/purge.ts)_
+_See code: [dist/commands/purge.ts](https://github.com/livecycle/preevy/blob/v0.0.53/dist/commands/purge.ts)_
 
 ## `preevy up [SERVICE]`
 
@@ -647,16 +685,17 @@ Bring up a preview environment
 ```
 USAGE
   $ preevy up [SERVICE] (--access-credentials-type api|browser --include-access-credentials) [-D] [-f
-    <value>] [--system-compose-file <value>] [-p <value>] [-d lightsail|gce|azure|kube-pod] [--lightsail-region
-    us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu
-    -central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>] [--gce-zone <value>] [--azure-region
-    <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>]
-    [--kube-pod-context <value>] [--kube-pod-template <value>] [--lightsail-availability-zone <value>]
-    [--lightsail-bundle-id nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0] [--gce-machine-type
-    <value>] [--azure-vm-size <value>] [--azure-resource-group-name <value>] [--kube-pod-server-side-apply] [--id
-    <value>] [-t <value>] [--tls-hostname <value>] [--insecure-skip-verify] [--skip-unchanged-files]
-    [--show-preevy-service-urls] [--columns <value> | -x] [--sort <value>] [--filter <value>] [--output csv|json|yaml |
-    | [--csv | --no-truncate]] [--no-header | ]
+    <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>] [-d lightsail|gce|azure|kube-pod]
+    [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northea
+    st-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>] [--gce-zone
+    <value>] [--azure-region <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>]
+    [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template <value>]
+    [--lightsail-availability-zone <value>] [--lightsail-bundle-id
+    nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0] [--gce-machine-type <value>]
+    [--azure-vm-size <value>] [--azure-resource-group-name <value>] [--kube-pod-server-side-apply] [--id <value>] [-t
+    <value>] [--tls-hostname <value>] [--insecure-skip-verify] [--skip-unchanged-files] [--show-preevy-service-urls]
+    [--columns <value> | -x] [--sort <value>] [--filter <value>] [--output csv|json|yaml |  | [--csv | --no-truncate]]
+    [--no-header | ]
 
 ARGUMENTS
   SERVICE  Service name(s). If not specified, will deploy all services
@@ -680,6 +719,7 @@ FLAGS
   --no-truncate                       do not truncate output to fit screen
   --output=<option>                   output in a more machine friendly format
                                       <options: csv|json|yaml>
+  --profile=<value>                   Run in a specific profile context
   --show-preevy-service-urls          Show URLs for internal Preevy services
   --[no-]skip-unchanged-files         Detect and skip unchanged files when copying (default: true)
   --sort=<value>                      property to sort by (prepend '-' for descending)
@@ -724,7 +764,7 @@ DESCRIPTION
   Bring up a preview environment
 ```
 
-_See code: [dist/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.50/dist/commands/up.ts)_
+_See code: [dist/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.53/dist/commands/up.ts)_
 
 ## `preevy urls [SERVICE] [PORT]`
 
@@ -733,9 +773,9 @@ Show urls for an existing environment
 ```
 USAGE
   $ preevy urls [SERVICE] [PORT] (--access-credentials-type api|browser --include-access-credentials) [-D]
-    [-f <value>] [--system-compose-file <value>] [-p <value>] [--id <value>] [-t <value>] [--tls-hostname <value>]
-    [--insecure-skip-verify] [--columns <value> | -x] [--sort <value>] [--filter <value>] [--output csv|json|yaml |  |
-    [--csv | --no-truncate]] [--no-header | ] [--show-preevy-service-urls] [--json]
+    [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>] [--id <value>] [-t <value>]
+    [--tls-hostname <value>] [--insecure-skip-verify] [--columns <value> | -x] [--sort <value>] [--filter <value>]
+    [--output csv|json|yaml |  | [--csv | --no-truncate]] [--no-header | ] [--show-preevy-service-urls] [--json]
 
 ARGUMENTS
   SERVICE  Service name. If not specified, will show all services
@@ -758,6 +798,7 @@ FLAGS
   --no-truncate                       do not truncate output to fit screen
   --output=<option>                   output in a more machine friendly format
                                       <options: csv|json|yaml>
+  --profile=<value>                   Run in a specific profile context
   --show-preevy-service-urls          Show URLs for internal Preevy services
   --sort=<value>                      property to sort by (prepend '-' for descending)
   --tls-hostname=<value>              Override TLS server name when tunneling via HTTPS
@@ -773,7 +814,7 @@ DESCRIPTION
   Show urls for an existing environment
 ```
 
-_See code: [dist/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.50/dist/commands/urls.ts)_
+_See code: [dist/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.53/dist/commands/urls.ts)_
 
 ## `preevy version`
 
@@ -794,5 +835,5 @@ DESCRIPTION
   Show Preevy version
 ```
 
-_See code: [dist/commands/version.ts](https://github.com/livecycle/preevy/blob/v0.0.50/dist/commands/version.ts)_
+_See code: [dist/commands/version.ts](https://github.com/livecycle/preevy/blob/v0.0.53/dist/commands/version.ts)_
 <!-- commandsstop -->

@@ -23,7 +23,7 @@ jobs:
           
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - uses: depot/setup-action@v1
         with:
           oidc: true
@@ -31,7 +31,7 @@ jobs:
       - name: Build using Docker (with depot)
         run: mkdir preevy-bin && depot build --project ${{ vars.DEPOT_PROJECT_ID }} --build-arg CLI_TARGET=${{ matrix.platform }}-${{ matrix.arch }}  -f Dockerfile.cli --target=cli --output=type=tar,dest=./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar --progress=plain  --platform=linux/${{ matrix.arch == 'x64' && 'amd64' || matrix.arch }} .
 
-      - uses: apple-actions/import-codesign-certs@v1
+      - uses: apple-actions/import-codesign-certs@v2
         if: ${{ matrix.platform == 'macos' }}
         with: 
           p12-file-base64: ${{ secrets.APPLE_CERT_DATA }}
@@ -59,7 +59,7 @@ jobs:
     needs: build-binaries
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - uses: depot/setup-action@v1
       - name: Download artifacts
         uses: actions/download-artifact@v3

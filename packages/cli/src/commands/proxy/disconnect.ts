@@ -24,11 +24,10 @@ export default class Disconnect extends ProfileCommand<typeof Disconnect> {
   async run(): Promise<unknown> {
     const { args } = await this.parse(Disconnect)
     const inspector = commands.proxy.inspectRunningComposeApp(args['compose-project'])
-    const agentContainerId = await inspector.getPreevyAgentContainer()
-
-    if (agentContainerId) {
-      await execPromiseStdout(`docker rm -f ${agentContainerId}`)
-      this.log(`Removed ${agentContainerId}, disconnected ${args['compose-project']} tunnel`)
+    const agentContainer = await inspector.getPreevyAgentContainer()
+    if (agentContainer) {
+      await execPromiseStdout(`docker rm -f ${agentContainer.id}`)
+      this.log(`Removed ${agentContainer.id}, disconnected ${args['compose-project']} tunnel`)
     }
     return undefined
   }

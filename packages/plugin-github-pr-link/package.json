@@ -1,6 +1,6 @@
 {
   "name": "@preevy/plugin-github-pr-link",
-  "version": "0.0.50",
+  "version": "0.0.53",
   "description": "",
   "main": "dist/index.js",
   "files": [
@@ -9,16 +9,16 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@oclif/core": "^2",
-    "@preevy/cli-common": "0.0.50",
-    "@preevy/core": "0.0.50",
+    "@preevy/cli-common": "0.0.53",
+    "@preevy/core": "0.0.53",
     "lodash": "^4.17.21",
     "nunjucks": "^3.2.4",
     "octokit": "^2.0.14"
   },
   "devDependencies": {
     "@types/nunjucks": "^3.2.2",
-    "@typescript-eslint/eslint-plugin": "^5.55.0",
-    "@typescript-eslint/parser": "^5.55.0",
+    "@typescript-eslint/eslint-plugin": "6.7.4",
+    "@typescript-eslint/parser": "6.7.4",
     "eslint": "^8.36.0",
     "shx": "^0.3.3",
     "typescript": "^5.0.4"

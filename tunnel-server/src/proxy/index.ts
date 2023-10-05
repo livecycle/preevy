@@ -1,5 +1,5 @@
 import httpProxy from 'http-proxy'
-import { IncomingMessage, ServerResponse } from 'http'
+import { IncomingMessage } from 'http'
 import net from 'net'
 import type { Logger } from 'pino'
 import { inspect } from 'util'
@@ -7,12 +7,11 @@ import { KeyObject } from 'crypto'
 import stream from 'stream'
 import { ActiveTunnel, ActiveTunnelStore } from '../tunnel-store'
 import { requestsCounter } from '../metrics'
-import { Claims, jwtAuthenticator, AuthenticationResult, AuthError, createGetVerificationData } from '../auth'
+import { Claims, jwtAuthenticator, AuthenticationResult, AuthError, saasIdentityProvider, cliIdentityProvider } from '../auth'
 import { SessionStore } from '../session'
 import { BadGatewayError, BadRequestError, BasicAuthUnauthorizedError, RedirectError, UnauthorizedError, errorHandler, errorUpgradeHandler, tryHandler, tryUpgradeHandler } from '../http-server-helpers'
 import { TunnelFinder, proxyRouter } from './router'
-import { injectScripts } from './html-manipulation'
-import { INJECT_SCRIPTS_HEADER } from './common'
+import { proxyInjectionHandlers } from './injection'
 
 const loginRedirectUrl = (loginUrl: string) => ({ env, returnPath }: { env: string; returnPath?: string }) => {
   const url = new URL(loginUrl)
@@ -43,10 +42,13 @@ export const proxy = ({
   saasPublicKey: KeyObject
   jwtSaasIssuer: string
 }) => {
-  const theProxy = httpProxy.createProxy({})
-  theProxy.on('proxyRes', injectScripts)
+  const theProxy = httpProxy.createProxyServer({ xfwd: true })
+  const injectionHandlers = proxyInjectionHandlers({ log })
+  theProxy.on('proxyRes', injectionHandlers.proxyResHandler)
+  theProxy.on('proxyReq', injectionHandlers.proxyReqHandler)
 
   const loginRedirectUrlForRequest = loginRedirectUrl(loginUrl)
+  const saasIdp = saasIdentityProvider(jwtSaasIssuer, saasPublicKey)
 
   const validatePrivateTunnelRequest = async (
     req: IncomingMessage,
@@ -61,7 +63,7 @@ export const proxy = ({
 
       const authenticate = jwtAuthenticator(
         tunnel.publicKeyThumbprint,
-        createGetVerificationData(saasPublicKey, jwtSaasIssuer)(tunnel.publicKey)
+        [saasIdp, cliIdentityProvider(tunnel.publicKey, tunnel.publicKeyThumbprint)]
       )
 
       let authResult: AuthenticationResult
@@ -135,13 +137,7 @@ export const proxy = ({
     log.debug('proxying to %j', { target: activeTunnel.target, url: req.url })
     requestsCounter.inc({ clientId: activeTunnel.clientId })
 
-    const injects = activeTunnel.inject
-      ?.filter(({ pathRegex }) => !pathRegex || pathRegex.test(mutatedReq.url || ''))
-      ?.map(({ src, defer, async }) => ({ src, defer, async }))
-
-    if (injects?.length) {
-      mutatedReq.headers[INJECT_SCRIPTS_HEADER] = JSON.stringify(injects)
-    }
+    injectionHandlers.setInjectsForReq(mutatedReq, activeTunnel.inject)
 
     return theProxy.web(
       mutatedReq,
@@ -152,7 +148,7 @@ export const proxy = ({
         target: {
           socketPath: activeTunnel.target,
         },
-        selfHandleResponse: true, // handled by the injectScripts onProxyRes hook
+        selfHandleResponse: true, // handled by the onProxyRes hook
       },
       err => errorHandler(log, err, req, res)
     )
@@ -164,7 +160,7 @@ export const proxy = ({
       const { req: mutatedReq, activeTunnel } = await validateProxyRequest(
         tunnelFinder,
         req,
-        pkThumbprint => sessionStore(req, undefined as unknown as ServerResponse, pkThumbprint),
+        pkThumbprint => sessionStore(req, undefined, pkThumbprint),
       )
 
       const upgrade = mutatedReq.headers.upgrade?.toLowerCase()
