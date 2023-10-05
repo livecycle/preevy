@@ -32,7 +32,7 @@
   "devDependencies": {
     "@jest/globals": "^29.5.0",
     "@types/content-type": "^1.1.5",
-    "@types/cookies": "^0.7.7",
+    "@types/cookies": "^0.7.8",
     "@types/http-proxy": "^1.17.9",
     "@types/lodash": "^4.14.192",
     "@types/node": "18",
