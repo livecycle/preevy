@@ -171,7 +171,7 @@ Every Compose service is exposed individually with a generated URL in the follow
 
 When using the default `*.livecycle.run` domain, environments are publicly accessible to those who know the URLs. You can create private environments by hosting the tunnel service yourself, e.g, on a private network or behind a login page.
 
-## Configuration files
+## Configuration Files
 
 Preevy extracts its runtime settings from the [Compose file](https://docs.docker.com/compose/compose-file/03-compose-file/).
 
@@ -217,7 +217,7 @@ x-preevy:
 
 See the [included GitHub PR Link Plugin](packages/plugin-github-pr-link) for an example.
 
-## Docs and support
+## Docs and Support
 
 Read about Preevy's components and learn how to use them in our [documentation](https://preevy.dev/).
 
