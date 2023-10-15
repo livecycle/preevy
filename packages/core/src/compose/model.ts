@@ -69,6 +69,8 @@ const volumeSkipList = [
   /^\/$/,
 ]
 
+const toPosix = (x:string) => x.split(path.sep).join(path.posix.sep)
+
 export const fixModelForRemote = async (
   { skipServices = [], cwd, remoteBaseDir }: {
     skipServices?: string[]
@@ -83,12 +85,11 @@ export const fixModelForRemote = async (
     if (!path.isAbsolute(absolutePath)) {
       throw new Error(`expected absolute path: "${absolutePath}"`)
     }
-
-    const relativePath = path.relative(cwd, absolutePath)
+    const relativePath = toPosix(path.relative(cwd, absolutePath))
 
     return relativePath.startsWith('..')
-      ? path.join('absolute', absolutePath)
-      : path.join('relative', relativePath)
+      ? path.posix.join('absolute', absolutePath)
+      : path.posix.join('relative', relativePath)
   }
 
   const overrideSecretsOrConfigs = (
@@ -96,7 +97,7 @@ export const fixModelForRemote = async (
   ) => mapValues(c ?? {}, secretOrConfig => {
     const remote = remotePath(secretOrConfig.file)
     filesToCopy.push({ local: secretOrConfig.file, remote })
-    return { ...secretOrConfig, file: path.join(remoteBaseDir, remote) }
+    return { ...secretOrConfig, file: path.posix.join(remoteBaseDir, remote) }
   })
 
   const overrideSecrets = overrideSecretsOrConfigs(model.secrets)
@@ -137,7 +138,7 @@ export const fixModelForRemote = async (
           filesToCopy.push({ local: volume.source, remote })
         }
 
-        return { ...volume, source: path.join(remoteBaseDir, remote) }
+        return { ...volume, source: path.posix.join(remoteBaseDir, remote) }
       }, service.volumes)),
     })
   })

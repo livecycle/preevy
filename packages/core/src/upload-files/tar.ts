@@ -121,7 +121,7 @@ export const tarStreamer = (initialFilesToCopy: FileToCopy[] = []) => {
       },
       directoryEntry: (file: FileToCopy, entry: string) => ({
         local: path.join(file.local, entry),
-        remote: path.join(file.remote, entry),
+        remote: path.posix.join(file.remote, entry),
       }),
     }
 
