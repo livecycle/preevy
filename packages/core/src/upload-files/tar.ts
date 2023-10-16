@@ -1,6 +1,7 @@
 import util from 'util'
 import path from 'path'
 import fs from 'fs'
+import { platform } from 'os'
 import { pack, Headers, Pack } from 'tar-stream'
 import { Writable, pipeline } from 'stream'
 import { EmitterConsumer } from '@preevy/common'
@@ -8,11 +9,13 @@ import { TransferProgressEmitter, TransferProgressEvents, transferProgressEmitte
 import { FileInfo, FileToCopy } from './files'
 import { Visitor, fsWalker } from './walk'
 
+const isWin = platform() === 'win32'
+
 const headerFromStats = (local: FileInfo, remote: string): Headers | undefined => {
   const { stats, symlinkTarget } = local
   const header: Headers = {
     name: remote,
-    mode: stats.mode,
+    mode: isWin ? 0o777 : stats.mode,
     mtime: stats.mtime,
     size: stats.size,
     uid: stats.uid,

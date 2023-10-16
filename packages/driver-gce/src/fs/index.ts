@@ -52,7 +52,7 @@ export const googleCloudStorageFs = async (url: string): Promise<VirtualFS> => {
   return {
     read: async (filename: string) => {
       try {
-        const [result] = await bucket.file(path.join(prefix, filename)).download()
+        const [result] = await bucket.file(path.posix.join(prefix, filename)).download()
         return result
       } catch (error) {
         if (!hasErrorCode(error, 404)) {
@@ -63,7 +63,7 @@ export const googleCloudStorageFs = async (url: string): Promise<VirtualFS> => {
     },
     write: async (filename: string, content: Buffer | string) => await stream.promises.pipeline(
       stream.Readable.from(content),
-      bucket.file(path.join(prefix, filename)).createWriteStream(),
+      bucket.file(path.posix.join(prefix, filename)).createWriteStream(),
     ),
     delete: async (filename: string) => {
       try {
