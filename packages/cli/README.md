@@ -19,7 +19,7 @@ $ npm install -g preevy
 $ preevy COMMAND
 running command...
 $ preevy (--version)
-preevy/0.0.53 darwin-arm64 node-v18.17.1
+preevy/0.0.54 win32-x64 node-v18.18.1
 $ preevy --help [COMMAND]
 USAGE
   $ preevy COMMAND
@@ -102,7 +102,7 @@ DESCRIPTION
   Delete preview environments
 ```
 
-_See code: [dist/commands/down.ts](https://github.com/livecycle/preevy/blob/v0.0.53/dist/commands/down.ts)_
+_See code: [dist/commands/down.ts](https://github.com/livecycle/preevy/blob/v0.0.54/dist/commands/down.ts)_
 
 ## `preevy help [COMMANDS]`
 
@@ -148,7 +148,7 @@ DESCRIPTION
   Initialize or import a new profile
 ```
 
-_See code: [dist/commands/init.ts](https://github.com/livecycle/preevy/blob/v0.0.53/dist/commands/init.ts)_
+_See code: [dist/commands/init.ts](https://github.com/livecycle/preevy/blob/v0.0.54/dist/commands/init.ts)_
 
 ## `preevy login`
 
@@ -161,7 +161,7 @@ USAGE
 
 FLAGS
   --lc-api-url=<value>    [default: https://app.livecycle.run] The Livecycle API URL'
-  --lc-auth-url=<value>   [default: https://livecycle.us.auth0.com] The login URL
+  --lc-auth-url=<value>   [default: https://auth.livecycle.dev] The login URL
   --lc-client-id=<value>  [default: BHXcVtapfKPEpZtYO3AJ2Livmz6j7xK0] The client ID for the OAuth app
 
 GLOBAL FLAGS
@@ -174,7 +174,7 @@ DESCRIPTION
   Login to the Livecycle SaaS
 ```
 
-_See code: [dist/commands/login.ts](https://github.com/livecycle/preevy/blob/v0.0.53/dist/commands/login.ts)_
+_See code: [dist/commands/login.ts](https://github.com/livecycle/preevy/blob/v0.0.54/dist/commands/login.ts)_
 
 ## `preevy logs [SERVICES]`
 
@@ -235,7 +235,7 @@ DESCRIPTION
   Show logs for an existing environment
 ```
 
-_See code: [dist/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.53/dist/commands/logs.ts)_
+_See code: [dist/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.54/dist/commands/logs.ts)_
 
 ## `preevy ls`
 
@@ -296,7 +296,7 @@ DESCRIPTION
   List preview environments
 ```
 
-_See code: [dist/commands/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.53/dist/commands/ls.ts)_
+_See code: [dist/commands/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.54/dist/commands/ls.ts)_
 
 ## `preevy profile config update`
 
@@ -530,10 +530,10 @@ Link the profile to the logged in user's organization
 ```
 USAGE
   $ preevy profile link [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>]
-    [--lc-api-url <value>] [--access_token <value>] [--org <value>]
+    [--lc-api-url <value>] [--access-token <value>] [--org <value>]
 
 FLAGS
-  --access_token=<value>  Livecycle's Access Token
+  --access-token=<value>  Livecycle's Access Token
   --lc-api-url=<value>    [default: https://app.livecycle.run] The Livecycle API URL'
   --org=<value>           Target organization slug for linking the profile
   --profile=<value>       Run in a specific profile context
@@ -676,7 +676,7 @@ DESCRIPTION
   Delete all cloud provider machines, and potentially other resources
 ```
 
-_See code: [dist/commands/purge.ts](https://github.com/livecycle/preevy/blob/v0.0.53/dist/commands/purge.ts)_
+_See code: [dist/commands/purge.ts](https://github.com/livecycle/preevy/blob/v0.0.54/dist/commands/purge.ts)_
 
 ## `preevy up [SERVICE]`
 
@@ -764,7 +764,7 @@ DESCRIPTION
   Bring up a preview environment
 ```
 
-_See code: [dist/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.53/dist/commands/up.ts)_
+_See code: [dist/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.54/dist/commands/up.ts)_
 
 ## `preevy urls [SERVICE] [PORT]`
 
@@ -814,7 +814,7 @@ DESCRIPTION
   Show urls for an existing environment
 ```
 
-_See code: [dist/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.53/dist/commands/urls.ts)_
+_See code: [dist/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.54/dist/commands/urls.ts)_
 
 ## `preevy version`
 
@@ -835,5 +835,5 @@ DESCRIPTION
   Show Preevy version
 ```
 
-_See code: [dist/commands/version.ts](https://github.com/livecycle/preevy/blob/v0.0.53/dist/commands/version.ts)_
+_See code: [dist/commands/version.ts](https://github.com/livecycle/preevy/blob/v0.0.54/dist/commands/version.ts)_
 <!-- commandsstop -->

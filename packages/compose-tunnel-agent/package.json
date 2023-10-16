@@ -1,6 +1,6 @@
 {
   "name": "@preevy/compose-tunnel-agent",
-  "version": "0.0.53",
+  "version": "0.0.54",
   "description": "",
   "main": "out/index.js",
   "files": [
@@ -15,7 +15,7 @@
     "@fastify/cors": "^8.3.0",
     "@fastify/request-context": "^5.0.0",
     "@fastify/websocket": "^8.2.0",
-    "@preevy/common": "0.0.53",
+    "@preevy/common": "0.0.54",
     "dockerode": "^3.3.4",
     "fastify": "^4.22.2",
     "fastify-type-provider-zod": "^1.1.9",
