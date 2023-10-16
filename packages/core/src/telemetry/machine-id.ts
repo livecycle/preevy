@@ -35,8 +35,9 @@ const calcMachineId = async () => {
 
 export const memoizedMachineId = async (dataDir: string) => {
   const dir = localFs(dataDir)
-  const filename = path.join(dataDir, 'machine-id')
-  const storedMachineId = await readFileOrUndefined(filename)
+  const filename = 'machine-id'
+  const filepath = path.join(dataDir, 'machine-id')
+  const storedMachineId = await readFileOrUndefined(filepath)
   if (storedMachineId) {
     return storedMachineId
   }

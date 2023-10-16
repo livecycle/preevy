@@ -98,7 +98,7 @@ export const sftpClient = (
         ...entries.map(f => self.putFile(
           {
             local: isDirEnt(f) ? path.join(p, f.name) : f,
-            remote: path.join(remote, pathFromStringOrFileInfo(f)),
+            remote: path.posix.join(remote, pathFromStringOrFileInfo(f)),
           },
           options,
         )),

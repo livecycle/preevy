@@ -34,7 +34,7 @@ module.exports = {
   plugins: ['import', 'jest', '@typescript-eslint'],
   rules: {
     'no-void': ['warn', { allowAsStatement: true }],
-    'linebreak-style': ['warn', isWindows ? 'windows' : 'unix'],
+    'linebreak-style': ['warn', 'unix'],
     quotes: [
       'warn',
       'single',

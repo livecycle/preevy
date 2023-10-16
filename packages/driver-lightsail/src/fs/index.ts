@@ -53,7 +53,7 @@ export const s3fs = async (s3Url: string): Promise<VirtualFS> => {
       try {
         result = await s3.getObject({
           Bucket: bucket,
-          Key: path.join(prefix, filename),
+          Key: path.posix.join(prefix, filename),
         })
       } catch (err) {
         if (isNotFoundError(err)) {
@@ -72,7 +72,7 @@ export const s3fs = async (s3Url: string): Promise<VirtualFS> => {
     async write(filename: string, content: Buffer | string) {
       await s3.putObject({
         Bucket: bucket,
-        Key: path.join(prefix, filename),
+        Key: path.posix.join(prefix, filename),
         Body: content,
       })
     },
@@ -80,7 +80,7 @@ export const s3fs = async (s3Url: string): Promise<VirtualFS> => {
       try {
         await s3.deleteObject({
           Bucket: bucket,
-          Key: path.join(prefix, filename),
+          Key: path.posix.join(prefix, filename),
         })
       } catch (err) {
         if (isNotFoundError(err)) {

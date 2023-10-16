@@ -50,7 +50,7 @@ const expandDir = async (local: string | DirInfo | FileInfo) => {
   const di = await normalizeDirInfo(local)
   const entries = await Promise.all(
     // eslint-disable-next-line no-use-before-define
-    di.entries.map(e => expandFile(isDirEnt(e) ? path.join(di.path, e.name) : e))
+    di.entries.map(e => expandFile(isDirEnt(e) ? path.posix.join(di.path, e.name) : e))
   )
 
   return {
