@@ -1,4 +1,5 @@
 export * from './lib/plugins/model'
+export * as text from './lib/text'
 export { HookName, HookFunc, HooksListeners, Hooks } from './lib/hooks'
 export { PluginContext, PluginInitContext } from './lib/plugins/context'
 export { composeFlags, envIdFlags, tunnelServerFlags, urlFlags } from './lib/common-flags'

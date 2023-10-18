@@ -1,10 +1,9 @@
 import { Flags, Args, ux } from '@oclif/core'
 import inquirer from 'inquirer'
 import confirm from '@inquirer/confirm'
-import chalk from 'chalk'
 import { defaultBucketName as gsDefaultBucketName, defaultProjectId as defaultGceProjectId } from '@preevy/driver-gce'
 import { defaultBucketName as s3DefaultBucketName, AWS_REGIONS, awsUtils } from '@preevy/driver-lightsail'
-import { BaseCommand } from '@preevy/cli-common'
+import { BaseCommand, text } from '@preevy/cli-common'
 import { EOL } from 'os'
 import { Flag } from '@oclif/core/lib/interfaces'
 import { DriverName, formatDriverFlagsToArgs, machineDrivers } from '../drivers'
@@ -133,10 +132,10 @@ export default class Init extends BaseCommand {
     const { 'profile-alias': profileAlias } = this.args
     if (await profileConfig.get(profileAlias, { throwOnNotFound: false })) {
       ux.error([
-        `A profile with the alias ${chalk.bold(profileAlias)} already exists.`,
-        `Run ${chalk.bold(`${this.config.bin} profile ls`)} to list existing profiles.`,
-        `Run ${chalk.bold(`${this.config.bin} profile rm <profile-alias>`)} to remove an existing profile.`,
-        `Run ${chalk.bold(`${this.config.bin} init <profile-alias>`)} to create a profile with a different alias.`,
+        `A profile with the alias ${text.code(profileAlias)} already exists.`,
+        `Run ${text.command(this.config, 'profile ls')} to list existing profiles.`,
+        `Run ${text.command(this.config, 'profile rm <profile-alias>')} to remove an existing profile.`,
+        `Run ${text.command(this.config, 'init <profile-alias>')} to create a profile with a different alias.`,
       ].join(EOL))
     }
 
@@ -164,13 +163,13 @@ export default class Init extends BaseCommand {
       ...formatDriverFlagsToArgs(driver, driverStatic.flags as Record<string, Flag<unknown>>, driverFlags),
     ])
 
-    ux.info(chalk.bold.cyan('Use Livecycle together with Preevy to enable easy sharing and collaboration of your environments!'))
+    ux.info(text.recommendation('Use Livecycle together with Preevy to enable easy sharing and collaboration of your environments!'))
 
     if (!await confirm({
       message: 'Would you like to link this profile to a Livecycle account?',
       default: true,
     })) {
-      ux.info(`You can later run ${chalk.bold(`${this.config.bin} profile link`)} to link this profile to a Livecycle account.`)
+      ux.info(`You can later run ${text.command(this.config, 'profile link')} to link this profile to a Livecycle account.`)
       return undefined
     }
 

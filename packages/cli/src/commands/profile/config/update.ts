@@ -1,7 +1,7 @@
 import { profileStore } from '@preevy/core'
 import { Flags, ux } from '@oclif/core'
 import { mapValues, omit, pickBy } from 'lodash'
-import chalk from 'chalk'
+import { text } from '@preevy/cli-common'
 import {
   removeDriverFlagPrefix,
   extractDriverFlags,
@@ -36,8 +36,7 @@ const validateUnset = (driver: DriverName, unset: string[]) => {
   const unknownUnset = unset.filter(k => !driverFlagsAvailableToUnset.has(k))
   if (unknownUnset.length) {
     ux.error(
-      `Unknown unset values for driver ${chalk.bold(driver)}: ${unknownUnset.map(x => chalk.bold(x)).join(', ')}. Available options to unset: ${[...driverFlagsAvailableToUnset.keys()].map(x => chalk.bold(x)).join(', ')}`,
-      { exit: 1 },
+      `Unknown unset values for driver ${text.code(driver)}: ${text.codeList(unknownUnset)}. Available options to unset: ${text.codeList([...driverFlagsAvailableToUnset.keys()])}`,
     )
   }
 }
@@ -84,7 +83,7 @@ export default class UpdateProfileConfig extends ProfileCommand<typeof UpdatePro
 
     await pStore.setDefaultFlags(driver, updated)
 
-    ux.info(`Updated configuration for driver ${chalk.bold(driver)}:`)
+    ux.info(`Updated configuration for driver ${text.code(driver)}:`)
     if (Object.keys(updated).length) {
       ux.styledObject(updated)
     } else {

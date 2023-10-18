@@ -1,7 +1,7 @@
 import { profileStore } from '@preevy/core'
 import { ux } from '@oclif/core'
 import { EOL } from 'os'
-import chalk from 'chalk'
+import { text } from '@preevy/cli-common'
 import { DriverName } from '../../../drivers'
 import ProfileCommand from '../../../profile-command'
 
@@ -17,13 +17,13 @@ export default class ViewProfileConfig extends ProfileCommand<typeof ViewProfile
     if (!driver) {
       ux.error([
         'Missing driver configuration in profile.',
-        `Run ${chalk.bold(`${this.config.bin} profile config update --driver <driver>`)} to set the desired machine driver`,
+        `Run ${text.command(this.config, 'profile config update --driver <driver>')} to set the desired machine driver`,
       ].join(EOL))
     }
     if (this.flags.json) {
       return { driver, defaultFlags: config }
     }
-    ux.info(`Current configuration for driver ${chalk.bold(driver)}:`)
+    ux.info(`Current configuration for driver ${text.code(driver)}:`)
     if (Object.keys(config).length) {
       ux.styledObject(config)
     } else {
