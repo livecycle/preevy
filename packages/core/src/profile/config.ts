@@ -1,4 +1,5 @@
 import path from 'path'
+import { rimraf } from 'rimraf'
 import { localFs } from '../store/fs/local'
 import { VirtualFS, store, tarSnapshot } from '../store'
 import { ProfileStore, profileStore } from './store'
@@ -22,9 +23,10 @@ export const localProfilesConfig = (
   fsFromUrl: (url: string, baseDir: string) => Promise<VirtualFS>,
 ) => {
   const localStore = localFs(localDir)
+  const localProfilesDir = path.join(localDir, 'profiles')
   const tarSnapshotFromUrl = async (
     url: string,
-  ) => store(async dir => await tarSnapshot(await fsFromUrl(url, path.join(localDir, 'profiles')), dir))
+  ) => store(async dir => await tarSnapshot(await fsFromUrl(url, localProfilesDir), dir))
 
   async function readProfileList(): Promise<ProfileList> {
     const data = await localStore.read(profileListFileName)
@@ -79,7 +81,8 @@ export const localProfilesConfig = (
     },
     async delete(alias: string) {
       const list = await readProfileList()
-      if (!list.profiles[alias]) {
+      const listing = list.profiles[alias]
+      if (!listing) {
         throw new Error(`Profile ${alias} does not exist`)
       }
       delete list.profiles[alias]
@@ -87,6 +90,9 @@ export const localProfilesConfig = (
         list.current = undefined
       }
       await localStore.write(profileListFileName, JSON.stringify(list))
+      if (listing.location.startsWith('local://')) {
+        await rimraf(path.join(localProfilesDir, alias))
+      }
     },
     async importExisting(alias: string, location: string) {
       const list = await readProfileList()
