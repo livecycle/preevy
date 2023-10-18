@@ -60,11 +60,14 @@ export const localProfilesConfig = (
     async list(): Promise<ProfileListing[]> {
       return Object.entries((await readProfileList()).profiles).map(([alias, profile]) => ({ alias, ...profile }))
     },
-    async get(alias: string) {
+    async get(alias: string, opts: { throwOnNotFound: boolean } = { throwOnNotFound: true }) {
       const { profiles } = await readProfileList()
       const locationUrl = profiles[alias]?.location
       if (!locationUrl) {
-        throw new Error(`Profile ${alias} not found`)
+        if (opts.throwOnNotFound) {
+          throw new Error(`Profile ${alias} not found`)
+        }
+        return undefined
       }
       const tarSnapshotStore = await tarSnapshotFromUrl(locationUrl)
       const profileInfo = await profileStore(tarSnapshotStore).info()

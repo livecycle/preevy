@@ -2,6 +2,7 @@ import { Args, Flags, ux } from '@oclif/core'
 import { find, range, map } from 'iter-tools-es'
 import { LocalProfilesConfig } from '@preevy/core'
 import { BaseCommand } from '@preevy/cli-common'
+import chalk from 'chalk'
 import { loadProfileConfig, onProfileChange } from '../../profile-command'
 
 const DEFAULT_ALIAS_PREFIX = 'default'
@@ -46,9 +47,10 @@ export default class ImportProfile extends BaseCommand<typeof ImportProfile> {
 
     const { info } = await profileConfig.importExisting(alias, this.args.location)
     onProfileChange(info, alias, this.args.location)
-    ux.info(`Profile ${info.id} imported successfully as ${alias}`)
     if (this.flags.use) {
       await profileConfig.setCurrent(alias)
     }
+
+    ux.info(`Profile ${chalk.bold(info.id)} imported successfully as ${chalk.bold(alias)} 👍`)
   }
 }

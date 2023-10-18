@@ -1,9 +1,12 @@
 import { Flags, Args, ux } from '@oclif/core'
-import { Flag } from '@oclif/core/lib/interfaces'
 import inquirer from 'inquirer'
+import confirm from '@inquirer/confirm'
+import chalk from 'chalk'
 import { defaultBucketName as gsDefaultBucketName, defaultProjectId as defaultGceProjectId } from '@preevy/driver-gce'
 import { defaultBucketName as s3DefaultBucketName, AWS_REGIONS, awsUtils } from '@preevy/driver-lightsail'
 import { BaseCommand } from '@preevy/cli-common'
+import { EOL } from 'os'
+import { Flag } from '@oclif/core/lib/interfaces'
 import { DriverName, formatDriverFlagsToArgs, machineDrivers } from '../drivers'
 import { loadProfileConfig } from '../profile-command'
 import ambientAwsAccountId = awsUtils.ambientAccountId
@@ -127,32 +130,19 @@ export default class Init extends BaseCommand {
 
   async run(): Promise<unknown> {
     const profileConfig = loadProfileConfig(this.config)
-    const existingProfiles = await profileConfig.list()
-    let profileAlias = this.args['profile-alias']
-    const profileExists = existingProfiles.find(p => p.alias === profileAlias)
-    if (profileExists) {
-      ux.info(`Profile ${profileAlias} already exists`)
-      ux.info('Use `init <profile-alias>` to create a new profile')
-      return undefined
+    const { 'profile-alias': profileAlias } = this.args
+    if (await profileConfig.get(profileAlias, { throwOnNotFound: false })) {
+      ux.error([
+        `A profile with the alias ${chalk.bold(profileAlias)} already exists.`,
+        `Run ${chalk.bold(`${this.config.bin} profile ls`)} to list existing profiles.`,
+        `Run ${chalk.bold(`${this.config.bin} profile rm <profile-alias>`)} to remove an existing profile.`,
+        `Run ${chalk.bold(`${this.config.bin} init <profile-alias>`)} to create a profile with a different alias.`,
+      ].join(EOL))
     }
 
     if (this.flags.from) {
       await this.config.runCommand('profile:import', [this.flags.from, '--name', profileAlias, '--use'])
-      this.log('Initialized profile')
       return undefined
-    }
-
-    if (profileExists) {
-      if (profileAlias !== 'default') {
-        throw new Error(`Profile ${profileAlias} already exists`)
-      }
-      profileAlias = await inquirer.prompt<{
-          profileName: string
-        }>([{
-          type: 'input',
-          name: 'profileAlias',
-          message: 'What is the name of your profile?',
-        }])
     }
 
     const driver = await chooseDriver()
@@ -174,7 +164,19 @@ export default class Init extends BaseCommand {
       ...formatDriverFlagsToArgs(driver, driverStatic.flags as Record<string, Flag<unknown>>, driverFlags),
     ])
 
-    this.log('Initialized profile')
+    ux.info(chalk.bold.cyan('Use Livecycle together with Preevy to enable easy sharing and collaboration of your environments!'))
+
+    if (!await confirm({
+      message: 'Would you like to link this profile to a Livecycle account?',
+      default: true,
+    })) {
+      ux.info(`You can later run ${chalk.bold(`${this.config.bin} profile link`)} to link this profile to a Livecycle account.`)
+      return undefined
+    }
+
+    await this.config.runCommand('login')
+    await this.config.runCommand('profile:link')
+
     return undefined
   }
 }

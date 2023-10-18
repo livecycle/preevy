@@ -18,6 +18,7 @@
     "/oclif.manifest.json"
   ],
   "dependencies": {
+    "@inquirer/confirm": "^2.0.14",
     "@oclif/core": "^2",
     "@oclif/plugin-help": "^5",
     "@preevy/cli-common": "0.0.55",

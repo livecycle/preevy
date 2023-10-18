@@ -87,7 +87,7 @@ abstract class ProfileCommand<T extends typeof Command> extends BaseCommand<T> {
   #profile: Profile | undefined
   get profile(): Profile {
     if (!this.#profile) {
-      this.error(`Profile not initialized, run ${chalk.italic.bold.greenBright('preevy init')} to get started.`)
+      this.error(`Profile not initialized, run ${chalk.bold(`${this.config.bin} init`)} to get started.`)
     }
     return this.#profile
   }

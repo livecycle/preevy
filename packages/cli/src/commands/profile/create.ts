@@ -1,5 +1,6 @@
-import { Args, Flags } from '@oclif/core'
+import { Args, Flags, ux } from '@oclif/core'
 import { createTunnelingKey } from '@preevy/core'
+import chalk from 'chalk'
 import {
   DriverName,
   extractDriverFlags,
@@ -52,6 +53,9 @@ export default class CreateProfile extends ProfileCommand<typeof CreateProfile> 
     if (this.flags.use) {
       await this.profileConfig.setCurrent(alias)
     }
+
+    ux.info(chalk.greenBright('Profile initialized 👍'))
+
     return undefined
   }
 }
