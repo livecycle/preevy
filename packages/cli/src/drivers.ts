@@ -5,7 +5,7 @@ import azure from '@preevy/driver-azure'
 import kubePod from '@preevy/driver-kube-pod'
 import { Flag } from '@oclif/core/lib/interfaces'
 import { Interfaces } from '@oclif/core'
-import { formatFlagsToArgs } from '@preevy/cli-common/src/utils'
+import { formatFlagsToArgs } from '@preevy/cli-common'
 
 export const machineDrivers = {
   lightsail,
