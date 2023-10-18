@@ -34,7 +34,7 @@ export default class Urls extends ProfileCommand<typeof Urls> {
     const composeInspector = commands.proxy.inspectRunningComposeApp(args['compose-project'])
     const envId = await composeInspector.getEnvId()
     if (!envId) {
-      throw new Error('Proxy not running, use preevy proxy connect <compose-project>')
+      throw new Error(`Proxy not running, use ${this.config.bin} proxy connect <compose-project>`)
     }
     const commandArgs = [`--id=${envId}`, ...formatFlagsToArgs(flags, PreevyUrlsCmd.flags), ...Object.values(pick(this.args, Object.keys(PreevyUrlsCmd.args))).map(x => `${x}`)]
     await this.config.runCommand('urls', commandArgs)
