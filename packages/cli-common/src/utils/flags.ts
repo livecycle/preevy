@@ -2,8 +2,7 @@ import { Flag } from '@oclif/core/lib/interfaces'
 
 type FlagSpec<T> =Pick<Flag<T>, 'type' | 'default'>
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function formatFlagsToArgs(flags: Record<string, unknown>, spec: Record<string, FlagSpec<any>> = {}) {
+export function formatFlagsToArgs(flags: Record<string, unknown>, spec: Record<string, FlagSpec<unknown>> = {}, prefix = '') {
   return Object.entries(flags).flatMap(function format(this: void, [key, value]):string[] {
     if (spec[key]?.default === value) {
       return []
@@ -21,6 +20,6 @@ export function formatFlagsToArgs(flags: Record<string, unknown>, spec: Record<s
     if (typeof value === 'object') {
       return Object.entries(value ?? {}).flatMap(([k, v]) => format([`${key}-${k}`, v]))
     }
-    return [`--${key}`, `${value}`]
+    return [`--${prefix}${key}`, `${value}`]
   })
 }

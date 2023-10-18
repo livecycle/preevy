@@ -1,16 +1,17 @@
-import { map, mapKeys } from 'lodash'
+import { map, mapKeys, pickBy } from 'lodash'
 import lightsail from '@preevy/driver-lightsail'
 import gce from '@preevy/driver-gce'
 import azure from '@preevy/driver-azure'
-import kubeDocker from '@preevy/driver-kube-pod'
+import kubePod from '@preevy/driver-kube-pod'
 import { Flag } from '@oclif/core/lib/interfaces'
 import { Interfaces } from '@oclif/core'
+import { formatFlagsToArgs } from '@preevy/cli-common/src/utils'
 
 export const machineDrivers = {
   lightsail,
   gce,
   azure,
-  'kube-pod': kubeDocker,
+  'kube-pod': kubePod,
 } as const
 
 type MachineDrivers = typeof machineDrivers
@@ -66,38 +67,64 @@ export const machineCreationflagsForAllDrivers = {
   ...machineCreationDriverFlags('kube-pod'),
 }
 
-export const stripDriverFlagNamePrefix = (driverName:string, flag: string) => flag.replace(`${driverName}-`, '')
+export const removeDriverFlagPrefix = (
+  driverName: string,
+  flag: string,
+) => {
+  const driverPrefix = `${driverName}-`
+  return flag.indexOf(driverPrefix) === 0 ? flag.substring(driverPrefix.length) : flag
+}
 
 export const removeDriverPrefix = <T extends {}>(
   driverName: string,
   flags: Record<string, unknown>,
-) => mapKeys(flags, (_, key) => stripDriverFlagNamePrefix(driverName, key) as unknown as T)
+) => mapKeys(flags, (_, key) => removeDriverFlagPrefix(driverName, key) as unknown as T)
 
-export const excludeDefaultFlags = (
+export const addDriverPrefix = (
+  driverName: string,
+  flags: Record<string, unknown>,
+) => mapKeys(flags, (_, key) => `${driverName}-${key}`)
+
+const excludeDefaultFlags = (
   driverFlagDefs: Record<string, Flag<unknown>>,
-) => ([key, value]: [string, unknown]) => value !== (
-  (driverFlagDefs as Record<string, Flag<unknown>>)[key]
-)?.default
+  driverFlagValues: Record<string, unknown>,
+) => pickBy(
+  driverFlagValues,
+  (value, key) => value !== ((driverFlagDefs as Record<string, Flag<unknown>>)[key])?.default,
+)
+
+export const formatDriverFlagsToArgs = (
+  driverName: string,
+  driverFlagDefs: Record<string, Flag<unknown>>,
+  driverFlagValues: Record<string, unknown>,
+) => formatFlagsToArgs(
+  excludeDefaultFlags(driverFlagDefs, driverFlagValues),
+  driverFlagDefs,
+  `${driverName}-`,
+)
 
 type AllFlags = typeof flagsForAllDrivers & typeof machineCreationflagsForAllDrivers
 
-export function extractConfigurableFlags<TFlags extends Partial<AllFlags>>(
+export function extractDriverFlags<TFlags extends Partial<AllFlags>>(
   flags: Interfaces.InferredFlags<TFlags>,
   driver: DriverName,
   options: {
     excludeDefaultValues: boolean
   } = { excludeDefaultValues: true }
-) {
+): Record<string, unknown> {
   const driverStatic = machineDrivers[driver]
   const allDriverFlags = {
     ...driverStatic.flags,
     ...driverStatic.machineCreationFlags,
   } as Record<string, Flag<unknown>>
-  const defaultFlagsFilter = options.excludeDefaultValues ? excludeDefaultFlags(allDriverFlags) : () => true
-
   const driverPrefix = `${driver}-`
-  return Object.fromEntries(Object.entries(flags)
-    .filter(([k]) => k.startsWith(driverPrefix))
-    .map(([k, v]) => [k.substring(driverPrefix.length), v])
-    .filter(([k, v]) => defaultFlagsFilter([k as string, v])))
+  const driverFlagValues = Object.fromEntries(
+    Object.entries(flags)
+      .filter(([k]) => k.startsWith(driverPrefix))
+      .map(([k, v]) => [k.substring(driverPrefix.length), v])
+  )
+
+  return options.excludeDefaultValues
+    ? excludeDefaultFlags(allDriverFlags, driverFlagValues)
+    : driverFlagValues
 }

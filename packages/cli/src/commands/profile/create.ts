@@ -2,7 +2,7 @@ import { Args, Flags } from '@oclif/core'
 import { createTunnelingKey } from '@preevy/core'
 import {
   DriverName,
-  extractConfigurableFlags,
+  extractDriverFlags,
   flagsForAllDrivers,
   machineCreationflagsForAllDrivers,
 } from '../../drivers'
@@ -44,7 +44,7 @@ export default class CreateProfile extends ProfileCommand<typeof CreateProfile> 
 
     await this.profileConfig.create(alias, this.args.url, { driver }, async pStore => {
       if (driver) {
-        await pStore.setDefaultFlags(driver, extractConfigurableFlags(this.flags, driver))
+        await pStore.setDefaultFlags(driver, extractDriverFlags(this.flags, driver))
       }
       this.log('Creating new SSH key pair')
       await pStore.setTunnelingKey(await createTunnelingKey())
