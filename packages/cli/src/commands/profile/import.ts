@@ -36,10 +36,6 @@ export default class ImportProfile extends BaseCommand<typeof ImportProfile> {
     }),
   }
 
-  static strict = false
-
-  static enableJsonFlag = true
-
   async run(): Promise<void> {
     const profileConfig = loadProfileConfig(this.config)
     const alias = this.flags.name ?? await defaultAlias(profileConfig)
