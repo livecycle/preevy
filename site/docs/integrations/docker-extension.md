@@ -73,7 +73,7 @@ That's it! You have successfully installed the Livecycle Docker Extension and sh
 <details>
   <summary>What is the difference between the Livecycle Docker Extension and ngrok?</summary>
   <p>
-    The main difference is the collaboration aspect. Livecycle allows you to share your local development environment with your team, so you can get feedback much earlier in the development workflow.
+    The difference is that our extension serves as a gateway to demonstrate the collaboration experience you can achieve using Preevy in remote environments. If you find the collaboration flow useful, you can expand it to create preview environments using the same tool.
   </p>
 </details>
 
