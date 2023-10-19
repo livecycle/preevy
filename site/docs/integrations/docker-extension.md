@@ -12,7 +12,7 @@ The Livecycle Docker Extension enables you to share your local development envir
 
 - Instant, secure tunneling to frontend and backend services
 - Share HTTPS links so teammates can quickly access and review your web UI and backend services at runtime.
-- Public and private access controls
+- Public and private access
 - Integration with external identity providers for secure access
 - Integrated debugging tools that include log inspection, shell, and container inpsection
 - Integration with the [OSS Preevy CLI tool](https://github.com/livecycle/preevy) that can be used for publishing ephemeral environments on your cloud provider or any Kubernetes cluster
