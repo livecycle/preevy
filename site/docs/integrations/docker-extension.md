@@ -11,7 +11,7 @@ The Livecycle Docker Extension enables you to share your local development envir
 ## Key Features
 
 - Instant, secure tunneling to frontend and backend services
-- Share HTTPS links so teammates can quickly access and review code while it's in flight
+- Share HTTPS links so teammates can quickly access and review your web UI and backend services at runtime.
 - Public and private access controls
 - Integration with external identity providers for secure access
 - Integrated debugging tools that include log inspection, shell, and container inpsection
