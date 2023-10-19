@@ -71,7 +71,7 @@ That's it! You have successfully installed the Livecycle Docker Extension and sh
 ## FAQ
 
 <details>
-  <summary>How Livecycle Docker Extension is different from ngrok?</summary>
+  <summary>What is the difference between the Livecycle Docker Extension and ngrok?</summary>
   <p>
     The main difference is the collaboration aspect. Livecycle allows you to share your local development environment with your team, so you can get feedback much earlier in the development workflow.
   </p>
