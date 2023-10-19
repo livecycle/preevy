@@ -108,7 +108,7 @@ That's it! You have successfully installed the Livecycle Docker Extension and sh
 </details>
 
 <details>
-  <summary>How do I get support for Livecycle Docker Extension?</summary>
+  <summary>How do I get support for the Livecycle Docker Extension?</summary>
   <p>
     You can join the <a href="https://community.livecycle.io">Livecycle Community</a> on Slack to get support for Livecycle Docker Extension.
   </p>
