@@ -23,7 +23,6 @@ The Livecycle Docker Extension enables you to share your local development envir
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
-The content is fairly well-written, but there are a few grammar and clarity improvements that can be made. Here's the revised content:
 
 ### Steps
 
