@@ -6,7 +6,7 @@ title: Livecycle Docker Extension
 
 ## Overview
 
-Livecycle Docker Extension helps you to share your local development environment with your team. It allows you to share your local development environment with your team, so you can get feedback much earlier in the development workflow, without the hassle of staging environments or CI builds.
+The Livecycle Docker Extension enables you to share your local development environment with your team, so you can get feedback much earlier in the development workflow, without the hassle of staging environments or CI builds.
 
 ## Key Features
 
