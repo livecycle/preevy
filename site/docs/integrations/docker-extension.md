@@ -101,7 +101,7 @@ That's it! You have successfully installed the Livecycle Docker Extension and sh
 </details>
 
 <details>
-  <summary>What makes Livecycle Docker Extension different from other tools?</summary>
+  <summary>What makes the Livecycle Docker Extension different from other tools?</summary>
   <p>
     Support provisioning to your cloud provider or k8s cluster -> In that context we are not bound to abilities like tunnel or ngrok as we allow the environment to be available and accessible regardless of your local setup. We also support your CI pipeline- showing that it can be added to your GH actions for example while also add comments to your GH.
   </p>
