@@ -96,7 +96,7 @@ That's it! You have successfully installed the Livecycle Docker Extension and sh
 <details>
   <summary>How do I get started with Livecycle Docker Extension?</summary>
   <p>
-    You can get started with Livecycle Docker Extension by following the steps in the <a href="#getting-started">Getting Started</a> section.
+    You can get started with the Livecycle Docker Extension by following the steps in the <a href="#getting-started">Getting Started</a> section.
   </p>
 </details>
 
