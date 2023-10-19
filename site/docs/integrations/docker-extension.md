@@ -17,7 +17,6 @@ Livecycle Docker Extension helps you to share your local development environment
 - Integrated debugging tools that include log inspection, shell, and container inpsection
 - Integration with OSS Preevy CLI tool that can be used for publishing ephemerals environment on your cloud provider or any Kubernetes cluster
 
-
 ## Getting Started
 
 ### Prerequisites
