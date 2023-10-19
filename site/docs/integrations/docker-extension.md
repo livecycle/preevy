@@ -86,9 +86,9 @@ That's it! You have successfully installed the Livecycle Docker Extension and sh
 </details>
 
 <details>
-  <summary>Is Livecycle Docker Extension secure?</summary>
+  <summary>What security features does the Livecycle Docker extension offer?</summary>
   <p>
-    Yes, Livecycle Docker Extension is secure. It uses a private tunnel to expose your local development environment to the internet. You can also add access controls to restrict access to your environment. In addition, Livecycle Docker Extension supports HTTPS and SSL termination.
+    The Livecycle Docker Extension uses a secure [SSH tunnel](https://livecycle.io/blogs/preevy-proxy-service-2/) to expose your local development environment using Livecycle's tunnel server, which is only accessible using HTTPS. You can enable private URLs to restrict access to your environment.
   </p>
 </details>
 
