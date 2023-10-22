@@ -2,7 +2,7 @@ import { Hook as OclifHook, Command, Flags } from '@oclif/core'
 import { Parser } from '@oclif/core/lib/parser/parse'
 import { Config, Topic } from '@oclif/core/lib/interfaces'
 import { localComposeClient, ComposeModel, resolveComposeFiles, withSpinner, NoComposeFilesError } from '@preevy/core'
-import { composeFlags } from '../../lib/flags'
+import { composeFlags } from '../../lib/common-flags'
 import { addPluginFlags, loadPlugins, hooksFromPlugins, addPluginCommands } from '../../lib/plugins'
 
 type InternalConfig = Config & {

@@ -1,8 +1,7 @@
 import path from 'path'
 import { Command, Flags, Interfaces } from '@oclif/core'
-import chalk from 'chalk'
 import { LocalProfilesConfig, Profile, Store, detectCiProvider, fsTypeFromUrl, localProfilesConfig, telemetryEmitter } from '@preevy/core'
-import { BaseCommand } from '@preevy/cli-common'
+import { BaseCommand, text } from '@preevy/cli-common'
 import { fsFromUrl } from './fs'
 
 export const onProfileChange = (profile: Profile, alias: string, location: string) => {
@@ -87,7 +86,7 @@ abstract class ProfileCommand<T extends typeof Command> extends BaseCommand<T> {
   #profile: Profile | undefined
   get profile(): Profile {
     if (!this.#profile) {
-      this.error(`Profile not initialized, run ${chalk.italic.bold.greenBright('preevy init')} to get started.`)
+      this.error(`Profile not initialized, run ${text.command(this.config, 'init')} to get started.`)
     }
     return this.#profile
   }

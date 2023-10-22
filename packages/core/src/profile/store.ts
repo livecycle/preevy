@@ -31,7 +31,7 @@ export const profileStore = (store: Store) => {
         await write('info.json', JSON.stringify(profile))
       })
     },
-    setDefaultFlags: async (driver: string, flags: Record<string, string>) => {
+    setDefaultFlags: async (driver: string, flags: Record<string, unknown>) => {
       await store.transaction(profileDir, async ({ write }) => {
         await write(`${driver}-defaults.json`, JSON.stringify(flags))
       })

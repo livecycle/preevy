@@ -1,69 +1,25 @@
-import { Flags } from '@oclif/core'
+import { Flag } from '@oclif/core/lib/interfaces'
 
-const projectFlag = {
-  project: Flags.string({
-    char: 'p',
-    description: 'Project name. Defaults to the Compose project name',
-    required: false,
-    helpGroup: 'GLOBAL',
-  }),
+type FlagSpec<T> =Pick<Flag<T>, 'type' | 'default'>
+
+export function formatFlagsToArgs(flags: Record<string, unknown>, spec: Record<string, FlagSpec<unknown>> = {}, prefix = '') {
+  return Object.entries(flags).flatMap(function format(this: void, [key, value]):string[] {
+    if (spec[key]?.default === value) {
+      return []
+    }
+    if (Array.isArray(value)) {
+      return value.flatMap(v => format([key, v]))
+    }
+    if (typeof value === 'boolean') {
+      const defaultIsOn = spec[key]?.type === 'boolean' && spec[key].default === true
+      if (!value && defaultIsOn) {
+        return [`--no-${key}`]
+      }
+      return [`--${key}`]
+    }
+    if (typeof value === 'object') {
+      return Object.entries(value ?? {}).flatMap(([k, v]) => format([`${key}-${k}`, v]))
+    }
+    return [`--${prefix}${key}`, `${value}`]
+  })
 }
-export const composeFlags = {
-  file: Flags.string({
-    description: 'Compose configuration file',
-    multiple: true,
-    required: false,
-    char: 'f',
-    default: [],
-    helpGroup: 'GLOBAL',
-  }),
-  'system-compose-file': Flags.string({
-    description: 'Add extra Compose configuration file without overriding the defaults',
-    multiple: true,
-    required: false,
-    default: [],
-    helpGroup: 'GLOBAL',
-  }),
-  ...projectFlag,
-} as const
-
-export const envIdFlags = {
-  id: Flags.string({
-    description: 'Environment id - affects created URLs. If not specified, will try to detect automatically',
-    required: false,
-  }),
-  ...projectFlag,
-} as const
-
-export const tunnelServerFlags = {
-  'tunnel-url': Flags.string({
-    description: 'Tunnel url, specify ssh://hostname[:port] or ssh+tls://hostname[:port]',
-    char: 't',
-    default: 'ssh+tls://livecycle.run' ?? process.env.PREVIEW_TUNNEL_OVERRIDE,
-  }),
-  'tls-hostname': Flags.string({
-    description: 'Override TLS server name when tunneling via HTTPS',
-    required: false,
-  }),
-  'insecure-skip-verify': Flags.boolean({
-    description: 'Skip TLS or SSH certificate verification',
-    default: false,
-  }),
-} as const
-
-export const urlFlags = {
-  'include-access-credentials': Flags.boolean({
-    description: 'Include access credentials for basic auth for each service URL',
-    default: false,
-  }),
-  'show-preevy-service-urls': Flags.boolean({
-    description: 'Show URLs for internal Preevy services',
-    default: false,
-  }),
-  'access-credentials-type': Flags.custom<'browser' | 'api'>({
-    options: ['api', 'browser'],
-    dependsOn: ['include-access-credentials'],
-    default: 'browser',
-    required: true,
-  })(),
-} as const
