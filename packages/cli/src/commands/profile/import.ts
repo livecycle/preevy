@@ -1,7 +1,7 @@
-import { Args, Flags, ux } from '@oclif/core'
+import { Args, Flags } from '@oclif/core'
 import { find, range, map } from 'iter-tools-es'
 import { LocalProfilesConfig } from '@preevy/core'
-import { BaseCommand } from '@preevy/cli-common'
+import { BaseCommand, text } from '@preevy/cli-common'
 import { loadProfileConfig, onProfileChange } from '../../profile-command'
 
 const DEFAULT_ALIAS_PREFIX = 'default'
@@ -36,19 +36,16 @@ export default class ImportProfile extends BaseCommand<typeof ImportProfile> {
     }),
   }
 
-  static strict = false
-
-  static enableJsonFlag = true
-
   async run(): Promise<void> {
     const profileConfig = loadProfileConfig(this.config)
     const alias = this.flags.name ?? await defaultAlias(profileConfig)
 
     const { info } = await profileConfig.importExisting(alias, this.args.location)
     onProfileChange(info, alias, this.args.location)
-    ux.info(`Profile ${info.id} imported successfully as ${alias}`)
     if (this.flags.use) {
       await profileConfig.setCurrent(alias)
     }
+
+    text.success(`Profile ${text.code(info.id)} imported successfully as ${text.code(alias)} 👍`)
   }
 }

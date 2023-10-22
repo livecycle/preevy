@@ -4,7 +4,7 @@ import {
 } from '@preevy/core'
 import { asyncReduce } from 'iter-tools-es'
 import { commandLogger } from '../lib/log'
-import { composeFlags } from '../lib/flags'
+import { composeFlags } from '../lib/common-flags'
 
 // eslint-disable-next-line no-use-before-define
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof BaseCommand['baseFlags'] & T['flags']>
