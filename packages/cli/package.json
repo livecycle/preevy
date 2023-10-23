@@ -18,6 +18,7 @@
     "/oclif.manifest.json"
   ],
   "dependencies": {
+    "@inquirer/confirm": "^2.0.14",
     "@oclif/core": "^2",
     "@oclif/plugin-help": "^5",
     "@preevy/cli-common": "0.0.55",
@@ -29,7 +30,6 @@
     "@preevy/driver-kube-pod": "0.0.55",
     "@preevy/driver-lightsail": "0.0.55",
     "@preevy/plugin-github-pr-link": "0.0.55",
-    "chalk": "^4.1.2",
     "inquirer": "^8.0.0",
     "iter-tools-es": "^7.5.3",
     "lodash": "^4.17.21",
