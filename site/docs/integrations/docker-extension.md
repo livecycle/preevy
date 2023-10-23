@@ -57,7 +57,7 @@ Livecycle extension embed a standalone version of Preevy CLI that is used to pro
 
    URLs created by the extension are consistent, shareable and can be use by a browser or any other http client.
    Using these URLs, your team members will be able to see and interact with your local version of the app as long as the tunnel is open your workstation is running.  
-   Private environments require adding team members to your organization, and upon access, your team members will be prompt to authenticate.
+   Private environments require adding team members to your organization, and upon access, your team members will be prompted to authenticate.
    
    ![Livecycle Docker Extension](docker-ext-5.png)
 
@@ -112,7 +112,7 @@ That's it! You have successfully installed the Livecycle Docker Extension and sh
   Livecycle Docker extension is integrated with Preevy CLI and Livecylce services.
   Using the CLI, you can provision remote ephemeral environments that can be used in addtion to sharing local environments.  
   This functionality can also be used in the CI to provision ephemeral environment for Pull Requests.  
-  Livecycle add additonal layers of management, collaboration, review and debugging on top of shared environments.  
+  Livecycle adds additonal layers of management, collaboration, review and debugging on top of shared environments.  
 </details>
 
 <details>
