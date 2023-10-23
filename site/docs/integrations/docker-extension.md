@@ -7,22 +7,27 @@ title: Livecycle Docker Extension
 ## Overview
 
 The Livecycle Docker Extension enables you to share your local development environment with your team, so you can get feedback much earlier in the development workflow, without the hassle of staging environments or CI builds.
+Livecycle extension embed a standalone version of Preevy CLI that is used to provide all the network and collaboration capabilities. The profile created by Preevy can also be used to provision ephemeral environments.  
 
 ## Key Features
 
-- Instant, secure tunneling to frontend and backend services
-- Share HTTPS links so teammates can quickly access and review your web UI and backend services at runtime.
-- Public and private access
-- Integration with external identity providers for secure access
-- Integrated debugging tools that include log inspection, shell, and container inpsection
-- Integration with the [OSS Preevy CLI tool](https://github.com/livecycle/preevy) that can be used for publishing ephemeral environments on your cloud provider or any Kubernetes cluster
+- Simple Docker for desktop UI
+- Instant sharing of running applications/services:
+  - Preevy based HTTPS -> SSH Tunneling
+  - Share HTTPS links so teammates can quickly access and review your web UI and backen
+    services at runtime.
+  - [Public and private access](https://preevy.dev/recipes/private-services)
+  - Instant, secure tunneling to frontend and backend services
+- Livecycle Integration:
+  - Secure access to environments based on Google/Github identity providers 
+  - Environment debugging tools - log inspection, shell, and container inpsection
+- Can be used together with Preevy CLI to provision remote ephemeral environments
 
 ## Getting Started
 
 ### Prerequisites
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop)
-
 
 ### Steps
 
@@ -44,19 +49,22 @@ The Livecycle Docker Extension enables you to share your local development envir
 
    ![Livecycle Docker Extension](docker-ext-3.png)
 
-   You can choose between public and private access. If you choose public access, you will get a public URL that you can share with anyone. If you choose private access, you will get a private URL that you can share with your team members. Then click on the "Share" button to get the shareable URL.
+   You can choose between public and private access. If you choose public access, you will get a public URL that you can share with anyone. If you choose private access, you will get a private URL that require authentication and can only by used by your organization mebers. Then click on the "Share" button to get the shareable URL.
 
    ![Livecycle Docker Extension](docker-ext-4.png)
 
 4. **Accessing the shared URL**
 
-   Once you have shared the URL with your team members, they can access the URL in their browser. They will be able to see the application running in their browser.
-
+   URLs created by the extension are consistent, shareable and can be use by a browser or any other http client.
+   Using these URLs, your team members will be able to see and interact with your local version of the app as long as the tunnel is open your workstation is running.  
+   Private environments require adding team members to your organization, and upon access, your team members will be prompt to authenticate.
+   
    ![Livecycle Docker Extension](docker-ext-5.png)
 
 5. **Accessing Livecycle dashboard**
 
-   You can also access the Livecycle dashboard to see the logs and debug your application. Click on the "Open Link" button to open the Livecycle dashboard. On the dashboard, you can see all the running applications and services. You can also see the public and private URLs for each service.
+   You can also access the Livecycle dashboard to see the logs and debug your application. Click on the "Open Link" button to open the Livecycle dashboard. On the dashboard, you can see all the running applications and services.
+   The Livecycle dashboard requires authentication and organization membership, similiarly to private environments/services 
 
    ![Livecycle Docker Extension](docker-ext-6.png)
 
@@ -71,12 +79,14 @@ That's it! You have successfully installed the Livecycle Docker Extension and sh
 ## FAQ
 
 <details>
-  <summary>What is the difference between the Livecycle Docker Extension and ngrok?</summary>
+  <summary>What is the difference between the Livecycle Docker Extension and Ngrok?</summary>
   <p>
-    The difference is that our extension serves as a gateway to demonstrate the collaboration experience you can achieve using Preevy in remote environments. If you find the collaboration flow useful, you can expand it to create preview environments using the same tool.
+    Livecycle Docker extesnion is integrated with Docker, and provide a smoother experience.  
+    Consistent URLs, private environments, organizations and Google/Github authentication are supported out of the box.  
+    Livecycle dashboard provide debugging capabilites that includes log inspection, shell access, and container inspection.  
+    Lastly, the integration with Preevy allow you to create remote ephemeral environments that can be used when your workstation is offline or futher in your SDLC (preview environments for Pull Requests). 
   </p>
 </details>
-
 
 <details>
   <summary>Which frameworks and languages does Livecycle support?</summary>
@@ -102,7 +112,10 @@ That's it! You have successfully installed the Livecycle Docker Extension and sh
 <details>
   <summary>What makes the Livecycle Docker Extension different from other tools?</summary>
   <p>
-    Support provisioning to your cloud provider or k8s cluster -> In that context we are not bound to abilities like tunnel or ngrok as we allow the environment to be available and accessible regardless of your local setup. We also support your CI pipeline- showing that it can be added to your GH actions for example while also add comments to your GH.
+    Livecycle Docker extension is integrated with Preevy CLI and Livecylce services.
+    Using the CLI, you can provision remote ephemeral environments that can be used in addtion to sharing local environments.
+    This functionality can also be used in the CI to provision ephemeral environment for Pull Requests.
+    Livecycle add additonal layers of management, collaboration, review and debugging on top of shared environments.  
   </p>
 </details>
 
