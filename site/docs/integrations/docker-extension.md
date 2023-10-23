@@ -81,41 +81,52 @@ That's it! You have successfully installed the Livecycle Docker Extension and sh
 <details>
   <summary>What is the difference between the Livecycle Docker Extension and Ngrok?</summary>
   <p>
-    Livecycle Docker extesnion is integrated with Docker, and provide a smoother experience.  
+
+    Livecycle Docker extesnion is integrated with Docker, and provide a smoother experience for Docker users.
     Consistent URLs, private environments, organizations and Google/Github authentication are supported out of the box.  
     Livecycle dashboard provide debugging capabilites that includes log inspection, shell access, and container inspection.  
     Lastly, the integration with Preevy allow you to create remote ephemeral environments that can be used when your workstation is offline or futher in your SDLC (preview environments for Pull Requests). 
+
   </p>
 </details>
 
 <details>
   <summary>Which frameworks and languages does Livecycle support?</summary>
   <p>
+
     Livecycle is agnostic to specific language or framework. It works with any language or framework that can be run in a Docker container.
+
   </p>
 </details>
 
 <details>
   <summary>What security features does the Livecycle Docker extension offer?</summary>
   <p>
-    The Livecycle Docker Extension uses a secure [SSH tunnel](https://livecycle.io/blogs/preevy-proxy-service-2/) to expose your local development environment using Livecycle's tunnel server, which is only accessible using HTTPS. You can enable private URLs to restrict access to your environment.
+
+    The Livecycle Docker Extension uses a secure [SSH tunnel](https://livecycle.io/blogs/preevy-proxy-service-2/) to expose your local development environment using Livecycle's tunnel server, which is only accessible using HTTPS.  
+    You can enable private URLs to restrict access to your environment.
+
   </p>
 </details>
 
 <details>
   <summary>How do I get started with the Livecycle Docker Extension?</summary>
   <p>
+
     You can get started with the Livecycle Docker Extension by following the steps in the <a href="#getting-started">Getting Started</a> section.
+
   </p>
 </details>
 
 <details>
   <summary>What makes the Livecycle Docker Extension different from other tools?</summary>
   <p>
+
     Livecycle Docker extension is integrated with Preevy CLI and Livecylce services.
-    Using the CLI, you can provision remote ephemeral environments that can be used in addtion to sharing local environments.
-    This functionality can also be used in the CI to provision ephemeral environment for Pull Requests.
+    Using the CLI, you can provision remote ephemeral environments that can be used in addtion to sharing local environments.  
+    This functionality can also be used in the CI to provision ephemeral environment for Pull Requests.  
     Livecycle add additonal layers of management, collaboration, review and debugging on top of shared environments.  
+
   </p>
 </details>
 
