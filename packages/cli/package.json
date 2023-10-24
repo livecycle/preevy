@@ -68,6 +68,7 @@
     "plugins": [
       "@oclif/plugin-help"
     ],
+    "helpClass": "./dist/help",
     "hooks": {
       "init": [
         "./dist/hooks/init/sync-logging",

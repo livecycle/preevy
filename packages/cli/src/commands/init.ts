@@ -144,6 +144,10 @@ export default class Init extends BaseCommand {
       return undefined
     }
 
+    if (text.supportsColor) {
+      this.log(text.logo)
+    }
+
     const driver = await chooseDriver()
     const driverStatic = machineDrivers[driver]
 
