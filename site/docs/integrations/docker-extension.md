@@ -7,21 +7,16 @@ title: Livecycle Docker Extension
 ## Overview
 
 The Livecycle Docker Extension enables you to share your local development environment with your team, so you can get feedback much earlier in the development workflow, without the hassle of staging environments or CI builds.
-Livecycle extension embed a standalone version of Preevy CLI that is used to provide all the network and collaboration capabilities. The profile created by Preevy can also be used to provision ephemeral environments.  
+The Livecycle Docker extension embeds a standalone version of the Preevy CLI that which provides all the network and collaboration capabilities. The extension creates a Preevy profile which can also be used to provision ephemeral environments.  
 
 ## Key Features
 
 - Simple Docker for desktop UI
 - Instant sharing of running applications/services:
-  - Preevy based HTTPS -> SSH Tunneling
-  - Share HTTPS links so teammates can quickly access and review your web UI and backen
-    services at runtime.
-  - [Public and private access](https://preevy.dev/recipes/private-services)
-  - Instant, secure tunneling to frontend and backend services
-- Livecycle Integration:
-  - Secure access to environments based on Google/Github identity providers 
-  - Environment debugging tools - log inspection, shell, and container inpsection
-- Can be used together with Preevy CLI to provision remote ephemeral environments
+  - Share HTTPS links so teammates can quickly access and review your web UI and backend services at runtime.
+  - Instant, secure tunneling to frontend and backend services with [public or private access](https://preevy.dev/recipes/private-services). Access to private services can be restricted to your teammates' Google or GitHub accounts.
+- Tools to debug your environment - log inspection, shell, and container inpsection
+- Provision remote ephemeral environments using the Preevy CLI
 
 ## Getting Started
 
@@ -81,16 +76,16 @@ That's it! You have successfully installed the Livecycle Docker Extension and sh
 <details>
   <summary>What is the difference between the Livecycle Docker Extension and Ngrok?</summary>
   
-  Livecycle Docker extesnion is integrated with Docker, and provides a smoother experience for Docker users.  
+  The Livecycle Docker Extension is integrated with Docker, and provides a smoother experience for Docker users.  
   Consistent URLs, private environments, organizations and Google/Github authentication are supported out of the box.  
   Livecycle dashboard provides debugging capabilites that includes log inspection, shell access, and container inspection.  
-  Lastly, the integration with Preevy allow you to create remote ephemeral environments that can be used when your workstation is offline or futher in your SDLC (preview environments for Pull Requests).  
+  Lastly, integration with the Preevy CLI allows you to create preview environments for Pull Requests - remote ephemeral environments that can be used when your development machine is offline.
 </details>
 
 <details>
   <summary>Which frameworks and languages does Livecycle support?</summary>
   
-  Livecycle is agnostic to specific language or framework. It works with any language or framework that can be run in a Docker container.
+  Livecycle is language and framework agnostic. It works with anything that runs in a Docker container.
 </details>
 
 <details>
@@ -109,10 +104,10 @@ That's it! You have successfully installed the Livecycle Docker Extension and sh
 <details>
   <summary>What makes the Livecycle Docker Extension different from other tools?</summary>
   
-  Livecycle Docker extension is integrated with Preevy CLI and Livecylce services.
-  Using the CLI, you can provision remote ephemeral environments that can be used in addtion to sharing local environments.  
-  This functionality can also be used in the CI to provision ephemeral environment for Pull Requests.  
-  Livecycle adds additonal layers of management, collaboration, review and debugging on top of shared environments.  
+  Livecycle Docker extension is integrated with the Preevy CLI and the Livecycle managed service.
+  Using the Preevy CLI, you can provision remote ephemeral environments that can be used in addtion to sharing local environments.  
+  This functionality can also be used in your CI pipeline to provision preview environments for Pull Requests.  
+  The Livecycle managed service adds additonal layers of management, collaboration, review and debugging on top of shared environments.  
 </details>
 
 <details>
