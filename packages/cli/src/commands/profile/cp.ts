@@ -13,6 +13,17 @@ const validateFsType = (fsType: string) => {
   return fsType
 }
 
+const chooseTargetAlias = async (defaultAlias: string) => (
+  await inquirer.prompt<{ targetAlias: string }>([
+    {
+      type: 'input',
+      name: 'targetAlias',
+      message: 'Target profile name',
+      default: defaultAlias,
+    },
+  ])
+).targetAlias
+
 // eslint-disable-next-line no-use-before-define
 export default class CopyProfile extends BaseCommand<typeof CopyProfile> {
   static description = 'Copy a profile'
@@ -24,11 +35,21 @@ export default class CopyProfile extends BaseCommand<typeof CopyProfile> {
       description: 'Source profile name, defaults to the current profile',
       required: false,
     }),
-    'target-location': Flags.url({
+    // eslint-disable-next-line no-restricted-globals
+    'target-location': Flags.custom<{ location: string; fsType: FsType }>({
       description: 'Target profile location URL',
       required: false,
       exclusive: ['target-storage'],
-    }),
+      parse: async location => {
+        let url: URL
+        try {
+          url = new URL(location)
+        } catch (e) {
+          throw new Error(`Invalid URL: ${text.code(location)}`, { cause: e })
+        }
+        return { location, fsType: validateFsType(url.protocol.replace(':', '')) }
+      },
+    })(),
     'target-storage': Flags.custom<FsType>({
       description: 'Target profile storage type',
       required: false,
@@ -57,30 +78,11 @@ export default class CopyProfile extends BaseCommand<typeof CopyProfile> {
     return result
   }
 
-  async targetAlias(source: { alias: string }, fsType: string): Promise<string> {
-    if (this.flags['target-name']) {
-      return this.flags['target-name']
-    }
-    // eslint-disable-next-line no-use-before-define
-    const { targetAlias } = await inquirer.prompt<{ targetAlias: string }>([
-      {
-        type: 'input',
-        name: 'targetAlias',
-        message: 'Target profile name',
-        default: `${source.alias}-${fsType}`,
-      },
-    ])
-    return targetAlias
-  }
-
   async target(source: { alias: string }): Promise<{ location: string; alias: string }> {
     const { 'target-location': targetLocation, 'target-storage': targetStorage } = this.flags
-    const fsType = (targetLocation && validateFsType(targetLocation.protocol.replace(':', '')))
-      ?? targetStorage
-      ?? await chooseFsType()
-
-    const alias = await this.targetAlias(source, fsType)
-    return { alias, location: targetLocation?.toString() ?? await chooseFs[fsType]({ profileAlias: alias }) }
+    const fsType = targetLocation?.fsType ?? targetStorage ?? await chooseFsType()
+    const alias = this.flags['target-name'] ?? await chooseTargetAlias(`${source.alias}-${fsType}`)
+    return { alias, location: targetLocation?.location ?? await chooseFs[fsType]({ profileAlias: alias }) }
   }
 
   async run(): Promise<unknown> {
