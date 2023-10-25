@@ -1,5 +1,5 @@
 import { Args, ux } from '@oclif/core'
-import { BaseCommand } from '@preevy/cli-common'
+import { BaseCommand, text } from '@preevy/cli-common'
 import { loadProfileConfig } from '../../profile-command'
 
 // eslint-disable-next-line no-use-before-define
@@ -17,7 +17,7 @@ export default class UseProfile extends BaseCommand<typeof UseProfile> {
     const alias = this.args.name
     const profileConfig = loadProfileConfig(this.config)
     await profileConfig.setCurrent(alias)
-    ux.info(`Profile ${alias} is now being used`)
+    ux.info(text.success(`Profile ${text.code(alias)} is now being used`))
     return undefined
   }
 }

@@ -13,11 +13,6 @@ const validateFsType = (fsType: string) => {
   return fsType
 }
 
-const parseFsTypeFromUrl = (target: string) => {
-  const [fsType, ...rest] = target.split('://')
-  return rest.length ? validateFsType(fsType) : undefined
-}
-
 // eslint-disable-next-line no-use-before-define
 export default class CopyProfile extends BaseCommand<typeof CopyProfile> {
   static description = 'Copy a profile'
@@ -29,22 +24,18 @@ export default class CopyProfile extends BaseCommand<typeof CopyProfile> {
       description: 'Source profile name, defaults to the current profile',
       required: false,
     }),
-    target: Flags.custom<{ url?: string; fsType: FsType }>({
-      description: `Target profile. Either a full URL or a storage type, one of: ${fsTypes.join(', ')}`,
+    'target-location': Flags.url({
+      description: 'Target profile location URL',
       required: false,
-      parse: async input => {
-        if (isFsType(input)) {
-          return { fsType: input }
-        }
-        const fsType = parseFsTypeFromUrl(input)
-        if (!fsType) {
-          throw new Error(`Invalid target profile. Specify either a full URL or a storage type, one of: ${text.codeList(fsTypes)}`)
-        }
-        return { fsType, url: input }
-      },
+      exclusive: ['target-storage'],
+    }),
+    'target-storage': Flags.custom<FsType>({
+      description: 'Target profile storage type',
+      required: false,
+      options: [...fsTypes],
     })(),
     'target-name': Flags.string({
-      description: 'Target profile name. If not specified, the command will ask for one',
+      description: 'Target profile name',
       required: false,
     }),
     use: Flags.boolean({
@@ -53,17 +44,14 @@ export default class CopyProfile extends BaseCommand<typeof CopyProfile> {
     }),
   }
 
-  async source(profileConfig: LocalProfilesConfig): Promise<{
-    alias: string
-    location: string
-  }> {
+  async source(profileConfig: LocalProfilesConfig): Promise<{ alias: string; location: string }> {
     if (this.flags.profile) {
       const { location } = await profileConfig.get(this.flags.profile)
       return { alias: this.flags.profile, location }
     }
     const result = await profileConfig.current()
     if (!result) {
-      throw new Error(`No current profile, specify the source alias with ${text.code('--profile')}`)
+      throw new Error(`No current profile, specify the source alias with ${text.code(`--${CopyProfile.flags.profile.name}`)}`)
     }
     ux.info(`Copying current profile ${text.code(result.alias)} from ${text.code(result.location)}`)
     return result
@@ -85,29 +73,23 @@ export default class CopyProfile extends BaseCommand<typeof CopyProfile> {
     return targetAlias
   }
 
-  async target(source: { alias: string }): Promise<{ url: string; alias: string }> {
-    if (this.flags.target) {
-      const { url, fsType } = this.flags.target
-      const alias = await this.targetAlias(source, fsType)
-      return { alias, url: url || await chooseFs[fsType]({ profileAlias: alias }) }
-    }
+  async target(source: { alias: string }): Promise<{ location: string; alias: string }> {
+    const { 'target-location': targetLocation, 'target-storage': targetStorage } = this.flags
+    const fsType = (targetLocation && validateFsType(targetLocation.protocol.replace(':', '')))
+      ?? targetStorage
+      ?? await chooseFsType()
 
-    const fsType = await chooseFsType()
     const alias = await this.targetAlias(source, fsType)
-    return { alias, url: await chooseFs[fsType]({ profileAlias: alias }) }
+    return { alias, location: targetLocation?.toString() ?? await chooseFs[fsType]({ profileAlias: alias }) }
   }
 
   async run(): Promise<unknown> {
     const profileConfig = loadProfileConfig(this.config)
     const source = await this.source(profileConfig)
     const target = await this.target(source)
-    await profileConfig.copy(
-      { location: source.location },
-      { alias: target.alias, location: target.url },
-      Object.keys(machineDrivers),
-    )
+    await profileConfig.copy(source, target, Object.keys(machineDrivers))
 
-    ux.info(text.success(`Profile ${text.code(source.alias)} copied to ${text.code(target.url)} as ${text.code(target.alias)}`))
+    ux.info(text.success(`Profile ${text.code(source.alias)} copied to ${text.code(target.location)} as ${text.code(target.alias)}`))
 
     if (this.flags.use) {
       await profileConfig.setCurrent(target.alias)
