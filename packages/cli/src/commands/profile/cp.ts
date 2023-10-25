@@ -1,95 +1,77 @@
-import { FlagOutput, ArgOutput, ParserOutput } from '@oclif/core/lib/interfaces/parser'
-import { Args, Flags, ux } from '@oclif/core'
+import { Flags, ux } from '@oclif/core'
 import inquirer from 'inquirer'
 import { BaseCommand, text } from '@preevy/cli-common'
 import { LocalProfilesConfig } from '@preevy/core'
-import { mapValues } from 'lodash'
 import { loadProfileConfig } from '../../profile-command'
-import { chooseFs, chooseFsType } from '../../fs'
+import { FsType, chooseFs, chooseFsType, fsTypes, isFsType } from '../../fs'
 import { machineDrivers } from '../../drivers'
 
-const parseFsType = (target: string) => {
+const validateFsType = (fsType: string) => {
+  if (!isFsType(fsType)) {
+    throw new Error(`Unsupported storage type: ${text.code(fsType)}. Supported types: ${text.codeList(fsTypes as readonly string[])}`)
+  }
+  return fsType
+}
+
+const parseFsTypeFromUrl = (target: string) => {
   const [fsType, ...rest] = target.split('://')
-  return rest.length ? fsType : undefined
+  return rest.length ? validateFsType(fsType) : undefined
 }
 
 // eslint-disable-next-line no-use-before-define
 export default class CopyProfile extends BaseCommand<typeof CopyProfile> {
-  static description = 'Copy a profile to another storage'
-
-  static args = {
-    source: Args.string({
-      description: 'Source profile name, defaults to the current profile',
-      required: false,
-    }),
-    target: Args.string({
-      description: 'Target profile. Either a URL or a name, in which case the command will require interactive input to build the URL',
-      required: true,
-    }),
-  }
+  static description = 'Copy a profile'
 
   static enableJsonFlag = true
 
   static flags = {
-    use: Flags.boolean({
-      description: 'use the new profile',
+    profile: Flags.string({
+      description: 'Source profile name, defaults to the current profile',
       required: false,
     }),
-    targetName: Flags.string({
-      description: 'Target profile name',
+    target: Flags.custom<{ url?: string; fsType: FsType }>({
+      description: `Target profile. Either a full URL or a storage type, one of: ${fsTypes.join(', ')}`,
       required: false,
-    }),
-  }
-
-  // workaround for oclif bug when a required arg follows an optional arg
-  protected async parse<
-    F extends FlagOutput,
-    B extends FlagOutput,
-    A extends ArgOutput,
-  >(): Promise<ParserOutput<F, B, A>> {
-    const { args, ...result } = await super.parse({
-      flags: CopyProfile.flags,
-      baseFlags: CopyProfile.baseFlags,
-      args: mapValues(CopyProfile.args, v => ({ ...v, required: false })) as typeof CopyProfile.args,
-      strict: true,
-    })
-    if (!args.source) {
-      throw new Error('You must specify a target')
-    }
-    const bothSpecified = args.target !== undefined
-    return {
-      ...result,
-      args: {
-        source: bothSpecified ? args.source : undefined,
-        target: bothSpecified ? args.target : args.source,
+      parse: async input => {
+        if (isFsType(input)) {
+          return { fsType: input }
+        }
+        const fsType = parseFsTypeFromUrl(input)
+        if (!fsType) {
+          throw new Error(`Invalid target profile. Specify either a full URL or a storage type, one of: ${text.codeList(fsTypes)}`)
+        }
+        return { fsType, url: input }
       },
-    } as unknown as ParserOutput<F, B, A>
-  }
-
-  public async init(): Promise<void> {
-    await super.init()
-    this.targetFsType = parseFsType(this.args.target)
+    })(),
+    'target-name': Flags.string({
+      description: 'Target profile name. If not specified, the command will ask for one',
+      required: false,
+    }),
+    use: Flags.boolean({
+      description: 'Mark the new profile as the current profile',
+      required: false,
+    }),
   }
 
   async source(profileConfig: LocalProfilesConfig): Promise<{
     alias: string
     location: string
   }> {
-    console.log('args', this.args)
-    if (this.args.source) {
-      const { location } = await profileConfig.get(this.args.source)
-      return { alias: this.args.source, location }
+    if (this.flags.profile) {
+      const { location } = await profileConfig.get(this.flags.profile)
+      return { alias: this.flags.profile, location }
     }
     const result = await profileConfig.current()
     if (!result) {
-      throw new Error('No current profile, specify the source alias')
+      throw new Error(`No current profile, specify the source alias with ${text.code('--profile')}`)
     }
+    ux.info(`Copying current profile ${text.code(result.alias)} from ${text.code(result.location)}`)
     return result
   }
 
   async targetAlias(source: { alias: string }, fsType: string): Promise<string> {
-    if (this.flags.targetName) {
-      return this.flags.targetName
+    if (this.flags['target-name']) {
+      return this.flags['target-name']
     }
     // eslint-disable-next-line no-use-before-define
     const { targetAlias } = await inquirer.prompt<{ targetAlias: string }>([
@@ -103,15 +85,16 @@ export default class CopyProfile extends BaseCommand<typeof CopyProfile> {
     return targetAlias
   }
 
-  targetFsType: string | undefined
-
   async target(source: { alias: string }): Promise<{ url: string; alias: string }> {
-    if (this.targetFsType) {
-      return { url: this.args.target, alias: await this.targetAlias(source, this.targetFsType) }
+    if (this.flags.target) {
+      const { url, fsType } = this.flags.target
+      const alias = await this.targetAlias(source, fsType)
+      return { alias, url: url || await chooseFs[fsType]({ profileAlias: alias }) }
     }
+
     const fsType = await chooseFsType()
     const alias = await this.targetAlias(source, fsType)
-    return { url: await chooseFs[fsType]({ profileAlias: alias }), alias }
+    return { alias, url: await chooseFs[fsType]({ profileAlias: alias }) }
   }
 
   async run(): Promise<unknown> {

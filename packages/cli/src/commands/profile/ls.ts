@@ -5,8 +5,6 @@ import ProfileCommand from '../../profile-command'
 export default class ListProfile extends ProfileCommand<typeof ListProfile> {
   static description = 'Lists profiles'
 
-  static strict = false
-
   static enableJsonFlag = true
 
   async run(): Promise<unknown> {
@@ -14,8 +12,12 @@ export default class ListProfile extends ProfileCommand<typeof ListProfile> {
     const profiles = await this.profileConfig.list()
 
     if (this.flags.json) {
-      return profiles
+      return {
+        profiles: Object.fromEntries(profiles.map(({ alias, ...rest }) => [alias, rest])),
+        current: currentProfile?.alias,
+      }
     }
+
     ux.table(profiles, {
       alias: {
         header: 'Alias',

@@ -25,6 +25,7 @@ export const fsFromUrl = async (url: string, localBaseDir: string) => {
 
 export const fsTypes = ['local', 's3', 'gs'] as const
 export type FsType = typeof fsTypes[number]
+export const isFsType = (s: string): s is FsType => fsTypes.includes(s as FsType)
 
 export const chooseFsType = async () => (
   await inquirer.prompt<{ locationType: FsType }>([

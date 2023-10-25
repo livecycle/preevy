@@ -19,18 +19,18 @@ export default class CreateProfile extends ProfileCommand<typeof CreateProfile> 
     ...machineCreationflagsForAllDrivers,
     driver: DriverCommand.baseFlags.driver,
     use: Flags.boolean({
-      description: 'use the new profile',
+      description: 'Mark the new profile as the current profile',
       required: false,
     }),
   }
 
   static args = {
     name: Args.string({
-      description: 'name of the new profile',
+      description: 'Name of the new profile',
       required: true,
     }),
     url: Args.string({
-      description: 'url of the new profile store',
+      description: 'URL of the new profile',
       required: true,
     }),
   }

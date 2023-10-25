@@ -20,18 +20,18 @@ export default class ImportProfile extends BaseCommand<typeof ImportProfile> {
 
   static flags = {
     name: Flags.string({
-      description: 'name of the profile',
+      description: 'Name of the profile',
       required: false,
     }),
     use: Flags.boolean({
-      description: 'use the imported profile',
+      description: 'Mark the new profile as the current profile',
       required: false,
     }),
   }
 
   static args = {
     location: Args.string({
-      description: 'location of the profile',
+      description: 'URL of the profile',
       required: true,
     }),
   }
