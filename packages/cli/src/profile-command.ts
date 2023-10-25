@@ -56,14 +56,14 @@ abstract class ProfileCommand<T extends typeof Command> extends BaseCommand<T> {
     if (!profileAlias) {
       return
     }
-    const currentProfileInfo = await profileConfig.get(profileAlias)
-    if (!currentProfileInfo) {
+    const currentProfileConfig = await profileConfig.get(profileAlias)
+    if (!currentProfileConfig) {
       return
     }
 
-    this.#profile = currentProfileInfo.info
-    this.#store = currentProfileInfo.store
-    onProfileChange(currentProfileInfo.info, profileAlias, currentProfileInfo.location)
+    this.#profile = currentProfileConfig.info
+    this.#store = currentProfileConfig.store
+    onProfileChange(currentProfileConfig.info, profileAlias, currentProfileConfig.location)
   }
 
   #profileConfig: LocalProfilesConfig | undefined

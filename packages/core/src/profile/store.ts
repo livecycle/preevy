@@ -19,9 +19,6 @@ export const profileStore = (store: Store) => {
     info: async () => await ref.readJsonOrThrow<Profile>('info.json'),
     defaultFlags: async<T>(driver: string) => {
       const profile = await ref.readJSON<T>(`${driver}-defaults.json`)
-      if (!profile) {
-        return {}
-      }
       return profile ?? {}
     },
     async updateDriver(driver: string) {
