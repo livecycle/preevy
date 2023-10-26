@@ -1,7 +1,8 @@
 import path from 'path'
 import { rimraf } from 'rimraf'
+import { isEmpty } from 'lodash'
 import { localFs } from '../store/fs/local'
-import { VirtualFS, store, tarSnapshot } from '../store'
+import { Store, VirtualFS, store, tarSnapshot } from '../store'
 import { ProfileStore, profileStore } from './store'
 import { Profile } from './profile'
 
@@ -24,7 +25,7 @@ export const localProfilesConfig = (
 ) => {
   const localStore = localFs(localDir)
   const localProfilesDir = path.join(localDir, 'profiles')
-  const tarSnapshotFromUrl = async (
+  const storeFromUrl = async (
     url: string,
   ) => store(async dir => await tarSnapshot(await fsFromUrl(url, localProfilesDir), dir))
 
@@ -36,6 +37,75 @@ export const localProfilesConfig = (
       return initData
     }
     return JSON.parse(data.toString())
+  }
+
+  type GetResult = {
+    location: string
+    info: Profile
+    store: Store
+  }
+
+  async function get(alias: string): Promise<GetResult>
+  async function get(alias: string, opts: { throwOnNotFound: false }): Promise<GetResult>
+  async function get(alias: string, opts: { throwOnNotFound: true }): Promise<GetResult | undefined>
+  async function get(alias: string, opts?: { throwOnNotFound: boolean }): Promise<GetResult | undefined> {
+    const { profiles } = await readProfileList()
+    const locationUrl = profiles[alias]?.location
+    if (!locationUrl) {
+      if (opts?.throwOnNotFound) {
+        throw new Error(`Profile ${alias} not found`)
+      }
+      return undefined
+    }
+    const tarSnapshotStore = await storeFromUrl(locationUrl)
+    const profileInfo = await profileStore(tarSnapshotStore).info()
+    return {
+      location: locationUrl,
+      info: profileInfo,
+      store: tarSnapshotStore,
+    }
+  }
+
+  const create = async (alias: string, location: string, profile: Omit<Profile, 'id'>, init: (store: ProfileStore) => Promise<void>) => {
+    const list = await readProfileList()
+    if (list.profiles[alias]) {
+      throw new Error(`Profile ${alias} already exists`)
+    }
+    const id = `${alias}-${Math.random().toString(36).substring(2, 9)}`
+    const tar = await storeFromUrl(location)
+    const pStore = profileStore(tar)
+    await pStore.init({ id, ...profile })
+    list.profiles[alias] = {
+      id,
+      location,
+    }
+    await init(pStore)
+    await localStore.write(profileListFileName, JSON.stringify(list))
+    return {
+      info: {
+        id,
+        ...profile,
+      },
+      store: tar,
+    }
+  }
+
+  const copy = async (source: { location: string }, target: { alias: string; location: string }, drivers: string[]) => {
+    const sourceStore = await storeFromUrl(source.location)
+    const sourceProfileStore = profileStore(sourceStore)
+    const { driver } = await sourceProfileStore.info()
+    await create(target.alias, target.location, { driver }, async pStore => {
+      await pStore.setTunnelingKey(await sourceProfileStore.getTunnelingKey())
+      if (driver) {
+        await pStore.updateDriver(driver)
+      }
+      await Promise.all(drivers.map(async sourceDriver => {
+        const driverFlags = await sourceProfileStore.defaultFlags(sourceDriver)
+        if (!isEmpty(driverFlags)) {
+          await pStore.setDefaultFlags(sourceDriver, driverFlags)
+        }
+      }))
+    })
   }
 
   return {
@@ -62,23 +132,7 @@ export const localProfilesConfig = (
     async list(): Promise<ProfileListing[]> {
       return Object.entries((await readProfileList()).profiles).map(([alias, profile]) => ({ alias, ...profile }))
     },
-    async get(alias: string, opts: { throwOnNotFound: boolean } = { throwOnNotFound: true }) {
-      const { profiles } = await readProfileList()
-      const locationUrl = profiles[alias]?.location
-      if (!locationUrl) {
-        if (opts.throwOnNotFound) {
-          throw new Error(`Profile ${alias} not found`)
-        }
-        return undefined
-      }
-      const tarSnapshotStore = await tarSnapshotFromUrl(locationUrl)
-      const profileInfo = await profileStore(tarSnapshotStore).info()
-      return {
-        location: locationUrl,
-        info: profileInfo,
-        store: tarSnapshotStore,
-      }
-    },
+    get,
     async delete(alias: string) {
       const list = await readProfileList()
       const listing = list.profiles[alias]
@@ -99,7 +153,7 @@ export const localProfilesConfig = (
       if (list.profiles[alias]) {
         throw new Error(`Profile ${alias} already exists`)
       }
-      const tarSnapshotStore = await tarSnapshotFromUrl(location)
+      const tarSnapshotStore = await storeFromUrl(location)
       const info = await profileStore(tarSnapshotStore).info()
       list.profiles[alias] = {
         id: info.id,
@@ -112,29 +166,8 @@ export const localProfilesConfig = (
         store: tarSnapshotStore,
       }
     },
-    async create(alias: string, location: string, profile: Omit<Profile, 'id'>, init: (store: ProfileStore) => Promise<void>) {
-      const list = await readProfileList()
-      if (list.profiles[alias]) {
-        throw new Error(`Profile ${alias} already exists`)
-      }
-      const id = `${alias}-${Math.random().toString(36).substring(2, 9)}`
-      const tar = await tarSnapshotFromUrl(location)
-      const pStore = profileStore(tar)
-      await pStore.init({ id, ...profile })
-      list.profiles[alias] = {
-        id,
-        location,
-      }
-      await init(pStore)
-      await localStore.write(profileListFileName, JSON.stringify(list))
-      return {
-        info: {
-          id,
-          ...profile,
-        },
-        store: tar,
-      }
-    },
+    create,
+    copy,
   }
 }
 
