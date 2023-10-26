@@ -65,9 +65,6 @@
     "bin": "preevy",
     "dirname": "preevy",
     "commands": "./dist/commands",
-    "plugins": [
-      "@oclif/plugin-help"
-    ],
     "helpClass": "./dist/help",
     "hooks": {
       "init": [
