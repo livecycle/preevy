@@ -1,4 +1,9 @@
 version: 2
+groups:
+  production-dependencies:
+    dependency-type: "production"
+  development-dependencies:
+    dependency-type: "development"
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
