@@ -7,7 +7,7 @@ title: Livecycle Docker Extension
 ## Overview
 
 The Livecycle Docker Extension enables you to share your local development environment with your team, so you can get feedback much earlier in the development workflow, without the hassle of staging environments or CI builds.
-The Livecycle Docker extension embeds a standalone version of the Preevy CLI that which provides all the network and collaboration capabilities. The extension creates a Preevy profile which can also be used to provision ephemeral environments.  
+The Livecycle Docker extension embeds a standalone version of the Preevy CLI, which provides all the network and collaboration capabilities. The extension creates a Preevy profile which can also be used to provision ephemeral environments.  
 
 ## Key Features
 
@@ -15,8 +15,8 @@ The Livecycle Docker extension embeds a standalone version of the Preevy CLI tha
 - Instant sharing of running applications/services:
   - Share HTTPS links so teammates can quickly access and review your web UI and backend services at runtime.
   - Instant, secure tunneling to frontend and backend services with [public or private access](https://preevy.dev/recipes/private-services). Access to private services can be restricted to your teammates' Google or GitHub accounts.
-- Tools to debug your environment - log inspection, shell, and container inpsection
-- Provision remote ephemeral environments using the Preevy CLI
+- Tools to debug your environment - log inspection, shell, and container inspection.
+- Provision remote ephemeral environments using the Preevy CLI.
 
 ## Getting Started
 
@@ -44,13 +44,13 @@ The Livecycle Docker extension embeds a standalone version of the Preevy CLI tha
 
    ![Livecycle Docker Extension](docker-ext-3.png)
 
-   You can choose between public and private access. If you choose public access, you will get a public URL that you can share with anyone. If you choose private access, you will get a private URL that require authentication and can only by used by your organization mebers. Then click on the "Share" button to get the shareable URL.
+   You can choose between public and private access. If you choose public access, you will get a public URL that you can share with anyone. If you choose private access, you will get a private URL that require authentication and can only be used by your organization members. Then click on the "Share" button to get the shareable URL.
 
    ![Livecycle Docker Extension](docker-ext-4.png)
 
 4. **Accessing the shared URL**
 
-   URLs created by the extension are consistent, shareable and can be use by a browser or any other http client.
+   URLs created by the extension are consistent, shareable and can be used by a browser or any other http client.
    Using these URLs, your team members will be able to see and interact with your local version of the app as long as the tunnel is open your workstation is running.  
    Private environments require adding team members to your organization, and upon access, your team members will be prompted to authenticate.
    
