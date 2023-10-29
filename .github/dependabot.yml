@@ -1,15 +1,13 @@
 version: 2
-groups:
-  production-dependencies:
-    dependency-type: "production"
-  development-dependencies:
-    dependency-type: "development"
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
       day: sunday
+    groups:
+      github-action-deps:
+        patterns: ["*"]
 
   - package-ecosystem: "npm"
     directory: "/"
@@ -17,6 +15,9 @@ updates:
     schedule:
       interval: "weekly"
       day: sunday
+    groups:
+      root-deps:
+        patterns: ["*"]
 
   - package-ecosystem: "npm"
     directory: "/tunnel-server"
@@ -24,4 +25,7 @@ updates:
     schedule:
       interval: "weekly"
       day: sunday
+    groups:
+      tunnel-server-deps:
+        patterns: ["*"]
   
