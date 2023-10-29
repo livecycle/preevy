@@ -154,7 +154,7 @@ Once the profile is created, it can be imported to the CI runtime using `preevy 
 
 ## Security
 
-In case you find a security issue or have something you would like to discuss refer to our [security policy](https://github.com/livecycle/preevy/blob/main/security.md).
+In case you find a security issue or have something you would like to discuss, refer to our [security policy](https://github.com/livecycle/preevy/blob/main/security.md).
 
 ### Notice on preview environments exposure
 
