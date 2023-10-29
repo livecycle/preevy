@@ -4704,10 +4704,10 @@
   dependencies:
     "@types/node" "*"
 
-"@types/docker-modem@*":
-  version "3.0.2"
-  resolved "https://registry.yarnpkg.com/@types/docker-modem/-/docker-modem-3.0.2.tgz#c49c902e17364fc724e050db5c1d2b298c6379d4"
-  integrity sha512-qC7prjoEYR2QEe6SmCVfB1x3rfcQtUr1n4x89+3e0wSTMQ/KYCyf+/RAA9n2tllkkNc6//JMUZePdFRiGIWfaQ==
+"@types/docker-modem@*", "@types/docker-modem@3.0.5":
+  version "3.0.5"
+  resolved "https://registry.yarnpkg.com/@types/docker-modem/-/docker-modem-3.0.5.tgz#f835038427cab42a368c44537e278ae33861d381"
+  integrity sha512-LDkftannOJFknJDWDGbuBrT1Xu6TN28SKxsWIjbM/MHHJCO20mnuHnkkZl0YMSo7cTxvfV7V7mMkdd9ZziuSGA==
   dependencies:
     "@types/node" "*"
     "@types/ssh2" "*"
