@@ -99,8 +99,8 @@ To start using the Preevy CLI you will need:
 - A Docker-Compose application (examples can be found [here](https://github.com/docker/awesome-compose))
 - A cloud provider for provisioning VMs (AWS/GCP/Azure), or a Kubernetes cluster (local, remote or managed)
 
-If you don't have an existing cloud account or prefer to try Preevy first locally, you can use the [Docker Desktop Kuberentes server](https://docs.docker.com/desktop/kubernetes/). Go to:
-Docker Settings -> Kuberentes -> Enable Kubernetes.
+If you don't have an existing cloud account or prefer to try Preevy first locally, you can use the [Docker Desktop Kubernetes server](https://docs.docker.com/desktop/kubernetes/). Go to:
+Docker Settings -> Kubernetes -> Enable Kubernetes.
 And follow the instructions below.
 
 *For provisioning a VM*, configure your provider:
