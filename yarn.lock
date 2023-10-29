@@ -4882,9 +4882,9 @@
   integrity sha512-Gj7cI7z+98M282Tqmp2K5EIsoouUEzbBJhQQzDE3jSIRk6r9gsz0oUokqIUR4u1R3dMHo0pDHM7sNOHyhulypw==
 
 "@types/nunjucks@^3.2.2":
-  version "3.2.2"
-  resolved "https://registry.yarnpkg.com/@types/nunjucks/-/nunjucks-3.2.2.tgz#657b1f0f9eb32c5bb3efa8afe62a2e4232c09d1c"
-  integrity sha512-qarGBZOVxv1pF6BxQHwYHYYxim/TCm3aXF8BUt/kyF/+xi/DXMoj1Bhw3hXVBl2Yov+w47reDldm0iXXFZTotA==
+  version "3.2.5"
+  resolved "https://registry.yarnpkg.com/@types/nunjucks/-/nunjucks-3.2.5.tgz#88c820c9052bc19fefc11dfe5be76b5eaeada53d"
+  integrity sha512-P9EakWGTqHpziLO9FMRm98LrVnPoipXGR/iAVF55xYa9SKQq7Brob/JTxGESwkhoNkL7fFvROdUOWNwTceELfw==
 
 "@types/parse-json@^4.0.0":
   version "4.0.0"
