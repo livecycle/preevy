@@ -3769,9 +3769,9 @@ ts-pattern@^5.0.5:
   integrity sha512-tL0w8U/pgaacOmkb9fRlYzWEUDCfVjjv9dD4wHTgZ61MjhuMt46VNWTG747NqW6vRzoWIKABVhFSOJ82FvXrfA==
 
 tseep@^1.1.1:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/tseep/-/tseep-1.1.1.tgz#76d333d4a354cbfc627e957e49903cc53f46e17e"
-  integrity sha512-w2MjaqNWGDeliT5/W+/lhhnR0URiVwXXsXbkAZjQVywrOpdKhQAOL1ycyHfNOV1QBjouC7FawNmJePet1sGesw==
+  version "1.1.3"
+  resolved "https://registry.yarnpkg.com/tseep/-/tseep-1.1.3.tgz#7cf81b83680403af9d10829be6a04bd134bee8c5"
+  integrity sha512-deBIcIlXUMlr3xaN0UEochqjU/zXGaZGPqHPd1rxo4w6DklBdRM6WQQtsk7bekIF+qY6QTeen3nE6OA7BxL9rg==
 
 tsscmp@1.0.6:
   version "1.0.6"
