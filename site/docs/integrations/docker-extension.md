@@ -22,7 +22,7 @@ The Livecycle Docker extension embeds a standalone version of the Preevy CLI, wh
 
 ### Prerequisites
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) 4.10 or higher.
 
 ### Steps
 
@@ -91,14 +91,15 @@ That's it! You have successfully installed the Livecycle Docker Extension and sh
 <details>
   <summary>What security features does the Livecycle Docker extension offer?</summary>
   
-  The Livecycle Docker Extension uses a secure [SSH tunnel](https://livecycle.io/blogs/preevy-proxy-service-2/) to expose your local development environment using Livecycle's tunnel server, which is only accessible using HTTPS.  
+  The Livecycle Docker Extension uses a secure <a href="https://livecycle.io/blogs/preevy-proxy-service-2/" target="_blank">SSH tunnel</a> to expose your local development environment using Livecycle's tunnel server, which is only accessible using HTTPS.
+
   You can enable private URLs to restrict access to your environment.
 </details>
 
 <details>
   <summary>How do I get started with the Livecycle Docker Extension?</summary>
-  
-  You can get started with the Livecycle Docker Extension by following the steps in the [Getting Started](#getting-started) section.
+
+  You can get started with the Livecycle Docker Extension by following the steps in the Getting Started section of this document.
 </details>
 
 <details>
@@ -113,5 +114,5 @@ That's it! You have successfully installed the Livecycle Docker Extension and sh
 <details>
   <summary>How do I get support for the Livecycle Docker Extension?</summary>
   
-  Join the [Livecycle Community](https://community.livecycle.io) on Slack to get support for the Livecycle Docker Extension.
+  Join the <a href="https://community.livecycle.io" target="_blank">Livecycle Community</a> on Slack to get support for the Livecycle Docker Extension.
 </details>
