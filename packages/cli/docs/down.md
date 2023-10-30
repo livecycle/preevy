@@ -11,7 +11,7 @@ Delete preview environments
 
 ```
 USAGE
-  $ preevy down [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [-d
+  $ preevy down [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>] [-d
     lightsail|gce|azure|kube-pod] [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southea
     st-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1]
     [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
@@ -23,6 +23,7 @@ FLAGS
                          <options: lightsail|gce|azure|kube-pod>
   --force                Do not error if the environment is not found
   --id=<value>           Environment id - affects created URLs. If not specified, will try to detect automatically
+  --profile=<value>      Run in a specific profile context
   --wait                 Wait for resource deletion to complete. If false (the default), the deletion will be started
                          but not waited for
 
@@ -42,7 +43,7 @@ GCE DRIVER FLAGS
   --gce-zone=<value>        Google Cloud zone in which resources will be provisioned
 
 KUBE-POD DRIVER FLAGS
-  --kube-pod-context=<value>     Path to kubeconfig file (will load config from defaults if not specified)
+  --kube-pod-context=<value>     kubeconfig context name (will load config from defaults if not specified)
   --kube-pod-kubeconfig=<value>  Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-namespace=<value>   [default: default] Kubernetes namespace in which resources will be provisioned (needs
                                  to exist)
@@ -57,4 +58,4 @@ DESCRIPTION
   Delete preview environments
 ```
 
-_See code: [dist/commands/down.ts](https://github.com/livecycle/preevy/blob/v0.0.42/packages/cli/src/commands/down.ts)_
+_See code: [src/commands/down.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/down.ts)_

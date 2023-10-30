@@ -11,15 +11,16 @@ Bring up a preview environment
 
 ```
 USAGE
-  $ preevy up [SERVICE] [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [-d
-    lightsail|gce|azure|kube-pod] [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southea
-    st-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1]
-    [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
-    [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template
-    <value>] [--lightsail-availability-zone <value>] [--lightsail-bundle-id
+  $ preevy up [SERVICE] (--access-credentials-type api|browser --include-access-credentials) [-D] [-f
+    <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>] [-d lightsail|gce|azure|kube-pod]
+    [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northea
+    st-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>] [--gce-zone
+    <value>] [--azure-region <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>]
+    [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template <value>]
+    [--lightsail-availability-zone <value>] [--lightsail-bundle-id
     nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0] [--gce-machine-type <value>]
     [--azure-vm-size <value>] [--azure-resource-group-name <value>] [--kube-pod-server-side-apply] [--id <value>] [-t
-    <value>] [--tls-hostname <value>] [--insecure-skip-verify] [--skip-unchanged-files] [--include-access-credentials]
+    <value>] [--tls-hostname <value>] [--insecure-skip-verify] [--skip-unchanged-files] [--show-preevy-service-urls]
     [--columns <value> | -x] [--sort <value>] [--filter <value>] [--output csv|json|yaml |  | [--csv | --no-truncate]]
     [--no-header | ]
 
@@ -27,25 +28,29 @@ ARGUMENTS
   SERVICE  Service name(s). If not specified, will deploy all services
 
 FLAGS
-  -d, --driver=<option>         Machine driver to use
-                                <options: lightsail|gce|azure|kube-pod>
-  -t, --tunnel-url=<value>      [default: ssh+tls://livecycle.run] Tunnel url, specify ssh://hostname[:port] or
-                                ssh+tls://hostname[:port]
-  -x, --extended                show extra columns
-  --columns=<value>             only show provided columns (comma-separated)
-  --csv                         output is csv format [alias: --output=csv]
-  --filter=<value>              filter property by partial string matching, ex: name=foo
-  --id=<value>                  Environment id - affects created URLs. If not specified, will try to detect
-                                automatically
-  --include-access-credentials  Include access credentials for basic auth for each service URL
-  --insecure-skip-verify        Skip TLS or SSH certificate verification
-  --no-header                   hide table header from output
-  --no-truncate                 do not truncate output to fit screen
-  --output=<option>             output in a more machine friendly format
-                                <options: csv|json|yaml>
-  --[no-]skip-unchanged-files   Detect and skip unchanged files when copying (default: true)
-  --sort=<value>                property to sort by (prepend '-' for descending)
-  --tls-hostname=<value>        Override TLS server name when tunneling via HTTPS
+  -d, --driver=<option>               Machine driver to use
+                                      <options: lightsail|gce|azure|kube-pod>
+  -t, --tunnel-url=<value>            [default: ssh+tls://livecycle.run] Tunnel url, specify ssh://hostname[:port] or
+                                      ssh+tls://hostname[:port]
+  -x, --extended                      show extra columns
+  --access-credentials-type=<option>  (required) [default: browser]
+                                      <options: api|browser>
+  --columns=<value>                   only show provided columns (comma-separated)
+  --csv                               output is csv format [alias: --output=csv]
+  --filter=<value>                    filter property by partial string matching, ex: name=foo
+  --id=<value>                        Environment id - affects created URLs. If not specified, will try to detect
+                                      automatically
+  --include-access-credentials        Include access credentials for basic auth for each service URL
+  --insecure-skip-verify              Skip TLS or SSH certificate verification
+  --no-header                         hide table header from output
+  --no-truncate                       do not truncate output to fit screen
+  --output=<option>                   output in a more machine friendly format
+                                      <options: csv|json|yaml>
+  --profile=<value>                   Run in a specific profile context
+  --show-preevy-service-urls          Show URLs for internal Preevy services
+  --[no-]skip-unchanged-files         Detect and skip unchanged files when copying (default: true)
+  --sort=<value>                      property to sort by (prepend '-' for descending)
+  --tls-hostname=<value>              Override TLS server name when tunneling via HTTPS
 
 GLOBAL FLAGS
   -D, --debug                       Enable debug logging
@@ -65,7 +70,7 @@ GCE DRIVER FLAGS
   --gce-zone=<value>          Google Cloud zone in which resources will be provisioned
 
 KUBE-POD DRIVER FLAGS
-  --kube-pod-context=<value>         Path to kubeconfig file (will load config from defaults if not specified)
+  --kube-pod-context=<value>         kubeconfig context name (will load config from defaults if not specified)
   --kube-pod-kubeconfig=<value>      Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-namespace=<value>       [default: default] Kubernetes namespace in which resources will be provisioned
                                      (needs to exist)
@@ -86,4 +91,4 @@ DESCRIPTION
   Bring up a preview environment
 ```
 
-_See code: [dist/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.42/packages/cli/src/commands/up.ts)_
+_See code: [src/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/up.ts)_

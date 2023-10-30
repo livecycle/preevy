@@ -20,7 +20,7 @@ $ npm install -g preevy
 $ preevy COMMAND
 running command...
 $ preevy (--version)
-preevy/0.0.42 darwin-arm64 node-v18.16.0
+preevy/0.0.55 darwin-arm64 node-v18.12.1
 $ preevy --help [COMMAND]
 USAGE
   $ preevy COMMAND
@@ -34,6 +34,7 @@ USAGE
 * [`preevy down`](down.md) - Delete preview environments
 * [`preevy help`](help.md) - Display help for preevy.
 * [`preevy init`](init.md) - Initialize or import a new profile
+* [`preevy login`](login.md) - Login to the Livecycle SaaS
 * [`preevy logs`](logs.md) - Show logs for an existing environment
 * [`preevy ls`](ls.md) - List preview environments
 * [`preevy profile`](profile.md) - View and update profile configuration

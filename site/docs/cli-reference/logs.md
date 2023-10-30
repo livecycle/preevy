@@ -11,13 +11,13 @@ Show logs for an existing environment
 
 ```
 USAGE
-  $ preevy logs [SERVICES] [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [-d
-    lightsail|gce|azure|kube-pod] [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southea
-    st-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1]
+  $ preevy logs [SERVICES] [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile
+    <value>] [-d lightsail|gce|azure|kube-pod] [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast
+    -2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1]
     [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
     [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template
-    <value>] [--id <value>] [--columns <value> | -x] [--sort <value>] [--filter <value>] [--output csv|json|yaml |  |
-    [--csv | --no-truncate]] [--no-header | ]
+    <value>] [--id <value>] [--follow] [--tail <value>] [--no-log-prefix] [--timestamps] [--since <value>] [--until
+    <value>]
 
 ARGUMENTS
   SERVICES  Service name(s). If not specified, will show all services
@@ -25,16 +25,14 @@ ARGUMENTS
 FLAGS
   -d, --driver=<option>  Machine driver to use
                          <options: lightsail|gce|azure|kube-pod>
-  -x, --extended         show extra columns
-  --columns=<value>      only show provided columns (comma-separated)
-  --csv                  output is csv format [alias: --output=csv]
-  --filter=<value>       filter property by partial string matching, ex: name=foo
+  --follow               Follow log output
   --id=<value>           Environment id - affects created URLs. If not specified, will try to detect automatically
-  --no-header            hide table header from output
-  --no-truncate          do not truncate output to fit screen
-  --output=<option>      output in a more machine friendly format
-                         <options: csv|json|yaml>
-  --sort=<value>         property to sort by (prepend '-' for descending)
+  --no-log-prefix        Don't print log prefix in logs
+  --profile=<value>      Run in a specific profile context
+  --since=<value>        Show logs since timestamp
+  --tail=<value>         Number of lines to show from the end of the logs for each container (default: all)
+  --timestamps           Show timestamps
+  --until=<value>        Show logs before timestamp
 
 GLOBAL FLAGS
   -D, --debug                       Enable debug logging
@@ -51,7 +49,7 @@ GCE DRIVER FLAGS
   --gce-zone=<value>        Google Cloud zone in which resources will be provisioned
 
 KUBE-POD DRIVER FLAGS
-  --kube-pod-context=<value>     Path to kubeconfig file (will load config from defaults if not specified)
+  --kube-pod-context=<value>     kubeconfig context name (will load config from defaults if not specified)
   --kube-pod-kubeconfig=<value>  Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-namespace=<value>   [default: default] Kubernetes namespace in which resources will be provisioned (needs
                                  to exist)
@@ -66,4 +64,4 @@ DESCRIPTION
   Show logs for an existing environment
 ```
 
-_See code: [dist/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.42/packages/cli/src/commands/logs.ts)_
+_See code: [src/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/logs.ts)_

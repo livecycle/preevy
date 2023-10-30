@@ -5,9 +5,12 @@ View and update profile configuration
 
 * [`preevy profile config update`](#preevy-profile-config-update)
 * [`preevy profile config view`](#preevy-profile-config-view)
+* [`preevy profile cp`](#preevy-profile-cp)
 * [`preevy profile create NAME URL`](#preevy-profile-create-name-url)
 * [`preevy profile current`](#preevy-profile-current)
 * [`preevy profile import LOCATION`](#preevy-profile-import-location)
+* [`preevy profile key [TYPE]`](#preevy-profile-key-type)
+* [`preevy profile link`](#preevy-profile-link)
 * [`preevy profile ls`](#preevy-profile-ls)
 * [`preevy profile rm NAME`](#preevy-profile-rm-name)
 * [`preevy profile use NAME`](#preevy-profile-use-name)
@@ -18,17 +21,27 @@ View and update profile configuration
 
 ```
 USAGE
-  $ preevy profile config update [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--lightsail-region
-    us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northeast-1|ca-central-1|eu
-    -central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>] [--gce-zone <value>] [--azure-region
-    <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>]
-    [--kube-pod-context <value>] [--kube-pod-template <value>] [--lightsail-availability-zone <value>]
-    [--lightsail-bundle-id nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0] [--gce-machine-type
-    <value>] [--azure-vm-size <value>] [--azure-resource-group-name <value>] [--kube-pod-server-side-apply] [--unset
-    <value>] [--json]
+  $ preevy profile config update [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>]
+    [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northea
+    st-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>] [--gce-zone
+    <value>] [--azure-region <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>]
+    [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template <value>]
+    [--lightsail-availability-zone <value>] [--lightsail-bundle-id
+    nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0] [--gce-machine-type <value>]
+    [--azure-vm-size <value>] [--azure-resource-group-name <value>] [--kube-pod-server-side-apply] [-d
+    lightsail|gce|azure|kube-pod] [--unset lightsail-region|gce-project-id|gce-zone|azure-region|azure-subscription-id|k
+    ube-pod-namespace|kube-pod-kubeconfig|kube-pod-context|kube-pod-template|lightsail-availability-zone|lightsail-bundl
+    e-id|gce-machine-type|azure-vm-size|azure-resource-group-name|kube-pod-server-side-apply] [--json]
 
 FLAGS
-  --unset=<value>...  Unset a configuration option
+  -d, --driver=<option>  Machine driver to use
+                         <options: lightsail|gce|azure|kube-pod>
+  --profile=<value>      Run in a specific profile context
+  --unset=<option>...    [default: ] Unset a configuration option
+                         <options:
+                         lightsail-region|gce-project-id|gce-zone|azure-region|azure-subscription-id|kube-pod-namespace|
+                         kube-pod-kubeconfig|kube-pod-context|kube-pod-template|lightsail-availability-zone|lightsail-bu
+                         ndle-id|gce-machine-type|azure-vm-size|azure-resource-group-name|kube-pod-server-side-apply>
 
 GLOBAL FLAGS
   -D, --debug                       Enable debug logging
@@ -49,7 +62,7 @@ GCE DRIVER FLAGS
   --gce-zone=<value>          Google Cloud zone in which resources will be provisioned
 
 KUBE-POD DRIVER FLAGS
-  --kube-pod-context=<value>         Path to kubeconfig file (will load config from defaults if not specified)
+  --kube-pod-context=<value>         kubeconfig context name (will load config from defaults if not specified)
   --kube-pod-kubeconfig=<value>      Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-namespace=<value>       Kubernetes namespace in which resources will be provisioned (needs to exist)
   --[no-]kube-pod-server-side-apply  Use server side apply to create Kubernetes resources
@@ -69,13 +82,19 @@ DESCRIPTION
   View and update profile configuration
 ```
 
+_See code: [src/commands/profile/config/update.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/profile/config/update.ts)_
+
 ## `preevy profile config view`
 
 View profile configuration
 
 ```
 USAGE
-  $ preevy profile config view [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--json]
+  $ preevy profile config view [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>]
+  [--json]
+
+FLAGS
+  --profile=<value>  Run in a specific profile context
 
 GLOBAL FLAGS
   -D, --debug                       Enable debug logging
@@ -88,28 +107,63 @@ DESCRIPTION
   View profile configuration
 ```
 
+_See code: [src/commands/profile/config/view.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/profile/config/view.ts)_
+
+## `preevy profile cp`
+
+Copy a profile
+
+```
+USAGE
+  $ preevy profile cp [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--json] [--profile
+    <value>] [--target-location <value> | --target-storage local|s3|gs] [--target-name <value>] [--use]
+
+FLAGS
+  --profile=<value>          Source profile name, defaults to the current profile
+  --target-location=<value>  Target profile location URL
+  --target-name=<value>      Target profile name
+  --target-storage=<option>  Target profile storage type
+                             <options: local|s3|gs>
+  --use                      Mark the new profile as the current profile
+
+GLOBAL FLAGS
+  -D, --debug                       Enable debug logging
+  -f, --file=<value>...             [default: ] Compose configuration file
+  -p, --project=<value>             Project name. Defaults to the Compose project name
+  --json                            Format output as json.
+  --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
+
+DESCRIPTION
+  Copy a profile
+```
+
+_See code: [src/commands/profile/cp.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/profile/cp.ts)_
+
 ## `preevy profile create NAME URL`
 
 Create a new profile
 
 ```
 USAGE
-  $ preevy profile create NAME URL -d lightsail|gce|azure|kube-pod [-D] [-f <value>] [--system-compose-file <value>]
-    [-p <value>] [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast
-    -2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>]
+  $ preevy profile create NAME URL [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile
+    <value>] [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|a
+    p-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>]
     [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>]
     [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template <value>]
     [--lightsail-availability-zone <value>] [--lightsail-bundle-id
     nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0] [--gce-machine-type <value>]
-    [--azure-vm-size <value>] [--azure-resource-group-name <value>] [--kube-pod-server-side-apply] [--json]
+    [--azure-vm-size <value>] [--azure-resource-group-name <value>] [--kube-pod-server-side-apply] [-d
+    lightsail|gce|azure|kube-pod] [--use] [--json]
 
 ARGUMENTS
-  NAME  name of the new profile
-  URL   url of the new profile store
+  NAME  Name of the new profile
+  URL   URL of the new profile
 
 FLAGS
-  -d, --driver=<option>  (required) Machine driver to use
+  -d, --driver=<option>  Machine driver to use
                          <options: lightsail|gce|azure|kube-pod>
+  --profile=<value>      Run in a specific profile context
+  --use                  Mark the new profile as the current profile
 
 GLOBAL FLAGS
   -D, --debug                       Enable debug logging
@@ -130,7 +184,7 @@ GCE DRIVER FLAGS
   --gce-zone=<value>          Google Cloud zone in which resources will be provisioned
 
 KUBE-POD DRIVER FLAGS
-  --kube-pod-context=<value>         Path to kubeconfig file (will load config from defaults if not specified)
+  --kube-pod-context=<value>         kubeconfig context name (will load config from defaults if not specified)
   --kube-pod-kubeconfig=<value>      Path to kubeconfig file (will load config from defaults if not specified)
   --kube-pod-namespace=<value>       [default: default] Kubernetes namespace in which resources will be provisioned
                                      (needs to exist)
@@ -151,13 +205,18 @@ DESCRIPTION
   Create a new profile
 ```
 
+_See code: [src/commands/profile/create.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/profile/create.ts)_
+
 ## `preevy profile current`
 
 Display current profile in use
 
 ```
 USAGE
-  $ preevy profile current [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--json]
+  $ preevy profile current [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>] [--json]
+
+FLAGS
+  --profile=<value>  Run in a specific profile context
 
 GLOBAL FLAGS
   -D, --debug                       Enable debug logging
@@ -170,6 +229,8 @@ DESCRIPTION
   Display current profile in use
 ```
 
+_See code: [src/commands/profile/current.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/profile/current.ts)_
+
 ## `preevy profile import LOCATION`
 
 Import an existing profile
@@ -177,13 +238,41 @@ Import an existing profile
 ```
 USAGE
   $ preevy profile import LOCATION [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--name <value>]
+    [--use]
+
+ARGUMENTS
+  LOCATION  URL of the profile
+
+FLAGS
+  --name=<value>  Name of the profile
+  --use           Mark the new profile as the current profile
+
+GLOBAL FLAGS
+  -D, --debug                       Enable debug logging
+  -f, --file=<value>...             [default: ] Compose configuration file
+  -p, --project=<value>             Project name. Defaults to the Compose project name
+  --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
+
+DESCRIPTION
+  Import an existing profile
+```
+
+_See code: [src/commands/profile/import.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/profile/import.ts)_
+
+## `preevy profile key [TYPE]`
+
+Show profile key
+
+```
+USAGE
+  $ preevy profile key [TYPE] [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>]
     [--json]
 
 ARGUMENTS
-  LOCATION  location of the profile
+  TYPE  (private|public-pem|public-ssh|thumbprint|thumbprint-uri) [default: thumbprint-uri] type of the key to show
 
 FLAGS
-  --name=<value>  name of the profile
+  --profile=<value>  Run in a specific profile context
 
 GLOBAL FLAGS
   -D, --debug                       Enable debug logging
@@ -193,8 +282,37 @@ GLOBAL FLAGS
   --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
 
 DESCRIPTION
-  Import an existing profile
+  Show profile key
 ```
+
+_See code: [src/commands/profile/key.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/profile/key.ts)_
+
+## `preevy profile link`
+
+Link the profile to the logged in user's organization
+
+```
+USAGE
+  $ preevy profile link [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>]
+    [--lc-api-url <value>] [--access-token <value>] [--org <value>]
+
+FLAGS
+  --access-token=<value>  Livecycle's Access Token
+  --lc-api-url=<value>    [default: https://app.livecycle.run] The Livecycle API URL'
+  --org=<value>           Target organization slug for linking the profile
+  --profile=<value>       Run in a specific profile context
+
+GLOBAL FLAGS
+  -D, --debug                       Enable debug logging
+  -f, --file=<value>...             [default: ] Compose configuration file
+  -p, --project=<value>             Project name. Defaults to the Compose project name
+  --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
+
+DESCRIPTION
+  Link the profile to the logged in user's organization
+```
+
+_See code: [src/commands/profile/link.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/profile/link.ts)_
 
 ## `preevy profile ls`
 
@@ -202,7 +320,10 @@ Lists profiles
 
 ```
 USAGE
-  $ preevy profile ls [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--json]
+  $ preevy profile ls [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>] [--json]
+
+FLAGS
+  --profile=<value>  Run in a specific profile context
 
 GLOBAL FLAGS
   -D, --debug                       Enable debug logging
@@ -215,16 +336,22 @@ DESCRIPTION
   Lists profiles
 ```
 
+_See code: [src/commands/profile/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/profile/ls.ts)_
+
 ## `preevy profile rm NAME`
 
 Remove a profile
 
 ```
 USAGE
-  $ preevy profile rm NAME [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--json]
+  $ preevy profile rm NAME [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>]
+    [--json]
 
 ARGUMENTS
   NAME  name of the profile to remove
+
+FLAGS
+  --profile=<value>  Run in a specific profile context
 
 GLOBAL FLAGS
   -D, --debug                       Enable debug logging
@@ -237,13 +364,15 @@ DESCRIPTION
   Remove a profile
 ```
 
+_See code: [src/commands/profile/rm.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/profile/rm.ts)_
+
 ## `preevy profile use NAME`
 
 Set current profile
 
 ```
 USAGE
-  $ preevy profile use NAME [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--json]
+  $ preevy profile use NAME [-D] [-f <value>] [--system-compose-file <value>] [-p <value>]
 
 ARGUMENTS
   NAME  name of the profile to use
@@ -252,9 +381,10 @@ GLOBAL FLAGS
   -D, --debug                       Enable debug logging
   -f, --file=<value>...             [default: ] Compose configuration file
   -p, --project=<value>             Project name. Defaults to the Compose project name
-  --json                            Format output as json.
   --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
 
 DESCRIPTION
   Set current profile
 ```
+
+_See code: [src/commands/profile/use.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/profile/use.ts)_
