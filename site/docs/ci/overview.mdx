@@ -10,17 +10,26 @@ import StoreInS3Screenshot from "./screenshots/store-in-s3.png";
 Preevy is designed to be easily run in CI/CD workflows, such as [GH Actions](https://github.com/features/actions), [Circle CI](https://circleci.com/) and others.
 By sharing [profiles](/intro/under-the-hood#profile-configuration), Preevy is able to easily deploy to the same VM when new code is pushed to some branch.
 
-The most common use-case for a CI job that runs Preevy is to have a live preview environment for every PR/MR opened for review. This allows for [more collaborative and inclusive review workflows](/intro/motivation)
+The most common use-case for a CI job that runs Preevy is to have a live preview environment for every Pull Request as part of the review process. This allows for [more collaborative and inclusive review workflows](/intro/motivation)
 
-## How to run Preevy from the CI
+## Running Preevy in your CI pipeline
 
-To run Preevy in your CI, start by creating a profile your CI can use to deploy its environment. Run:
+### Make sure your profile is accessible remotely
+
+The Preevy Profile contains your tunneling key and driver data. The tunneling key determines the URLs generated per environment.
+The driver data allows you to update existing environments when a PR changes.
+
+Preevy stores the profile on a file, on your local FS or on a remote storage on your cloud provider - currently AWS S3 and Google Cloud Storage are supported.
+To use the profile across CI jobs, it needs to be stored remotely.
+To create a new profile, run `preevy init`. To start using an existing profile stored remotely, run `preevy init --from <profile-location>`.
+
+#### Option 1: Create a new Preevy Profile on a remote location
 
 ```bash
 preevy init [profile-name]
 ```
 
-When asked where to store the profile, choose `s3`
+When asked where to store the profile, choose `AWS S3` or `Google Cloud Storage`.
 
 <img src={StoreInS3Screenshot} width="75%" />
 
@@ -28,18 +37,24 @@ When asked where to store the profile, choose `s3`
 <br />
 
 Then, choose a URL to store the profile (Preevy will conveniently suggest one for you).
-It should look something like `s3://preview-8450209857-ci?region=us-east-1`
+For S3, it should look something like `s3://preview-8450209857-ci?region=us-east-1`
 
-Now, from inside your CI pipeline, import the profile:
+#### Option 2: If you already have a profile stored locally, migrate it to a remote location:
+
+```bash
+preevy profile cp --target-storage s3 # to use AWS S3
+preevy profile cp --target-storage gs # to use Google Cloud Storage
+```
+
+Once the profile has migrated to a remote location, you can specify the new location URL in the `preevy init --from` command - see below.
+
+### In your CI pipeline, import the profile
+
+Use the following commands in your CI job to import the Preevy Profile and provision an environment for your PR:
 
 ```bash
 preevy init --from "s3://preview-8450209857-ci?region=us-east-1"
-```
-
-Finally, run
-
-```bash
 preevy up
 ```
 
-Next, we're going to set up an example pipeline, using GitHub Actions.
+See the next sections for detailed examples using GitHub Actions.

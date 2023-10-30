@@ -148,9 +148,13 @@ Preevy is also designed to work seamlessly with your CI, allowing you to easily 
 
 Profiles are created using `preevy init`. Choose a S3/GCS URL for storing the profile - Preevy will create a bucket if one doesn't exist.
 
+If you already have a locally stored Preevy Profile, it can be migrated to a remote storage using [`preevy profile cp`](https://github.com/livecycle/preevy/blob/main/packages/cli/docs/profile.md#preevy-profile-cp)
+
 Once the profile is created, it can be imported to the CI runtime using `preevy init --from <profile-url>`
 
-[Examples](https://preevy.dev/ci/example-github-actions)
+Examples:
+- [Using AWS Lightsail](https://preevy.dev/ci/example-github-actions)
+- [Using Google Cloud Engine](https://preevy.dev/ci/example-github-actions-gce)
 
 ## Security
 
