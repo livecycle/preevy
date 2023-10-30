@@ -13,7 +13,7 @@
     "@preevy/core": "0.0.55",
     "lodash": "^4.17.21",
     "nunjucks": "^3.2.4",
-    "octokit": "^2.0.14"
+    "octokit": "^3.1.1"
   },
   "devDependencies": {
     "@types/nunjucks": "^3.2.2",

@@ -202,7 +202,7 @@ const client = ({
           {
             fromPort: 22,
             toPort: 22,
-            protocol: 'TCP',
+            protocol: 'tcp',
             cidrs: ['0.0.0.0/0'],
             ipv6Cidrs: ['::/0'],
           },
