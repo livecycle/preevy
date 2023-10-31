@@ -179,18 +179,10 @@ const DEFAULT_VM_SIZE = 'Standard_B2s'
 
 const machineCreationFlags = {
   ...flags,
-  region: Flags.string({
-    description: 'Microsoft Azure region in which resources will be provisioned',
-    required: true,
-  }),
   'vm-size': Flags.string({
     description: 'Machine type to be provisioned',
     default: DEFAULT_VM_SIZE,
     required: false,
-  }),
-  'resource-group-name': Flags.string({
-    description: 'Microsoft Azure resource group name',
-    required: true,
   }),
 } as const
 
@@ -198,7 +190,6 @@ type MachineCreationFlagTypes = Omit<InferredFlags<typeof machineCreationFlags>,
 
 type MachineCreationContext = DriverContext & {
   vmSize?: string
-  resourceGroupId: string
   metadata: MachineCreationFlagTypes
 }
 
@@ -273,10 +264,9 @@ const factory: MachineDriverFactory<
 
 const machineCreationContextFromFlags = (
   f: MachineCreationFlagTypes,
-): ReturnType<typeof contextFromFlags> & { vmSize: string; resourceGroupId: string } => ({
+): ReturnType<typeof contextFromFlags> & { vmSize: string } => ({
   ...contextFromFlags(f),
   vmSize: f['vm-size'],
-  resourceGroupId: f['resource-group-name'],
 })
 
 const machineCreationFactory: MachineCreationDriverFactory<

@@ -1,8 +1,8 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
-import { MachineCreationDriver, profileStore } from '@preevy/core'
+import { MachineCreationDriver } from '@preevy/core'
 import { BaseCommand } from '@preevy/cli-common'
 import DriverCommand from './driver-command'
-import { DriverFlags, DriverName, machineCreationflagsForAllDrivers, machineDrivers, removeDriverPrefix } from './drivers'
+import { machineCreationflagsForAllDrivers, machineDrivers } from './drivers'
 
 // eslint-disable-next-line no-use-before-define
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof MachineCreationDriverCommand['baseFlags'] & T['flags']>
@@ -24,11 +24,8 @@ abstract class MachineCreationDriverCommand<T extends typeof Command> extends Dr
       return this.#machineCreationDriver
     }
     const { profile, driverName } = this
-    const defaultFlags = await profileStore(this.store).defaultFlags(driverName)
-    const specifiedFlags = removeDriverPrefix<DriverFlags<DriverName, 'machineCreationFlags'>>(this.driverName, this.flags)
-    const driverFlags = { ...defaultFlags, ...specifiedFlags }
     this.#machineCreationDriver = machineDrivers[driverName].machineCreationFactory({
-      flags: driverFlags as never,
+      flags: await this.driverFlags(driverName, 'machineCreationFlags') as never,
       profile,
       store: this.store,
       log: this.logger,

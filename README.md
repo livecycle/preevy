@@ -65,7 +65,10 @@ Visit The full documentation here: https://preevy.dev/
   - [Notice on preview environments exposure](#notice-on-preview-environments-exposure)
 - [Configuration files](#configuration-files)
   - [Preevy-specific configuration](#preevy-specific-configuration)
-- [Plugins](#plugins)
+  - [`driver`](#driver)
+  - [`drivers`](#drivers)
+  - [`plugins`](#plugins)
+- [Plugins](#plugins-1)
 - [Docs and support](#docs-and-support)
 - [Telemetry](#telemetry)
 <!--lint enable double-link-->
@@ -185,15 +188,49 @@ An additional option `--system-compose-file` can be used to specify paths to Com
 
 ### Preevy-specific configuration
 
-Additional Preevy-specific configuration, if needed, can be specified by adding a `x-preevy` top-level element to the Compose file(s). Currently only the `plugins` section is supported:
+Additional Preevy-specific configuration, if needed, can be specified by adding a `x-preevy` top-level element to the Compose file(s).
 
 ```yaml
 services:
   ...
 x-preevy:
+  driver: lightsail
+  drivers:
+    lightsail:
+      region: eu-central-1
+    kube-pod:
+      context: dev-cluster
   plugins:
     ...
 ```
+
+The following optional properties are supported:
+
+### `driver`
+
+Override the default [driver](https://preevy.dev/category/drivers) to use for this Compose project.
+Available values: `lightsail`, `gce`, `azure`, `kube-pod`.
+
+This value can be overridden per command execution using the `--driver` CLI flag.
+
+### `drivers`
+
+Override the default the default options per driver for this Compose project. See the [specific driver documentation](https://preevy.dev/category/drivers).
+
+These values can be overridden per command execution using the specific driver CLI flags, e.g, `--lightsail-bundle-id=2xlarge_2_0`
+
+Example:
+
+```yaml
+x-preevy:
+  drivers:
+    lightsail:
+      bundle-id: large_2_0
+    kube-pod:
+      context: dev-cluster
+```
+
+### `plugins`
 
 <!--lint disable double-link-->
 See [Plugins](#plugins) below.
