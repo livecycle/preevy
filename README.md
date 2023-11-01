@@ -208,14 +208,18 @@ The following optional properties are supported:
 
 ### `driver`
 
+<!--lint disable double-link-->
 Override the default [driver](https://preevy.dev/category/drivers) to use for this Compose project.
 Available values: `lightsail`, `gce`, `azure`, `kube-pod`.
+<!--lint enable double-link-->
 
 This value can be overridden per command execution using the `--driver` CLI flag.
 
 ### `drivers`
 
+<!--lint disable double-link-->
 Override the default the default options per driver for this Compose project. See the [specific driver documentation](https://preevy.dev/category/drivers).
+<!--lint enable double-link-->
 
 These values can be overridden per command execution using the specific driver CLI flags, e.g, `--lightsail-bundle-id=2xlarge_2_0`
 
