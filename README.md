@@ -62,7 +62,9 @@ Visit The full documentation here: https://preevy.dev/
   - [Tunnel server](#tunnel-server)
 - [CI Integration](#ci-integration)
 - [Security](#security)
+  - [Private environments](#private-environments)
   - [Notice on preview environments exposure](#notice-on-preview-environments-exposure)
+  - [Network isolation](#network-isolation)
 - [Configuration files](#configuration-files)
   - [Preevy-specific configuration](#preevy-specific-configuration)
   - [`driver`](#driver)
@@ -163,6 +165,10 @@ Examples:
 
 In case you find a security issue or have something you would like to discuss, refer to our [security policy](https://github.com/livecycle/preevy/blob/main/security.md).
 
+### Private environments
+
+Preevy can add an authentication layer to your provisioned environments. When you configure your service as [private](https://preevy.dev/recipes/private-services/) the Tunnel Server restricts access based on a pre-shared secret or a Livecycle login (SSO via Google/Microsoft/GitHub).
+
 ### Notice on preview environments exposure
 
 Services on provisioned environments are not exposed directly, but rather via a [tunnel](https://livecycle.io/blogs/preevy-proxy-service-2/) created by the tunneling server.
@@ -176,7 +182,9 @@ Every Compose service is exposed individually with a generated URL in the follow
 - `tunnel-service-domain` is where the tunnel service is hosted. It can be specified using the `--tunnel-url` flag of the `preevy up` command, and defaults to our free service at `*.livecycle.run`.
 <!--lint enable awesome-list-item-->
 
-When using the default `*.livecycle.run` domain, environments are publicly accessible to those who know the URLs. You can create private environments by hosting the tunnel service yourself, e.g, on a private network or behind a login page.
+### Network isolation
+
+The Tunnel Server can be deployed on a your private network (e.g, VPC), which access to your environments at the network level.
 
 ## Configuration files
 
