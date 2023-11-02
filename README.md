@@ -65,12 +65,15 @@ Visit The full documentation here: https://preevy.dev/
   - [Private environments](#private-environments)
   - [Notice on preview environments exposure](#notice-on-preview-environments-exposure)
   - [Network isolation](#network-isolation)
-- [Configuration files](#configuration-files)
-  - [Preevy-specific compose file](#preevy-specific-compose-file)
+- [Configuration](#configuration)
+  - [Preevy Profile](#preevy-profile)
+  - [Compose files](#compose-files)
+    - [Project compose files](#project-compose-files)
+    - [Preevy-specific compose file](#preevy-specific-compose-file)
   - [Preevy-specific configuration](#preevy-specific-configuration)
-  - [`driver`](#driver)
-  - [`drivers`](#drivers)
-  - [`plugins`](#plugins)
+    - [`driver`](#driver)
+    - [`drivers`](#drivers)
+    - [`plugins`](#plugins)
 - [Plugins](#plugins-1)
 - [Docs and support](#docs-and-support)
 - [Telemetry](#telemetry)
@@ -187,19 +190,48 @@ Every Compose service is exposed individually with a generated URL in the follow
 
 The Tunnel Server can be deployed on a your private network (e.g, VPC), which access to your environments at the network level.
 
-## Configuration files
+## Configuration
+
+Preevy loads its configuration from the following sources, in order:
+
+<!--lint disable double-link-->
+- The Preevy Profile
+- Compose files ([Preevy-specific](#preevy-specific-compose-file), then [project](#project-compose-files))
+- Command-line arguments
+<!--lint enable double-link-->
+
+### Preevy Profile
+
+The Preevy profile is created on the `init` command and can be stored locally or remotely on your cloud provider. The profile includes the following:
+
+<!--lint disable double-link-->
+- A tunneling key, used to identify your services when connecting to the [Tunnel Server](#tunnel-server).
+- The default driver to use for provisioning environments.
+- Default driver options to use per driver (e.g, AWS region, K8s namespace).
+- Driver state whos contents depend on the specific driver.
+<!--lint enable double-link-->
+
+Profiles can be migrated to a different storage location using `preevy profile cp`.
+
+The `default` profile can be overridden using the global command line argument `--profile`.
+
+<sub><sup>Note: The profile currently combines context and state, and [some changes are planned](https://github.com/livecycle/preevy/issues/329).</sup></sub>
+
+### Compose files
 
 Preevy extracts its runtime settings from the [Compose file](https://docs.docker.com/compose/compose-file/03-compose-file/).
 
-Just like with `docker compose`, you can use the global `--file | -f` option to specify path(s) for the Compose file. If not specified, the [default loading order](https://docs.docker.com/compose/reference/#use--f-to-specify-name-and-path-of-one-or-more-compose-files) is used. Multiple files are [supported](https://docs.docker.com/compose/extends/#multiple-compose-files) just like with `docker compose`.
+#### Project compose files
 
-### Preevy-specific compose file
+Just like with the `docker compose` CLI, you can use the global `--file | -f` command line argument to specify path(s) for the Compose file. If not specified, the [default loading order](https://docs.docker.com/compose/reference/#use--f-to-specify-name-and-path-of-one-or-more-compose-files) is used. Multiple files are [supported](https://docs.docker.com/compose/extends/#multiple-compose-files).
 
-In addition to the default loading order described above, an optional Preevy-specific Compose file can be used. This is useful for scripts invoking the Preevy CLI (e.g, a GitHub Action), to accept user-provided compose files (including the default loading order) while ensuring a specific file is always loaded. Preevy attempts to load files named `compose.preevy.yaml`, `compose.preevy.yml`, `docker-compose.preevy.yaml` or `docker-compose.preevy.yml`. If one of these exists, they are loaded BEFORE the default loading order. The name of the Preevy-specific compose file can be overriden by spefcifying the argument `--system-compose-file`.
+#### Preevy-specific compose file
+
+In addition to the project compose files, an optional Preevy-specific Compose file can be used. Preevy attempts to load files named `compose.preevy.yaml`, `compose.preevy.yml`, `docker-compose.preevy.yaml` or `docker-compose.preevy.yml`. If one of these exists, it is loaded BEFORE the project compose file(s). The name of the Preevy-specific compose file can be overriden by spefcifying the argument `--system-compose-file`.
 
 ### Preevy-specific configuration
 
-Additional Preevy-specific configuration, if needed, can be specified by adding a `x-preevy` top-level element to the Compose file(s).
+Preevy-specific configuration, if needed, can be specified by adding a `x-preevy` top-level element to the Compose file(s).
 
 ```yaml
 services:
@@ -215,9 +247,9 @@ x-preevy:
     ...
 ```
 
-The following optional properties are supported:
+The properties are supported, all of them optional:
 
-### `driver`
+#### `driver`
 
 <!--lint disable double-link-->
 Override the default [driver](https://preevy.dev/category/drivers) to use for this Compose project.
@@ -226,7 +258,7 @@ Available values: `lightsail`, `gce`, `azure`, `kube-pod`.
 
 This value can be overridden per command execution using the `--driver` CLI flag.
 
-### `drivers`
+#### `drivers`
 
 <!--lint disable double-link-->
 Override the default the default options per driver for this Compose project. See the [specific driver documentation](https://preevy.dev/category/drivers).
@@ -245,7 +277,7 @@ x-preevy:
       context: dev-cluster
 ```
 
-### `plugins`
+#### `plugins`
 
 <!--lint disable double-link-->
 See [Plugins](#plugins) below.
