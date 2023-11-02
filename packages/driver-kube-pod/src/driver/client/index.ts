@@ -29,7 +29,7 @@ import {
 import { Package } from './common'
 import { logError } from './log-error'
 
-export const loadKubeConfig = (kubeconfig?: string, context?:string) => {
+export const loadKubeConfig = (kubeconfig?: string, context?: string) => {
   const kc = new k8s.KubeConfig()
   if (kubeconfig) {
     kc.loadFromFile(kubeconfig)

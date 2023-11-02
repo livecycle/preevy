@@ -5,13 +5,41 @@ title: AWS Lightsail Driver
 
 # AWS Lightsail Driver
 
-Preevy can provision virtual machines on AWS Lightsail using the `aws-lightsail` driver.
+Preevy can provision virtual machines on AWS Lightsail using the `lightsail` driver.
 [AWS lightsail](https://aws.amazon.com/lightsail) is Amazon's cost-effective solution for VMs in the cloud.
 AWS lightsail provisioning time for a VM is usually around 2 minutes, and its cost can be as low as $3.50 per month making them suitable for preview environments at scale.
 
 
-### Supported flags
-- `--aws-region` - The AWS region to use.
+### Supported options
+
+| option | flag | description | required | default |
+| ------ | ---- | ----------- | -------- | ------- |
+| `region` | `--lightsail-region` | AWS region in which resources will be provisioned | required | (none) |
+| `bundle-id` | `--lightsail-bundle-id` | Lightsail bundle ID (size of instance) to provision | optional | `medium_2_0` |
+| `availability-zone` | `--lightsail-availability-zone` | AWS zone to provision resources in region | optional | (first AZ in zone) |
+
+### Overriding options
+
+Similar to other drivers, options are saved in the Preevy profile to be used as default values for all operations.
+
+Options can be overridden for a specific compose file by adding them to the `x-preevy` section:
+
+```yaml
+services:
+  ...
+x-preevy:
+  driver: lightsail
+  drivers:
+    lightsail:
+      # use a larger instance for this project
+      bundle-id: xlarge_2_0
+```
+
+Options can also be overridden using a CLI flag per command execution:
+
+```bash
+preevy up ---lightsail-bundle-id=xlarge_2_0
+```
 
 ### Credentials Configuration
 Preevy uses the AWS JS SDK which supports multiple ways of configuring credentials, according to the [credentials provider chain](https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/setting-credentials-node.html).

@@ -1,7 +1,7 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
 import { MachineConnection, MachineDriver, isPartialMachine, profileStore } from '@preevy/core'
 import { pickBy } from 'lodash'
-import { DriverFlags, DriverName, flagsForAllDrivers, machineDrivers, removeDriverPrefix } from './drivers'
+import { DriverFlags, DriverName, FlagType, flagsForAllDrivers, machineDrivers, removeDriverPrefix } from './drivers'
 import ProfileCommand from './profile-command'
 
 // eslint-disable-next-line no-use-before-define
@@ -25,7 +25,7 @@ abstract class DriverCommand<T extends typeof Command> extends ProfileCommand<T>
 
   public async init(): Promise<void> {
     await super.init()
-    this.#driverName = this.flags.driver ?? this.profile.driver as DriverName
+    this.#driverName = this.flags.driver ?? this.preevyConfig?.driver as DriverName ?? this.profile.driver as DriverName
   }
 
   #driverName: DriverName | undefined
@@ -36,23 +36,32 @@ abstract class DriverCommand<T extends typeof Command> extends ProfileCommand<T>
     return this.#driverName
   }
 
+  protected async driverFlags<Name extends DriverName, Type extends FlagType>(
+    driver: Name,
+    type: Type
+  ): Promise<DriverFlags<DriverName, Type>> {
+    const driverFlagNames = Object.keys(machineDrivers[driver][type])
+    const flagDefaults = pickBy(
+      {
+        ...await profileStore(this.store).defaultFlags(driver),
+        ...this.preevyConfig.drivers?.[driver] ?? {},
+      },
+      (_v, k) => driverFlagNames.includes(k),
+    ) as DriverFlags<DriverName, Type>
+    return {
+      ...flagDefaults,
+      ...removeDriverPrefix<DriverFlags<DriverName, Type>>(driver, this.flags),
+    }
+  }
+
   #driver: MachineDriver | undefined
   async driver(): Promise<MachineDriver> {
     if (this.#driver) {
       return this.#driver
     }
     const { profile, driverName } = this
-    const driverFlagNames = Object.keys(machineDrivers[driverName].flags)
-    const defaultFlags = pickBy(
-      await profileStore(this.store).defaultFlags(driverName),
-      (_v, k) => driverFlagNames.includes(k),
-    )
-    const driverFlags = {
-      ...defaultFlags,
-      ...removeDriverPrefix<DriverFlags<DriverName, 'flags'>>(driverName, this.flags),
-    }
     this.#driver = machineDrivers[driverName].factory({
-      flags: driverFlags as never,
+      flags: await this.driverFlags(driverName, 'flags') as never,
       profile,
       store: this.store,
       log: this.logger,

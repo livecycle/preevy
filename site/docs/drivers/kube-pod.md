@@ -31,16 +31,36 @@ Your services are still exposed using the Preevy Tunnel Service - there's no nee
 - The [`kubectl`](https://kubernetes.io/docs/tasks/tools/#kubectl) tool needs to be installed and available in the PATH.
 - By default, the driver runs a Pod with [`privileged: true` security context](https://kubernetes.io/docs/concepts/security/pod-security-standards/#privileged). In some cases, this requirement may be lifted by customizing the deployment template, see [below](#configuring-rootless-unprivileged-docker-in-docker).
 
-## Supported flags
+## Supported options
 
-|flag|default|env var|description|
-|---|--------|-------|-----------|
-|`--kube-pod-namespace`|`default`| |Kubernetes namespace to provision resources in|
-|`--kube-pod-kubeconfig`|`$HOME/.kube`| `KUBECONFIG` | path to a [`kubeconfig`](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/) file|
-|`--kube-pod-template`|[default template](https://github.com/livecycle/preevy/blob/main/packages/driver-kube-pod/static/default-template.yaml.njk)| |path to a [nunjacks template](https://mozilla.github.io/nunjucks/templating.html) used to provision Kubernetes resources per environment. See [below](#customizing-the-provisioned-kubernetes-resources) for details|
-|`--no-kube-pod-server-side-apply`|  | | provision resources using client-side apply (CREATE/PATCH) instead of [server-side apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/). Applies to `preevy up` only|
+| option | flag | default | env var | description |
+| ---- | --- | -------- | ------- | ----------- |
+|`namespace`|`--kube-pod-namespace`|`default`| |Kubernetes namespace to provision resources in|
+|`kubeconfig`|`--kube-pod-kubeconfig`|`$HOME/.kube`| `KUBECONFIG` | path to a [`kubeconfig`](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/) file|
+|`pod-template`|`--kube-pod-template`|[default template](https://github.com/livecycle/preevy/blob/main/packages/driver-kube-pod/static/default-template.yaml.njk)| |path to a [nunjacks template](https://mozilla.github.io/nunjucks/templating.html) used to provision Kubernetes resources per environment. See [below](#customizing-the-provisioned-kubernetes-resources) for details|
+|`server-side-apply`|`--[no-]kube-pod-server-side-apply`| true | | if true, provision resources using [server-side apply](https://kubernetes.io/docs/reference/using-api/server-side-apply/), else using client-side apply (CREATE/PATCH). Applies to `preevy up` only|
 
-Similar to other drivers, flags are saved in the Preevy profile to be used as default values for all operations. They can be specified per command if the defaults need to be changed. For example, if a specific environment needs to be provisioned in a different Kubernetes namespace, specify `--kube-pod-namespace=other-namespace` when running the `preevy up` command.
+### Overriding options
+
+Similar to other drivers, options are saved in the Preevy profile to be used as default values for all operations.
+
+Options can be overridden for a specific compose file by adding them to the `x-preevy` section:
+
+```yaml
+services:
+  ...
+x-preevy:
+  driver: kube-pod
+  drivers:
+    kube-pod:
+      namespace: other-namespace
+```
+
+Options can also be overridden using a CLI flag per command execution:
+
+```bash
+preevy up --kube-pod-namespace=other-namespace
+```
 
 ## Customizing the provisioned Kubernetes resources
 

@@ -18,7 +18,7 @@ type MachineDrivers = typeof machineDrivers
 
 export type DriverName = keyof MachineDrivers
 
-type FlagType = 'flags' | 'machineCreationFlags'
+export type FlagType = 'flags' | 'machineCreationFlags'
 
 export type DriverFlagName<
   Name extends DriverName,

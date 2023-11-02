@@ -6,4 +6,6 @@ export type PreevyPluginConfig = {
 
 export type PreevyConfig = {
   plugins?: PreevyPluginConfig[]
+  driver?: string
+  drivers?: Record<string, Record<string, unknown>>
 }
