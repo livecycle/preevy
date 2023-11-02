@@ -26,7 +26,7 @@ export const initHook: OclifHook<'init'> = async function hook({ config, id, arg
   } as const).parse()
   const composeFiles = await resolveComposeFiles({
     userSpecifiedFiles: flags.file,
-    systemFiles: flags['system-compose-file'],
+    userSpecifiedSystemFiles: flags['system-compose-file'],
   })
 
   const userModelOrError = composeFiles.length
@@ -53,6 +53,7 @@ export const initHook: OclifHook<'init'> = async function hook({ config, id, arg
   (config as InternalConfig).loadTopics({ commands, topics })
 
   Object.assign(config, {
+    composeFiles,
     initialUserModel: userModelOrError,
     preevyConfig,
     preevyHooks: hooksFromPlugins(loadedPlugins.map(p => p.initResults)),

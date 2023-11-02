@@ -9,7 +9,7 @@ import {
 } from '@preevy/core'
 import { tunnelServerFlags } from '@preevy/cli-common'
 import { inspect } from 'util'
-import { tunnelNameResolver } from '@preevy/common'
+import { editUrl, tunnelNameResolver } from '@preevy/common'
 import MachineCreationDriverCommand from '../machine-creation-driver-command'
 import { envIdFlags, urlFlags } from '../common-flags'
 import { filterUrls, printUrls } from './urls'
@@ -120,6 +120,10 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
     this.logger.debug('expectedServiceUrls: %j', expectedServiceUrls)
 
+    const injectLivecycleScript = flags['enable-widget']
+      ? editUrl(flags['livecycle-widget-url'], { queryParams: { profile: thumbprint, env: envId } }).toString()
+      : undefined
+
     const { machine } = await commands.up({
       projectName,
       expectedServiceUrls,
@@ -129,10 +133,9 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       machineDriverName: this.driverName,
       machineCreationDriver,
       userSpecifiedProjectName: flags.project,
-      userSpecifiedComposeFiles: flags.file,
+      composeFiles: this.config.composeFiles,
       envId,
-      injectLivecycleScript: flags['enable-widget'] ? `${flags['livecycle-widget-url']}?profile=${thumbprint}&env=${envId}` : undefined,
-      systemComposeFiles: flags['system-compose-file'],
+      injectLivecycleScript,
       tunnelOpts,
       log: this.logger,
       dataDir: this.config.dataDir,

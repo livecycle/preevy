@@ -66,6 +66,7 @@ Visit The full documentation here: https://preevy.dev/
   - [Notice on preview environments exposure](#notice-on-preview-environments-exposure)
   - [Network isolation](#network-isolation)
 - [Configuration files](#configuration-files)
+  - [Preevy-specific compose file](#preevy-specific-compose-file)
   - [Preevy-specific configuration](#preevy-specific-configuration)
   - [`driver`](#driver)
   - [`drivers`](#drivers)
@@ -192,7 +193,9 @@ Preevy extracts its runtime settings from the [Compose file](https://docs.docker
 
 Just like with `docker compose`, you can use the global `--file | -f` option to specify path(s) for the Compose file. If not specified, the [default loading order](https://docs.docker.com/compose/reference/#use--f-to-specify-name-and-path-of-one-or-more-compose-files) is used. Multiple files are [supported](https://docs.docker.com/compose/extends/#multiple-compose-files) just like with `docker compose`.
 
-An additional option `--system-compose-file` can be used to specify paths to Compose files without overriding the default loading order. This is useful for scripts invoking the Preevy CLI (e.g, a GitHub Action), to accept user-provided compose files (including the default loading order) while ensuring a specific file is always loaded.
+### Preevy-specific compose file
+
+In addition to the default loading order described above, an optional Preevy-specific Compose file can be used. This is useful for scripts invoking the Preevy CLI (e.g, a GitHub Action), to accept user-provided compose files (including the default loading order) while ensuring a specific file is always loaded. Preevy attempts to load files named `compose.preevy.yaml`, `compose.preevy.yml`, `docker-compose.preevy.yaml` or `docker-compose.preevy.yml`. If one of these exists, they are loaded BEFORE the default loading order. The name of the Preevy-specific compose file can be overriden by spefcifying the argument `--system-compose-file`.
 
 ### Preevy-specific configuration
 
