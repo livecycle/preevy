@@ -3,6 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import { rimraf } from 'rimraf'
 import yaml from 'yaml'
+import { widgetScriptInjector } from '../../compose/script-injection'
 import { TunnelOpts } from '../../ssh'
 import { composeModelFilename, fixModelForRemote, localComposeClient, resolveComposeFiles } from '../../compose'
 import { ensureCustomizedMachine } from './machine'
@@ -68,6 +69,7 @@ const up = async ({
   userSpecifiedProjectName,
   userSpecifiedServices,
   userSpecifiedComposeFiles,
+  injectLivecycleScript,
   systemComposeFiles,
   log,
   dataDir,
@@ -91,6 +93,7 @@ const up = async ({
   systemComposeFiles: string[]
   log: Logger
   dataDir: string
+  injectLivecycleScript: string | undefined
   sshTunnelPrivateKey: string | Buffer
   allowedSshHostKeys: Buffer
   cwd: string
@@ -136,7 +139,7 @@ const up = async ({
   try {
     const { exec } = connection
 
-    const remoteModel = addComposeTunnelAgentService({
+    let remoteModel = addComposeTunnelAgentService({
       envId,
       debug,
       tunnelOpts,
@@ -151,6 +154,10 @@ const up = async ({
       composeProject: projectName,
     }, fixedModel)
 
+    if (injectLivecycleScript) {
+      const scriptInjector = widgetScriptInjector(injectLivecycleScript)
+      remoteModel = scriptInjector.inject(remoteModel, x => x !== COMPOSE_TUNNEL_AGENT_SERVICE_NAME)
+    }
     const modelStr = yaml.stringify(remoteModel)
     log.debug('model', modelStr)
     const composeFilePath = await createCopiedFile(composeModelFilename, modelStr)

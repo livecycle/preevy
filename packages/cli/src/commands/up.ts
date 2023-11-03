@@ -3,7 +3,7 @@ import {
   addBaseComposeTunnelAgentService,
   commands, findComposeTunnelAgentUrl,
   findEnvId,
-  findProjectName, getTunnelNamesToServicePorts, profileStore,
+  findProjectName, getTunnelNamesToServicePorts, jwkThumbprint, profileStore,
   telemetryEmitter,
   withSpinner,
 } from '@preevy/core'
@@ -26,6 +26,16 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       description: 'Detect and skip unchanged files when copying (default: true)',
       default: true,
       allowNo: true,
+    }),
+    'enable-widget': Flags.boolean({
+      default: false,
+      hidden: true,
+    }),
+    'livecycle-widget-url': Flags.string({
+      required: true,
+      hidden: true,
+      env: 'LIVECYCLE_WIDGET_URL',
+      default: 'https://app.livecycle.run/widget/widget-bootstrap.js',
     }),
     ...urlFlags,
     ...ux.table.flags(),
@@ -65,6 +75,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       () => pStore.getTunnelingKey(),
       { text: 'Getting tunneling key from profile...', successText: 'Got tunneling key from profile' },
     )
+    const thumbprint = await jwkThumbprint(tunnelingKey)
 
     const tunnelOpts = {
       url: flags['tunnel-url'],
@@ -120,6 +131,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       userSpecifiedProjectName: flags.project,
       userSpecifiedComposeFiles: flags.file,
       envId,
+      injectLivecycleScript: flags['enable-widget'] ? `${flags['livecycle-widget-url']}?profile=${thumbprint}&env=${envId}` : undefined,
       systemComposeFiles: flags['system-compose-file'],
       tunnelOpts,
       log: this.logger,
