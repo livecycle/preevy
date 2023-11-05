@@ -24,7 +24,7 @@
   "typescript.implementationsCodeLens.enabled": true,
   "typescript.preferences.quoteStyle": "single",
   "typescript.tsdk": "node_modules/typescript/lib",
-  "markdown.extension.toc.levels": "2..6",
+  "markdown.extension.toc.levels": "2..3",
   "prettier.enable": false,
   "editor.defaultFormatter": "dbaeumer.vscode-eslint",
   "[json]": {

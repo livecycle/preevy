@@ -1,18 +1,32 @@
 import fs from 'fs'
 
-export type ComposeFiles = {
-  userSpecifiedFiles: string[]
-  systemFiles: string[]
-}
-
 const DEFAULT_BASE_FILES = ['compose', 'docker-compose']
 const DEFAULT_OVERRIDE_FILES = DEFAULT_BASE_FILES.map(f => `${f}.override`)
+const DEFAULT_SYSTEM_FILES = DEFAULT_BASE_FILES.map(f => `${f}.preevy`)
 const YAML_EXTENSIONS = ['yaml', 'yml']
 
-const oneYamlFile = (baseNames: string[], type: string) => {
-  const existingFiles = baseNames
-    .flatMap(f => YAML_EXTENSIONS.map(e => `${f}.${e}`))
-    .filter(f => fs.existsSync(f))
+const fileExists = async (filename: string) => {
+  let h: fs.promises.FileHandle
+  try {
+    h = await fs.promises.open(filename, 'r')
+  } catch (e) {
+    if ((e as { code: unknown }).code === 'ENOENT') {
+      return false
+    }
+    throw e
+  }
+  void h?.close()
+  return true
+}
+
+const filterExistingFiles = async (...filenames: string[]) => (await Promise.all(
+  filenames.map(async filename => ({ exists: await fileExists(filename), filename }))
+)).filter(({ exists }) => exists).map(({ filename }) => filename)
+
+const oneYamlFileArray = async (baseNames: string[], type: string) => {
+  const existingFiles = await filterExistingFiles(
+    ...baseNames.flatMap(f => YAML_EXTENSIONS.map(e => `${f}.${e}`))
+  )
 
   if (!existingFiles.length) {
     return undefined
@@ -22,26 +36,21 @@ const oneYamlFile = (baseNames: string[], type: string) => {
     throw new Error(`Multiple ${type} files found: ${existingFiles.join(', ')}`)
   }
 
-  return existingFiles[0]
+  return existingFiles
 }
 
-const findDefaultFiles = () => {
-  const defaultFile = oneYamlFile(DEFAULT_BASE_FILES, 'default Compose')
-  if (!defaultFile) {
-    return []
-  }
-  const overrideFile = oneYamlFile(DEFAULT_OVERRIDE_FILES, 'default Compose override')
-  return overrideFile ? [defaultFile, overrideFile] : [defaultFile]
-}
+const findDefaultFiles = async () => (await oneYamlFileArray(DEFAULT_BASE_FILES, 'default Compose'))
+  ?? (await oneYamlFileArray(DEFAULT_OVERRIDE_FILES, 'default Compose override'))
+  ?? []
 
-const ensureFileReadable = async (path: string) => {
-  await fs.promises.readFile(path)
-  return path
-}
+const findDefaultSystemFiles = async () => (await oneYamlFileArray(DEFAULT_SYSTEM_FILES, 'default system Compose')) ?? []
 
 export const resolveComposeFiles = async (
-  { userSpecifiedFiles, systemFiles }: ComposeFiles,
+  { userSpecifiedFiles, userSpecifiedSystemFiles }: {
+    userSpecifiedFiles: string[]
+    userSpecifiedSystemFiles: string[]
+  },
 ): Promise<string[]> => [
-  ...userSpecifiedFiles.length ? userSpecifiedFiles : findDefaultFiles(),
-  ...await Promise.all(systemFiles.map(ensureFileReadable)),
+  ...(userSpecifiedSystemFiles.length ? userSpecifiedSystemFiles : await findDefaultSystemFiles()),
+  ...(userSpecifiedFiles.length ? userSpecifiedFiles : await findDefaultFiles()),
 ]

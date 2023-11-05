@@ -25,6 +25,7 @@ export type PluginModule = {
 
 declare module '@oclif/core/lib/config/config' {
   export interface Config {
+    composeFiles: string[]
     initialUserModel: ComposeModel | Error
     preevyHooks: HooksListeners
     preevyConfig: PreevyConfig

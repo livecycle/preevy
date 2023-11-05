@@ -5,7 +5,7 @@ import { rimraf } from 'rimraf'
 import yaml from 'yaml'
 import { widgetScriptInjector } from '../../compose/script-injection'
 import { TunnelOpts } from '../../ssh'
-import { composeModelFilename, fixModelForRemote, localComposeClient, resolveComposeFiles } from '../../compose'
+import { composeModelFilename, fixModelForRemote, localComposeClient } from '../../compose'
 import { ensureCustomizedMachine } from './machine'
 import { wrapWithDockerSocket } from '../../docker'
 import { addComposeTunnelAgentService } from '../../compose-tunnel-agent-client'
@@ -68,9 +68,8 @@ const up = async ({
   tunnelOpts,
   userSpecifiedProjectName,
   userSpecifiedServices,
-  userSpecifiedComposeFiles,
   injectLivecycleScript,
-  systemComposeFiles,
+  composeFiles,
   log,
   dataDir,
   allowedSshHostKeys: hostKey,
@@ -89,8 +88,7 @@ const up = async ({
   tunnelOpts: TunnelOpts
   userSpecifiedProjectName: string | undefined
   userSpecifiedServices: string[]
-  userSpecifiedComposeFiles: string[]
-  systemComposeFiles: string[]
+  composeFiles: string[]
   log: Logger
   dataDir: string
   injectLivecycleScript: string | undefined
@@ -104,11 +102,6 @@ const up = async ({
   projectName: string
 }): Promise<{ machine: MachineBase }> => {
   const remoteDir = remoteProjectDir(projectName)
-
-  const composeFiles = await resolveComposeFiles({
-    userSpecifiedFiles: userSpecifiedComposeFiles,
-    systemFiles: systemComposeFiles,
-  })
 
   log.debug(`Using compose files: ${composeFiles.join(', ')}`)
 
