@@ -43,6 +43,7 @@ export const telemetryEmitter = async ({ dataDir, version, debug }: {
       method: 'POST',
       redirect: 'follow',
       body,
+      timeout: 1500,
     }).catch(err => {
       if (debug) {
         process.stderr.write(`Error sending telemetry: ${inspect(err)}${os.EOL}`)
