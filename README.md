@@ -68,7 +68,7 @@ Visit The full documentation here: https://preevy.dev/
 - [Configuration](#configuration)
   - [Preevy Profile](#preevy-profile)
   - [Compose files](#compose-files)
-  - [Preevy-specific configuration](#preevy-specific-configuration)
+  - [`x-preevy`: Preevy-specific configuration in the Compose file(s)](#x-preevy-preevy-specific-configuration-in-the-compose-files)
 - [Plugins](#plugins-1)
 - [Docs and support](#docs-and-support)
 - [Telemetry](#telemetry)
