@@ -197,7 +197,7 @@ Preevy loads its configuration from the following sources, in order:
 
 ### Preevy Profile
 
-The Preevy profile is created on the `init` command and can be stored locally or remotely on your cloud provider. The profile includes the following:
+The Preevy profile is created by the `init` command and can be stored locally or remotely on your cloud provider. A profile is required to create environments. The profile includes the following:
 
 <!--lint disable double-link-->
 - A tunneling key, used to identify your services when connecting to the [Tunnel Server](#tunnel-server).
@@ -216,17 +216,17 @@ The `default` profile can be overridden using the global command line argument `
 
 Preevy extracts its runtime settings from the [Compose file](https://docs.docker.com/compose/compose-file/03-compose-file/).
 
-#### Project compose files
+#### Project Compose files
 
 Just like with the `docker compose` CLI, you can use the global `--file | -f` command line argument to specify path(s) for the Compose file. If not specified, the [default loading order](https://docs.docker.com/compose/reference/#use--f-to-specify-name-and-path-of-one-or-more-compose-files) is used. Multiple files are [supported](https://docs.docker.com/compose/extends/#multiple-compose-files).
 
-#### Preevy-specific compose file
+#### Preevy-specific Compose file
 
 In addition to the project compose files, an optional Preevy-specific Compose file can be used. Preevy attempts to load files named `compose.preevy.yaml`, `compose.preevy.yml`, `docker-compose.preevy.yaml` or `docker-compose.preevy.yml`. If one of these exists, it is loaded BEFORE the project compose file(s). The name of the Preevy-specific compose file can be overriden by spefcifying the argument `--system-compose-file`.
 
-### Preevy-specific configuration
+### `x-preevy`: Preevy-specific configuration in the Compose file(s)
 
-Preevy-specific configuration, if needed, can be specified by adding a `x-preevy` top-level element to the Compose file(s).
+A `x-preevy` top-level element can be added to the Compose file(s).
 
 ```yaml
 services:
@@ -242,7 +242,7 @@ x-preevy:
     ...
 ```
 
-The properties are supported, all of them optional:
+The following properties are supported, all of them optional:
 
 #### `driver`
 
