@@ -44,7 +44,7 @@ abstract class DriverCommand<T extends typeof Command> extends ProfileCommand<T>
     const flagDefaults = pickBy(
       {
         ...await profileStore(this.store).defaultFlags(driver),
-        ...this.preevyConfig.drivers?.[driver] ?? {},
+        ...this.preevyConfig?.drivers?.[driver] ?? {},
       },
       (_v, k) => driverFlagNames.includes(k),
     ) as DriverFlags<DriverName, Type>
