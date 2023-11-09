@@ -1,6 +1,7 @@
 import { Logger } from 'pino'
 import { inspect } from 'util'
 import { Gauge } from 'prom-client'
+import lodash from 'lodash'
 import { BaseSshClient, baseSshServer } from './base-server'
 import { ActiveTunnelStore, activeTunnelStoreKey } from '../tunnel-store'
 import { KeyAlreadyExistsError } from '../memory-store'
@@ -14,6 +15,7 @@ export const createSshServer = ({
   tunnelUrl,
   helloBaseResponse,
   tunnelsGauge,
+  sshConnectionsGauge,
 }: {
   log: Logger
   sshPrivateKey: string
@@ -22,10 +24,12 @@ export const createSshServer = ({
   tunnelUrl: (clientId: string, remotePath: string) => string
   helloBaseResponse: Record<string, unknown>
   tunnelsGauge: Pick<Gauge, 'inc' | 'dec'>
+  sshConnectionsGauge: Pick<Gauge, 'inc' | 'dec'>
 }) => {
-  const storeKeyToClient = new Map<string, BaseSshClient>()
   const onClient = (client: BaseSshClient) => {
     const { clientId, publicKey, envId, connectionId, publicKeyThumbprint, log } = client
+    sshConnectionsGauge.inc({ envId })
+    const cleanupClient = lodash.once(() => { sshConnectionsGauge.inc({ envId }) })
     const tunnels = new Map<string, string>()
     client
       .on('forward', async (requestId, { path: tunnelPath, access, meta, inject }, localSocketPath, accept, reject) => {
@@ -67,7 +71,7 @@ export const createSshServer = ({
 
         const setResult = await set().catch(err => { reject(err) })
         if (!setResult) {
-          return undefined
+          return
         }
         const { tx: setTx } = setResult
         const forward = await accept().catch(async e => {
@@ -75,27 +79,30 @@ export const createSshServer = ({
           await activeTunnelStore.delete(key, setTx)
         })
         if (!forward) {
-          return undefined
+          return
         }
-        storeKeyToClient.set(key, client)
         tunnels.set(requestId, tunnelUrl(clientId, tunnelPath))
-        const onForwardClose = (event: 'close' | 'error') => (err?: Error) => {
-          if (err) {
-            log.info('%s: deleting tunnel %s due to forward server error: %j', event, key, inspect(err))
-          } else {
-            log.info('%s: deleting tunnel %s', event, key)
-          }
+        const cleanupTunnel = lodash.once(() => {
           tunnels.delete(requestId)
-          storeKeyToClient.delete(key)
           void activeTunnelStore.delete(key, setTx)
           tunnelsGauge.dec({ clientId })
-        }
-        forward.on('close', onForwardClose('close'))
-        forward.on('error', onForwardClose('error'))
+        })
+        forward
+          .on('close', () => {
+            log.info('forward close: deleting tunnel %s', key)
+            cleanupTunnel()
+          })
+          .on('error', err => {
+            log.info('forward error: deleting tunnel %s due to forward server error: %j', key, inspect(err))
+            cleanupTunnel()
+          })
         tunnelsGauge.inc({ clientId })
-        return undefined
       })
-      .on('error', err => { log.warn('client error %j: %j', clientId, inspect(err)) })
+      .on('end', () => { cleanupClient() })
+      .on('error', err => {
+        log.warn('client error %j: %j', clientId, inspect(err))
+        cleanupClient()
+      })
       .on('exec', (command, respondWithJson, reject) => {
         if (command === 'hello') {
           respondWithJson({
