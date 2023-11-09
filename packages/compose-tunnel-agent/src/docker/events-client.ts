@@ -1,6 +1,7 @@
 import Docker from 'dockerode'
 import { tryParseJson, Logger, ScriptInjection } from '@preevy/common'
 import { throttle } from 'lodash'
+import { inspect } from 'util'
 import { filters } from './filters'
 import { containerToService } from './services'
 
@@ -28,8 +29,13 @@ export const eventsClient = ({
 }) => {
   const { listContainers, apiFilter } = filters({ docker, composeProject })
 
-  const toService = (container: Docker.ContainerInfo) => containerToService({ container, defaultAccess })
-  const getRunningServices = async (): Promise<RunningService[]> => (await listContainers()).map(toService)
+  const getRunningServices = async (): Promise<RunningService[]> => (await listContainers()).map(container => {
+    const { errors, ...service } = containerToService({ container, defaultAccess })
+    if (errors.length) {
+      log.warn('error parsing docker container "%s" info, some information may be missing: %j', container.Names?.[0], inspect(errors))
+    }
+    return service
+  })
 
   const startListening = async ({ onChange }: { onChange: (services: RunningService[]) => void }) => {
     const handler = throttle(async (data?: Buffer) => {

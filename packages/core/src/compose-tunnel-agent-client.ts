@@ -124,7 +124,6 @@ export const addComposeTunnelAgentService = (
         user,
         labels: {
           [COMPOSE_TUNNEL_AGENT_SERVICE_LABELS.ENV_ID]: envId,
-          [COMPOSE_TUNNEL_AGENT_SERVICE_LABELS.PRIVATE_MODE]: privateMode,
           ...profileThumbprint ? { [COMPOSE_TUNNEL_AGENT_SERVICE_LABELS.PROFILE_THUMBPRINT]: profileThumbprint } : {},
           [COMPOSE_TUNNEL_AGENT_SERVICE_LABELS.PRIVATE_MODE]: privateMode.toString(),
         },

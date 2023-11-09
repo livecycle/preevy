@@ -23,7 +23,13 @@ export { Logger } from './src/log'
 export { requiredEnv, numberFromEnv } from './src/env'
 export { tunnelNameResolver, TunnelNameResolver } from './src/tunnel-name'
 export { editUrl } from './src/url'
-export * from './src/compose-tunnel-agent'
-export * from './src/compose-utils'
+export {
+  ScriptInjection,
+  parseScriptInjectionLabels,
+  scriptInjectionsToLabels,
+  COMPOSE_TUNNEL_AGENT_PORT,
+  COMPOSE_TUNNEL_AGENT_SERVICE_LABELS,
+  COMPOSE_TUNNEL_AGENT_SERVICE_NAME,
+} from './src/compose-tunnel-agent'
 export { MachineStatusCommand, DockerMachineStatusCommandRecipe } from './src/machine-status-command'
 export { ProcessOutputBuffers, orderedOutput, OrderedOutput } from './src/process-output-buffers'

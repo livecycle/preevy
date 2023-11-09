@@ -120,7 +120,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
     this.logger.debug('expectedServiceUrls: %j', expectedServiceUrls)
 
-    const injectLivecycleScript = flags['enable-widget']
+    const injectWidgetScript = flags['enable-widget']
       ? editUrl(flags['livecycle-widget-url'], { queryParams: { profile: thumbprint, env: envId } }).toString()
       : undefined
 
@@ -135,7 +135,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       userSpecifiedProjectName: flags.project,
       composeFiles: this.config.composeFiles,
       envId,
-      injectLivecycleScript,
+      scriptInjections: injectWidgetScript ? { 'livecycle-widget': { src: injectWidgetScript } } : undefined,
       tunnelOpts,
       log: this.logger,
       dataDir: this.config.dataDir,
