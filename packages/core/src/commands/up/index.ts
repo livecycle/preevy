@@ -17,11 +17,11 @@ import { Logger } from '../../log'
 import { FileToCopy, uploadWithSpinner } from '../../upload-files'
 import { envMetadata } from '../../env-metadata'
 import { EnvId } from '../../env-id'
-import { SplitBuildSpec } from './split-build'
+import { LocalBuildSpec } from './split-build'
 import { gitContext } from '../../git'
 import { randomString } from '../../strings'
 
-export { splitBuildSpecSchema, SplitBuildSpec } from './split-build'
+export { localBuildSpecSchema, LocalBuildSpec } from './split-build'
 
 const createCopiedFileInDataDir = (
   { projectLocalDataDir, filesToCopy } : {
@@ -103,7 +103,7 @@ const up = async ({
   envId,
   expectedServiceUrls,
   projectName,
-  splitBuildSpec,
+  localBuildSpec,
 }: {
   debug: boolean
   machineDriver: MachineDriver
@@ -124,7 +124,7 @@ const up = async ({
   envId: EnvId
   expectedServiceUrls: { name: string; port: number; url: string }[]
   projectName: string
-  splitBuildSpec?: SplitBuildSpec
+  localBuildSpec?: LocalBuildSpec
 }): Promise<{ machine: MachineBase }> => {
   const remoteDir = remoteProjectDir(projectName)
 
@@ -180,15 +180,15 @@ const up = async ({
     )
   }
 
-  if (splitBuildSpec) {
+  if (localBuildSpec) {
     const tagSuffix = await gitContext(cwd)?.commit({ short: true }) ?? randomString.lowercaseNumeric(8)
     const serviceImage = (service: string, tag: string) => registryImageName(
       {
-        registry: splitBuildSpec.registry,
+        registry: localBuildSpec.registry,
         image: `preevy-${envId}-${service}`,
         tag,
       },
-      { ecrFormat: splitBuildSpec.ecrFormat },
+      { ecrFormat: localBuildSpec.ecrFormat },
     )
 
     const buildServices = mapValues(
@@ -200,6 +200,7 @@ const up = async ({
           build: Object.assign(build, {
             tags: (build.tags ?? []).concat(thisImage, latestImage),
             cache_from: (build.cache_from ?? []).concat(latestImage),
+            cache_to: (build.cache_to ?? []).concat(...localBuildSpec.cacheToLatest ? [latestImage] : []),
           }),
         })
       },
@@ -211,7 +212,7 @@ const up = async ({
     await childProcessPromise(spawn('docker', [
       'buildx', 'bake',
       '-f', buildFilename,
-      `--set=*.platform=${splitBuildSpec.platform ?? dockerPlatform}`,
+      `--set=*.platform=${localBuildSpec.platform ?? dockerPlatform}`,
       '--push',
     ], {
       stdio: 'inherit',
@@ -238,7 +239,7 @@ const up = async ({
     composeFiles: [composeFilePath.local],
     projectName: userSpecifiedProjectName,
   })
-  const composeArgs = calcComposeUpArgs({ userSpecifiedServices, debug, cwd, build: !splitBuildSpec })
+  const composeArgs = calcComposeUpArgs({ userSpecifiedServices, debug, cwd, build: !localBuildSpec })
 
   const withDockerSocket = wrapWithDockerSocket({ connection, log })
 

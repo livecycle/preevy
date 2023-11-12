@@ -1,4 +1,4 @@
-import { Args, Flags, ux } from '@oclif/core'
+import { Args, Flags, ux, Errors } from '@oclif/core'
 import {
   addBaseComposeTunnelAgentService,
   commands, findComposeTunnelAgentUrl,
@@ -22,12 +22,16 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
   static flags = {
     ...envIdFlags,
     ...tunnelServerFlags,
-    'split-build': Flags.custom<commands.SplitBuildSpec>({
-      description: 'Build locally and deploy remotely using an image registry',
+    'local-build': Flags.custom<commands.LocalBuildSpec>({
+      description: `Build locally and deploy remotely using an image registry; ${Object.entries(commands.localBuildSpecSchema.shape).map(([k, v]) => `${k}: ${v.description}`).join(', ')}`,
       required: false,
       parse: async input => {
         const pairs = input.split(',')
-        return commands.splitBuildSpecSchema.parse(Object.fromEntries(pairs.map(pair => pair.split('='))))
+        const result = commands.localBuildSpecSchema.safeParse(Object.fromEntries(pairs.map(pair => pair.split('='))))
+        if (!result.success) {
+          throw new Errors.CLIError(`Invalid local build arg: ${inspect(result.error)}`)
+        }
+        return result.data
       },
     })(),
     'skip-unchanged-files': Flags.boolean({
@@ -152,7 +156,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       cwd: process.cwd(),
       skipUnchangedFiles: flags['skip-unchanged-files'],
       version: this.config.version,
-      splitBuildSpec: flags['split-build'],
+      localBuildSpec: flags['local-build'],
     })
 
     this.log(`Preview environment ${envId} provisioned at: ${machine.locationDescription}`)

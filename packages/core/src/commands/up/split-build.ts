@@ -1,9 +1,10 @@
 import z from 'zod'
 
-export const splitBuildSpecSchema = z.object({
-  registry: z.string(),
-  platform: z.string().optional(),
-  ecrFormat: z.boolean().optional(),
+export const localBuildSpecSchema = z.object({
+  registry: z.string().describe('registry to use'),
+  platform: z.string().optional().describe('platform to build for (default: driver platform)'),
+  ecrFormat: z.boolean().optional().describe('use ECR format (default: auto detect)'),
+  cacheToLatest: z.boolean().default(false).describe('enable cache-to with latest tag (default: false)'),
 })
 
-export type SplitBuildSpec = z.infer<typeof splitBuildSpecSchema>
+export type LocalBuildSpec = z.infer<typeof localBuildSpecSchema>
