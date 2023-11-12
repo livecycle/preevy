@@ -3,8 +3,11 @@ import fs from 'fs'
 import path from 'path'
 import { rimraf } from 'rimraf'
 import yaml from 'yaml'
+import { spawn } from 'child_process'
+import { mapValues, pickBy } from 'lodash'
+import { childProcessPromise } from '../../child-process'
 import { TunnelOpts } from '../../ssh'
-import { composeModelFilename, fixModelForRemote, localComposeClient, addScriptInjectionsToModel } from '../../compose'
+import { composeModelFilename, fixModelForRemote, localComposeClient, addScriptInjectionsToModel, ComposeBuild, ComposeService } from '../../compose'
 import { ensureCustomizedMachine } from './machine'
 import { wrapWithDockerSocket } from '../../docker'
 import { addComposeTunnelAgentService } from '../../compose-tunnel-agent-client'
@@ -14,6 +17,11 @@ import { Logger } from '../../log'
 import { FileToCopy, uploadWithSpinner } from '../../upload-files'
 import { envMetadata } from '../../env-metadata'
 import { EnvId } from '../../env-id'
+import { SplitBuildSpec } from './split-build'
+import { gitContext } from '../../git'
+import { randomString } from '../../strings'
+
+export { splitBuildSpecSchema, SplitBuildSpec } from './split-build'
 
 const createCopiedFileInDataDir = (
   { projectLocalDataDir, filesToCopy } : {
@@ -35,10 +43,11 @@ const createCopiedFileInDataDir = (
   return result
 }
 
-const calcComposeUpArgs = ({ userSpecifiedServices, debug, cwd } : {
+const calcComposeUpArgs = ({ userSpecifiedServices, debug, cwd, build } : {
   userSpecifiedServices: string[]
   debug: boolean
   cwd: string
+  build: boolean
 }) => {
   const upServices = userSpecifiedServices.length
     ? userSpecifiedServices.concat(COMPOSE_TUNNEL_AGENT_SERVICE_NAME)
@@ -47,7 +56,8 @@ const calcComposeUpArgs = ({ userSpecifiedServices, debug, cwd } : {
   return [
     ...debug ? ['--verbose'] : [],
     '--project-directory', cwd,
-    'up', '-d', '--remove-orphans', '--build',
+    'up', '-d', '--remove-orphans',
+    ...build ? ['--build'] : [],
     ...upServices,
   ]
 }
@@ -58,6 +68,20 @@ const serviceLinkEnvVars = (
   expectedServiceUrls
     .map(({ name, port, url }) => [`PREEVY_BASE_URI_${name.replace(/[^a-zA-Z0-9_]/g, '_')}_${port}`.toUpperCase(), url])
 )
+
+const isEcr = (registry: string) => Boolean(registry.match(/^[0-9]+\.dkr\.ecr\.[^.]+\.*\.amazonaws\.com\/.+/))
+
+const registryImageName = (
+  { registry, image, tag }: {
+    registry: string
+    image: string
+    tag: string
+  },
+  { ecrFormat }: { ecrFormat?: boolean } = {},
+) => {
+  const formatForEcr = ecrFormat === undefined ? isEcr(registry) : ecrFormat
+  return formatForEcr ? `${registry}:${image}-${tag}` : `${registry}/${image}:${tag}`
+}
 
 const up = async ({
   debug,
@@ -79,6 +103,7 @@ const up = async ({
   envId,
   expectedServiceUrls,
   projectName,
+  splitBuildSpec,
 }: {
   debug: boolean
   machineDriver: MachineDriver
@@ -99,6 +124,7 @@ const up = async ({
   envId: EnvId
   expectedServiceUrls: { name: string; port: number; url: string }[]
   projectName: string
+  splitBuildSpec?: SplitBuildSpec
 }): Promise<{ machine: MachineBase }> => {
   const remoteDir = remoteProjectDir(projectName)
 
@@ -109,6 +135,14 @@ const up = async ({
     env: serviceLinkEnvVars(expectedServiceUrls),
     projectName: userSpecifiedProjectName,
   })
+
+  await using cleanup = new AsyncDisposableStack()
+
+  const { machine, connection, userAndGroup, dockerPlatform } = await ensureCustomizedMachine({
+    machineDriver, machineCreationDriver, machineDriverName, envId, log, debug,
+  })
+
+  cleanup.defer(() => connection.close())
 
   const { model: fixedModel, filesToCopy } = await fixModelForRemote(
     { cwd, remoteBaseDir: remoteDir },
@@ -123,10 +157,6 @@ const up = async ({
     createCopiedFile('tunnel_client_private_key', sshTunnelPrivateKey),
     createCopiedFile('tunnel_server_public_key', formatPublicKey(hostKey)),
   ])
-
-  const { machine, connection, userAndGroup } = await ensureCustomizedMachine({
-    machineDriver, machineCreationDriver, machineDriverName, envId, log, debug,
-  })
 
   let remoteModel = addComposeTunnelAgentService({
     envId,
@@ -150,32 +180,70 @@ const up = async ({
     )
   }
 
-  try {
-    const { exec } = connection
+  if (splitBuildSpec) {
+    const tagSuffix = await gitContext(cwd)?.commit({ short: true }) ?? randomString.lowercaseNumeric(8)
+    const serviceImage = (service: string, tag: string) => registryImageName(
+      {
+        registry: splitBuildSpec.registry,
+        image: `preevy-${envId}-${service}`,
+        tag,
+      },
+      { ecrFormat: splitBuildSpec.ecrFormat },
+    )
 
-    const modelStr = yaml.stringify(remoteModel)
-    log.debug('model', modelStr)
-    const composeFilePath = await createCopiedFile(composeModelFilename, modelStr)
+    const buildServices = mapValues(
+      pickBy(remoteModel.services, ({ build }) => build),
+      ({ build }: { build: ComposeBuild}, service) => {
+        const latestImage = serviceImage(service, 'latest')
+        const thisImage = serviceImage(service, tagSuffix)
+        return ({
+          build: Object.assign(build, {
+            tags: (build.tags ?? []).concat(thisImage, latestImage),
+            cache_from: (build.cache_from ?? []).concat(latestImage),
+          }),
+        })
+      },
+    )
 
-    await exec(`mkdir -p "${remoteDir}"`)
+    const buildFilename = path.join(projectLocalDataDir, 'build.yaml')
+    await fs.promises.writeFile(buildFilename, yaml.stringify({ services: buildServices }))
 
-    log.debug('Files to copy', filesToCopy)
+    await childProcessPromise(spawn('docker', [
+      'buildx', 'bake',
+      '-f', buildFilename,
+      `--set=*.platform=${splitBuildSpec.platform ?? dockerPlatform}`,
+      '--push',
+    ], {
+      stdio: 'inherit',
+    }))
 
-    await uploadWithSpinner(exec, remoteDir, filesToCopy, skipUnchangedFiles)
-
-    const compose = localComposeClient({
-      composeFiles: [composeFilePath.local],
-      projectName: userSpecifiedProjectName,
-    })
-    const composeArgs = calcComposeUpArgs({ userSpecifiedServices, debug, cwd })
-
-    const withDockerSocket = wrapWithDockerSocket({ connection, log })
-
-    log.info(`Running: docker compose up ${composeArgs.join(' ')}`)
-    await withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit' }))
-  } finally {
-    await connection.close()
+    for (const serviceName of Object.keys(buildServices)) {
+      (remoteModel.services as Record<string, ComposeService>)[serviceName].image = serviceImage(serviceName, tagSuffix)
+    }
   }
+
+  const modelStr = yaml.stringify(remoteModel)
+  log.debug('model', modelStr)
+  const composeFilePath = await createCopiedFile(composeModelFilename, modelStr)
+
+  const { exec } = connection
+
+  await exec(`mkdir -p "${remoteDir}"`)
+
+  log.debug('Files to copy', filesToCopy)
+
+  await uploadWithSpinner(exec, remoteDir, filesToCopy, skipUnchangedFiles)
+
+  const compose = localComposeClient({
+    composeFiles: [composeFilePath.local],
+    projectName: userSpecifiedProjectName,
+  })
+  const composeArgs = calcComposeUpArgs({ userSpecifiedServices, debug, cwd, build: !splitBuildSpec })
+
+  const withDockerSocket = wrapWithDockerSocket({ connection, log })
+
+  log.info(`Running: docker compose up ${composeArgs.join(' ')}`)
+  await withDockerSocket(() => compose.spawnPromise(composeArgs, { stdio: 'inherit' }))
 
   return { machine }
 }

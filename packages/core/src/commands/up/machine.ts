@@ -98,11 +98,16 @@ const writeMetadata = async (
   })
 }
 
-const getUserAndGroup = async (connection: MachineConnection) => (
+const getUserAndGroup = async (connection: Pick<MachineConnection, 'exec'>) => (
   await connection.exec('echo "$(id -u):$(stat -c %g /var/run/docker.sock)"')
 ).stdout
   .trim()
   .split(':') as [string, string]
+
+const getDockerPlatform = async (connection: Pick<MachineConnection, 'exec'>) => {
+  const arch = (await connection.exec('docker info -f "{{.Architecture}}"')).stdout.trim()
+  return arch === 'aarch64' ? 'linux/arm64' : 'linux/amd64'
+}
 
 const customizeNewMachine = ({
   log,
@@ -150,6 +155,7 @@ const customizeNewMachine = ({
 
   spinner.text = 'Finalizing...'
   const userAndGroup = await getUserAndGroup(connection)
+  const dockerPlatform = await getDockerPlatform(connection)
 
   await Promise.all([
     writeMetadata(machine, machineDriverName, machineCreationDriver.metadata, connection, userAndGroup),
@@ -160,7 +166,7 @@ const customizeNewMachine = ({
     }),
   ])
 
-  return { connection, userAndGroup, machine }
+  return { connection, userAndGroup, machine, dockerPlatform }
 }
 
 export const ensureCustomizedMachine = async ({
@@ -177,10 +183,16 @@ export const ensureCustomizedMachine = async ({
   envId: string
   log: Logger
   debug: boolean
-}): Promise<{ machine: MachineBase; connection: MachineConnection; userAndGroup: [string, string] }> => {
+}): Promise<{
+  machine: MachineBase
+  connection: MachineConnection
+  userAndGroup: [string, string]
+  dockerPlatform: string
+}> => {
   const { machine, connection: connectionPromise, origin } = await ensureMachine(
     { machineDriver, machineCreationDriver, envId, log, debug },
   )
+
   return await withSpinner(async spinner => {
     spinner.text = `Connecting to machine at ${machine.locationDescription}`
     const connection = await connectionPromise
@@ -200,12 +212,14 @@ export const ensureCustomizedMachine = async ({
       }
 
       const userAndGroup = await getUserAndGroup(connection)
+      const dockerPlatform = await getDockerPlatform(connection)
+
       if (origin === 'new-from-snapshot') {
         spinner.text = 'Finalizing...'
         await writeMetadata(machine, machineDriverName, machineCreationDriver.metadata, connection, userAndGroup)
       }
 
-      return { machine, connection, userAndGroup }
+      return { machine, connection, userAndGroup, dockerPlatform }
     } catch (e) {
       await connection.close()
       throw e

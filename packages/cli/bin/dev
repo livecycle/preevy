@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+require('disposablestack/auto')
 const oclif = require('@oclif/core')
 
 const path = require('path')

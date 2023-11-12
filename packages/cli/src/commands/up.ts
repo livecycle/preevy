@@ -22,6 +22,14 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
   static flags = {
     ...envIdFlags,
     ...tunnelServerFlags,
+    'split-build': Flags.custom<commands.SplitBuildSpec>({
+      description: 'Build locally and deploy remotely using an image registry',
+      required: false,
+      parse: async input => {
+        const pairs = input.split(',')
+        return commands.splitBuildSpecSchema.parse(Object.fromEntries(pairs.map(pair => pair.split('='))))
+      },
+    })(),
     'skip-unchanged-files': Flags.boolean({
       description: 'Detect and skip unchanged files when copying (default: true)',
       default: true,
@@ -144,6 +152,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       cwd: process.cwd(),
       skipUnchangedFiles: flags['skip-unchanged-files'],
       version: this.config.version,
+      splitBuildSpec: flags['split-build'],
     })
 
     this.log(`Preview environment ${envId} provisioned at: ${machine.locationDescription}`)

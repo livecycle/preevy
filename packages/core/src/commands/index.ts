@@ -1,7 +1,6 @@
-import up from './up'
-import ls from './ls'
-import shell from './shell'
+export { SplitBuildSpec, splitBuildSpecSchema, default as up } from './up'
+export { default as ls } from './ls'
+export { default as shell } from './shell'
 
-export { up, ls, shell }
 export { urls } from './urls'
 export * as proxy from './proxy'

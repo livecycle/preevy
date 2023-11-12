@@ -30,8 +30,8 @@
     "@types/inquirer-autocomplete-prompt": "^3.0.3",
     "@types/lodash": "^4.14.192",
     "@types/node": "18",
-    "@typescript-eslint/eslint-plugin": "6.7.4",
-    "@typescript-eslint/parser": "6.7.4",
+    "@typescript-eslint/eslint-plugin": "6.10.0",
+    "@typescript-eslint/parser": "6.10.0",
     "eslint": "^8.36.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-oclif": "^4",
@@ -44,7 +44,7 @@
     "shx": "^0.3.3",
     "ts-node": "^10.9.1",
     "tslib": "^2.5.0",
-    "typescript": "^5.0.4"
+    "typescript": "^5.2.2"
   },
   "scripts": {
     "lint": "eslint . --ext .ts,.tsx --cache",

@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "declaration": true,
-    "lib": ["ES2022"],
+    "lib": ["ES2022", "ESNext.Disposable"],
     "module": "CommonJS",
     "target": "ES2019",
     "moduleResolution": "node",

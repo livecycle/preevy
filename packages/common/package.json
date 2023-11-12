@@ -24,8 +24,8 @@
     "@types/node": "18",
     "@types/shell-escape": "^0.2.1",
     "@types/ssh2": "^1.11.8",
-    "@typescript-eslint/eslint-plugin": "6.7.4",
-    "@typescript-eslint/parser": "6.7.4",
+    "@typescript-eslint/eslint-plugin": "6.10.0",
+    "@typescript-eslint/parser": "6.10.0",
     "esbuild": "^0.17.14",
     "eslint": "^8.36.0",
     "husky": "^8.0.0",
@@ -33,7 +33,7 @@
     "lint-staged": "^14.0.1",
     "ts-jest": "29.1.1",
     "tsx": "^3.12.3",
-    "typescript": "^5.0.4",
+    "typescript": "^5.2.2",
     "yaml": "^2.3.2"
   },
   "scripts": {

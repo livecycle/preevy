@@ -9,7 +9,7 @@
     "patch-package": "^8.0.0",
     "postinstall-postinstall": "^2.1.0",
     "syncpack": "^9.8.4",
-    "typescript": "^5.0.4"
+    "typescript": "^5.2.2"
   },
   "resolutions": {
     "**/@oclif/core": "livecycle/oclif-core-patched-for-preevy#v3.12.0-preevy-patch-10"
