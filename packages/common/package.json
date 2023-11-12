@@ -38,10 +38,9 @@
   },
   "scripts": {
     "test": "yarn jest",
-    "start": "node dist/main.js",
-    "dev": "tsx watch ./main.ts",
     "lint": "eslint . --ext .ts,.tsx --cache",
     "build": "tsc -b",
+    "clean": "shx rm -rf dist tsconfig.tsbuildinfo",
     "prepack": "yarn build",
     "bump-to": "yarn version --no-commit-hooks --no-git-tag-version --new-version"
   }

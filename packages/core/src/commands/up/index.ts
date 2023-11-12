@@ -1,11 +1,10 @@
-import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, formatPublicKey, readOrUndefined } from '@preevy/common'
+import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, ScriptInjection, formatPublicKey, readOrUndefined } from '@preevy/common'
 import fs from 'fs'
 import path from 'path'
 import { rimraf } from 'rimraf'
 import yaml from 'yaml'
-import { widgetScriptInjector } from '../../compose/script-injection'
 import { TunnelOpts } from '../../ssh'
-import { composeModelFilename, fixModelForRemote, localComposeClient } from '../../compose'
+import { composeModelFilename, fixModelForRemote, localComposeClient, addScriptInjectionsToModel } from '../../compose'
 import { ensureCustomizedMachine } from './machine'
 import { wrapWithDockerSocket } from '../../docker'
 import { addComposeTunnelAgentService } from '../../compose-tunnel-agent-client'
@@ -36,7 +35,7 @@ const createCopiedFileInDataDir = (
   return result
 }
 
-const calcComposeArgs = ({ userSpecifiedServices, debug, cwd } : {
+const calcComposeUpArgs = ({ userSpecifiedServices, debug, cwd } : {
   userSpecifiedServices: string[]
   debug: boolean
   cwd: string
@@ -68,7 +67,7 @@ const up = async ({
   tunnelOpts,
   userSpecifiedProjectName,
   userSpecifiedServices,
-  injectLivecycleScript,
+  scriptInjections,
   composeFiles,
   log,
   dataDir,
@@ -91,7 +90,7 @@ const up = async ({
   composeFiles: string[]
   log: Logger
   dataDir: string
-  injectLivecycleScript: string | undefined
+  scriptInjections?: Record<string, ScriptInjection>
   sshTunnelPrivateKey: string | Buffer
   allowedSshHostKeys: Buffer
   cwd: string
@@ -129,28 +128,31 @@ const up = async ({
     machineDriver, machineCreationDriver, machineDriverName, envId, log, debug,
   })
 
+  let remoteModel = addComposeTunnelAgentService({
+    envId,
+    debug,
+    tunnelOpts,
+    sshPrivateKeyPath: path.posix.join(remoteDir, sshPrivateKeyFile.remote),
+    knownServerPublicKeyPath: path.posix.join(remoteDir, knownServerPublicKey.remote),
+    user: userAndGroup.join(':'),
+    machineStatusCommand: await machineDriver.machineStatusCommand(machine),
+    envMetadata: await envMetadata({ envId, version }),
+    composeModelPath: path.posix.join(remoteDir, composeModelFilename),
+    privateMode: false,
+    defaultAccess: 'public',
+    composeProject: projectName,
+  }, fixedModel)
+
+  if (scriptInjections) {
+    remoteModel = addScriptInjectionsToModel(
+      remoteModel,
+      serviceName => (serviceName !== COMPOSE_TUNNEL_AGENT_SERVICE_NAME ? scriptInjections : undefined),
+    )
+  }
+
   try {
     const { exec } = connection
 
-    let remoteModel = addComposeTunnelAgentService({
-      envId,
-      debug,
-      tunnelOpts,
-      sshPrivateKeyPath: path.posix.join(remoteDir, sshPrivateKeyFile.remote),
-      knownServerPublicKeyPath: path.posix.join(remoteDir, knownServerPublicKey.remote),
-      user: userAndGroup.join(':'),
-      machineStatusCommand: await machineDriver.machineStatusCommand(machine),
-      envMetadata: await envMetadata({ envId, version }),
-      composeModelPath: path.posix.join(remoteDir, composeModelFilename),
-      privateMode: false,
-      defaultAccess: 'public',
-      composeProject: projectName,
-    }, fixedModel)
-
-    if (injectLivecycleScript) {
-      const scriptInjector = widgetScriptInjector(injectLivecycleScript)
-      remoteModel = scriptInjector.inject(remoteModel, x => x !== COMPOSE_TUNNEL_AGENT_SERVICE_NAME)
-    }
     const modelStr = yaml.stringify(remoteModel)
     log.debug('model', modelStr)
     const composeFilePath = await createCopiedFile(composeModelFilename, modelStr)
@@ -165,7 +167,7 @@ const up = async ({
       composeFiles: [composeFilePath.local],
       projectName: userSpecifiedProjectName,
     })
-    const composeArgs = calcComposeArgs({ userSpecifiedServices, debug, cwd })
+    const composeArgs = calcComposeUpArgs({ userSpecifiedServices, debug, cwd })
 
     const withDockerSocket = wrapWithDockerSocket({ connection, log })
 

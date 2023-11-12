@@ -22,7 +22,7 @@ export {
 export { profileStore, Profile, ProfileStore, link, Org } from './profile'
 export { telemetryEmitter, registerEmitter, wireProcessExit, createTelemetryEmitter, machineId } from './telemetry'
 export { fsTypeFromUrl, Store, VirtualFS, localFsFromUrl, localFs } from './store'
-export { localComposeClient, ComposeModel, resolveComposeFiles, getExposedTcpServicePorts, remoteUserModel, NoComposeFilesError } from './compose'
+export { localComposeClient, ComposeModel, resolveComposeFiles, getExposedTcpServicePorts, remoteUserModel, NoComposeFilesError, addScriptInjectionsToModel } from './compose'
 export { withSpinner } from './spinner'
 export { findEnvId, findProjectName, findEnvIdByProjectName, validateEnvId, normalize as normalizeEnvId, EnvId } from './env-id'
 export { sshKeysStore } from './state'

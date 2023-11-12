@@ -1,44 +1,57 @@
-import { describe, test, expect } from '@jest/globals'
+import { describe, expect, jest, beforeEach, it } from '@jest/globals'
+import { ScriptInjection } from '@preevy/common'
 import { ComposeModel } from './model'
-import { scriptInjector } from './script-injection'
+import { addScriptInjectionsToModel } from './script-injection'
 
-describe('script injection', () => {
-  test('inject script to all services', async () => {
-    const model:ComposeModel = {
-      name: 'my-app',
-      services: {
-        frontend1: {},
-        frontend2: {
-          labels: {
-            other: 'value',
-          },
+describe('addScriptInjectionsToModel', () => {
+  const model: ComposeModel = Object.freeze({
+    name: 'my-app',
+    services: {
+      frontend1: {},
+      frontend2: {
+        labels: {
+          other: 'value',
         },
       },
-    }
-
-    const injector = scriptInjector('test', { src: 'https://mydomain.com/myscript.ts', async: true, pathRegex: /.*/ })
-    const newModel = injector.inject(model)
-    expect(newModel.services?.frontend1?.labels).toMatchObject({ 'preevy.inject_script.test.src': 'https://mydomain.com/myscript.ts', 'preevy.inject_script.test.async': 'true', 'preevy.inject_script.test.path_regex': '.*' })
-    expect(newModel.services?.frontend2?.labels).toMatchObject({ other: 'value', 'preevy.inject_script.test.src': 'https://mydomain.com/myscript.ts', 'preevy.inject_script.test.async': 'true', 'preevy.inject_script.test.path_regex': '.*' })
+      frontend3: {},
+    },
   })
 
-  test('does not affect original model', async () => {
-    const model:ComposeModel = {
-      name: 'my-app',
-      services: {
-        frontend1: {},
-        frontend2: {
-          labels: {
-            other: 'value',
-          },
-        },
-      },
-    }
+  let callback: jest.MockedFunction<(name: string) => Record<string, ScriptInjection> | undefined>
+  let newModel: ComposeModel
 
-    const injector = scriptInjector('test', { src: 'https://mydomain.com/myscript.ts' })
-    const newModel = injector.inject(model)
-    expect(model.services?.frontend1?.labels).toBeUndefined()
-    expect(model.services?.frontend2?.labels).not
-      .toMatchObject(newModel.services?.frontend2?.labels as Record<string, unknown>)
+  const injection: ScriptInjection = {
+    src: 'https://mydomain.com/myscript.ts',
+    async: true,
+    pathRegex: /.*/,
+  }
+
+  beforeEach(() => {
+    callback = jest.fn(name => (['frontend1', 'frontend2'].includes(name) ? ({ test: injection }) : undefined))
+    newModel = addScriptInjectionsToModel(model, callback)
+  })
+
+  it('injects the script for the first two services', () => {
+    const expectedLabels = {
+      'preevy.inject_script.test.src': 'https://mydomain.com/myscript.ts',
+      'preevy.inject_script.test.async': 'true',
+      'preevy.inject_script.test.path_regex': '.*',
+    }
+    expect(newModel.services?.frontend1?.labels).toMatchObject(expectedLabels)
+    expect(newModel.services?.frontend2?.labels).toMatchObject({ other: 'value', ...expectedLabels })
+  })
+
+  it('does not inject the script for the last service', () => {
+    expect(newModel.services?.frontend3?.labels).toMatchObject({})
+  })
+
+  it('calls the factory correctly', () => {
+    expect(callback).toHaveBeenCalledTimes(3)
+    expect(callback).toHaveBeenCalledWith('frontend1', {})
+    expect(callback).toHaveBeenCalledWith('frontend2', { labels: { other: 'value' } })
+  })
+
+  it('does not affect original model', () => {
+    expect(newModel).not.toBe(model)
   })
 })
