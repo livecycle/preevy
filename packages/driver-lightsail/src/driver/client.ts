@@ -29,7 +29,6 @@ export const REGIONS = [
   'eu-west-2',
   'eu-west-3',
   'eu-north-1',
-  'il-central-1',
 ] as const
 
 const getFirstAvailabilityZoneForRegion = async (ls: Lightsail) => {
