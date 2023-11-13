@@ -9,7 +9,7 @@ import { activeTunnelStoreKey, inMemoryActiveTunnelStore } from './src/tunnel-st
 import { getSSHKeys } from './src/ssh-keys'
 import { proxy } from './src/proxy'
 import { appLoggerFromEnv } from './src/logging'
-import { tunnelsGauge, runMetricsServer } from './src/metrics'
+import { tunnelsGauge, runMetricsServer, sshConnectionsGauge } from './src/metrics'
 import { numberFromEnv, requiredEnv } from './src/env'
 import { editUrl } from './src/url'
 import { cookieSessionStore } from './src/session'
@@ -83,6 +83,7 @@ const sshServer = createSshServer({
     rootUrl: BASE_URL.toString(),
   },
   tunnelsGauge,
+  sshConnectionsGauge,
   tunnelUrl: (clientId, remotePath) => tunnelUrl(BASE_URL, clientId, remotePath),
 })
   .listen(SSH_PORT, LISTEN_HOST, () => {
