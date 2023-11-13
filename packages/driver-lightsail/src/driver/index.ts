@@ -4,7 +4,8 @@ import { asyncConcat, asyncMap } from 'iter-tools-es'
 import { Flags } from '@oclif/core'
 import { randomBytes } from 'crypto'
 import { InferredFlags } from '@oclif/core/lib/interfaces'
-import { ListQuestion, Question } from 'inquirer'
+import inquirer, { Question } from 'inquirer'
+import inquirerAutoComplete from 'inquirer-autocomplete-prompt'
 import {
   telemetryEmitter,
   SshMachine, MachineDriver, MachineCreationDriver, MachineCreationDriverFactory, machineResourceType,
@@ -18,6 +19,8 @@ import { CUSTOMIZE_BARE_MACHINE } from './scripts'
 import { CURRENT_MACHINE_VERSION, TAGS, requiredTag } from './tags'
 
 export { BundleId, BUNDLE_IDS, bundleIdFromString as bundleId }
+
+inquirer.registerPrompt('autocomplete', inquirerAutoComplete)
 
 type ResourceType = typeof machineResourceType | 'snapshot' | 'keypair'
 
@@ -110,7 +113,6 @@ const flags = {
     description: 'AWS region in which resources will be provisioned',
     required: true,
     env: 'AWS_REGION',
-    options: REGIONS.map(r => r),
   }),
 } as const
 
@@ -120,14 +122,16 @@ const contextFromFlags = ({ region }: FlagTypes): { region: string } => ({
   region: region as string,
 })
 
-const questions = async (): Promise<(Question | ListQuestion)[]> => [
+const questions = async (): Promise<Question[]> => [
   {
-    type: 'list',
+    type: 'autocomplete',
     name: 'region',
     default: process.env.AWS_REGION ?? 'us-east-1',
     message: flags.region.description,
-    choices: flags.region.options,
-  },
+    source: async (_opts, input) => REGIONS.filter(r => !input || r.includes(input.toLowerCase())),
+    suggestOnly: true,
+    filter: i => i.toLowerCase(),
+  } as inquirerAutoComplete.AutocompleteQuestionOptions,
 ]
 
 const flagsFromAnswers = async (answers: Record<string, unknown>): Promise<FlagTypes> => ({

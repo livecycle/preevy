@@ -2,8 +2,11 @@ import { fsTypeFromUrl, localFsFromUrl } from '@preevy/core'
 import { googleCloudStorageFs, defaultBucketName as gsDefaultBucketName, defaultProjectId as defaultGceProjectId } from '@preevy/driver-gce'
 import { s3fs, defaultBucketName as s3DefaultBucketName, AWS_REGIONS, awsUtils } from '@preevy/driver-lightsail'
 import inquirer from 'inquirer'
+import inquirerAutoComplete from 'inquirer-autocomplete-prompt'
 import { DriverName } from './drivers'
 import ambientAwsAccountId = awsUtils.ambientAccountId
+
+inquirer.registerPrompt('autocomplete', inquirerAutoComplete)
 
 export const fsFromUrl = async (url: string, localBaseDir: string) => {
   const fsType = fsTypeFromUrl(url)
@@ -57,12 +60,14 @@ export const chooseFs: Record<FsType, FsChooser> = {
     // eslint-disable-next-line no-use-before-define
     const { region, bucket } = await inquirer.prompt<{ region: string; bucket: string }>([
       {
-        type: 'list',
+        type: 'autocomplete',
         name: 'region',
         message: 'S3 bucket region',
-        choices: AWS_REGIONS,
+        source: async (_opts, input) => AWS_REGIONS.filter(r => !input || r.includes(input.toLowerCase())),
         default: driver?.name === 'lightsail' ? driver.flags.region as string : 'us-east-1',
-      },
+        suggestOnly: true,
+        filter: i => i.toLowerCase(),
+      } as inquirerAutoComplete.AutocompleteQuestionOptions,
       {
         type: 'input',
         name: 'bucket',

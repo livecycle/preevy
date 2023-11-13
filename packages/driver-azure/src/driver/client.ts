@@ -63,6 +63,7 @@ export const REGIONS = [
   'centraluseuap',
   'eastus2euap',
   'qatarcentral',
+  'israelcentral',
 ]
 
 type VMInstance = {

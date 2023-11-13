@@ -17,10 +17,13 @@
     "@oclif/core": "^2",
     "@preevy/core": "0.0.56",
     "inquirer": "^8.0.0",
+    "inquirer-autocomplete-prompt": "^2.0.0",
     "iter-tools-es": "^7.5.3",
     "lodash": "^4.17.21"
   },
   "devDependencies": {
+    "@types/inquirer": "^8.0.0",
+    "@types/inquirer-autocomplete-prompt": "^3.0.3",
     "@types/lodash": "^4.14.192",
     "@types/node": "18",
     "@typescript-eslint/eslint-plugin": "6.7.4",
