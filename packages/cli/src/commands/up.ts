@@ -29,7 +29,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
         const pairs = input.split(',')
         const result = commands.localBuildSpecSchema.safeParse(Object.fromEntries(pairs.map(pair => pair.split('='))))
         if (!result.success) {
-          throw new Errors.CLIError(`Invalid local build arg: ${inspect(result.error)}`)
+          throw new Errors.CLIError(`Invalid local-build arg: ${inspect(result.error)}`)
         }
         return result.data
       },

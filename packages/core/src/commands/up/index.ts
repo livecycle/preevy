@@ -200,7 +200,11 @@ const up = async ({
           build: Object.assign(build, {
             tags: (build.tags ?? []).concat(thisImage, latestImage),
             cache_from: (build.cache_from ?? []).concat(latestImage),
-            cache_to: (build.cache_to ?? []).concat(...localBuildSpec.cacheToLatest ? [latestImage] : []),
+            cache_to: (build.cache_to ?? []).concat(
+              ...localBuildSpec.cacheToLatest
+                ? [`type=registry,ref=${latestImage},image-manifest=true,mode=max`]
+                : [],
+            ),
           }),
         })
       },
