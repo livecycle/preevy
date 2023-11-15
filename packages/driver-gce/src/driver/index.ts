@@ -1,6 +1,7 @@
 import { Flags, Interfaces } from '@oclif/core'
 import { asyncMap } from 'iter-tools-es'
-import { InputQuestion, ListQuestion } from 'inquirer'
+import inquirer, { ListQuestion, Question } from 'inquirer'
+import inquirerAutoComplete from 'inquirer-autocomplete-prompt'
 import {
   MachineDriver,
   SshMachine, MachineCreationDriver, MachineCreationDriverFactory, MachineDriverFactory,
@@ -15,10 +16,12 @@ import {
   extractDefined,
   PartialMachine,
 } from '@preevy/core'
-import { pick } from 'lodash'
+import { memoize, pick } from 'lodash'
 import createClient, { Client, Instance, availableRegions, defaultProjectId, instanceError, shortResourceName } from './client'
 import { deserializeMetadata, metadataKey } from './metadata'
 import { LABELS } from './labels'
+
+inquirer.registerPrompt('autocomplete', inquirerAutoComplete)
 
 type DriverContext = {
   log: Logger
@@ -108,26 +111,32 @@ const contextFromFlags = ({
   zone,
 })
 
-const questions = async (): Promise<(InputQuestion | ListQuestion)[]> => [
-  {
-    type: 'input',
-    name: 'project',
-    default: defaultProjectId,
-    message: flags['project-id'].description,
-  },
-  {
-    type: 'list',
-    name: 'region',
-    choices: async ({ project }) => (await availableRegions(project)).map(r => r.name),
-  },
-  {
-    type: 'list',
-    name: 'zone',
-    choices: async (
-      { project, region },
-    ) => (await availableRegions(project)).find(r => r.name === region)?.zones ?? [],
-  },
-]
+const questions = async (): Promise<Question[]> => {
+  const memoizedAvailableRegions = memoize(availableRegions)
+  return [
+    {
+      type: 'input',
+      name: 'project',
+      default: defaultProjectId,
+      message: flags['project-id'].description,
+    },
+    {
+      type: 'autocomplete',
+      name: 'region',
+      source: async ({ project }, input) => (await memoizedAvailableRegions(project))
+        .filter(({ name }) => !input || name.includes(input.toLowerCase()))
+        .map(r => r.name),
+      filter: i => i.toLowerCase(),
+    } as inquirerAutoComplete.AutocompleteQuestionOptions,
+    {
+      type: 'list',
+      name: 'zone',
+      choices: memoize(
+        async ({ project, region }) => (await availableRegions(project)).find(r => r.name === region)?.zones ?? [],
+      ),
+    } as ListQuestion,
+  ]
+}
 
 const flagsFromAnswers = async (answers: Record<string, unknown>): Promise<FlagTypes> => ({
   'project-id': answers.project as string,

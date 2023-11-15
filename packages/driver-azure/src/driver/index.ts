@@ -1,6 +1,7 @@
 import { Flags, Interfaces } from '@oclif/core'
 import { asyncFirst, asyncMap } from 'iter-tools-es'
-import { ListQuestion, Question } from 'inquirer'
+import inquirer, { Question } from 'inquirer'
+import inquirerAutoComplete from 'inquirer-autocomplete-prompt'
 import { InferredFlags } from '@oclif/core/lib/interfaces'
 import { Resource, VirtualMachine } from '@azure/arm-compute'
 import { inspect } from 'util'
@@ -25,6 +26,8 @@ import { pick } from 'lodash'
 import { Client, client as createClient, REGIONS } from './client'
 import { CUSTOMIZE_BARE_MACHINE } from './scripts'
 import { AzureCustomTags, extractResourceGroupNameFromId } from './vm-creation-utils'
+
+inquirer.registerPrompt('autocomplete', inquirerAutoComplete)
 
 type RootObjectDetailsError = {
   code: string
@@ -142,13 +145,15 @@ const flags = {
 
 type FlagTypes = Omit<Interfaces.InferredFlags<typeof flags>, 'json'>
 
-const questions = async (): Promise<(Question | ListQuestion)[]> => [
+const questions = async (): Promise<Question[]> => [
   {
-    type: 'list',
+    type: 'autocomplete',
     name: 'region',
     message: flags.region.description,
-    choices: REGIONS,
-  },
+    source: async (_opts, input) => !input || REGIONS.filter(r => r.includes(input.toLowerCase())),
+    suggestOnly: true,
+    filter: i => i.toLowerCase(),
+  } as inquirerAutoComplete.AutocompleteQuestionOptions,
   {
     type: 'input',
     name: 'subscription-id',

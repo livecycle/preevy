@@ -31,6 +31,7 @@
     "@preevy/driver-lightsail": "0.0.56",
     "@preevy/plugin-github-pr-link": "0.0.56",
     "inquirer": "^8.0.0",
+    "inquirer-autocomplete-prompt": "^2.0.0",
     "iter-tools-es": "^7.5.3",
     "lodash": "^4.17.21",
     "shell-escape": "^0.2.0",
@@ -39,6 +40,7 @@
   "devDependencies": {
     "@oclif/test": "^2.3.4",
     "@types/inquirer": "^8.0.0",
+    "@types/inquirer-autocomplete-prompt": "^3.0.3",
     "@types/lodash": "^4.14.192",
     "@types/node": "18",
     "@types/shell-escape": "^0.2.1",
