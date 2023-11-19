@@ -12,6 +12,7 @@ export const composeFlags = {
   file: Flags.string({
     description: 'Compose configuration file',
     multiple: true,
+    singleValue: true,
     required: false,
     char: 'f',
     default: [],
@@ -20,6 +21,7 @@ export const composeFlags = {
   'system-compose-file': Flags.string({
     description: 'Add extra Compose configuration file without overriding the defaults',
     multiple: true,
+    singleValue: true,
     required: false,
     default: [],
     helpGroup: 'GLOBAL',

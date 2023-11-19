@@ -47,6 +47,7 @@ export default class Purge extends DriverCommand<typeof Purge> {
       description: 'Resource type(s) to delete',
       default: [machineResourceType],
       multiple: true,
+      singleValue: true,
     }),
     force: Flags.boolean({
       description: 'Do not ask for confirmation',

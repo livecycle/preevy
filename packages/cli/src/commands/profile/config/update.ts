@@ -53,6 +53,7 @@ export default class UpdateProfileConfig extends ProfileCommand<typeof UpdatePro
       description: 'Unset a configuration option',
       default: [],
       multiple: true,
+      singleValue: true,
     }),
   }
 

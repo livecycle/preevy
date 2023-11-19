@@ -19,7 +19,7 @@
   ],
   "dependencies": {
     "@inquirer/confirm": "^2.0.14",
-    "@oclif/core": "^2",
+    "@oclif/core": "^3",
     "@oclif/plugin-help": "^5",
     "@preevy/cli-common": "0.0.56",
     "@preevy/common": "0.0.56",
@@ -38,7 +38,6 @@
     "yaml": "^2.3.2"
   },
   "devDependencies": {
-    "@oclif/test": "^2.3.4",
     "@types/inquirer": "^8.0.0",
     "@types/inquirer-autocomplete-prompt": "^3.0.3",
     "@types/lodash": "^4.14.192",
@@ -55,7 +54,7 @@
     "eslint-plugin-jsx-a11y": "^6.7.1",
     "eslint-plugin-react": "^7.32.2",
     "jest": "29.7.0",
-    "oclif": "^3",
+    "oclif": "^4.0.4",
     "pkg": "^5.8.1",
     "shx": "^0.3.3",
     "ts-node": "^10.9.1",
