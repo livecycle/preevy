@@ -19,7 +19,7 @@ class LinkGithubPr extends BaseGithubPrCommand<typeof LinkGithubPr> {
     const urls = await this.config.runCommand('urls', [
       ...(this.flags.id === undefined ? [] : [`--id ${this.flags.id}`]),
       ...(this.flags.debug === undefined ? [] : ['--debug']),
-      ...(this.flags.file.map(f => `--file ${f}`)),
+      ...Array.isArray(this.flags.file) ? (this.flags.file.map(f => `--file ${f}`)) : [],
       ...(this.flags.project === undefined ? [] : [`--project ${this.flags.project}`]),
       '--json',
     ]) as FlatTunnel[]

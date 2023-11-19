@@ -14,7 +14,7 @@
     "@aws-sdk/client-s3": "^3.271.0",
     "@aws-sdk/client-sts": "^3.289.0",
     "@aws-sdk/util-waiter": "^3.271.0",
-    "@oclif/core": "^2",
+    "@oclif/core": "^3",
     "@preevy/core": "0.0.56",
     "inquirer": "^8.0.0",
     "inquirer-autocomplete-prompt": "^2.0.0",
