@@ -1,6 +1,7 @@
 import { TunnelNameResolver } from '@preevy/common'
 import { generateSshKeyPair } from '../ssh/keypair'
-import { ComposeModel, getExposedTcpServicePorts } from '../compose'
+import { ComposeModel } from '../compose/model'
+import { getExposedTcpServicePorts } from '../compose/client'
 
 type port = string
 type url = string

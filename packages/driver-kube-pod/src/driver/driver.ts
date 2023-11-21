@@ -37,7 +37,7 @@ export const machineConnection = async (
   log.debug(`Found pod "${pod.metadata?.name}"`)
 
   return ({
-    close: async () => undefined,
+    [Symbol.dispose]: () => undefined,
 
     exec: async (command, opts) => {
       const { code, output } = await client.exec({
@@ -55,10 +55,15 @@ export const machineConnection = async (
 
     dockerSocket: async () => {
       const host = '0.0.0.0'
-      const { localSocket, close } = await client.portForward(deployment, 2375, { host, port: 0 })
+
+      const {
+        localSocket,
+        [Symbol.asyncDispose]: dispose,
+      } = await client.portForward(deployment, 2375, { host, port: 0 })
+
       return {
         address: { host, port: (localSocket as AddressInfo).port },
-        close,
+        [Symbol.asyncDispose]: dispose,
       }
     },
   })

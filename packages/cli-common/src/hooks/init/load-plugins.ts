@@ -53,6 +53,7 @@ export const initHook: OclifHook<'init'> = async function hook(args) {
       async () => await localComposeClient({
         composeFiles,
         projectName: flags.project,
+        projectDirectory: process.cwd(),
       }).getModelOrError(),
       {
         text: `Loading compose file${composeFiles.length > 1 ? 's' : ''}: ${composeFiles.join(', ')}`,

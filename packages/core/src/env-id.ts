@@ -1,6 +1,6 @@
 import { detectCiProvider } from './ci-providers'
 import { gitContext } from './git'
-import { ComposeModel } from './compose'
+import { ComposeModel } from './compose/model'
 import { Logger } from './log'
 
 export type EnvId = string & {

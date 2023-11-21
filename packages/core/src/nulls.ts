@@ -44,3 +44,9 @@ export function extractDefined<T extends {}, Prop extends keyof T>(
     ? defined.then(obj => obj[prop] as unknown as NonNullable<T[Prop]>)
     : (o as T)[prop] as NonNullable<T[Prop]>
 }
+
+export const hasProp = <
+  K extends string | symbol | number
+>(prop: K) => <
+  T extends { [k in K]?: unknown }
+>(obj: T): obj is T & { [k in K]-?: NonNullable<T[K]> } => Boolean(obj[prop])

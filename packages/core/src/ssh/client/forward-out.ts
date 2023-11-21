@@ -3,9 +3,8 @@ import net, { AddressInfo, ListenOptions } from 'net'
 import ssh2 from 'ssh2'
 import { Logger } from '../../log'
 
-export type ForwardOutStreamLocal = {
+export type ForwardOutStreamLocal = AsyncDisposable & {
   localSocket: string | AddressInfo
-  close: () => Promise<void>
 }
 
 export const forwardOutStreamLocal = ({ ssh, log, listenAddress, remoteSocket, onClose }: {
@@ -50,7 +49,7 @@ export const forwardOutStreamLocal = ({ ssh, log, listenAddress, remoteSocket, o
         reject(new Error(message))
         return
       }
-      resolve({ localSocket: address, close: async () => { socketServer.close() } })
+      resolve({ localSocket: address, [Symbol.asyncDispose]: async () => { socketServer.close() } })
     })
     .on('error', (err: unknown) => {
       log.error('socketServer error', err)

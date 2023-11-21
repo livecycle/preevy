@@ -1,5 +1,6 @@
-import { ux, Args } from '@oclif/core'
+import { Args } from '@oclif/core'
 import { commands, execPromiseStdout } from '@preevy/core'
+import { tableFlags } from '@preevy/cli-common'
 import ProfileCommand from '../../profile-command'
 
 // eslint-disable-next-line no-use-before-define
@@ -7,7 +8,7 @@ export default class Disconnect extends ProfileCommand<typeof Disconnect> {
   static description = 'Disconnect tunneled local compose application'
 
   static flags = {
-    ...ux.table.flags(),
+    ...tableFlags,
   }
 
   static strict = false

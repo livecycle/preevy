@@ -1,6 +1,7 @@
 import { ux } from '@oclif/core'
 import { asyncMap, asyncToArray } from 'iter-tools-es'
 import { commands } from '@preevy/core'
+import { tableFlags } from '@preevy/cli-common'
 import DriverCommand from '../driver-command'
 
 // eslint-disable-next-line no-use-before-define
@@ -8,7 +9,7 @@ export default class Ls extends DriverCommand<typeof Ls> {
   static description = 'List preview environments'
 
   static flags = {
-    ...ux.table.flags(),
+    ...tableFlags,
   }
 
   static args = {

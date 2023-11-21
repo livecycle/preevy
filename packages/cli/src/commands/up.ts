@@ -1,19 +1,78 @@
-import { Args, Flags, ux, Errors } from '@oclif/core'
+import { Args, Flags } from '@oclif/core'
 import {
+  ComposeModel,
+  Logger,
+  ProfileStore,
+  TunnelOpts,
   addBaseComposeTunnelAgentService,
-  commands, findComposeTunnelAgentUrl,
+  commands, ensureMachine, findComposeTunnelAgentUrl,
   findEnvId,
   findProjectName, getTunnelNamesToServicePorts, jwkThumbprint, profileStore,
   telemetryEmitter,
   withSpinner,
 } from '@preevy/core'
-import { argsFromRaw, tunnelServerFlags } from '@preevy/cli-common'
+import { argsFromRaw, buildFlags, parseBuildFlags, tableFlags, text, tunnelServerFlags } from '@preevy/cli-common'
 import { inspect } from 'util'
 import { editUrl, tunnelNameResolver } from '@preevy/common'
 import MachineCreationDriverCommand from '../machine-creation-driver-command'
 import { envIdFlags, urlFlags } from '../common-flags'
 import { filterUrls, printUrls, writeUrlsToFile } from './urls'
 import { connectToTunnelServerSsh } from '../tunnel-server-client'
+
+const fetchTunnelServerDetails = async ({
+  log,
+  tunnelingKey,
+  envId,
+  userModel,
+  pStore,
+  tunnelOpts,
+}: {
+  log: Logger
+  tunnelingKey: string | Buffer
+  envId: string
+  userModel: ComposeModel
+  pStore: ProfileStore
+  tunnelOpts: TunnelOpts
+}) => {
+  const expectedTunnels = getTunnelNamesToServicePorts(
+    addBaseComposeTunnelAgentService(userModel),
+    tunnelNameResolver({ envId }),
+  )
+
+  const { hostKey, expectedServiceUrls } = await withSpinner(async spinner => {
+    spinner.text = 'Connecting...'
+
+    const { hostKey: hk, client: tunnelServerSshClient } = await connectToTunnelServerSsh({
+      tunnelingKey,
+      knownServerPublicKeys: pStore.knownServerPublicKeys,
+      tunnelOpts,
+      log,
+      spinner,
+    })
+
+    spinner.text = 'Getting server details...'
+
+    const [{ clientId }, expectedTunnelUrls] = await Promise.all([
+      tunnelServerSshClient.execHello(),
+      tunnelServerSshClient.execTunnelUrl(Object.keys(expectedTunnels)),
+    ])
+
+    log.debug('Tunnel server details: %j', { clientId, expectedTunnelUrls })
+
+    void tunnelServerSshClient.end()
+
+    telemetryEmitter().group({ type: 'profile' }, { proxy_client_id: clientId })
+
+    const esu = Object.entries(expectedTunnels)
+      .map(([tunnel, { name, port }]) => ({ name, port, url: expectedTunnelUrls[tunnel] }))
+
+    return { hostKey: hk, expectedServiceUrls: esu }
+  }, { opPrefix: 'Tunnel server', successText: 'Got tunnel server details' })
+
+  log.debug('expectedServiceUrls: %j', expectedServiceUrls)
+
+  return { expectedServiceUrls, hostKey }
+}
 
 // eslint-disable-next-line no-use-before-define
 export default class Up extends MachineCreationDriverCommand<typeof Up> {
@@ -22,18 +81,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
   static flags = {
     ...envIdFlags,
     ...tunnelServerFlags,
-    'local-build': Flags.custom<commands.LocalBuildSpec>({
-      description: `Build locally and deploy remotely using an image registry; ${Object.entries(commands.localBuildSpecSchema.shape).map(([k, v]) => `${k}: ${v.description}`).join(', ')}`,
-      required: false,
-      parse: async input => {
-        const pairs = input.split(',')
-        const result = commands.localBuildSpecSchema.safeParse(Object.fromEntries(pairs.map(pair => pair.split('='))))
-        if (!result.success) {
-          throw new Errors.CLIError(`Invalid local-build arg: ${inspect(result.error)}`)
-        }
-        return result.data
-      },
-    })(),
+    ...buildFlags,
     'skip-unchanged-files': Flags.boolean({
       description: 'Detect and skip unchanged files when copying (default: true)',
       default: true,
@@ -50,7 +98,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       default: 'https://app.livecycle.run/widget/widget-bootstrap.js',
     }),
     ...urlFlags,
-    ...ux.table.flags(),
+    ...tableFlags,
   }
 
   static strict = false
@@ -95,55 +143,45 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       insecureSkipVerify: flags['insecure-skip-verify'],
     }
 
-    const expectedTunnels = getTunnelNamesToServicePorts(
-      addBaseComposeTunnelAgentService(userModel),
-      tunnelNameResolver({ envId }),
-    )
-
-    const { hostKey, expectedServiceUrls } = await withSpinner(async spinner => {
-      spinner.text = 'Connecting...'
-
-      const { hostKey: hk, client: tunnelServerSshClient } = await connectToTunnelServerSsh({
-        tunnelingKey,
-        knownServerPublicKeys: pStore.knownServerPublicKeys,
-        tunnelOpts,
-        log: this.logger,
-        spinner,
-      })
-
-      spinner.text = 'Getting server details...'
-
-      const [{ clientId }, expectedTunnelUrls] = await Promise.all([
-        tunnelServerSshClient.execHello(),
-        tunnelServerSshClient.execTunnelUrl(Object.keys(expectedTunnels)),
-      ])
-
-      this.logger.debug('Tunnel server details: %j', { clientId, expectedTunnelUrls })
-
-      void tunnelServerSshClient.end()
-
-      telemetryEmitter().group({ type: 'profile' }, { proxy_client_id: clientId })
-
-      const esu = Object.entries(expectedTunnels)
-        .map(([tunnel, { name, port }]) => ({ name, port, url: expectedTunnelUrls[tunnel] }))
-
-      return { hostKey: hk, expectedServiceUrls: esu }
-    }, { opPrefix: 'Tunnel server', successText: 'Got tunnel server details' })
-
-    this.logger.debug('expectedServiceUrls: %j', expectedServiceUrls)
+    const { expectedServiceUrls, hostKey } = await fetchTunnelServerDetails({
+      log: this.logger,
+      tunnelingKey,
+      envId,
+      userModel,
+      pStore,
+      tunnelOpts,
+    })
 
     const injectWidgetScript = flags['enable-widget']
       ? editUrl(flags['livecycle-widget-url'], { queryParams: { profile: thumbprint, env: envId } }).toString()
       : undefined
 
-    const { machine } = await commands.up({
+    await using cleanup = new AsyncDisposableStack()
+
+    const { machine, connection, userAndGroup, dockerPlatform } = await ensureMachine({
+      log: this.logger,
+      debug: this.flags.debug,
+      machineDriver: driver,
+      machineCreationDriver,
+      machineDriverName: this.driverName,
+      envId,
+    })
+
+    const machineStatusCommand = await driver.machineStatusCommand(machine)
+
+    cleanup.use(connection)
+
+    const buildSpec = parseBuildFlags(flags)
+
+    await commands.up({
+      connection,
+      machineStatusCommand,
+      userAndGroup,
+      dockerPlatform,
       projectName,
       expectedServiceUrls,
       userSpecifiedServices: restArgs,
       debug: flags.debug,
-      machineDriver: driver,
-      machineDriverName: this.driverName,
-      machineCreationDriver,
       userSpecifiedProjectName: flags.project,
       composeFiles: this.config.composeFiles,
       envId,
@@ -156,10 +194,10 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       cwd: process.cwd(),
       skipUnchangedFiles: flags['skip-unchanged-files'],
       version: this.config.version,
-      localBuildSpec: flags['local-build'],
+      buildSpec,
     })
 
-    this.log(`Preview environment ${envId} provisioned at: ${machine.locationDescription}`)
+    this.log(`Preview environment ${text.code(envId)} provisioned at: ${text.code(machine.locationDescription)}`)
 
     const composeTunnelServiceUrl = findComposeTunnelAgentUrl(expectedServiceUrls)
     const flatTunnels = await withSpinner(() => commands.urls({

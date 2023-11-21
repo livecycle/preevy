@@ -3,7 +3,7 @@ import fetch from 'node-fetch'
 import retry from 'p-retry'
 import util from 'util'
 import { mapValues, merge } from 'lodash'
-import { COMPOSE_TUNNEL_AGENT_PORT, COMPOSE_TUNNEL_AGENT_SERVICE_LABELS, COMPOSE_TUNNEL_AGENT_SERVICE_NAME, MachineStatusCommand, dateReplacer } from '@preevy/common'
+import { COMPOSE_TUNNEL_AGENT_PORT, COMPOSE_TUNNEL_AGENT_SERVICE_LABELS, COMPOSE_TUNNEL_AGENT_SERVICE_NAME, MachineStatusCommand, ScriptInjection, dateReplacer } from '@preevy/common'
 import { ComposeModel, ComposeService, composeModelFilename } from './compose/model'
 import { TunnelOpts } from './ssh/url'
 import { Tunnel } from './tunneling'
@@ -12,6 +12,7 @@ import { EnvMetadata, driverMetadataFilename } from './env-metadata'
 import { REMOTE_DIR_BASE } from './remote-files'
 import { isPacked, pkgSnapshotDir } from './pkg'
 import { EnvId } from './env-id'
+import { addScriptInjectionsToServices } from './compose/script-injection'
 
 const COMPOSE_TUNNEL_AGENT_DIR = path.join(path.dirname(require.resolve('@preevy/compose-tunnel-agent')), '..')
 
@@ -62,6 +63,7 @@ export const addComposeTunnelAgentService = (
     profileThumbprint,
     privateMode,
     defaultAccess,
+    scriptInjections,
   }: {
     tunnelOpts: TunnelOpts
     sshPrivateKeyPath: string
@@ -76,12 +78,13 @@ export const addComposeTunnelAgentService = (
     profileThumbprint?: string
     privateMode: boolean
     defaultAccess: 'private' | 'public'
+    scriptInjections?: (serviceName: string, serviceDef: ComposeService) => Record<string, ScriptInjection> | undefined
   },
   model: ComposeModel,
 ): ComposeModel => ({
   ...model,
   services: {
-    ...model.services,
+    ...scriptInjections ? addScriptInjectionsToServices(model.services, scriptInjections) : model.services,
     [COMPOSE_TUNNEL_AGENT_SERVICE_NAME]:
       merge(baseDockerProxyService(), {
         restart: 'always',

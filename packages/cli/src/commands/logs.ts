@@ -2,7 +2,7 @@ import yaml from 'yaml'
 import { Args, Flags, Interfaces } from '@oclif/core'
 import {
   addBaseComposeTunnelAgentService,
-  localComposeClient, wrapWithDockerSocket, findEnvId, MachineConnection, ComposeModel, remoteUserModel,
+  localComposeClient, findEnvId, MachineConnection, ComposeModel, remoteUserModel, dockerEnvContext,
 } from '@preevy/core'
 import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME } from '@preevy/common'
 import { argsFromRaw } from '@preevy/cli-common'
@@ -99,23 +99,21 @@ export default class Logs extends DriverCommand<typeof Logs> {
       connection = await this.connect(envId)
     }
 
-    try {
-      const compose = localComposeClient({
-        composeFiles: Buffer.from(yaml.stringify(addBaseComposeTunnelAgentService(userModel))),
-        projectName: flags.project,
-      })
+    const compose = localComposeClient({
+      composeFiles: Buffer.from(yaml.stringify(addBaseComposeTunnelAgentService(userModel))),
+      projectName: flags.project,
+      projectDirectory: process.cwd(),
+    })
 
-      const withDockerSocket = wrapWithDockerSocket({ connection, log })
-      await withDockerSocket(() => compose.spawnPromise(
-        [
-          'logs',
-          ...serializeDockerComposeLogsFlags(flags),
-          ...validateServices(restArgs, userModel),
-        ],
-        { stdio: 'inherit' },
-      ))
-    } finally {
-      await connection.close()
-    }
+    await using dockerContext = await dockerEnvContext({ connection, log })
+
+    await compose.spawnPromise(
+      [
+        'logs',
+        ...serializeDockerComposeLogsFlags(flags),
+        ...validateServices(restArgs, userModel),
+      ],
+      { stdio: 'inherit', env: dockerContext.env },
+    )
   }
 }

@@ -1,30 +1,19 @@
-import { AddressInfo } from 'net'
 import { MachineStatusCommand } from '@preevy/common'
 import { PartialStdioOptions } from '../child-process'
 import { CommandExecuter } from '../command-executer'
 import { Profile } from '../profile'
-import { MachineBase, PartialMachine, Resource, SpecDiffItem } from './machine'
+import { MachineBase, PartialMachine, Resource, SpecDiffItem } from './machine-model'
 import { Store } from '../store'
 import { Logger } from '../log'
-import { EnvMachineMetadata } from '../env-metadata'
 
-export type ForwardOutStreamLocal = {
-  localSocket: string | AddressInfo
-  close: () => Promise<void>
-}
-
-export type ForwardSocket = {
+export type ForwardSocket = AsyncDisposable & {
   address: { host: string; port: number }
-  close: () => Promise<void>
 }
 
-export type MachineConnection = {
+export type MachineConnection = Disposable & {
   exec: CommandExecuter
   dockerSocket: () => Promise<ForwardSocket>
-  close: () => Promise<void>
 }
-
-export type MachineMetadata = Omit<EnvMachineMetadata, 'machineLocationDescription' | 'driver' | 'providerId'>
 
 export type MachineDriver<
   Machine extends MachineBase = MachineBase,

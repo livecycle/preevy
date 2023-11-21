@@ -1,20 +1,21 @@
 import { EOL } from 'os'
 import retry from 'p-retry'
 import { dateReplacer } from '@preevy/common'
-import { withSpinner } from '../../spinner'
-import { MachineCreationDriver, SpecDiffItem, MachineDriver, MachineConnection, MachineBase, isPartialMachine, machineResourceType } from '../../driver'
-import { telemetryEmitter } from '../../telemetry'
-import { Logger } from '../../log'
-import { scriptExecuter } from '../../remote-script-executer'
-import { EnvMetadata, driverMetadataFilename } from '../../env-metadata'
-import { REMOTE_DIR_BASE } from '../../remote-files'
+import { withSpinner } from '../spinner'
+import { telemetryEmitter } from '../telemetry'
+import { Logger } from '../log'
+import { scriptExecuter } from '../remote-script-executer'
+import { EnvMetadata, driverMetadataFilename } from '../env-metadata'
+import { REMOTE_DIR_BASE } from '../remote-files'
+import { MachineBase, SpecDiffItem, isPartialMachine, machineResourceType } from './machine-model'
+import { MachineConnection, MachineCreationDriver, MachineDriver } from './driver'
 
 const machineDiffText = (diff: SpecDiffItem[]) => diff
   .map(({ name, old, new: n }) => `* ${name}: ${old} -> ${n}`).join(EOL)
 
 type Origin = 'existing' | 'new-from-snapshot' | 'new-from-scratch'
 
-const ensureMachine = async ({
+const ensureBareMachine = async ({
   machineDriver,
   machineCreationDriver,
   envId,
@@ -98,13 +99,13 @@ const writeMetadata = async (
   })
 }
 
-const getUserAndGroup = async (connection: Pick<MachineConnection, 'exec'>) => (
+export const getUserAndGroup = async (connection: Pick<MachineConnection, 'exec'>) => (
   await connection.exec('echo "$(id -u):$(stat -c %g /var/run/docker.sock)"')
 ).stdout
   .trim()
   .split(':') as [string, string]
 
-const getDockerPlatform = async (connection: Pick<MachineConnection, 'exec'>) => {
+export const getDockerPlatform = async (connection: Pick<MachineConnection, 'exec'>) => {
   const arch = (await connection.exec('docker info -f "{{.Architecture}}"')).stdout.trim()
   return arch === 'aarch64' ? 'linux/arm64' : 'linux/amd64'
 }
@@ -147,7 +148,7 @@ const customizeNewMachine = ({
       retries: 5,
       onFailedAttempt: async err => {
         log.debug(`Failed to execute docker run hello-world: ${err}`)
-        await connection.close()
+        connection[Symbol.dispose]()
         connection = await machineDriver.connect(machine, { log, debug })
       },
     }
@@ -169,7 +170,7 @@ const customizeNewMachine = ({
   return { connection, userAndGroup, machine, dockerPlatform }
 }
 
-export const ensureCustomizedMachine = async ({
+export const ensureMachine = async ({
   machineDriver,
   machineCreationDriver,
   machineDriverName,
@@ -189,7 +190,7 @@ export const ensureCustomizedMachine = async ({
   userAndGroup: [string, string]
   dockerPlatform: string
 }> => {
-  const { machine, connection: connectionPromise, origin } = await ensureMachine(
+  const { machine, connection: connectionPromise, origin } = await ensureBareMachine(
     { machineDriver, machineCreationDriver, envId, log, debug },
   )
 
@@ -221,7 +222,7 @@ export const ensureCustomizedMachine = async ({
 
       return { machine, connection, userAndGroup, dockerPlatform }
     } catch (e) {
-      await connection.close()
+      connection[Symbol.dispose]()
       throw e
     }
   }, { opPrefix: 'Configuring machine', successText: 'Machine configured' })
