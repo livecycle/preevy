@@ -3,10 +3,10 @@ import fetch from 'node-fetch'
 import * as jose from 'jose'
 import { z } from 'zod'
 import open from 'open'
+import inquirer from 'inquirer'
 import { VirtualFS, localFs } from './store'
 import { Logger } from './log'
 import { withSpinner } from './spinner'
-import { childProcessPromise } from './child-process'
 
 export class TokenExpiredError extends Error {
   constructor() {
@@ -14,13 +14,29 @@ export class TokenExpiredError extends Error {
   }
 }
 
+type PostLoginResult = { userId: string; currentOrg: string; currentOrgRole: string; email: string } |
+  {
+    userId: string
+    email: string
+    organizationDomainDetails: {
+      name: string
+      isOrganizationalDomain: true
+      domain: string
+    }
+  }
+
 const PERSISTENT_TOKEN_FILE_NAME = 'lc-access-token.json'
 
 const wait = (timeInMs: number) => new Promise<void>(resolve => {
-  setTimeout(() => { resolve() }, timeInMs)
+  setTimeout(() => {
+    resolve()
+  }, timeInMs)
 })
 
-const tokensResponseDataSchema = z.object({ access_token: z.string(), id_token: z.string() })
+const tokensResponseDataSchema = z.object({
+  access_token: z.string(),
+  id_token: z.string(),
+})
 
 export type TokenFileSchema = z.infer<typeof tokensResponseDataSchema>
 
@@ -33,11 +49,15 @@ const pollTokensFromAuthEndpoint = async (
 ) => {
   try {
     while (true) {
-      const tokenResponse = await fetch(`${loginUrl}/oauth/token`, { method: 'POST',
+      const tokenResponse = await fetch(`${loginUrl}/oauth/token`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-        body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+        body: new URLSearchParams({
+          grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
           device_code: deviceCode,
-          client_id: clientId }) })
+          client_id: clientId,
+        }),
+      })
 
       if (tokenResponse.status !== 403) {
         if (!tokenResponse.ok) throw new Error(`Bad response from token endpoint: ${tokenResponse.status}: ${tokenResponse.statusText}`)
@@ -53,12 +73,14 @@ const pollTokensFromAuthEndpoint = async (
   }
 }
 
-const deviceCodeSchema = z.object({ device_code: z.string(),
+const deviceCodeSchema = z.object({
+  device_code: z.string(),
   user_code: z.string(),
   verification_uri: z.string(),
   expires_in: z.number(),
   interval: z.number(),
-  verification_uri_complete: z.string() })
+  verification_uri_complete: z.string(),
+})
 
 const deviceFlow = async (loginUrl: string, logger: Logger, clientId: string) => {
   const deviceCodeResponse = await fetch(`${loginUrl}/oauth/device/code`, {
@@ -72,13 +94,13 @@ const deviceFlow = async (loginUrl: string, logger: Logger, clientId: string) =>
   })
 
   const responseData = deviceCodeSchema.parse(await deviceCodeResponse.json())
-
   logger.info('Opening browser for authentication')
-  try { await childProcessPromise(await open(responseData.verification_uri_complete)) } catch (e) {
+  try {
+    await open(responseData.verification_uri_complete)
+  } catch (e) {
     logger.info(`Could not open browser at ${responseData.verification_uri_complete}`)
     logger.info('Please try entering the URL manually')
   }
-
   logger.info('Make sure code is ', responseData.user_code)
   return await withSpinner(
     () => pollTokensFromAuthEndpoint(
@@ -90,11 +112,14 @@ const deviceFlow = async (loginUrl: string, logger: Logger, clientId: string) =>
       responseData.interval * 1000,
       clientId
     ),
-    { opPrefix: 'Waiting for approval', successText: 'Done!' }
+    {
+      opPrefix: 'Waiting for approval',
+      successText: 'Done!',
+    }
   )
 }
 
-export const getTokensFromLocalFs = async (fs: VirtualFS) : Promise<TokenFileSchema | undefined> => {
+export const getTokensFromLocalFs = async (fs: VirtualFS): Promise<TokenFileSchema | undefined> => {
   const tokensFile = await fs.read(PERSISTENT_TOKEN_FILE_NAME)
   if (tokensFile === undefined) return undefined
 
@@ -128,13 +153,64 @@ export const login = async (dataDir: string, loginUrl: string, lcUrl: string, cl
 
   const postLoginResponse = await fetch(
     `${lcUrl}/api/cli/post-login`,
-    { method: 'POST',
+    {
+      method: 'POST',
       body: JSON.stringify({ id_token: tokens.id_token }),
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokens.access_token}` } }
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${tokens.access_token}`,
+      },
+    }
   )
 
   if (postLoginResponse.ok) {
-    logger.info(`Logged in successfully as: ${jose.decodeJwt(tokens.id_token).email} 👌`)
+    const postLoginData: PostLoginResult = await postLoginResponse.json()
+    if (!('currentOrg' in postLoginData)) {
+      const {
+        orgName,
+        associateDomain,
+        // eslint-disable-next-line no-use-before-define
+      } = await inquirer.prompt<{ orgName: string; associateDomain: string }>([
+        {
+          type: 'input',
+          name: 'orgName',
+          message: 'Select a name for your organization',
+          default: postLoginData.organizationDomainDetails.name,
+        },
+        {
+          type: 'confirm',
+          name: 'associateDomain',
+          message: `Allow anyone with @${postLoginData.organizationDomainDetails.domain} email domain to join your organization as viewers`,
+          default: true,
+        },
+      ])
+
+      const createOrganizationResponse = await withSpinner(
+        () => fetch(
+          `${lcUrl}/api/org`,
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              name: orgName,
+              associateDomain,
+            }),
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${tokens.access_token}`,
+            },
+          }
+        ),
+        {
+          opPrefix: 'Creating organization',
+          successText: 'Done!',
+        }
+      )
+
+      if (!createOrganizationResponse.ok) {
+        throw new Error(`Bad response from org endpoint ${createOrganizationResponse.status}: ${createOrganizationResponse.statusText}`)
+      }
+      logger.info(`Logged in successfully as: ${jose.decodeJwt(tokens.id_token).email} 👌`)
+    }
   } else {
     throw new Error(`Bad response from post-login endpoint ${postLoginResponse.status}: ${postLoginResponse.statusText}`)
   }
