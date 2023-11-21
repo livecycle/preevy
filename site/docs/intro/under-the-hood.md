@@ -7,16 +7,24 @@ title: Under the hood
 
 When provisioning a new environment using the [`up`](/cli-reference#preevy-up-service) command, Preevy does the following:
 
-- Reads for [default configurations](#profile-configuration) and relevant keys from the current profile store.
-- Calculates environment name based on the current git branch (or uses the `--id` flag.)
-- Uses the local Cloud provider configuration to provision a new VM.
-- Reads SSH keypair from profile to access the VM, if necessary, generate a new one.
-- Connects to the VM using SSH and sets up Docker.
-- Reads the compose file and copies local volume mounts to the VM.
-- Augments the compose deployment with a helper service, `tunnel-agent`, responsible for connecting to the [tunnel server](/tunnel-server).
-- Runs the application using [docker-compose](https://docs.docker.com/compose/) with `--build` while using the local build context.
-- The `tunnel-agent` is inspecting the network configuration of all deployed services and create a tunnel for each service.
-- Fetch the urls from tunnel-agent and output them to the end user.
+- Load the configuration
+  - Read the specified Compose file(s)
+  - Read the tunneling key and default flags from the profile.
+  - Calculate the environment ID based on the current git branch (or uses the `--id` flag.)
+  - Connect to the Tunnel Server using the tunneling key to pre-generate the public URLs in env vars
+- Make sure a machine is provisioned:
+  - Query the configured cloud provider for an existing machine
+  - If a machine doesn't exist yet, a new one is provisioned and a Docker server is set up in it
+- Set up a SSH tunnel to the Docker server on the provisioned machine
+- Build the Compose project
+  - Extract the build information from the specified Compose file(s) and combine it with the specified build options to generates an interim build Compose file.
+  - Run `docker buildx bake` with the generated build Compose file.
+    - The resulting images are either loaded to the provisioned machine or written to an image registry.
+- Deploy the Compose services to the machine's Docker server using the `docker compose up` command
+  - Local volumes mounts are copied to the remote machine firsst
+  - The original Compose project with is augmented with a helper service, `preevy_proxy`, responsible for connecting to the [Tunnel Server](/tunnel-server).
+- The `preevy_proxy` service creates a tunnel for each service.
+- Fetch the urls from Tunnel Server and output them.
 
 ## Profile configuration
 
