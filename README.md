@@ -138,7 +138,7 @@ The CLI is a Node.js program responsible for:
 - Syncing Compose source code and local volumes.
 - Running the Compose app, augmented with a daemon for connecting to the tunneling service.
 
-### [Tunnel server](/tunnel-server)
+### [Tunnel server](tunnel-server)
 
 The tunnel server is a Node.js base server responsible for exposing friendly HTTPS URLs for the Compose services.
 
