@@ -105,7 +105,7 @@ const up = async ({
     sshTunnelPrivateKey,
   })
 
-  log.info('build spec: %j', buildSpec ?? 'none')
+  log.debug('build spec: %j', buildSpec ?? 'none')
 
   let composeModel = model
 

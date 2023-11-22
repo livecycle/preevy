@@ -33,13 +33,9 @@ export const buildFlags = {
   'no-registry-cache': Flags.boolean({
     description: 'Do not add the registry as a cache source and target',
     helpGroup,
+    allowNo: false,
     required: false,
     dependsOn: ['registry'],
-  }),
-  load: Flags.boolean({
-    description: 'Load build results to the Docker server at the deployment target',
-    helpGroup,
-    required: false,
   }),
   builder: Flags.string({
     description: 'Builder to use',
@@ -63,14 +59,11 @@ export const parseBuildFlags = (flags: Omit<InferredFlags<typeof buildFlags>, 'j
     builder: flags.builder,
     noCache: flags['no-cache'],
     cacheFromRegistry: !flags['no-registry-cache'],
-    ...flags.registry
-      ? {
-        registry: parseRegistry({
-          registry: flags.registry,
-          singleName: flags['no-registry-single-name'] ? false : flags['registry-single-name'],
-        }),
-        load: flags.load,
-      }
-      : { load: true },
+    ...flags.registry && {
+      registry: parseRegistry({
+        registry: flags.registry,
+        singleName: flags['no-registry-single-name'] ? false : flags['registry-single-name'],
+      }),
+    },
   }
 }
