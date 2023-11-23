@@ -47,6 +47,7 @@ export default class Purge extends DriverCommand<typeof Purge> {
       description: 'Resource type(s) to delete',
       default: [machineResourceType],
       multiple: true,
+      delimiter: ',',
       singleValue: true,
     }),
     force: Flags.boolean({
