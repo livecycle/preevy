@@ -13,6 +13,7 @@
     "@preevy/compose-tunnel-agent": "0.0.56",
     "chalk": "^4.1.2",
     "fast-safe-stringify": "^2.1.1",
+    "inquirer": "^8.0.0",
     "is-stream": "^2.0.1",
     "iter-tools-es": "^7.5.3",
     "jose": "^4.14.4",
