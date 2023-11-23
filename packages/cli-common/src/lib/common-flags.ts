@@ -70,4 +70,8 @@ export const urlFlags = {
     default: 'browser',
     required: true,
   })(),
+  'output-urls-to': Flags.file({
+    description: 'Output URLs to file',
+    required: false,
+  }),
 } as const

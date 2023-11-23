@@ -12,7 +12,7 @@ import { inspect } from 'util'
 import { editUrl, tunnelNameResolver } from '@preevy/common'
 import MachineCreationDriverCommand from '../machine-creation-driver-command'
 import { envIdFlags, urlFlags } from '../common-flags'
-import { filterUrls, printUrls } from './urls'
+import { filterUrls, printUrls, writeUrlsToFile } from './urls'
 import { connectToTunnelServerSsh } from '../tunnel-server-client'
 
 // eslint-disable-next-line no-use-before-define
@@ -174,6 +174,8 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
         { envId, urls },
       )),
     )
+
+    await writeUrlsToFile({ log: this.logger }, flags, urls)
 
     if (flags.json) {
       return urls

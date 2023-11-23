@@ -1,11 +1,24 @@
+import fs from 'fs'
+import yaml from 'yaml'
 import { Args, ux, Interfaces } from '@oclif/core'
-import { FlatTunnel, ProfileStore, TunnelOpts, addBaseComposeTunnelAgentService, commands, findComposeTunnelAgentUrl, findEnvId, getTunnelNamesToServicePorts, profileStore } from '@preevy/core'
-import { HooksListeners, PluginContext, tunnelServerFlags } from '@preevy/cli-common'
+import { FlatTunnel, Logger, ProfileStore, TunnelOpts, addBaseComposeTunnelAgentService, commands, findComposeTunnelAgentUrl, findEnvId, getTunnelNamesToServicePorts, profileStore } from '@preevy/core'
+import { HooksListeners, PluginContext, text, tunnelServerFlags } from '@preevy/cli-common'
 import { asyncReduce } from 'iter-tools-es'
 import { tunnelNameResolver } from '@preevy/common'
 import { connectToTunnelServerSsh } from '../tunnel-server-client'
 import ProfileCommand from '../profile-command'
 import { envIdFlags, urlFlags } from '../common-flags'
+
+export const writeUrlsToFile = async (
+  { log }: { log: Logger },
+  { 'output-urls-to': outputUrlsTo }: Interfaces.InferredFlags<Pick<typeof urlFlags, 'output-urls-to'>>,
+  urls: FlatTunnel[],
+) => {
+  if (!outputUrlsTo) return
+  const contents = /\.ya?ml$/.test(outputUrlsTo) ? yaml.stringify(urls) : JSON.stringify(urls)
+  await fs.promises.writeFile(outputUrlsTo, contents, { encoding: 'utf8' })
+  log.info(`URLs written to file ${text.code(outputUrlsTo)}`)
+}
 
 export const printUrls = (
   flatTunnels: FlatTunnel[],
@@ -132,6 +145,8 @@ export default class Urls extends ProfileCommand<typeof Urls> {
       },
       filters: this.config.preevyHooks.filterUrls,
     })
+
+    await writeUrlsToFile({ log: this.logger }, flags, urls)
 
     if (flags.json) {
       return urls

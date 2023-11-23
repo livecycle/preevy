@@ -6,7 +6,7 @@ import { formatPublicKey } from '@preevy/common'
 import { spawn } from 'child_process'
 import { connectToTunnelServerSsh } from '../../tunnel-server-client'
 import ProfileCommand from '../../profile-command'
-import { filterUrls, printUrls } from '../urls'
+import { filterUrls, printUrls, writeUrlsToFile } from '../urls'
 
 // eslint-disable-next-line no-use-before-define
 export default class Connect extends ProfileCommand<typeof Connect> {
@@ -140,6 +140,8 @@ export default class Connect extends ProfileCommand<typeof Connect> {
       },
       filters: this.config.preevyHooks.filterUrls,
     })
+
+    await writeUrlsToFile({ log: this.logger }, flags, urls)
 
     if (flags.json) {
       return urls
