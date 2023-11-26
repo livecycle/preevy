@@ -70,6 +70,8 @@ Visit The full documentation here: https://preevy.dev/
   - [Compose files](#compose-files)
   - [`x-preevy`: Preevy-specific configuration in the Compose file(s)](#x-preevy-preevy-specific-configuration-in-the-compose-files)
 - [Plugins](#plugins-1)
+  - [Default plugins](#default-plugins)
+  - [Enabling or disabling plugins](#enabling-or-disabling-plugins)
 - [Docs and support](#docs-and-support)
 - [Telemetry](#telemetry)
 <!--lint enable double-link-->
@@ -282,10 +284,18 @@ See [Plugins](#plugins) below.
 
 Plugins are a way to extend Preevy's functionality via externally-published NPM packages.
 
-A plugin can execute code in response to events. It can also defined new commands, and add flags to existing commands to customize their behavior.
+A plugin can add hooks which execute code in response to events. It can also define new commands, and add flags to existing commands to customize their behavior.
+
+### Default plugins
+
+The [GitHub integration plugin](packages/plugin-github) packaged as `@preevy/plugin-github` is bundled with Preevy and enabled by default.
+
+### Enabling or disabling plugins
+
+#### From the Docker Compose file
 
 <!--lint disable double-link-->
-Plugins are specified in the [Preevy configuration](#preevy-specific-configuration). Add a `plugins` section to the `x-preevy` top-level element:
+Plugins can be configured in the [Preevy configuration](#x-preevy-preevy-specific-configuration-in-the-compose-files) section of your Compose file. Add a `plugins` section to the `x-preevy` top-level element:
 <!--lint enable double-link-->
 
 ```yaml
@@ -293,12 +303,22 @@ services:
   ...
 x-preevy:
   plugins:
-    - module: '@preevy/plugin-github-pr-link'
+    - module: '@preevy/plugin-github'
       disabled: false # optional, set to true to disable plugin
       # ...additional plugin-specific configuration goes here
 ```
 
-See the [included GitHub PR Link Plugin](packages/plugin-github-pr-link) for an example.
+See the [included GitHub integration plugin](packages/plugin-github/README.md) for a detailed example.
+
+#### From the environment
+
+Plugins can be enabled or disabled by setting the `PREEVY_ENABLE_PLUGINS` and `PREEVY_DISABLE_PLUGINS` environment variables to a comma-separated list of packages.
+
+Example: To disable the default GitHub integration plugin, set `PREEVY_DISABLE_PLUGINS=@preevy/plugin-github`.
+
+#### From the CLI flags
+
+Specify the global `--enable-plugin=<module>` and `--disable-plugin=<module>` flags to enable or disable plugins per command execution. CLI flags take priority over the Docker Compose and environment configuration.
 
 ## Docs and support
 

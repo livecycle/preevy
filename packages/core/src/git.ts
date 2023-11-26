@@ -32,3 +32,5 @@ export function gitContext(cwd: string = process.cwd()) {
     remoteTrackingBranchUrl,
   }
 }
+
+export type GitContext = ReturnType<typeof gitContext>

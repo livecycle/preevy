@@ -1,5 +1,5 @@
 {
-  "name": "@preevy/plugin-github-pr-link",
+  "name": "@preevy/plugin-github",
   "version": "0.0.56",
   "description": "",
   "main": "dist/index.js",

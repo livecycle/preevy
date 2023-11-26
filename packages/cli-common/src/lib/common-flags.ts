@@ -1,4 +1,5 @@
 import { Flags } from '@oclif/core'
+import { DEFAULT_PLUGINS } from './plugins/default-plugins'
 
 const projectFlag = {
   project: Flags.string({
@@ -29,6 +30,24 @@ export const composeFlags = {
     helpGroup: 'GLOBAL',
   }),
   ...projectFlag,
+} as const
+
+export const pluginFlags = {
+  'enable-plugin': Flags.string({
+    description: 'Enable plugin with specified package name',
+    multiple: true,
+    delimiter: ',',
+    singleValue: true,
+    helpGroup: 'GLOBAL',
+    default: DEFAULT_PLUGINS,
+  }),
+  'disable-plugin': Flags.string({
+    description: 'Disable plugin with specified package name',
+    multiple: true,
+    delimiter: ',',
+    singleValue: true,
+    helpGroup: 'GLOBAL',
+  }),
 } as const
 
 export const envIdFlags = {

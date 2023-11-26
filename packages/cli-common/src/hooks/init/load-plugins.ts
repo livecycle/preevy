@@ -1,8 +1,9 @@
 import { Hook as OclifHook, Command, Flags } from '@oclif/core'
 import { Parser } from '@oclif/core/lib/parser/parse'
-import { Config, Topic } from '@oclif/core/lib/interfaces'
+import { BooleanFlag, Config, Topic } from '@oclif/core/lib/interfaces'
 import { localComposeClient, ComposeModel, resolveComposeFiles, withSpinner, NoComposeFilesError } from '@preevy/core'
-import { composeFlags } from '../../lib/common-flags'
+import { cloneDeep } from 'lodash'
+import { composeFlags, pluginFlags } from '../../lib/common-flags'
 import { addPluginFlags, loadPlugins, hooksFromPlugins, addPluginCommands } from '../../lib/plugins'
 
 type InternalConfig = Config & {
@@ -12,18 +13,34 @@ type InternalConfig = Config & {
 
 const excludedCommandIds = ['init', 'version', /^profile:/, 'ls']
 
-export const initHook: OclifHook<'init'> = async function hook({ config, id, argv }) {
+const flagDefs = cloneDeep({
+  ...composeFlags,
+  ...pluginFlags,
+  json: Flags.boolean(),
+}) as typeof composeFlags & typeof pluginFlags & { json: BooleanFlag<boolean> }
+
+flagDefs['enable-plugin'].default = undefined
+
+export const initHook: OclifHook<'init'> = async function hook(args) {
+  const { config, id, argv } = args
+  // workaround oclif bug when executing `preevy --flag1 --flag2` with no command
+  if (id?.startsWith('-')) {
+    await initHook.call(this, ({ ...args, id: undefined, argv: [id].concat(argv) }))
+    return
+  }
+
   if (id && excludedCommandIds.some(excluded => (typeof excluded === 'string' ? excluded === id : excluded.test(id)))) {
     return
   }
 
   const { flags, raw } = await new Parser({
-    flags: { ...composeFlags, json: Flags.boolean() },
+    flags: flagDefs,
     strict: false,
     args: {},
     context: undefined,
     argv,
   } as const).parse()
+
   const composeFiles = await resolveComposeFiles({
     userSpecifiedFiles: flags.file,
     userSpecifiedSystemFiles: flags['system-compose-file'],
@@ -45,7 +62,12 @@ export const initHook: OclifHook<'init'> = async function hook({ config, id, arg
 
   const userModel = userModelOrError instanceof Error ? {} as ComposeModel : userModelOrError
   const preevyConfig = userModel['x-preevy'] ?? {}
-  const loadedPlugins = await loadPlugins(preevyConfig, { userModel, oclifConfig: config, argv })
+  const loadedPlugins = await loadPlugins(
+    config,
+    flags,
+    preevyConfig.plugins,
+    { preevyConfig, userModel, oclifConfig: config, argv },
+  )
   const commands = addPluginFlags(addPluginCommands(config.commands, loadedPlugins), loadedPlugins)
   const topics = [...config.topics, ...loadedPlugins.flatMap(({ initResults }) => initResults.topics ?? [])];
 

@@ -25,6 +25,6 @@
     { "path": "../driver-gce" },
     { "path": "../driver-azure" },
     { "path": "../driver-kube-pod" },
-    { "path": "../plugin-github-pr-link" },
+    { "path": "../plugin-github" },
   ]
 }

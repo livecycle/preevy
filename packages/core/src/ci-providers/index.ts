@@ -15,3 +15,5 @@ export const ciProviders = {
 
 export const detectCiProvider = (): CiProvider | undefined => Object.values(ciProviders)
   .find(p => p.currentlyRunningInProvider())
+
+export { CiProvider } from './base'

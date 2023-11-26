@@ -29,7 +29,7 @@
     "@preevy/driver-gce": "0.0.56",
     "@preevy/driver-kube-pod": "0.0.56",
     "@preevy/driver-lightsail": "0.0.56",
-    "@preevy/plugin-github-pr-link": "0.0.56",
+    "@preevy/plugin-github": "0.0.56",
     "inquirer": "^8.0.0",
     "inquirer-autocomplete-prompt": "^2.0.0",
     "iter-tools-es": "^7.5.3",
