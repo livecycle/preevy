@@ -1,3 +1,16 @@
+diff --git a/node_modules/@oclif/core/lib/help/util.js b/node_modules/@oclif/core/lib/help/util.js
+index 6c97a31..3a7ace6 100644
+--- a/node_modules/@oclif/core/lib/help/util.js
++++ b/node_modules/@oclif/core/lib/help/util.js
+@@ -43,7 +43,7 @@ function collateSpacedCmdIDFromArgs(argv, config) {
+         const ids = (0, util_1.collectUsableIds)(config.commandIDs);
+         const final = [];
+         const idPresent = (id) => ids.has(id);
+-        const finalizeId = (s) => (s ? [...final, s].join(':') : final.join(':'));
++        const finalizeId = (s) => (s ? [...final, s] : final).filter(Boolean).join(':');
+         const hasArgs = () => {
+             const id = finalizeId();
+             if (!id)
 diff --git a/node_modules/@oclif/core/lib/interfaces/parser.d.ts b/node_modules/@oclif/core/lib/interfaces/parser.d.ts
 index acb8583..2d53745 100644
 --- a/node_modules/@oclif/core/lib/interfaces/parser.d.ts

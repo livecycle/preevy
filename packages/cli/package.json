@@ -95,6 +95,7 @@
       "dist/hooks/**/*.js"
     ]
   },
+  "bundleDependencies": ["@oclif/core"],
   "scripts": {
     "build": "yarn clean && tsc -b",
     "clean": "shx rm -rf dist",
@@ -103,8 +104,7 @@
     "posttest": "yarn lint",
     "prepack": "yarn build && oclif manifest && oclif readme --dir docs --multi     && ./scripts/prepare_and_copy_docs.sh",
     "cli": "./bin/dev",
-    "version": "oclif readme && git add README.md",
-    "bump-to": "yarn version --no-commit-hooks --no-git-tag-version --new-version"
+    "version": "oclif readme && git add README.md"
   },
   "engines": {
     "node": ">=18.0.0"
