@@ -82,7 +82,7 @@ export const initHook: OclifHook<'init'> = async function hook(args) {
   })
 
   if (id === 'help') {
-    const restArgs = raw.filter(arg => arg.type === 'arg').map(arg => arg.input)
+    const restArgs = raw.filter(arg => arg.type === 'arg').map(arg => arg.input).filter(Boolean)
     argv.splice(0, argv.length, ...restArgs)
   }
 }

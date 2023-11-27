@@ -7,7 +7,7 @@ import {
   telemetryEmitter,
   withSpinner,
 } from '@preevy/core'
-import { tunnelServerFlags } from '@preevy/cli-common'
+import { argsFromRaw, tunnelServerFlags } from '@preevy/cli-common'
 import { inspect } from 'util'
 import { editUrl, tunnelNameResolver } from '@preevy/common'
 import MachineCreationDriverCommand from '../machine-creation-driver-command'
@@ -52,7 +52,8 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
   async run(): Promise<unknown> {
     const { flags, raw } = await this.parse(Up)
-    const restArgs = raw.filter(arg => arg.type === 'arg').map(arg => arg.input)
+    const restArgs = argsFromRaw(raw)
+    this.log('restArgs', restArgs)
 
     const driver = await this.driver()
     const machineCreationDriver = await this.machineCreationDriver()
