@@ -10,7 +10,7 @@
     "lib": ["es2022"],
     "esModuleInterop": true,
     "sourceMap": true,
-    "baseUrl": ".",
+    "baseUrl": "."
   },
   "include": [
     "src/**/*"
@@ -25,6 +25,6 @@
     { "path": "../driver-gce" },
     { "path": "../driver-azure" },
     { "path": "../driver-kube-pod" },
-    { "path": "../plugin-github" },
+    { "path": "../plugin-github" }
   ]
 }

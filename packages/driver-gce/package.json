@@ -12,7 +12,7 @@
   "dependencies": {
     "@google-cloud/compute": "^4.0.1",
     "@google-cloud/storage": "^6.9.5",
-    "@oclif/core": "^3",
+    "@oclif/core": "livecycle/oclif-core-patched-for-preevy#v3.12.0-preevy-patch-10",
     "@preevy/core": "0.0.56",
     "google-auth-library": "^8.7.0",
     "google-gax": "^4.0.4",

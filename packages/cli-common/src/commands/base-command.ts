@@ -114,6 +114,7 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
     })
     emitter.unref()
     await emitter.flush()
+    // eslint-disable-next-line @typescript-eslint/return-await
     return await super.catch(error)
   }
 }

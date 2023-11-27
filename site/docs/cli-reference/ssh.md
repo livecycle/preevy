@@ -1,37 +1,29 @@
-`preevy logs`
-=============
+`preevy ssh`
+============
 
-Show logs for an existing environment
+Execute a command or start an interactive shell inside an environment
 
-* [`preevy logs [SERVICES]`](#preevy-logs-services)
+* [`preevy ssh ENVID`](#preevy-ssh-envid)
 
-## `preevy logs [SERVICES]`
+## `preevy ssh ENVID`
 
-Show logs for an existing environment
+Execute a command or start an interactive shell inside an environment
 
 ```
 USAGE
-  $ preevy logs [SERVICES] [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--enable-plugin
+  $ preevy ssh ENVID [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--enable-plugin
     <value>] [--disable-plugin <value>] [--profile <value>] [-d lightsail|gce|azure|kube-pod] [--lightsail-region
     <value>] [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
     [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template
-    <value>] [--id <value>] [--follow] [--tail <value>] [--no-log-prefix] [--timestamps] [--since <value>] [--until
     <value>]
 
 ARGUMENTS
-  SERVICES  Service name(s). If not specified, will show all services
+  ENVID  Environment id
 
 FLAGS
   -d, --driver=<option>  Machine driver to use
                          <options: lightsail|gce|azure|kube-pod>
-      --follow           Follow log output
-      --id=<value>       Environment id - affects created URLs. If not specified, will try to detect automatically
-      --no-log-prefix    Don't print log prefix in logs
       --profile=<value>  Run in a specific profile context
-      --since=<value>    Show logs since timestamp
-      --tail=<value>     Number of lines to show from the end of the logs for each container (default: all)
-      --timestamps       Show timestamps
-      --until=<value>    Show logs before timestamp
 
 GLOBAL FLAGS
   -D, --debug                           Enable debug logging
@@ -60,7 +52,8 @@ LIGHTSAIL DRIVER FLAGS
   --lightsail-region=<value>  AWS region in which resources will be provisioned
 
 DESCRIPTION
-  Show logs for an existing environment
-```
+  Execute a command or start an interactive shell inside an environment
 
-_See code: [src/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.56/src/commands/logs.ts)_
+ALIASES
+  $ preevy ssh
+```

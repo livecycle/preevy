@@ -20,7 +20,7 @@ $ npm install -g preevy
 $ preevy COMMAND
 running command...
 $ preevy (--version)
-preevy/0.0.55 darwin-arm64 node-v18.12.1
+preevy/0.0.56 darwin-arm64 node-v18.12.1
 $ preevy --help [COMMAND]
 USAGE
   $ preevy COMMAND
@@ -39,6 +39,7 @@ USAGE
 * [`preevy ls`](ls.md) - List preview environments
 * [`preevy profile`](profile.md) - View and update profile configuration
 * [`preevy purge`](purge.md) - Delete all cloud provider machines, and potentially other resources
+* [`preevy ssh`](ssh.md) - Execute a command or start an interactive shell inside an environment
 * [`preevy up`](up.md) - Bring up a preview environment
 * [`preevy urls`](urls.md) - Show urls for an existing environment
 * [`preevy version`](version.md) - Show Preevy version

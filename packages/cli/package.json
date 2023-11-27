@@ -19,7 +19,7 @@
   ],
   "dependencies": {
     "@inquirer/confirm": "^2.0.14",
-    "@oclif/core": "^3",
+    "@oclif/core": "livecycle/oclif-core-patched-for-preevy#v3.12.0-preevy-patch-10",
     "@oclif/plugin-help": "^5",
     "@preevy/cli-common": "0.0.56",
     "@preevy/common": "0.0.56",
@@ -38,6 +38,7 @@
     "yaml": "^2.3.2"
   },
   "devDependencies": {
+    "@types/cli-progress": "^3.11.5",
     "@types/inquirer": "^8.0.0",
     "@types/inquirer-autocomplete-prompt": "^3.0.3",
     "@types/lodash": "^4.14.192",
@@ -95,14 +96,13 @@
       "dist/hooks/**/*.js"
     ]
   },
-  "bundleDependencies": ["@oclif/core"],
   "scripts": {
     "build": "yarn clean && tsc -b",
     "clean": "shx rm -rf dist",
     "lint": "eslint . --ext .ts --cache",
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "yarn lint",
-    "prepack": "yarn build && oclif manifest && oclif readme --dir docs --multi     && ./scripts/prepare_and_copy_docs.sh",
+    "prepack": "yarn build && ./scripts/validate-tsconfig && oclif manifest && oclif readme --dir docs --multi && ./scripts/prepare_and_copy_docs.sh",
     "cli": "./bin/dev",
     "version": "oclif readme && git add README.md"
   },
