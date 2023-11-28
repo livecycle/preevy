@@ -21,40 +21,39 @@ View and update profile configuration
 
 ```
 USAGE
-  $ preevy profile config update [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>]
-    [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northea
-    st-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>] [--gce-zone
-    <value>] [--azure-region <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>]
+  $ preevy profile config update [--json] [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--enable-plugin
+    <value>] [--disable-plugin <value>] [--profile <value>] [--lightsail-region <value>] [--gce-project-id <value>]
+    [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>]
     [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template <value>]
     [--lightsail-availability-zone <value>] [--lightsail-bundle-id
     nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0] [--gce-machine-type <value>]
-    [--azure-vm-size <value>] [--azure-resource-group-name <value>] [--kube-pod-server-side-apply] [-d
-    lightsail|gce|azure|kube-pod] [--unset lightsail-region|gce-project-id|gce-zone|azure-region|azure-subscription-id|k
-    ube-pod-namespace|kube-pod-kubeconfig|kube-pod-context|kube-pod-template|lightsail-availability-zone|lightsail-bundl
-    e-id|gce-machine-type|azure-vm-size|azure-resource-group-name|kube-pod-server-side-apply] [--json]
+    [--azure-vm-size <value>] [--kube-pod-server-side-apply] [-d lightsail|gce|azure|kube-pod] [--unset
+    lightsail-region|gce-project-id|gce-zone|azure-region|azure-subscription-id|kube-pod-namespace|kube-pod-kubeconfig|k
+    ube-pod-context|kube-pod-template|lightsail-availability-zone|lightsail-bundle-id|gce-machine-type|azure-vm-size|kub
+    e-pod-server-side-apply]
 
 FLAGS
-  -d, --driver=<option>  Machine driver to use
-                         <options: lightsail|gce|azure|kube-pod>
-  --profile=<value>      Run in a specific profile context
-  --unset=<option>...    [default: ] Unset a configuration option
-                         <options:
-                         lightsail-region|gce-project-id|gce-zone|azure-region|azure-subscription-id|kube-pod-namespace|
-                         kube-pod-kubeconfig|kube-pod-context|kube-pod-template|lightsail-availability-zone|lightsail-bu
-                         ndle-id|gce-machine-type|azure-vm-size|azure-resource-group-name|kube-pod-server-side-apply>
+  -d, --driver=<option>    Machine driver to use
+                           <options: lightsail|gce|azure|kube-pod>
+      --profile=<value>    Run in a specific profile context
+      --unset=<option>...  [default: ] Unset a configuration option
+                           <options: lightsail-region|gce-project-id|gce-zone|azure-region|azure-subscription-id|kube-po
+                           d-namespace|kube-pod-kubeconfig|kube-pod-context|kube-pod-template|lightsail-availability-zon
+                           e|lightsail-bundle-id|gce-machine-type|azure-vm-size|kube-pod-server-side-apply>
 
 GLOBAL FLAGS
-  -D, --debug                       Enable debug logging
-  -f, --file=<value>...             [default: ] Compose configuration file
-  -p, --project=<value>             Project name. Defaults to the Compose project name
-  --json                            Format output as json.
-  --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
+  -D, --debug                           Enable debug logging
+  -f, --file=<value>...                 [default: ] Compose configuration file
+  -p, --project=<value>                 Project name. Defaults to the Compose project name
+      --disable-plugin=<value>...       Disable plugin with specified package name
+      --enable-plugin=<value>...        [default: @preevy/plugin-github] Enable plugin with specified package name
+      --json                            Format output as json.
+      --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
 
 AZURE DRIVER FLAGS
-  --azure-region=<value>               Microsoft Azure region in which resources will be provisioned
-  --azure-resource-group-name=<value>  Microsoft Azure resource group name
-  --azure-subscription-id=<value>      Microsoft Azure subscription id
-  --azure-vm-size=<value>              Machine type to be provisioned
+  --azure-region=<value>           Microsoft Azure region in which resources will be provisioned
+  --azure-subscription-id=<value>  Microsoft Azure subscription id
+  --azure-vm-size=<value>          Machine type to be provisioned
 
 GCE DRIVER FLAGS
   --gce-machine-type=<value>  Machine type to be provisioned
@@ -73,16 +72,13 @@ LIGHTSAIL DRIVER FLAGS
   --lightsail-bundle-id=<option>         Lightsail bundle ID (size of instance) to provision. Default: medium_2_0
                                          <options:
                                          nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0>
-  --lightsail-region=<option>            AWS region in which resources will be provisioned
-                                         <options: us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-
-                                         1|ap-southeast-2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|e
-                                         u-west-3|eu-north-1>
+  --lightsail-region=<value>             AWS region in which resources will be provisioned
 
 DESCRIPTION
   View and update profile configuration
 ```
 
-_See code: [src/commands/profile/config/update.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/profile/config/update.ts)_
+_See code: [src/commands/profile/config/update.ts](https://github.com/livecycle/preevy/blob/v0.0.56/src/commands/profile/config/update.ts)_
 
 ## `preevy profile config view`
 
@@ -90,24 +86,26 @@ View profile configuration
 
 ```
 USAGE
-  $ preevy profile config view [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>]
-  [--json]
+  $ preevy profile config view [--json] [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--enable-plugin
+    <value>] [--disable-plugin <value>] [--profile <value>]
 
 FLAGS
   --profile=<value>  Run in a specific profile context
 
 GLOBAL FLAGS
-  -D, --debug                       Enable debug logging
-  -f, --file=<value>...             [default: ] Compose configuration file
-  -p, --project=<value>             Project name. Defaults to the Compose project name
-  --json                            Format output as json.
-  --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
+  -D, --debug                           Enable debug logging
+  -f, --file=<value>...                 [default: ] Compose configuration file
+  -p, --project=<value>                 Project name. Defaults to the Compose project name
+      --disable-plugin=<value>...       Disable plugin with specified package name
+      --enable-plugin=<value>...        [default: @preevy/plugin-github] Enable plugin with specified package name
+      --json                            Format output as json.
+      --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
 
 DESCRIPTION
   View profile configuration
 ```
 
-_See code: [src/commands/profile/config/view.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/profile/config/view.ts)_
+_See code: [src/commands/profile/config/view.ts](https://github.com/livecycle/preevy/blob/v0.0.56/src/commands/profile/config/view.ts)_
 
 ## `preevy profile cp`
 
@@ -115,8 +113,9 @@ Copy a profile
 
 ```
 USAGE
-  $ preevy profile cp [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--json] [--profile
-    <value>] [--target-location <value> | --target-storage local|s3|gs] [--target-name <value>] [--use]
+  $ preevy profile cp [--json] [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--enable-plugin
+    <value>] [--disable-plugin <value>] [--profile <value>] [--target-location <value> | --target-storage local|s3|gs]
+    [--target-name <value>] [--use]
 
 FLAGS
   --profile=<value>          Source profile name, defaults to the current profile
@@ -127,17 +126,19 @@ FLAGS
   --use                      Mark the new profile as the current profile
 
 GLOBAL FLAGS
-  -D, --debug                       Enable debug logging
-  -f, --file=<value>...             [default: ] Compose configuration file
-  -p, --project=<value>             Project name. Defaults to the Compose project name
-  --json                            Format output as json.
-  --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
+  -D, --debug                           Enable debug logging
+  -f, --file=<value>...                 [default: ] Compose configuration file
+  -p, --project=<value>                 Project name. Defaults to the Compose project name
+      --disable-plugin=<value>...       Disable plugin with specified package name
+      --enable-plugin=<value>...        [default: @preevy/plugin-github] Enable plugin with specified package name
+      --json                            Format output as json.
+      --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
 
 DESCRIPTION
   Copy a profile
 ```
 
-_See code: [src/commands/profile/cp.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/profile/cp.ts)_
+_See code: [src/commands/profile/cp.ts](https://github.com/livecycle/preevy/blob/v0.0.56/src/commands/profile/cp.ts)_
 
 ## `preevy profile create NAME URL`
 
@@ -145,15 +146,13 @@ Create a new profile
 
 ```
 USAGE
-  $ preevy profile create NAME URL [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile
-    <value>] [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|a
-    p-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>]
-    [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>]
-    [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template <value>]
-    [--lightsail-availability-zone <value>] [--lightsail-bundle-id
+  $ preevy profile create NAME URL [--json] [-D] [-f <value>] [--system-compose-file <value>] [-p <value>]
+    [--enable-plugin <value>] [--disable-plugin <value>] [--profile <value>] [--lightsail-region <value>]
+    [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
+    [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template
+    <value>] [--lightsail-availability-zone <value>] [--lightsail-bundle-id
     nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0] [--gce-machine-type <value>]
-    [--azure-vm-size <value>] [--azure-resource-group-name <value>] [--kube-pod-server-side-apply] [-d
-    lightsail|gce|azure|kube-pod] [--use] [--json]
+    [--azure-vm-size <value>] [--kube-pod-server-side-apply] [-d lightsail|gce|azure|kube-pod] [--use]
 
 ARGUMENTS
   NAME  Name of the new profile
@@ -162,21 +161,22 @@ ARGUMENTS
 FLAGS
   -d, --driver=<option>  Machine driver to use
                          <options: lightsail|gce|azure|kube-pod>
-  --profile=<value>      Run in a specific profile context
-  --use                  Mark the new profile as the current profile
+      --profile=<value>  Run in a specific profile context
+      --use              Mark the new profile as the current profile
 
 GLOBAL FLAGS
-  -D, --debug                       Enable debug logging
-  -f, --file=<value>...             [default: ] Compose configuration file
-  -p, --project=<value>             Project name. Defaults to the Compose project name
-  --json                            Format output as json.
-  --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
+  -D, --debug                           Enable debug logging
+  -f, --file=<value>...                 [default: ] Compose configuration file
+  -p, --project=<value>                 Project name. Defaults to the Compose project name
+      --disable-plugin=<value>...       Disable plugin with specified package name
+      --enable-plugin=<value>...        [default: @preevy/plugin-github] Enable plugin with specified package name
+      --json                            Format output as json.
+      --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
 
 AZURE DRIVER FLAGS
-  --azure-region=<value>               Microsoft Azure region in which resources will be provisioned
-  --azure-resource-group-name=<value>  Microsoft Azure resource group name
-  --azure-subscription-id=<value>      Microsoft Azure subscription id
-  --azure-vm-size=<value>              [default: Standard_B2s] Machine type to be provisioned
+  --azure-region=<value>           Microsoft Azure region in which resources will be provisioned
+  --azure-subscription-id=<value>  Microsoft Azure subscription id
+  --azure-vm-size=<value>          [default: Standard_B2s] Machine type to be provisioned
 
 GCE DRIVER FLAGS
   --gce-machine-type=<value>  Machine type to be provisioned
@@ -196,16 +196,13 @@ LIGHTSAIL DRIVER FLAGS
   --lightsail-bundle-id=<option>         Lightsail bundle ID (size of instance) to provision. Default: medium_2_0
                                          <options:
                                          nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0>
-  --lightsail-region=<option>            AWS region in which resources will be provisioned
-                                         <options: us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-
-                                         1|ap-southeast-2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|e
-                                         u-west-3|eu-north-1>
+  --lightsail-region=<value>             AWS region in which resources will be provisioned
 
 DESCRIPTION
   Create a new profile
 ```
 
-_See code: [src/commands/profile/create.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/profile/create.ts)_
+_See code: [src/commands/profile/create.ts](https://github.com/livecycle/preevy/blob/v0.0.56/src/commands/profile/create.ts)_
 
 ## `preevy profile current`
 
@@ -213,23 +210,26 @@ Display current profile in use
 
 ```
 USAGE
-  $ preevy profile current [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>] [--json]
+  $ preevy profile current [--json] [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--enable-plugin
+    <value>] [--disable-plugin <value>] [--profile <value>]
 
 FLAGS
   --profile=<value>  Run in a specific profile context
 
 GLOBAL FLAGS
-  -D, --debug                       Enable debug logging
-  -f, --file=<value>...             [default: ] Compose configuration file
-  -p, --project=<value>             Project name. Defaults to the Compose project name
-  --json                            Format output as json.
-  --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
+  -D, --debug                           Enable debug logging
+  -f, --file=<value>...                 [default: ] Compose configuration file
+  -p, --project=<value>                 Project name. Defaults to the Compose project name
+      --disable-plugin=<value>...       Disable plugin with specified package name
+      --enable-plugin=<value>...        [default: @preevy/plugin-github] Enable plugin with specified package name
+      --json                            Format output as json.
+      --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
 
 DESCRIPTION
   Display current profile in use
 ```
 
-_See code: [src/commands/profile/current.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/profile/current.ts)_
+_See code: [src/commands/profile/current.ts](https://github.com/livecycle/preevy/blob/v0.0.56/src/commands/profile/current.ts)_
 
 ## `preevy profile import LOCATION`
 
@@ -237,8 +237,8 @@ Import an existing profile
 
 ```
 USAGE
-  $ preevy profile import LOCATION [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--name <value>]
-    [--use]
+  $ preevy profile import LOCATION [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--enable-plugin
+    <value>] [--disable-plugin <value>] [--name <value>] [--use]
 
 ARGUMENTS
   LOCATION  URL of the profile
@@ -248,16 +248,18 @@ FLAGS
   --use           Mark the new profile as the current profile
 
 GLOBAL FLAGS
-  -D, --debug                       Enable debug logging
-  -f, --file=<value>...             [default: ] Compose configuration file
-  -p, --project=<value>             Project name. Defaults to the Compose project name
-  --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
+  -D, --debug                           Enable debug logging
+  -f, --file=<value>...                 [default: ] Compose configuration file
+  -p, --project=<value>                 Project name. Defaults to the Compose project name
+      --disable-plugin=<value>...       Disable plugin with specified package name
+      --enable-plugin=<value>...        [default: @preevy/plugin-github] Enable plugin with specified package name
+      --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
 
 DESCRIPTION
   Import an existing profile
 ```
 
-_See code: [src/commands/profile/import.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/profile/import.ts)_
+_See code: [src/commands/profile/import.ts](https://github.com/livecycle/preevy/blob/v0.0.56/src/commands/profile/import.ts)_
 
 ## `preevy profile key [TYPE]`
 
@@ -265,8 +267,8 @@ Show profile key
 
 ```
 USAGE
-  $ preevy profile key [TYPE] [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>]
-    [--json]
+  $ preevy profile key [TYPE] [--json] [-D] [-f <value>] [--system-compose-file <value>] [-p <value>]
+    [--enable-plugin <value>] [--disable-plugin <value>] [--profile <value>]
 
 ARGUMENTS
   TYPE  (private|public-pem|public-ssh|thumbprint|thumbprint-uri) [default: thumbprint-uri] type of the key to show
@@ -275,17 +277,19 @@ FLAGS
   --profile=<value>  Run in a specific profile context
 
 GLOBAL FLAGS
-  -D, --debug                       Enable debug logging
-  -f, --file=<value>...             [default: ] Compose configuration file
-  -p, --project=<value>             Project name. Defaults to the Compose project name
-  --json                            Format output as json.
-  --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
+  -D, --debug                           Enable debug logging
+  -f, --file=<value>...                 [default: ] Compose configuration file
+  -p, --project=<value>                 Project name. Defaults to the Compose project name
+      --disable-plugin=<value>...       Disable plugin with specified package name
+      --enable-plugin=<value>...        [default: @preevy/plugin-github] Enable plugin with specified package name
+      --json                            Format output as json.
+      --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
 
 DESCRIPTION
   Show profile key
 ```
 
-_See code: [src/commands/profile/key.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/profile/key.ts)_
+_See code: [src/commands/profile/key.ts](https://github.com/livecycle/preevy/blob/v0.0.56/src/commands/profile/key.ts)_
 
 ## `preevy profile link`
 
@@ -293,8 +297,8 @@ Link the profile to the logged in user's organization
 
 ```
 USAGE
-  $ preevy profile link [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>]
-    [--lc-api-url <value>] [--access-token <value>] [--org <value>]
+  $ preevy profile link [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--enable-plugin <value>]
+    [--disable-plugin <value>] [--profile <value>] [--lc-api-url <value>] [--access-token <value>] [--org <value>]
 
 FLAGS
   --access-token=<value>  Livecycle's Access Token
@@ -303,16 +307,18 @@ FLAGS
   --profile=<value>       Run in a specific profile context
 
 GLOBAL FLAGS
-  -D, --debug                       Enable debug logging
-  -f, --file=<value>...             [default: ] Compose configuration file
-  -p, --project=<value>             Project name. Defaults to the Compose project name
-  --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
+  -D, --debug                           Enable debug logging
+  -f, --file=<value>...                 [default: ] Compose configuration file
+  -p, --project=<value>                 Project name. Defaults to the Compose project name
+      --disable-plugin=<value>...       Disable plugin with specified package name
+      --enable-plugin=<value>...        [default: @preevy/plugin-github] Enable plugin with specified package name
+      --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
 
 DESCRIPTION
   Link the profile to the logged in user's organization
 ```
 
-_See code: [src/commands/profile/link.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/profile/link.ts)_
+_See code: [src/commands/profile/link.ts](https://github.com/livecycle/preevy/blob/v0.0.56/src/commands/profile/link.ts)_
 
 ## `preevy profile ls`
 
@@ -320,23 +326,26 @@ Lists profiles
 
 ```
 USAGE
-  $ preevy profile ls [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>] [--json]
+  $ preevy profile ls [--json] [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--enable-plugin
+    <value>] [--disable-plugin <value>] [--profile <value>]
 
 FLAGS
   --profile=<value>  Run in a specific profile context
 
 GLOBAL FLAGS
-  -D, --debug                       Enable debug logging
-  -f, --file=<value>...             [default: ] Compose configuration file
-  -p, --project=<value>             Project name. Defaults to the Compose project name
-  --json                            Format output as json.
-  --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
+  -D, --debug                           Enable debug logging
+  -f, --file=<value>...                 [default: ] Compose configuration file
+  -p, --project=<value>                 Project name. Defaults to the Compose project name
+      --disable-plugin=<value>...       Disable plugin with specified package name
+      --enable-plugin=<value>...        [default: @preevy/plugin-github] Enable plugin with specified package name
+      --json                            Format output as json.
+      --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
 
 DESCRIPTION
   Lists profiles
 ```
 
-_See code: [src/commands/profile/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/profile/ls.ts)_
+_See code: [src/commands/profile/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.56/src/commands/profile/ls.ts)_
 
 ## `preevy profile rm NAME`
 
@@ -344,8 +353,8 @@ Remove a profile
 
 ```
 USAGE
-  $ preevy profile rm NAME [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>]
-    [--json]
+  $ preevy profile rm NAME [--json] [-D] [-f <value>] [--system-compose-file <value>] [-p <value>]
+    [--enable-plugin <value>] [--disable-plugin <value>] [--profile <value>]
 
 ARGUMENTS
   NAME  name of the profile to remove
@@ -354,17 +363,19 @@ FLAGS
   --profile=<value>  Run in a specific profile context
 
 GLOBAL FLAGS
-  -D, --debug                       Enable debug logging
-  -f, --file=<value>...             [default: ] Compose configuration file
-  -p, --project=<value>             Project name. Defaults to the Compose project name
-  --json                            Format output as json.
-  --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
+  -D, --debug                           Enable debug logging
+  -f, --file=<value>...                 [default: ] Compose configuration file
+  -p, --project=<value>                 Project name. Defaults to the Compose project name
+      --disable-plugin=<value>...       Disable plugin with specified package name
+      --enable-plugin=<value>...        [default: @preevy/plugin-github] Enable plugin with specified package name
+      --json                            Format output as json.
+      --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
 
 DESCRIPTION
   Remove a profile
 ```
 
-_See code: [src/commands/profile/rm.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/profile/rm.ts)_
+_See code: [src/commands/profile/rm.ts](https://github.com/livecycle/preevy/blob/v0.0.56/src/commands/profile/rm.ts)_
 
 ## `preevy profile use NAME`
 
@@ -372,19 +383,22 @@ Set current profile
 
 ```
 USAGE
-  $ preevy profile use NAME [-D] [-f <value>] [--system-compose-file <value>] [-p <value>]
+  $ preevy profile use NAME [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--enable-plugin
+    <value>] [--disable-plugin <value>]
 
 ARGUMENTS
   NAME  name of the profile to use
 
 GLOBAL FLAGS
-  -D, --debug                       Enable debug logging
-  -f, --file=<value>...             [default: ] Compose configuration file
-  -p, --project=<value>             Project name. Defaults to the Compose project name
-  --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
+  -D, --debug                           Enable debug logging
+  -f, --file=<value>...                 [default: ] Compose configuration file
+  -p, --project=<value>                 Project name. Defaults to the Compose project name
+      --disable-plugin=<value>...       Disable plugin with specified package name
+      --enable-plugin=<value>...        [default: @preevy/plugin-github] Enable plugin with specified package name
+      --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
 
 DESCRIPTION
   Set current profile
 ```
 
-_See code: [src/commands/profile/use.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/profile/use.ts)_
+_See code: [src/commands/profile/use.ts](https://github.com/livecycle/preevy/blob/v0.0.56/src/commands/profile/use.ts)_

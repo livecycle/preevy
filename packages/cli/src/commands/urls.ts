@@ -16,8 +16,8 @@ export const writeUrlsToFile = async (
 ) => {
   if (!outputUrlsTo) return
   const contents = /\.ya?ml$/.test(outputUrlsTo) ? yaml.stringify(urls) : JSON.stringify(urls)
+  log.info(`Writing URLs to file ${text.code(outputUrlsTo)}`)
   await fs.promises.writeFile(outputUrlsTo, contents, { encoding: 'utf8' })
-  log.info(`URLs written to file ${text.code(outputUrlsTo)}`)
 }
 
 export const printUrls = (

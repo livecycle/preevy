@@ -1,19 +1,18 @@
-import { Command, Flags, Interfaces } from '@oclif/core'
 import { Octokit } from 'octokit'
 import { FlatTunnel } from '@preevy/core'
-import { upsertPreevyComment } from '../../lib/github-comment'
+import { upsertPreevyComment } from '../../../lib/github-comment'
 import BaseGithubPrCommand from './base'
+import { commentTemplateFlagDef } from '../../../flags'
 
 // eslint-disable-next-line no-use-before-define
-export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof LinkGithubPr['baseFlags'] & T['flags']>
-export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>
+class CommentGithubPr extends BaseGithubPrCommand<typeof CommentGithubPr> {
+  static id = 'github:pr:comment'
+  static description = 'Post a comment on a GitHub Pull Request describing the preevy environment'
 
-// eslint-disable-next-line no-use-before-define
-class LinkGithubPr extends BaseGithubPrCommand<typeof LinkGithubPr> {
-  static id = 'github-pr:link'
-  static description = 'Link a GitHub Pull Request to an existing environment'
-
-  static flags = {}
+  static flags = {
+    ...BaseGithubPrCommand.baseFlags, // workaround: help not showing base flags due to command not cached
+    ...commentTemplateFlagDef,
+  }
 
   async run() {
     const urls = await this.config.runCommand('urls', [
@@ -24,8 +23,8 @@ class LinkGithubPr extends BaseGithubPrCommand<typeof LinkGithubPr> {
       '--json',
     ]) as FlatTunnel[]
 
-    const { flags } = await this.parse(LinkGithubPr)
-    const config = await this.loadGithubConfig(flags)
+    const { flags } = await this.parse(CommentGithubPr)
+    const config = await this.loadGithubPullRequestCommentConfig(flags)
 
     await upsertPreevyComment({
       octokit: new Octokit({ auth: config.token }),
@@ -37,4 +36,4 @@ class LinkGithubPr extends BaseGithubPrCommand<typeof LinkGithubPr> {
   }
 }
 
-export default LinkGithubPr
+export default CommentGithubPr

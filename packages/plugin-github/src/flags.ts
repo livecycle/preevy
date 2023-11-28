@@ -1,9 +1,9 @@
-import { Parser } from '@oclif/core/lib/parser/parse'
 import { Flags } from '@oclif/core'
 import { mapKeys } from 'lodash'
+import { ParsedFlags, parseFlags } from '@preevy/cli-common'
 import { tryParseRepo } from './repo'
 
-const HELP_GROUP = 'GitHub PR link'
+const HELP_GROUP = 'GitHub integration'
 
 export const flagsDef = {
   token: Flags.string({
@@ -23,6 +23,9 @@ export const flagsDef = {
       return result
     },
   })(),
+} as const
+
+export const pullRequestFlagsDef = {
   'pull-request': Flags.custom<number>({
     description: 'GitHub Pull Request number. Will auto-detect if not specified',
     required: false,
@@ -35,22 +38,33 @@ export const flagsDef = {
       return result
     },
   })(),
-  'comment-template-file': Flags.string({
+} as const
+
+export const commentTemplateFlagDef = {
+  'pr-comment-template-file': Flags.string({
     description: 'Path to nunjucks template file',
     required: false,
     helpGroup: HELP_GROUP,
   }),
 } as const
 
-const flagPrefix = 'github-pr-link' as const
+const flagPrefix = 'github' as const
 
-type PrefixedFlagsDef = {
-  [K in keyof typeof flagsDef as `${typeof flagPrefix}-${K}`]: typeof flagsDef[K]
+type Prefixed<T extends { [k: string]: unknown }> = {
+  [K in keyof T as `${typeof flagPrefix}-${string & K}`]: T[K]
 }
 
-export const prefixedFlagsDef = {
-  ...mapKeys(flagsDef, (_v, k) => `${flagPrefix}-${k}`) as PrefixedFlagsDef,
-  [`${flagPrefix}-enabled` as const]: Flags.custom<'auto' | 'no' | 'always'>({
+type ExtractPrefix<S extends string> = S extends `${typeof flagPrefix}-${infer suffix}` ? suffix : never
+
+type Unprefixed<T extends { [k: `${typeof flagPrefix}-${string}`]: unknown }> = {
+  [K in keyof T as ExtractPrefix<string & keyof T>]: T[K]
+}
+
+const upDownFlagsDefSource = { ...flagsDef, ...pullRequestFlagsDef, ...commentTemplateFlagDef } as const
+
+export const upDownFlagsDef = {
+  ...mapKeys(upDownFlagsDefSource, (_v, k) => `${flagPrefix}-${k}`) as Prefixed<typeof upDownFlagsDefSource>,
+  [`${flagPrefix}-pr-comment-enabled` as const]: Flags.custom<'auto' | 'no' | 'always'>({
     description: 'Whether to enable posting to the GitHub PR',
     required: false,
     helpGroup: HELP_GROUP,
@@ -59,12 +73,7 @@ export const prefixedFlagsDef = {
   })(),
 } as const
 
-export const parseFlags = async <T extends {}>(def: T, argv: string[]) => (await new Parser({
-  flags: def,
-  strict: false,
-  args: {},
-  context: undefined,
-  argv,
-}).parse()).flags
-
-export type ParsedFlags<T extends {}> = Awaited<ReturnType<typeof parseFlags<T>>>
+export const parseUpDownFlagsDef = (argv: string[]) => mapKeys(
+  parseFlags(upDownFlagsDef, argv),
+  (_v, k) => k.replace(/^github-/, ''),
+) as Unprefixed<ParsedFlags<typeof upDownFlagsDef>>
