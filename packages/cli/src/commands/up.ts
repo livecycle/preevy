@@ -53,7 +53,6 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
   async run(): Promise<unknown> {
     const { flags, raw } = await this.parse(Up)
     const restArgs = argsFromRaw(raw)
-    this.log('restArgs', restArgs)
 
     const driver = await this.driver()
     const machineCreationDriver = await this.machineCreationDriver()
