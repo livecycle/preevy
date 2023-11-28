@@ -7,6 +7,8 @@ import { Logger } from '../log'
 import { BuildSpec, generateBuild } from '../build'
 import { gitContext } from '../git'
 import { childProcessPromise } from '../child-process'
+import { telemetryEmitter } from '../telemetry'
+import { measureTime } from '../timing'
 
 const buildCommand = async ({
   log,
@@ -43,7 +45,12 @@ const buildCommand = async ({
   ]
 
   log.info(`Running: docker ${dockerArgs.join(' ')}`)
-  await childProcessPromise(spawn('docker', dockerArgs, { stdio: 'inherit', cwd, env }))
+  const { elapsedTimeSec } = await measureTime(() => childProcessPromise(spawn('docker', dockerArgs, { stdio: 'inherit', cwd, env })))
+  telemetryEmitter().capture('build success', {
+    elapsed_sec: elapsedTimeSec,
+    has_registry: Boolean(buildSpec.registry),
+  })
+  log.info(`Elapsed time for build step: ${elapsedTimeSec.toLocaleString(undefined, { maximumFractionDigits: 2 })} sec`)
 
   return { buildModel, deployModel }
 }

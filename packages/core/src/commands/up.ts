@@ -12,6 +12,8 @@ import { BuildSpec } from '../build'
 import modelCommand from './model'
 import buildCommand from './build'
 import { CommandExecuter } from '../command-executer'
+import { telemetryEmitter } from '../telemetry'
+import { measureTime } from '../timing'
 
 const uploadFiles = async ({
   log,
@@ -143,7 +145,14 @@ const up = async ({
   log.info(`Running: docker compose up ${composeArgs.join(' ')}`)
 
   await using dockerContext = await dockerEnvContext({ connection, log })
-  await compose.spawnPromise(composeArgs, { stdio: 'inherit', env: dockerContext.env })
+
+  const { elapsedTimeSec } = await measureTime(() => compose.spawnPromise(composeArgs, { stdio: 'inherit', env: dockerContext.env }))
+  telemetryEmitter().capture('provisioning success', {
+    elapsed_sec: elapsedTimeSec,
+    with_build: Boolean(buildSpec),
+    has_registry: Boolean(buildSpec?.registry),
+  })
+  log.info(`Elapsed time for provisioning step: ${elapsedTimeSec.toLocaleString(undefined, { maximumFractionDigits: 2 })} sec`)
 
   return { composeModel, projectLocalDataDir }
 }
