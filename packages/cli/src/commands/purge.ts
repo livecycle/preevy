@@ -65,7 +65,7 @@ export default class Purge extends DriverCommand<typeof Purge> {
   static strict = false
 
   async run(): Promise<unknown> {
-    const { flags } = await this.parse(Purge)
+    const { flags } = this
 
     const driver = await this.driver()
     const resourcePlurals: Record<string, string> = { [machineResourceType]: 'machines', ...driver.resourcePlurals }

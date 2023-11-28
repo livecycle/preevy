@@ -5,7 +5,6 @@ import {
   localComposeClient, findEnvId, MachineConnection, ComposeModel, remoteUserModel, dockerEnvContext,
 } from '@preevy/core'
 import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME } from '@preevy/common'
-import { argsFromRaw } from '@preevy/cli-common'
 import DriverCommand from '../driver-command'
 import { envIdFlags } from '../common-flags'
 
@@ -80,8 +79,7 @@ export default class Logs extends DriverCommand<typeof Logs> {
 
   async run(): Promise<void> {
     const log = this.logger
-    const { flags, raw } = await this.parse(Logs)
-    const restArgs = argsFromRaw(raw)
+    const { flags, rawArgs: restArgs } = this
 
     let connection: MachineConnection
     let userModel: ComposeModel

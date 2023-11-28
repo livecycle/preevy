@@ -19,7 +19,7 @@ class UnCommentGithubPr extends BaseGithubPrCommand<typeof UnCommentGithubPr> {
   }
 
   async run() {
-    const { flags } = await this.parse(UnCommentGithubPr)
+    const { flags } = this
     const config = await this.loadGithubPullRequestCommentConfig(flags)
 
     await upsertPreevyComment({

@@ -3,12 +3,15 @@ import {
   LogLevel, Logger, logLevels, ComposeModel, ProcessError, telemetryEmitter,
 } from '@preevy/core'
 import { asyncReduce } from 'iter-tools-es'
+import { ParsingToken } from '@oclif/core/lib/interfaces/parser'
 import { commandLogger } from '../lib/log'
 import { composeFlags, pluginFlags } from '../lib/common-flags'
 
 // eslint-disable-next-line no-use-before-define
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof BaseCommand['baseFlags'] & T['flags']>
 export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>
+
+const argsFromRaw = (raw: ParsingToken[]) => raw.filter(arg => arg.type === 'arg').map(arg => arg.input).filter(Boolean)
 
 abstract class BaseCommand<T extends typeof Command=typeof Command> extends Command {
   static baseFlags = {
@@ -35,6 +38,7 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
 
   protected flags!: Flags<T>
   protected args!: Args<T>
+  #rawArgs!: ParsingToken[]
 
   #userModel?: ComposeModel
   protected async userModel() {
@@ -76,23 +80,26 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
 
   public async init(): Promise<void> {
     await super.init()
-    const { args, flags } = await this.parse({
+    const { args, flags, raw } = await this.parse({
       flags: this.ctor.flags,
       baseFlags: super.ctor.baseFlags,
       args: this.ctor.args,
-      strict: this.ctor.strict,
+      strict: false,
     })
     this.args = args as Args<T>
     this.flags = flags as Flags<T>
     if (this.flags.debug) {
       oclifSettings.debug = true
     }
+    this.#rawArgs = raw
     this.logger = commandLogger(this, this.flags.json ? 'stderr' : 'stdout')
     this.stdErrLogger = commandLogger(this, 'stderr')
   }
 
   protected logger!: Logger
   protected stdErrLogger!: Logger
+
+  protected get rawArgs() { return argsFromRaw(this.#rawArgs) }
 
   public get logLevel(): LogLevel {
     return this.flags['log-level'] ?? this.flags.debug ? 'debug' : 'info'

@@ -23,7 +23,7 @@ class CommentGithubPr extends BaseGithubPrCommand<typeof CommentGithubPr> {
       '--json',
     ]) as FlatTunnel[]
 
-    const { flags } = await this.parse(CommentGithubPr)
+    const { flags } = this
     const config = await this.loadGithubPullRequestCommentConfig(flags)
 
     await upsertPreevyComment({

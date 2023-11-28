@@ -102,7 +102,7 @@ export default class Urls extends ProfileCommand<typeof Urls> {
 
   async run(): Promise<unknown> {
     const log = this.logger
-    const { flags, args } = await this.parse(Urls)
+    const { flags, args } = this
 
     const envId = await findEnvId({
       userSpecifiedEnvId: flags.id,

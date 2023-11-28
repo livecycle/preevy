@@ -50,7 +50,7 @@ const buildCommand = async ({
     elapsed_sec: elapsedTimeSec,
     has_registry: Boolean(buildSpec.registry),
   })
-  log.info(`Elapsed time for build step: ${elapsedTimeSec.toLocaleString(undefined, { maximumFractionDigits: 2 })} sec`)
+  log.info(`Build step done in ${elapsedTimeSec.toLocaleString(undefined, { maximumFractionDigits: 2 })}s`)
 
   return { buildModel, deployModel }
 }

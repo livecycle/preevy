@@ -23,7 +23,7 @@ export default class Disconnect extends ProfileCommand<typeof Disconnect> {
 
   // eslint-disable-next-line class-methods-use-this
   async run(): Promise<unknown> {
-    const { args } = await this.parse(Disconnect)
+    const { args } = this
     const inspector = commands.proxy.inspectRunningComposeApp(args['compose-project'])
     const agentContainer = await inspector.getPreevyAgentContainer()
     if (agentContainer) {

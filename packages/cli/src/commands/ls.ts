@@ -18,7 +18,7 @@ export default class Ls extends DriverCommand<typeof Ls> {
   static enableJsonFlag = true
 
   async run(): Promise<unknown> {
-    const { flags } = await this.parse(Ls)
+    const { flags } = this
     const driver = await this.driver()
     const machines = await asyncToArray(
       asyncMap(
