@@ -108,7 +108,7 @@ services:
 
 ### AWS ECR dance
 
-Using Amazon Elastic Container Registry as your image registry requires creating a "repository" before pushing an image. When creating image refs for ECR, Preevy uses a slightly different scheme, because image names (the part after the slash) cannot be dynamic - so the dynamic part is moved to the tag.
+Using Amazon [Elastic Container Registry](https://aws.amazon.com/ecr/) as your image registry requires creating a "repository" before pushing an image. When creating image refs for ECR, Preevy uses a slightly different scheme, because image names (the part after the slash) cannot be dynamic - so the dynamic part is moved to the tag.
 
 Example, with the same project and registry above:
 
@@ -125,8 +125,8 @@ Not specifying the registry will disable automatic generation of image refs (and
 
 Several options exist:
 
-* Creating a registry on the same cloud provider used by Preevy to provision the environment machines is usually inexpensive: ECR for AWS, GCR for Google Cloud, ACR for Azure.
-* Creating a registry on the CI provider, e.g, GHR on GitHub actions.
+* Creating a registry on the same cloud provider used by Preevy to provision the environment machines is usually inexpensive: [ECR](https://aws.amazon.com/ecr/) for AWS, [GAR](https://cloud.google.com/artifact-registry/) for Google Cloud, [ACR](https://azure.microsoft.com/en-us/products/container-registry/) for Azure.
+* Creating a registry on the CI provider, e.g, [GHR](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry) on GitHub actions.
 * [Docker Hub](https://www.docker.com/products/docker-hub/)
 * [ttl.sh](https://ttl.sh/) is a free, ephemeral and anonymous image registry.
 * Other 3rd party registries exist with some free tiers: JFrog, Treescale, Canister, GitLab
