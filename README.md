@@ -80,8 +80,8 @@ Visit The full documentation here: https://preevy.dev/
 
 Preevy can take any Docker-Compose application definition and with a single `up` command perform the following:
 
-- Provision and configure a new virtual machine (VM) on your cloud.
-- Build and deploy your application on the VM.
+- Provision and configure a virtual machine (VM) on your cloud, or a Pod on your Kubernetes cluster.
+- Build and deploy your application on the VM/Pod.
 - Expose each service of your application to the web with a user-friendly public HTTPS URL without any DNS/Certificate configuration.
 
 These environments can be managed using the Preevy command-line interface (CLI) and can be easily updated or destroyed when necessary.
