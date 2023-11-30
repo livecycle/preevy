@@ -1,8 +1,8 @@
 ---
-title: Preevy PR Plugin
+title: GitHub Plugin
 ---
 
-# Preevy PR Plugin
+# Preevy GitHub Plugin
 
 The `@preevy/plugin-github` plugin adds GitHub integration to [Preevy](https://github.com/livecycle/preevy).
 
