@@ -42,19 +42,23 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
 
   #userModel?: ComposeModel
   protected async userModel() {
-    const { initialUserModel, preevyHooks } = this.config
+    const { initialUserModel } = this.config
     if (initialUserModel instanceof Error) {
       return initialUserModel
     }
 
     if (!this.#userModel) {
-      this.#userModel = await asyncReduce(
-        initialUserModel,
-        (userModel, hook) => hook({ log: this.logger, userModel }, undefined),
-        preevyHooks?.userModelFilter || [],
-      )
+      this.#userModel = await this.modelFilter(initialUserModel)
     }
     return this.#userModel
+  }
+
+  protected get modelFilter() {
+    return (model: ComposeModel) => asyncReduce(
+      model,
+      (filteredModel, hook) => hook({ log: this.logger, userModel: filteredModel }, undefined),
+      this.config.preevyHooks?.userModelFilter || [],
+    )
   }
 
   protected get preevyConfig() {

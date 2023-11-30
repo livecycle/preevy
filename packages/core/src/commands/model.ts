@@ -2,7 +2,7 @@ import { MachineStatusCommand, ScriptInjection } from '@preevy/common'
 import path from 'path'
 import { rimraf } from 'rimraf'
 import { TunnelOpts } from '../ssh'
-import { remoteComposeModel } from '../compose'
+import { ComposeModel, remoteComposeModel } from '../compose'
 import { createCopiedFileInDataDir } from '../remote-files'
 import { Logger } from '../log'
 import { EnvId } from '../env-id'
@@ -25,6 +25,7 @@ const composeModel = async ({
   envId,
   expectedServiceUrls,
   projectName,
+  modelFilter,
 }: {
   debug: boolean
   machineStatusCommand?: MachineStatusCommand
@@ -43,6 +44,7 @@ const composeModel = async ({
   envId: EnvId
   expectedServiceUrls: { name: string; port: number; url: string }[]
   projectName: string
+  modelFilter: (userModel: ComposeModel) => Promise<ComposeModel>
 }) => {
   const projectLocalDataDir = path.join(dataDir, projectName)
   await rimraf(projectLocalDataDir)
@@ -58,6 +60,7 @@ const composeModel = async ({
     cwd,
     expectedServiceUrls,
     projectName,
+    modelFilter,
     agentSettings: {
       allowedSshHostKeys: hostKey,
       sshTunnelPrivateKey,

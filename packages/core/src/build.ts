@@ -66,7 +66,7 @@ export const generateBuild = ({
 
       const cacheFrom = build.cache_from ?? []
       const cacheTo = build.cache_to ?? []
-      const tags = build?.tags ?? []
+      const tags = build.tags ?? []
 
       if (buildSpec.registry && buildSpec.cacheFromRegistry) {
         cacheTo.push(`type=registry,ref=${latestImage},mode=max,oci-mediatypes=true,image-manifest=true`)

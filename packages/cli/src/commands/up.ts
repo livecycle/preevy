@@ -183,6 +183,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       debug: flags.debug,
       userSpecifiedProjectName: flags.project,
       composeFiles: this.config.composeFiles,
+      modelFilter: this.modelFilter,
       envId,
       scriptInjections: injectWidgetScript ? { 'livecycle-widget': { src: injectWidgetScript } } : undefined,
       tunnelOpts,

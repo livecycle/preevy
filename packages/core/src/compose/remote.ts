@@ -141,6 +141,7 @@ export const remoteComposeModel = async ({
   expectedServiceUrls,
   projectName,
   agentSettings,
+  modelFilter,
 }: {
   debug: boolean
   userSpecifiedProjectName: string | undefined
@@ -151,6 +152,7 @@ export const remoteComposeModel = async ({
   expectedServiceUrls: { name: string; port: number; url: string }[]
   projectName: string
   agentSettings?: AgentSettings
+  modelFilter: (userModel: ComposeModel) => Promise<ComposeModel>
 }) => {
   const remoteDir = remoteProjectDir(projectName)
 
@@ -171,7 +173,7 @@ export const remoteComposeModel = async ({
 
   const { model: fixedModel, filesToCopy } = await fixModelForRemote(
     { cwd, remoteBaseDir: remoteDir },
-    await composeClientWithInjectedArgs.getModel(services)
+    await modelFilter(await composeClientWithInjectedArgs.getModel(services)),
   )
 
   let model: ComposeModel = fixedModel

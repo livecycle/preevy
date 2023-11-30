@@ -8,13 +8,13 @@ This plugin is bundled with Preevy and enabled by default. To disable it, see [b
 
 ![Demo comment](./demo.png)
 
-### Automatic comment at `up` and `down`
+### Automatic PR comment at `up` and `down`
 
 Comment generation is done as part of the `up` and `down` core commands.
 
-If a GitHub context is detected (e.g, when running in a GitHub actions job), it will post the comment automatically.
+Preevy will post the comment if a GitHub PR and a GitHub token are detected in the context (e.g, when running in a GitHub Action or other [supported CI provider](#configuration-from-the-ci-provider-context)) or specified explicitly. See the [Configuration section](#configuration) for details.
 
-### Manual comment using the `github` commands
+### Manual PR comment using the `github` commands
 
 This plugin adds the following commands:
 
@@ -23,6 +23,17 @@ This plugin adds the following commands:
 `github pr uncomment`: Updates the GitHub PR comment to state that the Preevy environment has been deleted.
 
 Run `preevy github pr comment --help` for details.
+
+## GitHub Docker build cache
+
+Specify `--github-add-build-cache` at the `up` command to add [GitHub cache](https://docs.docker.com/build/ci/github-actions/cache/#github-cache) to your build directives.
+
+This will add the following directives to all services with a `build` section:
+
+```yaml
+  cache_to: type=gha,mode=max
+  cache_from: type=gha
+```
 
 ## Configuration
 
@@ -115,7 +126,7 @@ The following flags can be specified at the Preevy CLI:
   </tr>
 </table>
 
-### Comment template
+### PR comment template
 
 The generated PR comment can be customized by specifying a template in your Docker Compose file, or in a separate file (see above). The template is rendered by [`nunjucks`](https://mozilla.github.io/nunjucks/templating.html) and receives a context containing a `urls` property which is one of the following:
 

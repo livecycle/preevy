@@ -1,7 +1,7 @@
 import { MachineStatusCommand, ScriptInjection } from '@preevy/common'
 import yaml from 'yaml'
 import { TunnelOpts } from '../ssh'
-import { composeModelFilename, localComposeClient } from '../compose'
+import { ComposeModel, composeModelFilename, localComposeClient } from '../compose'
 import { dockerEnvContext } from '../docker'
 import { MachineConnection } from '../driver'
 import { remoteProjectDir } from '../remote-files'
@@ -57,6 +57,7 @@ const up = async ({
   expectedServiceUrls,
   projectName,
   buildSpec,
+  modelFilter,
 }: {
   debug: boolean
   machineStatusCommand?: MachineStatusCommand
@@ -79,6 +80,7 @@ const up = async ({
   expectedServiceUrls: { name: string; port: number; url: string }[]
   projectName: string
   buildSpec?: BuildSpec
+  modelFilter: (userModel: ComposeModel) => Promise<ComposeModel>
 }) => {
   const remoteDir = remoteProjectDir(projectName)
 
@@ -105,6 +107,7 @@ const up = async ({
     expectedServiceUrls,
     projectName,
     sshTunnelPrivateKey,
+    modelFilter,
   })
 
   log.debug('build spec: %j', buildSpec ?? 'none')
