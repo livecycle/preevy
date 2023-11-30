@@ -19,7 +19,7 @@ In addition, builds often run with no cache (especially when the machine was jus
 
 ## Solutions
 
-1. Offloading Offloading the build step to a specialized server can reduce the memory, disk and CPU requirements of the machines provisioned for environments. It can also help speed up the build step so Preview Environments can be created faster in your CI.
+1. Offloading the build step to a specialized server can reduce the memory, disk and CPU requirements of the machines provisioned for environments. It can also help speed up the build step so Preview Environments can be created faster in your CI.
 2. Reusing cached layers from previous builds can accelerate the build by skipping expensive build steps (e.g, `yarn install`). When creating Preview Environments In CI, cached image layers from the base branch, or previous builds of the same branch can be reused.
 
 Starting with version `0.0.57`, Preevy runs a separate build step using the [`docker buildx bake`](https://docs.docker.com/engine/reference/commandline/buildx_bake/) command, before running the deploy step using `docker compose up`. Preevy can customize the build step to make use of BuildKit builders, and automatically configure caching for the build. These two features work together to speed up the creation of Preview Environments in your CI.
