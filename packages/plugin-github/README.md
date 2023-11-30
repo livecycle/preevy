@@ -31,8 +31,8 @@ Specify `--github-add-build-cache` at the `up` command to add [GitHub cache](htt
 This will add the following directives to all services with a `build` section:
 
 ```yaml
-  cache_to: type=gha,mode=max
-  cache_from: type=gha
+  cache_to: type=gha,scope=<project>/<service>,mode=max
+  cache_from: type=gha,scope=<project>/<service>
 ```
 
 ## Configuration

@@ -83,14 +83,22 @@ export const userModelFilter: HookFactory<'userModelFilter'> = async ({ argv }) 
     return {
       ...userModel,
       services: {
-        ...mapValues(userModel.services ?? {}, (({ build, ...rest }) => ({
-          ...rest,
-          build: build && {
-            ...build,
-            cache_from: (build.cache_from ?? []).concat('type=gha'),
-            cache_to: (build.cache_to ?? []).concat('type=gha,mode=max'),
-          },
-        }))),
+        ...mapValues(userModel.services ?? {}, (({ build, ...rest }, serviceName) => {
+          if (!build) {
+            return rest
+          }
+
+          const scope = [userModel.name, serviceName].join('/')
+
+          return ({
+            ...rest,
+            build: {
+              ...build,
+              cache_from: (build.cache_from ?? []).concat(`type=gha,scope=${scope}`),
+              cache_to: (build.cache_to ?? []).concat(`type=gha,scope=${scope},mode=max`),
+            },
+          })
+        })),
       },
     }
   }
