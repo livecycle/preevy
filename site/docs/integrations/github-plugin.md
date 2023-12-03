@@ -91,7 +91,7 @@ The following flags can be specified at the Preevy CLI:
     <th>Description</th>
   </tr>
   <tr>
-    <td rowspan=5><code>up</code>, <code>down</code></td>
+    <td rowspan="5"><code>up</code>, <code>down</code></td>
     <td><code>--github-token=&lt;token&gt;</code></td>
     <td>GitHub token</td>
   </tr>
@@ -112,7 +112,7 @@ The following flags can be specified at the Preevy CLI:
     <td>Whether to enable posting/updating a comment on the GitHub PR</td>
   </tr>
   <tr>
-    <td rowspan=5><code>github pr comment</code>, <code>github pr uncomment</code></td>
+    <td rowspan="5"><code>github pr comment</code>, <code>github pr uncomment</code></td>
     <td><code>--token=&lt;token&gt;</code></td>
     <td>GitHub token</td>
   </tr>
@@ -135,7 +135,7 @@ The following flags can be specified at the Preevy CLI:
 The generated PR comment can be customized by specifying a template in your Docker Compose file, or in a separate file (see above). The template is rendered by [`nunjucks`](https://mozilla.github.io/nunjucks/templating.html) and receives a context containing a `urls` property which is one of the following:
 
 * `undefined`: The environment is being deleted, or the `uncomment` command has been invoked.
-* Otherwise, the result of the [preevy `urls` command](../cli/README.md#preevy-urls-service-port): an array of `{ service: string; port: number; url: string; project: string }`
+* Otherwise, the result of the [preevy `urls` command](https://github.com/livecycle/preevy/blob/main/packages/cli/README.md#preevy-urls-service-port): an array of `{ service: string; port: number; url: string; project: string }`
 
 Here is an example of a configuration file containing a customized template:
 

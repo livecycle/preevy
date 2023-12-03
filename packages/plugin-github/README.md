@@ -87,7 +87,7 @@ The following flags can be specified at the Preevy CLI:
     <th>Description</th>
   </tr>
   <tr>
-    <td rowspan=5><code>up</code>, <code>down</code></td>
+    <td rowspan="5"><code>up</code>, <code>down</code></td>
     <td><code>--github-token=&lt;token&gt;</code></td>
     <td>GitHub token</td>
   </tr>
@@ -108,7 +108,7 @@ The following flags can be specified at the Preevy CLI:
     <td>Whether to enable posting/updating a comment on the GitHub PR</td>
   </tr>
   <tr>
-    <td rowspan=5><code>github pr comment</code>, <code>github pr uncomment</code></td>
+    <td rowspan="5"><code>github pr comment</code>, <code>github pr uncomment</code></td>
     <td><code>--token=&lt;token&gt;</code></td>
     <td>GitHub token</td>
   </tr>
