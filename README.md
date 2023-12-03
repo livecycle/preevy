@@ -61,6 +61,7 @@ Visit The full documentation here: https://preevy.dev/
   - [CLI](#cli)
   - [Tunnel server](#tunnel-server)
 - [CI Integration](#ci-integration)
+  - [Faster builds in CI](#faster-builds-in-ci)
 - [Security](#security)
   - [Private environments](#private-environments)
   - [Notice on preview environments exposure](#notice-on-preview-environments-exposure)
@@ -150,7 +151,7 @@ A Docker/OCI image is available on ghcr.io: ghcr.io/livecycle/preevy/tunnel-serv
 
 ## CI Integration
 
-Preevy is also designed to work seamlessly with your CI, allowing you to easily import a shared preview profile shared in AWS S3 and Google Cloud Storage (GCS).
+Preevy is designed to work seamlessly with your CI, allowing you to easily import a shared preview profile shared in AWS S3 and Google Cloud Storage (GCS).
 
 Profiles are created using `preevy init`. Choose a S3/GCS URL for storing the profile - Preevy will create a bucket if one doesn't exist.
 
@@ -161,6 +162,10 @@ Once the profile is created, it can be imported to the CI runtime using `preevy 
 Examples:
 - [Using AWS Lightsail](https://preevy.dev/ci/example-github-actions)
 - [Using Google Cloud Engine](https://preevy.dev/ci/example-github-actions-gce)
+
+### Faster builds in CI
+
+Check out our [documentation](https://preevy.dev/recipes/faster-build) to find out how to speed up your builds and reduce the costs of your preview environments by running Preevy with BuildKit builders in CI.
 
 ## Security
 

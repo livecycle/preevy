@@ -169,6 +169,15 @@ Optimizing the CI build involves using multiple techniques while balancing their
 
 We tested a [simple app](https://github.com/livecycle/preevy-gha-gce-demo) comprising of two built images (in addition to an external db image). In each run, Preevy was used to provision a Preview Environment in GitHub Actions on Google Cloud.
 
+#### Environment machine sizes
+
+Two machine sizes were tested:
+
+`e2-small`: 2GB of memory, 0.5-2 vCPUs
+`e2-medium`: 4GB of memory, 1-2 vCPUs
+
+The small machine is good enough for running the app and costs exactly half of the bigger machine.
+
 #### Build flag variations
 
 A few variations of the builder, registry and cache were tested:
@@ -195,7 +204,7 @@ A few scenarios were tested to simulate CI runs in different stages of the devel
 
 |Scenario|Description|Code changes|Environment machine exists?|Registry and cache populated?|
 |:--|:--------|:------------|:---------------------------|:-----------------------------|
-|**A**|Control group| |No|No|
+|**A**|From scratch - not likely in CI| |No|No|
 |**B**|Commit to existing PR,<br/>no code changes| |Yes|Yes|
 |**C**|Commit to existing PR,<br/>code changes|A JSX file|Yes|Yes|
 |**D**|Commit to existing PR, dep changes|`package.json`|Yes|Yes
@@ -213,8 +222,10 @@ VM preparation time was not measured.
 
 ### Results summary
 
-- Default mode was fastest in the control group, and in all cases where the VM already existed (existing PR).
-- Using the GitHub registry without the GitHub cache was fastest when the VM is new (new PR).
+Offloading the build to the stronger CI machine can reduce the cost of running preview environments significantly - in this sample case by nearly 50%!
+
+- For the small environment machine, build was decidedly faster when done on the CI machine.
+- For the bigger environment machine, it was faster to build a new PR on the CI machine, and especially fast with the GitHub registry (which has a good network connection to the CI machine).
 
 ### Discussion
 
@@ -224,69 +235,134 @@ Building on the Environment machine is advantageous: It does not require cache i
 
 The performance benefits of using a registry and/or cache can be seen when building cross-branch.
 
-Other benefits of offloading the builds which were not tested here are:
-
-* Utilizing stronger build machines
-* Decreasing the requirements and cost of the Environment machines
-
 ### Full results
 
-#### Scenario A - Control group
+#### Scenario A: from scratch
 
-|registry|builder|cache|build time|deploy time|setup time|total time|
+This is an unlikely scenario in CI, but it serves as a control group for the others.
+
+##### `e2-small` machine
+
+|registry|builder|cache|setup time|build time|deploy time|total time|
 |:-----|:------|:-----|:-----|:-----|:----|:-----|
-| | | | 68.968| 25.652| 0| 94.62
-GHCR| CI&nbsp;machine| | 46.937| 46.29| 2| 95.227
-GHCR| CI&nbsp;machine| GHA| 50.397| 51.284| 11| 112.681
-GAR| CI&nbsp;machine| | 75.593| 44.862| 10| 130.455
-| | CI&nbsp;machine| | 114.501| 30.052| 3| 147.553
-| | CI&nbsp;machine| GHA| 120.074| 30.15| 7| 157.224
-GAR| CI&nbsp;machine| GHA| 92.174| 55.758| 11| 158.932
+| | docker-container | ghcache | 18 | 116 | 34 | 169
+|gar | docker-container |  | 7 | 94 | 72 | 172
+| | docker-container |  | 3 | 142 | 37 | 182
+|gar | docker-container | ghcache | 13 | 105 | 66 | 183
+| |  |  | 0 | 128 | 59 | 187
+|ghcr | docker-container |  | 9 | 53 | 1091 | 1152
+|ghcr | docker-container | ghcache | 14 | 53 | 1101 | 1168
 
-#### Scenario B - Commit to existing PR, no code changes
+##### `e2-medium` machine
 
-|registry|builder|cache|build time|deploy time|setup time|total time|
+|registry|builder|cache|setup time|build time|deploy time|total time|
 |:-----|:------|:-----|:-----|:-----|:----|:-----|
-| | | | 8.362| 4.237| 0| 12.599
-| GHCR| CI&nbsp;machine| | 7.311| 5.094| 3| 15.405
-| GHCR| CI&nbsp;machine| GHA| 6.881| 4.524| 13| 24.405
-|GAR| CI&nbsp;machine| | 36.251| 4.54| 10| 50.791
-| GAR| CI&nbsp;machine| GHA| 34.363| 4.565| 13| 51.928
-| | CI&nbsp;machine| | 96.284| 28.839| 2| 127.123
-| | CI&nbsp;machine| GHA| 108.243| 28.514| 15| 151.757
+| | | | 0| 69| 26| 95
+GHCR| CI&nbsp;machine| | 2| 47| 46| 95
+GHCR| CI&nbsp;machine| GHA|  11| 50| 51| 113
+GAR| CI&nbsp;machine| | 10| 76| 45| 130
+| | CI&nbsp;machine| | 3| 115| 30| 148
+| | CI&nbsp;machine| GHA| 7| 120| 30| 157
+GAR| CI&nbsp;machine| GHA| 11| 92| 56| 159
 
-#### Scenario C - Commit to existing PR with code changes
+#### Scenario B: commit to existing PR, no code changes
 
-|registry|builder|cache|build time|deploy time|setup time|total time|
+##### `e2-small` machine
+
+|registry|builder|cache|setup time|build time|deploy time|total time|
 |:-----|:------|:-----|:-----|:-----|:----|:-----|
-| 	| | | 8.629| 26.29| 0| 34.919
-| GHCR| CI&nbsp;machine| | 28.49| 34.341| 3| 65.831
-| GAR| CI&nbsp;machine| | 66.72| 28.382| 4| 99.102
-| GAR| CI&nbsp;machine| GHA| 63.47| 28.537| 12| 104.007
-| GHCR| CI&nbsp;machine| GHA| 46.589| 56.05| 10| 112.639
-| | CI&nbsp;machine| GHA| 91.149| 26.397| 14| 131.546
-| |	CI&nbsp;machine| | 110.388| 29.924| 3| 143.312
+|  |  |  | 0 | 9 | 6 | 15
+| ghcr | docker-container | ghcache | 9 | 11 | 5 | 24
+| ghcr | docker-container |  | 10 | 8 | 5 | 23
+| gar | docker-container |  | 5 | 34 | 5 | 44
+|  | docker-container | ghcache | 9 | 51 | 5 | 65
+| gar | docker-container | ghcache | 13 | 58 | 5 | 76
+|  | docker-container |  | 2 | 101 | 29 | 132
 
-#### Scenario D - Commit to existing PR with `package.json` changes
+##### `e2-medium` machine
 
-|registry|builder|cache|build time|deploy time|setup time|total time|
+|registry|builder|cache|setup time|build time|deploy time|total time|
 |:-----|:------|:-----|:-----|:-----|:----|:-----|
-| | | | 29.404| 26.515| 0| 55.919
-| GHCR| CI&nbsp;machine| GHA| 48.826| 48.05| 9| 105.876
-| GHCR| CI&nbsp;machine| | 63.608| 50.872| 2| 116.48
-| 	CI&nbsp;machine| | | 100.53| 29.61| 2| 132.14
-| GAR| CI&nbsp;machine| | 100.26| 47.276| 7| 154.536
-| 	CI&nbsp;machine| | GHA| 120.549| 30.57| 12| 163.119
-| GAR| CI&nbsp;machine| GHA| 104.126| 46.926| 16| 167.052
+| | | | 0| 8| 4| 13
+| GHCR| CI&nbsp;machine| | 3| 7| 5| 15
+| GHCR| CI&nbsp;machine| GHA| 13| 7| 5| 24
+|GAR| CI&nbsp;machine| | 10| 36| 5| 51
+| GAR| CI&nbsp;machine| GHA| 13| 34| 5| 52
+| | CI&nbsp;machine| | 2| 96| 29| 127
+| | CI&nbsp;machine| GHA| 15| 108| 29| 152
 
-#### Scenario E - First commit to new PR (machine does not exist)
+#### Scenario C: commit to existing PR with code changes
 
-|registry|builder|cache|build time|deploy time|setup time|total time|
+##### `e2-small` machine
+
+|registry|builder|cache|setup time|build time|deploy time|total time|
 |:-----|:------|:-----|:-----|:-----|:----|:-----|
-| GHCR| CI&nbsp;machine| | 8.442| 62.054| 8| 78.496
-| GAR| CI&nbsp;machine| | 28.025| 58.529| 4| 90.554
-| GHCR| CI&nbsp;machine| GHA| 16.103| 57.076| 21| 94.179
-| | 	| | 70.513| 25.602| 0| 96.115
-| GAR| CI&nbsp;machine| GHA| 30.289| 57.191| 17| 104.48
-| | 	CI&nbsp;machine| GHA| 81.732| 25.832| 11| 118.564
-| | 	CI&nbsp;machine| | 94.371| 26.617| 7| 127.988
+|  |  |  | 0 | 9 | 27 | 36
+| ghcr | docker-container |  | 2 | 24 | 31 | 57
+| ghcr | docker-container | ghcache | 9 | 30 | 52 | 91
+| gar | docker-container |  | 12 | 53 | 30 | 95
+| gar | docker-container | ghcache | 12 | 59 | 32 | 102
+|  | docker-container | ghcache | 9 | 78 | 28 | 115
+|  | docker-container |  | 6 | 112 | 30 | 147
+
+##### `e2-medium` machine
+
+|registry|builder|cache|setup time|build time|deploy time|total time|
+|:-----|:------|:-----|:-----|:-----|:----|:-----|
+|       | | | 0| 9| 26| 35
+| GHCR| CI&nbsp;machine| | 3| 28| 34| 66
+| GAR| CI&nbsp;machine| | 4| 67| 28| 99
+| GAR| CI&nbsp;machine| GHA| 12| 63| 29| 104
+| GHCR| CI&nbsp;machine| GHA| 10| 47| 56| 113
+| | CI&nbsp;machine| GHA| 14| 91| 26| 132
+| |     CI&nbsp;machine| | 3| 110| 30| 143
+
+#### Scenario D: commit to existing PR with `package.json` changes
+
+##### `e2-small` machine
+
+|registry|builder|cache|setup time|build time|deploy time|total time|
+|:-----|:------|:-----|:-----|:-----|:----|:-----|
+| ghcr | docker-container | ghcache | 10 | 43 | 52 | 105
+|  | docker-container |  | 2 | 101 | 28 | 131
+|  | docker-container | ghcache | 9 | 97 | 28 | 134
+| gar | docker-container | ghcache | 17 | 78 | 48 | 143
+| gar | docker-container |  | 6 | 96 | 48 | 151
+|  |  |  | 0 | 123 | 30 | 153
+
+##### `e2-medium` machine
+
+|registry|builder|cache|setup time|build time|deploy time|total time|
+|:-----|:------|:-----|:-----|:-----|:----|:-----|
+| | | |  0|29| 27| 56
+| GHCR| CI&nbsp;machine| GHA| 9| 49| 48| 106
+| GHCR| CI&nbsp;machine| | 2| 64| 51| 116
+| |       CI&nbsp;machine| |  2| 101| 30| 132
+| GAR| CI&nbsp;machine| | 7| 100| 47| 155
+| |       CI&nbsp;machine | GHA| 12| 121| 31| 163
+| GAR| CI&nbsp;machine| GHA| 16| 104| 47| 167
+
+#### Scenario E: first commit to new PR (machine does not exist)
+
+##### `e2-small` machine
+
+|registry|builder|cache|setup time|build time|deploy time|total time|
+|:-----|:------|:-----|:-----|:-----|:----|:-----|
+|  | docker-container |  | 3 | 117 | 37 | 157
+| gar | docker-container |  | 6 | 88 | 69 | 164
+| gar | docker-container | ghcache | 17 | 91 | 66 | 174
+ |  | | | 0 | 153 | 56 | 210
+| ghcr | docker-container |  | 7 | 46 | 1066 | 1119
+| ghcr | docker-container | ghcache | 13 | 41 | 1082 | 1136
+
+##### `e2-medium` machine
+
+|registry|builder|cache|setup time|build time|deploy time|total time|
+|:-----|:------|:-----|:-----|:-----|:----|:-----|
+| GHCR| CI&nbsp;machine| | 8| 8| 62| 78
+| GAR| CI&nbsp;machine| |  4|28| 59| 91
+| GHCR| CI&nbsp;machine| GHA|  21|16| 57| 94
+| |     | | 0| 71| 26| 96
+| GAR| CI&nbsp;machine| GHA| 17| 30| 57| 104
+| |     CI&nbsp;machine| GHA| 11| 82| 26| 119
+| |     CI&nbsp;machine| | 7| 94| 27| 128
