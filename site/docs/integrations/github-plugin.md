@@ -2,7 +2,7 @@
 title: GitHub Plugin
 ---
 
-# Preevy GitHub Plugin
+# Preevy GitHub integration
 
 The `@preevy/plugin-github` plugin adds GitHub integration to [Preevy](https://github.com/livecycle/preevy).
 
@@ -12,13 +12,13 @@ This plugin is bundled with Preevy and enabled by default. To disable it, see [b
 
 ![Demo comment](./demo.png)
 
-### Automatic comment at `up` and `down`
+### Automatic PR comment at `up` and `down`
 
 Comment generation is done as part of the `up` and `down` core commands.
 
-If a GitHub context is detected (e.g, when running in a GitHub actions job), it will post the comment automatically.
+Preevy will post the comment if a GitHub PR and a GitHub token are detected in the context (e.g, when running in a GitHub Action or other [supported CI provider](#configuration-from-the-ci-provider-context)) or specified explicitly. See the [Configuration section](#configuration) for details.
 
-### Manual comment using the `github` commands
+### Manual PR comment using the `github` commands
 
 This plugin adds the following commands:
 
@@ -27,6 +27,17 @@ This plugin adds the following commands:
 `github pr uncomment`: Updates the GitHub PR comment to state that the Preevy environment has been deleted.
 
 Run `preevy github pr comment --help` for details.
+
+## GitHub Docker build cache
+
+Specify `--github-add-build-cache` at the `up` command to add [GitHub cache](https://docs.docker.com/build/ci/github-actions/cache/#github-cache) to your build directives.
+
+This will add the following directives to all services with a `build` section:
+
+```yaml
+  cache_to: type=gha,scope=<project>/<service>,mode=max
+  cache_from: type=gha,scope=<project>/<service>
+```
 
 ## Configuration
 
@@ -43,11 +54,11 @@ At runtime, the plugin will attempt to detect the configuration it needs from en
 
 The plugin can automatically detect its configuration when running in a CI provider supported by `@preevy/core`:
 
-* [GitHub Actions](../core/src/ci-providers/github-actions.ts)
-* [GitLab Actions](../core/src/ci-providers/gitlab.ts)
-* [Circle CI](../core/src/ci-providers/circle.ts)
-* [Travis CI](../core/src/ci-providers/travis.ts)
-* [Azure Pipelines](../core/src/ci-providers/azure-pipelines.ts)
+* GitHub Actions
+* GitLab Actions
+* Circle CI
+* Travis CI
+* Azure Pipelines
 
 To disable auto-detection, specify `detect: false` at the plugin configuration in the Docker Compose file.
 
@@ -80,7 +91,7 @@ The following flags can be specified at the Preevy CLI:
     <th>Description</th>
   </tr>
   <tr>
-    <td><code>up</code>, <code>down</code></td>
+    <td rowspan=5><code>up</code>, <code>down</code></td>
     <td><code>--github-token=&lt;token&gt;</code></td>
     <td>GitHub token</td>
   </tr>
@@ -101,7 +112,7 @@ The following flags can be specified at the Preevy CLI:
     <td>Whether to enable posting/updating a comment on the GitHub PR</td>
   </tr>
   <tr>
-    <td><code>github pr comment</code>, <code>github pr uncomment</code></td>
+    <td rowspan=5><code>github pr comment</code>, <code>github pr uncomment</code></td>
     <td><code>--token=&lt;token&gt;</code></td>
     <td>GitHub token</td>
   </tr>
@@ -119,7 +130,7 @@ The following flags can be specified at the Preevy CLI:
   </tr>
 </table>
 
-### Comment template
+### PR comment template
 
 The generated PR comment can be customized by specifying a template in your Docker Compose file, or in a separate file (see above). The template is rendered by [`nunjucks`](https://mozilla.github.io/nunjucks/templating.html) and receives a context containing a `urls` property which is one of the following:
 
