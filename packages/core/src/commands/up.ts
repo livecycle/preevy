@@ -150,12 +150,12 @@ const up = async ({
   await using dockerContext = await dockerEnvContext({ connection, log })
 
   const { elapsedTimeSec } = await measureTime(() => compose.spawnPromise(composeArgs, { stdio: 'inherit', env: dockerContext.env }))
-  telemetryEmitter().capture('provision success', {
+  telemetryEmitter().capture('deploy success', {
     elapsed_sec: elapsedTimeSec,
     with_build: Boolean(buildSpec),
     has_registry: Boolean(buildSpec?.registry),
   })
-  log.info(`Provision step done in ${elapsedTimeSec.toLocaleString(undefined, { maximumFractionDigits: 2 })}s`)
+  log.info(`Deploy step done in ${elapsedTimeSec.toLocaleString(undefined, { maximumFractionDigits: 2 })}s`)
 
   return { composeModel, projectLocalDataDir }
 }
