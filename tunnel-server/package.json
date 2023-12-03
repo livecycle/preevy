@@ -49,7 +49,7 @@
   },
   "scripts": {
     "test": "yarn node --experimental-vm-modules $(yarn bin jest)",
-    "start": "ts-node ./index.ts",
+    "start": "ts-node --esm ./index.ts",
     "build": "tsc --noEmit",
     "dev": "DEBUG=1 yarn nodemon ./index.ts",
     "lint": "eslint -c .eslintrc.cjs --no-eslintrc --ext .ts --cache ."
