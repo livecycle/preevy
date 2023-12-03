@@ -174,23 +174,24 @@ We tested a [simple app](https://github.com/livecycle/preevy-gha-gce-demo) compr
 Two machine sizes were tested:
 
 `e2-small`: 2GB of memory, 0.5-2 vCPUs
+
 `e2-medium`: 4GB of memory, 1-2 vCPUs
 
 The small machine is good enough for running the app and costs exactly half of the bigger machine.
 
-#### Build flag variations
+#### Build flag configurations
 
 A few variations of the builder, registry and cache were tested:
 
-|Builder         |Registry|Cache|`preevy up` flags|
-|:----------------|:--------|:-----|:-----------|
-|Environment machine|none    |none    |None - this is the default build mode|
-|CI machine|none    |none|`--builder=X`
-|CI machine|none    |GHA| `--builder=X`<br/> `--github-add-build-cache` |
-|CI machine|GHCR     |none| `--builder=X`<br/>`--registry=ghcr.io`
-|CI machine|GHCR     |GHA| `--builder=X`<br/>`--registry=ghcr.io`<br/>`--github-add-build-cache`|
-|CI machine|GAR     |none| `--builder=X`<br/>`--registry=my-docker.pkg.dev`|
-|CI machine|GAR     |GHA| `--builder=X`<br/>`--registry=my-docker.pkg.dev`<br/>`--github-add-build-cache`|
+| |Builder         |Registry|Cache|`preevy up` flags|
+|:--|:----------------|:--------|:-----|:-----------|
+|**1**|Environment machine|none    |none    |None - this is the default build mode|
+|**2**|CI machine|none    |none|`--builder=X`
+|**3**|CI machine|none    |GHA| `--builder=X`<br/> `--github-add-build-cache` |
+|**4**|CI machine|GHCR     |none| `--builder=X`<br/>`--registry=ghcr.io` |
+|**5**|CI machine|GHCR     |GHA| `--builder=X`<br/>`--registry=ghcr.io`<br/>`--github-add-build-cache`|
+|**6**|CI machine|GAR     |none| `--builder=X`<br/>`--registry=my-docker.pkg.dev`|
+|**7**|CI machine|GAR     |GHA| `--builder=X`<br/>`--registry=my-docker.pkg.dev`<br/>`--github-add-build-cache`|
 
 ##### Legend:
 
@@ -243,126 +244,126 @@ This is an unlikely scenario in CI, but it serves as a control group for the oth
 
 ##### `e2-small` machine
 
-|registry|builder|cache|setup time|build time|deploy time|total time|
-|:-----|:------|:-----|:-----|:-----|:----|:-----|
-| | CI&nbsp;machine | GHA | 18 | 116 | 34 | 169
-|GAR | CI&nbsp;machine |  | 7 | 94 | 72 | 172
-| | CI&nbsp;machine |  | 3 | 142 | 37 | 182
-|GAR | CI&nbsp;machine | GHA | 13 | 105 | 66 | 183
-| |  |  | 0 | 128 | 59 | 187
-|GHCR | CI&nbsp;machine |  | 9 | 53 | 1091 | 1152
-|GHCR | CI&nbsp;machine | GHA | 14 | 53 | 1101 | 1168
+|builder|registry|cache|setup time|build time|deploy time|total time|
+|:------|:-----|:-----|:-----|:-----|:----|:-----|
+| CI&nbsp;machine | | GHA | 18 | 116 | 34 | 169
+| CI&nbsp;machine |GAR |  | 7 | 94 | 72 | 172
+| CI&nbsp;machine | |  | 3 | 142 | 37 | 182
+| CI&nbsp;machine |GAR | GHA | 13 | 105 | 66 | 183
+| Environment | |  | 0 | 128 | 59 | 187
+| CI&nbsp;machine |GHCR |  | 9 | 53 | 1091 | 1152
+| CI&nbsp;machine |GHCR | GHA | 14 | 53 | 1101 | 1168
 
 ##### `e2-medium` machine
 
-|registry|builder|cache|setup time|build time|deploy time|total time|
-|:-----|:------|:-----|:-----|:-----|:----|:-----|
-| | | | 0| 69| 26| 95
-GHCR| CI&nbsp;machine| | 2| 47| 46| 95
-GHCR| CI&nbsp;machine| GHA|  11| 50| 51| 113
-GAR| CI&nbsp;machine| | 10| 76| 45| 130
-| | CI&nbsp;machine| | 3| 115| 30| 148
-| | CI&nbsp;machine| GHA| 7| 120| 30| 157
-GAR| CI&nbsp;machine| GHA| 11| 92| 56| 159
+|builder|registry|cache|setup time|build time|deploy time|total time|
+|:------|:-----|:-----|:-----|:-----|:----|:-----|
+| Environment | | | 0| 69| 26| 95
+| CI&nbsp;machine| GHCR|  | 2| 47| 46| 95
+| CI&nbsp;machine| GHCR| GHA|  11| 50| 51| 113
+| CI&nbsp;machine| GAR|  | 10| 76| 45| 130
+| CI&nbsp;machine| | | 3| 115| 30| 148
+| CI&nbsp;machine| | GHA| 7| 120| 30| 157
+| CI&nbsp;machine| GAR| GHA| 11| 92| 56| 159
 
 #### Scenario B: commit to existing PR, no code changes
 
 ##### `e2-small` machine
 
-|registry|builder|cache|setup time|build time|deploy time|total time|
-|:-----|:------|:-----|:-----|:-----|:----|:-----|
-|  |  |  | 0 | 9 | 6 | 15
-| GHCR | CI&nbsp;machine | GHA | 9 | 11 | 5 | 24
-| GHCR | CI&nbsp;machine |  | 10 | 8 | 5 | 23
-| GAR | CI&nbsp;machine |  | 5 | 34 | 5 | 44
-|  | CI&nbsp;machine | GHA | 9 | 51 | 5 | 65
-| GAR | CI&nbsp;machine | GHA | 13 | 58 | 5 | 76
-|  | CI&nbsp;machine |  | 2 | 101 | 29 | 132
+|builder|registry|cache|setup time|build time|deploy time|total time|
+|:------|:-----|:-----|:-----|:-----|:----|:-----|
+| Environment |  |  | 0 | 9 | 6 | 15
+| CI&nbsp;machine | GHCR | GHA | 9 | 11 | 5 | 24
+| CI&nbsp;machine | GHCR |  | 10 | 8 | 5 | 23
+| CI&nbsp;machine | GAR |  | 5 | 34 | 5 | 44
+| CI&nbsp;machine |  | GHA | 9 | 51 | 5 | 65
+| CI&nbsp;machine | GAR | GHA | 13 | 58 | 5 | 76
+| CI&nbsp;machine |  |  | 2 | 101 | 29 | 132
 
 ##### `e2-medium` machine
 
-|registry|builder|cache|setup time|build time|deploy time|total time|
-|:-----|:------|:-----|:-----|:-----|:----|:-----|
-| | | | 0| 8| 4| 13
-| GHCR| CI&nbsp;machine| | 3| 7| 5| 15
-| GHCR| CI&nbsp;machine| GHA| 13| 7| 5| 24
-|GAR| CI&nbsp;machine| | 10| 36| 5| 51
-| GAR| CI&nbsp;machine| GHA| 13| 34| 5| 52
-| | CI&nbsp;machine| | 2| 96| 29| 127
-| | CI&nbsp;machine| GHA| 15| 108| 29| 152
+|builder|registry|cache|setup time|build time|deploy time|total time|
+|:------|:-----|:-----|:-----|:-----|:----|:-----|
+| Environment | | | 0| 8| 4| 13
+| CI&nbsp;machine| GHCR| | 3| 7| 5| 15
+| CI&nbsp;machine| GHCR| GHA| 13| 7| 5| 24
+| CI&nbsp;machine|GAR| | 10| 36| 5| 51
+| CI&nbsp;machine| GAR| GHA| 13| 34| 5| 52
+| CI&nbsp;machine| | | 2| 96| 29| 127
+| CI&nbsp;machine| | GHA| 15| 108| 29| 152
 
 #### Scenario C: commit to existing PR with code changes
 
 ##### `e2-small` machine
 
-|registry|builder|cache|setup time|build time|deploy time|total time|
-|:-----|:------|:-----|:-----|:-----|:----|:-----|
-|  |  |  | 0 | 9 | 27 | 36
-| GHCR | CI&nbsp;machine |  | 2 | 24 | 31 | 57
-| GHCR | CI&nbsp;machine | GHA | 9 | 30 | 52 | 91
-| GAR | CI&nbsp;machine |  | 12 | 53 | 30 | 95
-| GAR | CI&nbsp;machine | GHA | 12 | 59 | 32 | 102
-|  | CI&nbsp;machine | GHA | 9 | 78 | 28 | 115
-|  | CI&nbsp;machine |  | 6 | 112 | 30 | 147
+|builder|registry|cache|setup time|build time|deploy time|total time|
+|:------|:-----|:-----|:-----|:-----|:----|:-----|
+| Environment |  |  | 0 | 9 | 27 | 36
+| CI&nbsp;machine | GHCR |  | 2 | 24 | 31 | 57
+| CI&nbsp;machine | GHCR | GHA | 9 | 30 | 52 | 91
+| CI&nbsp;machine | GAR |  | 12 | 53 | 30 | 95
+| CI&nbsp;machine | GAR | GHA | 12 | 59 | 32 | 102
+| CI&nbsp;machine |  | GHA | 9 | 78 | 28 | 115
+| CI&nbsp;machine |  |  | 6 | 112 | 30 | 147
 
 ##### `e2-medium` machine
 
-|registry|builder|cache|setup time|build time|deploy time|total time|
-|:-----|:------|:-----|:-----|:-----|:----|:-----|
-|       | | | 0| 9| 26| 35
-| GHCR| CI&nbsp;machine| | 3| 28| 34| 66
-| GAR| CI&nbsp;machine| | 4| 67| 28| 99
-| GAR| CI&nbsp;machine| GHA| 12| 63| 29| 104
-| GHCR| CI&nbsp;machine| GHA| 10| 47| 56| 113
-| | CI&nbsp;machine| GHA| 14| 91| 26| 132
-| |     CI&nbsp;machine| | 3| 110| 30| 143
+|builder|registry|cache|setup time|build time|deploy time|total time|
+|:------|:-----|:-----|:-----|:-----|:----|:-----|
+| Environment |       | | 0| 9| 26| 35
+| CI&nbsp;machine| GHCR| | 3| 28| 34| 66
+| CI&nbsp;machine| GAR| | 4| 67| 28| 99
+| CI&nbsp;machine| GAR| GHA| 12| 63| 29| 104
+| CI&nbsp;machine| GHCR| GHA| 10| 47| 56| 113
+| CI&nbsp;machine| | GHA| 14| 91| 26| 132
+| CI&nbsp;machine| | | 3| 110| 30| 143
 
 #### Scenario D: commit to existing PR with `package.json` changes
 
 ##### `e2-small` machine
 
-|registry|builder|cache|setup time|build time|deploy time|total time|
-|:-----|:------|:-----|:-----|:-----|:----|:-----|
-| GHCR | CI&nbsp;machine | GHA | 10 | 43 | 52 | 105
-|  | CI&nbsp;machine |  | 2 | 101 | 28 | 131
-|  | CI&nbsp;machine | GHA | 9 | 97 | 28 | 134
-| GAR | CI&nbsp;machine | GHA | 17 | 78 | 48 | 143
-| GAR | CI&nbsp;machine |  | 6 | 96 | 48 | 151
-|  |  |  | 0 | 123 | 30 | 153
+|builder|registry|cache|setup time|build time|deploy time|total time|
+|:------|:-----|:-----|:-----|:-----|:----|:-----|
+| CI&nbsp;machine | GHCR | GHA | 10 | 43 | 52 | 105
+| CI&nbsp;machine |  |  | 2 | 101 | 28 | 131
+| CI&nbsp;machine |  | GHA | 9 | 97 | 28 | 134
+| CI&nbsp;machine | GAR | GHA | 17 | 78 | 48 | 143
+| CI&nbsp;machine | GAR |  | 6 | 96 | 48 | 151
+| Environment|  |  | 0 | 123 | 30 | 153
 
 ##### `e2-medium` machine
 
-|registry|builder|cache|setup time|build time|deploy time|total time|
-|:-----|:------|:-----|:-----|:-----|:----|:-----|
-| | | |  0|29| 27| 56
-| GHCR| CI&nbsp;machine| GHA| 9| 49| 48| 106
-| GHCR| CI&nbsp;machine| | 2| 64| 51| 116
-| |       CI&nbsp;machine| |  2| 101| 30| 132
-| GAR| CI&nbsp;machine| | 7| 100| 47| 155
-| |       CI&nbsp;machine | GHA| 12| 121| 31| 163
-| GAR| CI&nbsp;machine| GHA| 16| 104| 47| 167
+|builder|registry|cache|setup time|build time|deploy time|total time|
+|:------|:-----|:-----|:-----|:-----|:----|:-----|
+| Environment| | |  0|29| 27| 56
+| CI&nbsp;machine| GHCR| GHA| 9| 49| 48| 106
+| CI&nbsp;machine| GHCR| | 2| 64| 51| 116
+| CI&nbsp;machine| | |  2| 101| 30| 132
+| CI&nbsp;machine| GAR| | 7| 100| 47| 155
+| CI&nbsp;machine | | GHA| 12| 121| 31| 163
+| CI&nbsp;machine| GAR| GHA| 16| 104| 47| 167
 
 #### Scenario E: first commit to new PR (machine does not exist)
 
 ##### `e2-small` machine
 
-|registry|builder|cache|setup time|build time|deploy time|total time|
-|:-----|:------|:-----|:-----|:-----|:----|:-----|
-|  | CI&nbsp;machine |  | 3 | 117 | 37 | 157
-| GAR | CI&nbsp;machine |  | 6 | 88 | 69 | 164
-| GAR | CI&nbsp;machine | GHA | 17 | 91 | 66 | 174
- |  | | | 0 | 153 | 56 | 210
-| GHCR | CI&nbsp;machine |  | 7 | 46 | 1066 | 1119
-| GHCR | CI&nbsp;machine | GHA | 13 | 41 | 1082 | 1136
+|builder|registry|cache|setup time|build time|deploy time|total time|
+|:------|:-----|:-----|:-----|:-----|:----|:-----|
+| CI&nbsp;machine |  |  | 3 | 117 | 37 | 157
+| CI&nbsp;machine | GAR |  | 6 | 88 | 69 | 164
+| CI&nbsp;machine | GAR | GHA | 17 | 91 | 66 | 174
+| Environment |  | | | 0 | 153 | 56 | 210
+| CI&nbsp;machine | GHCR |  | 7 | 46 | 1066 | 1119
+| CI&nbsp;machine | GHCR | GHA | 13 | 41 | 1082 | 1136
 
 ##### `e2-medium` machine
 
-|registry|builder|cache|setup time|build time|deploy time|total time|
-|:-----|:------|:-----|:-----|:-----|:----|:-----|
-| GHCR| CI&nbsp;machine| | 8| 8| 62| 78
-| GAR| CI&nbsp;machine| |  4|28| 59| 91
-| GHCR| CI&nbsp;machine| GHA|  21|16| 57| 94
-| |     | | 0| 71| 26| 96
-| GAR| CI&nbsp;machine| GHA| 17| 30| 57| 104
-| |     CI&nbsp;machine| GHA| 11| 82| 26| 119
-| |     CI&nbsp;machine| | 7| 94| 27| 128
+|builder|registry|cache|setup time|build time|deploy time|total time|
+|:------|:-----|:-----|:-----|:-----|:----|:-----|
+| CI&nbsp;machine| GHCR| | 8| 8| 62| 78
+| CI&nbsp;machine| GAR| |  4|28| 59| 91
+| CI&nbsp;machine| GHCR| GHA|  21|16| 57| 94
+| Environment    | | | 0| 71| 26| 96
+| CI&nbsp;machine| GAR| GHA| 17| 30| 57| 104
+| CI&nbsp;machine| | GHA| 11| 82| 26| 119
+| CI&nbsp;machine| | | 7| 94| 27| 128
