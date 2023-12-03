@@ -245,13 +245,13 @@ This is an unlikely scenario in CI, but it serves as a control group for the oth
 
 |registry|builder|cache|setup time|build time|deploy time|total time|
 |:-----|:------|:-----|:-----|:-----|:----|:-----|
-| | docker-container | ghcache | 18 | 116 | 34 | 169
-|gar | docker-container |  | 7 | 94 | 72 | 172
-| | docker-container |  | 3 | 142 | 37 | 182
-|gar | docker-container | ghcache | 13 | 105 | 66 | 183
+| | CI&nbsp;machine | GHA | 18 | 116 | 34 | 169
+|GAR | CI&nbsp;machine |  | 7 | 94 | 72 | 172
+| | CI&nbsp;machine |  | 3 | 142 | 37 | 182
+|GAR | CI&nbsp;machine | GHA | 13 | 105 | 66 | 183
 | |  |  | 0 | 128 | 59 | 187
-|ghcr | docker-container |  | 9 | 53 | 1091 | 1152
-|ghcr | docker-container | ghcache | 14 | 53 | 1101 | 1168
+|GHCR | CI&nbsp;machine |  | 9 | 53 | 1091 | 1152
+|GHCR | CI&nbsp;machine | GHA | 14 | 53 | 1101 | 1168
 
 ##### `e2-medium` machine
 
@@ -272,12 +272,12 @@ GAR| CI&nbsp;machine| GHA| 11| 92| 56| 159
 |registry|builder|cache|setup time|build time|deploy time|total time|
 |:-----|:------|:-----|:-----|:-----|:----|:-----|
 |  |  |  | 0 | 9 | 6 | 15
-| ghcr | docker-container | ghcache | 9 | 11 | 5 | 24
-| ghcr | docker-container |  | 10 | 8 | 5 | 23
-| gar | docker-container |  | 5 | 34 | 5 | 44
-|  | docker-container | ghcache | 9 | 51 | 5 | 65
-| gar | docker-container | ghcache | 13 | 58 | 5 | 76
-|  | docker-container |  | 2 | 101 | 29 | 132
+| GHCR | CI&nbsp;machine | GHA | 9 | 11 | 5 | 24
+| GHCR | CI&nbsp;machine |  | 10 | 8 | 5 | 23
+| GAR | CI&nbsp;machine |  | 5 | 34 | 5 | 44
+|  | CI&nbsp;machine | GHA | 9 | 51 | 5 | 65
+| GAR | CI&nbsp;machine | GHA | 13 | 58 | 5 | 76
+|  | CI&nbsp;machine |  | 2 | 101 | 29 | 132
 
 ##### `e2-medium` machine
 
@@ -298,12 +298,12 @@ GAR| CI&nbsp;machine| GHA| 11| 92| 56| 159
 |registry|builder|cache|setup time|build time|deploy time|total time|
 |:-----|:------|:-----|:-----|:-----|:----|:-----|
 |  |  |  | 0 | 9 | 27 | 36
-| ghcr | docker-container |  | 2 | 24 | 31 | 57
-| ghcr | docker-container | ghcache | 9 | 30 | 52 | 91
-| gar | docker-container |  | 12 | 53 | 30 | 95
-| gar | docker-container | ghcache | 12 | 59 | 32 | 102
-|  | docker-container | ghcache | 9 | 78 | 28 | 115
-|  | docker-container |  | 6 | 112 | 30 | 147
+| GHCR | CI&nbsp;machine |  | 2 | 24 | 31 | 57
+| GHCR | CI&nbsp;machine | GHA | 9 | 30 | 52 | 91
+| GAR | CI&nbsp;machine |  | 12 | 53 | 30 | 95
+| GAR | CI&nbsp;machine | GHA | 12 | 59 | 32 | 102
+|  | CI&nbsp;machine | GHA | 9 | 78 | 28 | 115
+|  | CI&nbsp;machine |  | 6 | 112 | 30 | 147
 
 ##### `e2-medium` machine
 
@@ -323,11 +323,11 @@ GAR| CI&nbsp;machine| GHA| 11| 92| 56| 159
 
 |registry|builder|cache|setup time|build time|deploy time|total time|
 |:-----|:------|:-----|:-----|:-----|:----|:-----|
-| ghcr | docker-container | ghcache | 10 | 43 | 52 | 105
-|  | docker-container |  | 2 | 101 | 28 | 131
-|  | docker-container | ghcache | 9 | 97 | 28 | 134
-| gar | docker-container | ghcache | 17 | 78 | 48 | 143
-| gar | docker-container |  | 6 | 96 | 48 | 151
+| GHCR | CI&nbsp;machine | GHA | 10 | 43 | 52 | 105
+|  | CI&nbsp;machine |  | 2 | 101 | 28 | 131
+|  | CI&nbsp;machine | GHA | 9 | 97 | 28 | 134
+| GAR | CI&nbsp;machine | GHA | 17 | 78 | 48 | 143
+| GAR | CI&nbsp;machine |  | 6 | 96 | 48 | 151
 |  |  |  | 0 | 123 | 30 | 153
 
 ##### `e2-medium` machine
@@ -348,12 +348,12 @@ GAR| CI&nbsp;machine| GHA| 11| 92| 56| 159
 
 |registry|builder|cache|setup time|build time|deploy time|total time|
 |:-----|:------|:-----|:-----|:-----|:----|:-----|
-|  | docker-container |  | 3 | 117 | 37 | 157
-| gar | docker-container |  | 6 | 88 | 69 | 164
-| gar | docker-container | ghcache | 17 | 91 | 66 | 174
+|  | CI&nbsp;machine |  | 3 | 117 | 37 | 157
+| GAR | CI&nbsp;machine |  | 6 | 88 | 69 | 164
+| GAR | CI&nbsp;machine | GHA | 17 | 91 | 66 | 174
  |  | | | 0 | 153 | 56 | 210
-| ghcr | docker-container |  | 7 | 46 | 1066 | 1119
-| ghcr | docker-container | ghcache | 13 | 41 | 1082 | 1136
+| GHCR | CI&nbsp;machine |  | 7 | 46 | 1066 | 1119
+| GHCR | CI&nbsp;machine | GHA | 13 | 41 | 1082 | 1136
 
 ##### `e2-medium` machine
 
