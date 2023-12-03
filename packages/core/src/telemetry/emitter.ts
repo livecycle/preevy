@@ -1,4 +1,5 @@
 import os from 'os'
+import fs from 'fs'
 import crypto from 'crypto'
 import stringify from 'fast-safe-stringify'
 import fetch from 'node-fetch'
@@ -20,23 +21,27 @@ type IdentifyFunction = {
   (id: string, person?: TelemetryProperties): void
 }
 
-export const telemetryEmitter = async ({ dataDir, version, debug }: {
+export const telemetryEmitter = async ({ dataDir, version, debug, filename }: {
   dataDir: string
   version: string
   debug: number
+  filename?: string
 }) => {
   const machineId = await memoizedMachineId(dataDir)
   let distinctId = machineId
   const groupIdentities = {} as Record<GroupIdentityType, string>
   const pendingEvents: TelemetryEvent[] = []
   const runId = newRunId()
+  const file = filename ? fs.createWriteStream(filename, 'utf-8') : undefined // await fs.promises.open(filename, 'a') : undefined
   let debounceDisabled = false
   const flushLimit = pLimit(1)
   const flush = async () => await flushLimit(async () => {
     if (!pendingEvents.length) {
       return
     }
-    const body = stringify({ batch: pendingEvents.map(serializableEvent) })
+    const batch = pendingEvents.map(serializableEvent)
+    const body = stringify({ batch })
+    file?.write(batch.map(event => `${stringify(event)}${os.EOL}`).join(''))
     pendingEvents.length = 0
     const response = await fetch(TELEMETRY_URL, {
       headers: { 'Content-Type': 'application/json' },

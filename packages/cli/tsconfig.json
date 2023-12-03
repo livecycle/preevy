@@ -7,7 +7,7 @@
     "rootDir": "src",
     "strict": true,
     "target": "es2019",
-    "lib": ["es2022"],
+    "lib": ["es2022", "ESNext.Disposable"],
     "esModuleInterop": true,
     "sourceMap": true,
     "baseUrl": "."

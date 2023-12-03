@@ -1,6 +1,6 @@
-import { ux, Args, Flags } from '@oclif/core'
+import { Args, Flags } from '@oclif/core'
 import { jwkThumbprint, commands, profileStore, withSpinner, SshConnection, machineId, validateEnvId, normalizeEnvId, EnvId } from '@preevy/core'
-import { tunnelServerFlags, urlFlags } from '@preevy/cli-common'
+import { tableFlags, text, tunnelServerFlags, urlFlags } from '@preevy/cli-common'
 import { inspect } from 'util'
 import { formatPublicKey } from '@preevy/common'
 import { spawn } from 'child_process'
@@ -15,7 +15,7 @@ export default class Connect extends ProfileCommand<typeof Connect> {
   static flags = {
     ...tunnelServerFlags,
     ...urlFlags,
-    ...ux.table.flags(),
+    ...tableFlags,
     id: Flags.string({
       aliases: ['env-id'],
       description: 'specify the environment ID for this app',
@@ -69,7 +69,7 @@ export default class Connect extends ProfileCommand<typeof Connect> {
     } else {
       const deviceId = (await machineId(this.config.dataDir)).substring(0, 2)
       envId = normalizeEnvId(`${composeProject}-dev-${deviceId}`)
-      this.logger.info(`Using environment ID ${envId}, based on Docker Compose and local device`)
+      this.logger.info(`Using environment ID ${text.code(envId)}, based on Docker Compose and local device`)
     }
     let client: SshConnection['client'] | undefined
     let hostKey: Buffer

@@ -1,13 +1,13 @@
-import { HookFunc } from '@preevy/cli-common'
+import { HookFunc, HookName } from '@preevy/cli-common'
 import { Octokit } from 'octokit'
 import { Config as OclifConfig } from '@oclif/core/lib/interfaces'
 import { Logger, detectCiProvider } from '@preevy/core'
-import { memoize } from 'lodash'
+import { mapValues, memoize } from 'lodash'
 import { upsertPreevyComment, Content } from './lib/github-comment'
 import { parseUpDownFlagsDef } from './flags'
 import { PluginConfig, loadGithubPullRequestCommentConfig } from './config'
 
-const SCOPED_ENV_VAR = 'GITHUB_PR_COMMENT_ENABLED'
+const COMMENT_ENABLED_ENV_KEY = 'GITHUB_PR_COMMENT_ENABLED'
 
 const upsertPrCommentHook = async ({ argv, pluginConfig, oclifConfig, log, envId, content }: {
   argv: string[]
@@ -17,12 +17,12 @@ const upsertPrCommentHook = async ({ argv, pluginConfig, oclifConfig, log, envId
   envId: string
   content: Content
 }) => {
-  if (oclifConfig.scopedEnvVar(SCOPED_ENV_VAR) && !oclifConfig.scopedEnvVarTrue(SCOPED_ENV_VAR)) {
-    log.debug(`Skipping due to env var ${oclifConfig.scopedEnvVarKey(SCOPED_ENV_VAR)}=${oclifConfig.scopedEnvVar(SCOPED_ENV_VAR)}`)
+  if (oclifConfig.scopedEnvVar(COMMENT_ENABLED_ENV_KEY) && !oclifConfig.scopedEnvVarTrue(COMMENT_ENABLED_ENV_KEY)) {
+    log.debug(`Skipping due to env var ${oclifConfig.scopedEnvVarKey(COMMENT_ENABLED_ENV_KEY)}=${oclifConfig.scopedEnvVar(COMMENT_ENABLED_ENV_KEY)}`)
     return
   }
 
-  const flags = parseUpDownFlagsDef(argv)
+  const flags = await parseUpDownFlagsDef(argv)
 
   if (flags['pr-comment-enabled'] === 'no') {
     log.debug('Skipping due to flag')
@@ -53,18 +53,53 @@ const upsertPrCommentHook = async ({ argv, pluginConfig, oclifConfig, log, envId
   })
 }
 
-export const envCreated = ({ argv, pluginConfig, oclifConfig }: {
+type HookFactory<T extends HookName> = ({ argv, pluginConfig, oclifConfig }: {
   argv: string[]
   pluginConfig: PluginConfig
   oclifConfig: OclifConfig
-}): HookFunc<'envCreated'> => async ({ log }, { envId, urls }) => {
+}) => Promise<HookFunc<T>>
+
+export const envCreated: HookFactory<'envCreated'> = async (
+  { argv, pluginConfig, oclifConfig },
+) => async ({ log }, { envId, urls }) => {
   await upsertPrCommentHook({ argv, pluginConfig, oclifConfig, log, envId, content: { urls } })
 }
 
-export const envDeleted = ({ argv, pluginConfig, oclifConfig }: {
-  argv: string[]
-  pluginConfig: PluginConfig
-  oclifConfig: OclifConfig
-}): HookFunc<'envDeleted'> => async ({ log }, { envId }) => {
+export const envDeleted: HookFactory<'envDeleted'> = async (
+  { argv, pluginConfig, oclifConfig },
+) => async ({ log }, { envId }) => {
   await upsertPrCommentHook({ argv, pluginConfig, oclifConfig, log, envId, content: 'deleted' })
+}
+
+export const userModelFilter: HookFactory<'userModelFilter'> = async ({ argv }) => {
+  const { 'add-build-cache': addBuildCache } = await parseUpDownFlagsDef(argv)
+  if (!addBuildCache) {
+    return async ({ userModel }) => userModel
+  }
+
+  return async ({ log, userModel }) => {
+    log.debug('Adding GHA build cache to user model')
+
+    return {
+      ...userModel,
+      services: {
+        ...mapValues(userModel.services ?? {}, (({ build, ...rest }, serviceName) => {
+          if (!build) {
+            return rest
+          }
+
+          const scope = [userModel.name, serviceName].join('/')
+
+          return ({
+            ...rest,
+            build: {
+              ...build,
+              cache_from: (build.cache_from ?? []).concat(`type=gha,scope=${scope}`),
+              cache_to: (build.cache_to ?? []).concat(`type=gha,scope=${scope},mode=max`),
+            },
+          })
+        })),
+      },
+    }
+  }
 }

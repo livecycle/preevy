@@ -78,7 +78,7 @@ abstract class DriverCommand<T extends typeof Command> extends ProfileCommand<T>
     try {
       return await f(connection)
     } finally {
-      await connection.close()
+      connection[Symbol.dispose]()
     }
   }
 

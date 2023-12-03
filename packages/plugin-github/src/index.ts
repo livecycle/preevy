@@ -1,5 +1,5 @@
 import { Plugin } from '@preevy/cli-common'
-import { envCreated, envDeleted } from './hooks'
+import { envCreated, envDeleted, userModelFilter } from './hooks'
 import { PluginConfig } from './config'
 import { upDownFlagsDef } from './flags'
 import CommentGithubPr from './commands/github/pr/comment'
@@ -17,8 +17,9 @@ export const preevyPlugin: Plugin<PluginConfig> = {
       description: 'GitHub integration',
     }],
     hooks: {
-      envCreated: envCreated(context),
-      envDeleted: envDeleted(context),
+      userModelFilter: await userModelFilter(context),
+      envCreated: await envCreated(context),
+      envDeleted: await envDeleted(context),
     },
   }),
 }

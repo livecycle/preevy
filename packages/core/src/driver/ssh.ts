@@ -9,7 +9,7 @@ import retry, { Options as RetryOptions } from 'p-retry'
 import { Store } from '../store'
 import { SshKeyPair, connectSshClient } from '../ssh'
 import { MachineConnection, MachineDriver } from './driver'
-import { MachineBase } from './machine'
+import { MachineBase } from './machine-model'
 import { sshKeysStore } from '../state'
 import { Logger } from '../log'
 
@@ -57,13 +57,13 @@ export const sshDriver = (
       )
 
       return {
-        close: async () => connection.close(),
+        [Symbol.dispose]: () => connection[Symbol.dispose](),
         exec: connection.exec,
         dockerSocket: async () => {
           const host = '0.0.0.0'
           const forward = await connection.forwardOutStreamLocal({ port: 0, host }, '/var/run/docker.sock')
           return {
-            close: forward.close,
+            [Symbol.asyncDispose]: forward[Symbol.asyncDispose],
             address: { host, port: (forward.localSocket as AddressInfo).port },
           }
         },

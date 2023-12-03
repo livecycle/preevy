@@ -1,6 +1,6 @@
 ---
 title: "Service discovery using environment variables"
-sidebar_position: 2
+sidebar_position: 3
 ---
 
 ## tl;dr

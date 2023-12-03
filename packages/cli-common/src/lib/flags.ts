@@ -1,5 +1,4 @@
 import { Flag } from '@oclif/core/lib/interfaces'
-import { ParsingToken } from '@oclif/core/lib/interfaces/parser'
 import { Parser } from '@oclif/core/lib/parser/parse'
 
 type FlagSpec<T> =Pick<Flag<T>, 'type' | 'default'>
@@ -35,5 +34,3 @@ export const parseFlags = async <T extends {}>(def: T, argv: string[]) => (await
 }).parse()).flags
 
 export type ParsedFlags<T extends {}> = Omit<Awaited<ReturnType<typeof parseFlags<T>>>, 'json'>
-
-export const argsFromRaw = (raw: ParsingToken[]) => raw.filter(arg => arg.type === 'arg').map(arg => arg.input).filter(Boolean)

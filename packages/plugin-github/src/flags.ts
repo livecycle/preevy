@@ -48,6 +48,14 @@ export const commentTemplateFlagDef = {
   }),
 } as const
 
+const buildFlagDef = {
+  'add-build-cache': Flags.boolean({
+    description: 'Add github cache to the build',
+    required: false,
+    helpGroup: HELP_GROUP,
+  }),
+} as const
+
 const flagPrefix = 'github' as const
 
 type Prefixed<T extends { [k: string]: unknown }> = {
@@ -60,7 +68,12 @@ type Unprefixed<T extends { [k: `${typeof flagPrefix}-${string}`]: unknown }> = 
   [K in keyof T as ExtractPrefix<string & keyof T>]: T[K]
 }
 
-const upDownFlagsDefSource = { ...flagsDef, ...pullRequestFlagsDef, ...commentTemplateFlagDef } as const
+const upDownFlagsDefSource = {
+  ...flagsDef,
+  ...pullRequestFlagsDef,
+  ...commentTemplateFlagDef,
+  ...buildFlagDef,
+} as const
 
 export const upDownFlagsDef = {
   ...mapKeys(upDownFlagsDefSource, (_v, k) => `${flagPrefix}-${k}`) as Prefixed<typeof upDownFlagsDefSource>,
@@ -73,7 +86,7 @@ export const upDownFlagsDef = {
   })(),
 } as const
 
-export const parseUpDownFlagsDef = (argv: string[]) => mapKeys(
-  parseFlags(upDownFlagsDef, argv),
+export const parseUpDownFlagsDef = async (argv: string[]) => mapKeys(
+  await parseFlags(upDownFlagsDef, argv),
   (_v, k) => k.replace(/^github-/, ''),
 ) as Unprefixed<ParsedFlags<typeof upDownFlagsDef>>

@@ -111,7 +111,7 @@ export const sftpClient = (
       files.map(f => self.putFile(f, options)),
     ).then(() => undefined),
 
-    close: () => sftp.end(),
+    [Symbol.dispose]: () => sftp.end(),
   }
 
   return self

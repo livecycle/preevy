@@ -61,6 +61,7 @@ Visit The full documentation here: https://preevy.dev/
   - [CLI](#cli)
   - [Tunnel server](#tunnel-server)
 - [CI Integration](#ci-integration)
+  - [Faster builds in CI](#faster-builds-in-ci)
 - [Security](#security)
   - [Private environments](#private-environments)
   - [Notice on preview environments exposure](#notice-on-preview-environments-exposure)
@@ -150,7 +151,7 @@ A Docker/OCI image is available on ghcr.io: ghcr.io/livecycle/preevy/tunnel-serv
 
 ## CI Integration
 
-Preevy is also designed to work seamlessly with your CI, allowing you to easily import a shared preview profile shared in AWS S3 and Google Cloud Storage (GCS).
+Preevy is designed to work seamlessly with your CI, allowing you to easily import a shared preview profile shared in AWS S3 and Google Cloud Storage (GCS).
 
 Profiles are created using `preevy init`. Choose a S3/GCS URL for storing the profile - Preevy will create a bucket if one doesn't exist.
 
@@ -161,6 +162,10 @@ Once the profile is created, it can be imported to the CI runtime using `preevy 
 Examples:
 - [Using AWS Lightsail](https://preevy.dev/ci/example-github-actions)
 - [Using Google Cloud Engine](https://preevy.dev/ci/example-github-actions-gce)
+
+### Faster builds in CI
+
+Check out our [documentation](https://preevy.dev/recipes/faster-build) to find out how to speed up your builds and reduce the costs of your preview environments by running Preevy with BuildKit builders in CI.
 
 ## Security
 
@@ -332,6 +337,8 @@ The Preevy CLI collects telemetry data to help us understand product usage and d
 
 The data collected is *anonymous* and cannot be used to uniquely identify a user.
 Access to the data is limited to Livecycle's employees and not shared with 3rd parties.
+
+To see the collected data, set the environment variable `PREEVY_TELEMETRY_FILE` to a filename.
 
 We appreciate the usage data sent to us as - it's the most basic and raw type of feedback we get from our users. However, if you are concerned about sending out data, you may choose to disable telemetry.
 

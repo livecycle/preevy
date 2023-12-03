@@ -3,9 +3,8 @@ import * as k8s from '@kubernetes/client-node'
 import { promisify } from 'util'
 import { Logger } from '@preevy/core'
 
-type ForwardSocket = {
+type ForwardSocket = AsyncDisposable & {
   localSocket: string | AddressInfo
-  close: () => Promise<void>
 }
 
 type Closable = { close: () => void }
@@ -46,7 +45,7 @@ const portForward = (
   server.listen(listenAddress, () => {
     resolve({
       localSocket: server.address() as string | AddressInfo,
-      close: () => {
+      [Symbol.asyncDispose]: () => {
         sockets.forEach(ws => ws.close())
         return closeServer()
       },

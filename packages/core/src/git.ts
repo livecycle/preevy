@@ -5,7 +5,9 @@ export function gitContext(cwd: string = process.cwd()) {
   const branchName = async () => await execGit('rev-parse --abbrev-ref HEAD')
     .catch(() => undefined)
 
-  const head = async () => await execGit('rev-parse HEAD')
+  const head = async (
+    { short }: { short?: boolean } = { short: false },
+  ) => await execGit(`rev-parse ${short ? '--short ' : ''}HEAD`)
     .catch(() => undefined)
 
   const author = async (commit?: string) => {

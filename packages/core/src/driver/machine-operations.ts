@@ -1,20 +1,21 @@
 import { EOL } from 'os'
 import retry from 'p-retry'
 import { dateReplacer } from '@preevy/common'
-import { withSpinner } from '../../spinner'
-import { MachineCreationDriver, SpecDiffItem, MachineDriver, MachineConnection, MachineBase, isPartialMachine, machineResourceType } from '../../driver'
-import { telemetryEmitter } from '../../telemetry'
-import { Logger } from '../../log'
-import { scriptExecuter } from '../../remote-script-executer'
-import { EnvMetadata, driverMetadataFilename } from '../../env-metadata'
-import { REMOTE_DIR_BASE } from '../../remote-files'
+import { withSpinner } from '../spinner'
+import { telemetryEmitter } from '../telemetry'
+import { Logger } from '../log'
+import { scriptExecuter } from '../remote-script-executer'
+import { EnvMetadata, driverMetadataFilename } from '../env-metadata'
+import { REMOTE_DIR_BASE } from '../remote-files'
+import { MachineBase, SpecDiffItem, isPartialMachine, machineResourceType } from './machine-model'
+import { MachineConnection, MachineCreationDriver, MachineDriver } from './driver'
 
 const machineDiffText = (diff: SpecDiffItem[]) => diff
   .map(({ name, old, new: n }) => `* ${name}: ${old} -> ${n}`).join(EOL)
 
 type Origin = 'existing' | 'new-from-snapshot' | 'new-from-scratch'
 
-const ensureMachine = async ({
+const ensureBareMachine = async ({
   machineDriver,
   machineCreationDriver,
   envId,
@@ -98,11 +99,16 @@ const writeMetadata = async (
   })
 }
 
-const getUserAndGroup = async (connection: MachineConnection) => (
+export const getUserAndGroup = async (connection: Pick<MachineConnection, 'exec'>) => (
   await connection.exec('echo "$(id -u):$(stat -c %g /var/run/docker.sock)"')
 ).stdout
   .trim()
   .split(':') as [string, string]
+
+export const getDockerPlatform = async (connection: Pick<MachineConnection, 'exec'>) => {
+  const arch = (await connection.exec('docker info -f "{{.Architecture}}"')).stdout.trim()
+  return arch === 'aarch64' ? 'linux/arm64' : 'linux/amd64'
+}
 
 const customizeNewMachine = ({
   log,
@@ -142,7 +148,7 @@ const customizeNewMachine = ({
       retries: 5,
       onFailedAttempt: async err => {
         log.debug(`Failed to execute docker run hello-world: ${err}`)
-        await connection.close()
+        connection[Symbol.dispose]()
         connection = await machineDriver.connect(machine, { log, debug })
       },
     }
@@ -150,6 +156,7 @@ const customizeNewMachine = ({
 
   spinner.text = 'Finalizing...'
   const userAndGroup = await getUserAndGroup(connection)
+  const dockerPlatform = await getDockerPlatform(connection)
 
   await Promise.all([
     writeMetadata(machine, machineDriverName, machineCreationDriver.metadata, connection, userAndGroup),
@@ -160,10 +167,10 @@ const customizeNewMachine = ({
     }),
   ])
 
-  return { connection, userAndGroup, machine }
+  return { connection, userAndGroup, machine, dockerPlatform }
 }
 
-export const ensureCustomizedMachine = async ({
+export const ensureMachine = async ({
   machineDriver,
   machineCreationDriver,
   machineDriverName,
@@ -177,10 +184,16 @@ export const ensureCustomizedMachine = async ({
   envId: string
   log: Logger
   debug: boolean
-}): Promise<{ machine: MachineBase; connection: MachineConnection; userAndGroup: [string, string] }> => {
-  const { machine, connection: connectionPromise, origin } = await ensureMachine(
+}): Promise<{
+  machine: MachineBase
+  connection: MachineConnection
+  userAndGroup: [string, string]
+  dockerPlatform: string
+}> => {
+  const { machine, connection: connectionPromise, origin } = await ensureBareMachine(
     { machineDriver, machineCreationDriver, envId, log, debug },
   )
+
   return await withSpinner(async spinner => {
     spinner.text = `Connecting to machine at ${machine.locationDescription}`
     const connection = await connectionPromise
@@ -200,14 +213,16 @@ export const ensureCustomizedMachine = async ({
       }
 
       const userAndGroup = await getUserAndGroup(connection)
+      const dockerPlatform = await getDockerPlatform(connection)
+
       if (origin === 'new-from-snapshot') {
         spinner.text = 'Finalizing...'
         await writeMetadata(machine, machineDriverName, machineCreationDriver.metadata, connection, userAndGroup)
       }
 
-      return { machine, connection, userAndGroup }
+      return { machine, connection, userAndGroup, dockerPlatform }
     } catch (e) {
-      await connection.close()
+      connection[Symbol.dispose]()
       throw e
     }
   }, { opPrefix: 'Configuring machine', successText: 'Machine configured' })

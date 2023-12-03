@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 require('source-map-support').install()
+require('disposablestack/auto')
 
 const oclif = require('@oclif/core')
 

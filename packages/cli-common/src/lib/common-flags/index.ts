@@ -1,17 +1,23 @@
-import { Flags } from '@oclif/core'
-import { DEFAULT_PLUGINS } from './plugins/default-plugins'
+import { Flags, ux } from '@oclif/core'
+import { mapValues } from 'lodash'
+import { EOL } from 'os'
+import { DEFAULT_PLUGINS } from '../plugins/default-plugins'
+
+export * from './build-flags'
+
+export const tableFlags = mapValues(ux.table.flags(), f => ({ ...f, helpGroup: 'OUTPUT' })) as ReturnType<typeof ux.table['flags']>
 
 const projectFlag = {
   project: Flags.string({
     char: 'p',
-    description: 'Project name. Defaults to the Compose project name',
+    summary: 'Project name. Defaults to the Compose project name',
     required: false,
     helpGroup: 'GLOBAL',
   }),
 }
 export const composeFlags = {
   file: Flags.string({
-    description: 'Compose configuration file',
+    summary: 'Compose configuration file',
     multiple: true,
     delimiter: ',',
     singleValue: true,
@@ -21,7 +27,7 @@ export const composeFlags = {
     helpGroup: 'GLOBAL',
   }),
   'system-compose-file': Flags.string({
-    description: 'Add extra Compose configuration file without overriding the defaults',
+    summary: 'Add extra Compose configuration file without overriding the defaults',
     multiple: true,
     delimiter: ',',
     singleValue: true,
@@ -52,7 +58,8 @@ export const pluginFlags = {
 
 export const envIdFlags = {
   id: Flags.string({
-    description: 'Environment id - affects created URLs. If not specified, will try to detect automatically',
+    summary: 'Environment id',
+    description: `Affects created URLs${EOL}If not specified, will detect from the current Git context`,
     required: false,
   }),
   ...projectFlag,
@@ -60,30 +67,31 @@ export const envIdFlags = {
 
 export const tunnelServerFlags = {
   'tunnel-url': Flags.string({
-    description: 'Tunnel url, specify ssh://hostname[:port] or ssh+tls://hostname[:port]',
+    summary: 'Tunnel url, specify ssh://hostname[:port] or ssh+tls://hostname[:port]',
     char: 't',
     default: 'ssh+tls://livecycle.run' ?? process.env.PREVIEW_TUNNEL_OVERRIDE,
   }),
   'tls-hostname': Flags.string({
-    description: 'Override TLS server name when tunneling via HTTPS',
+    summary: 'Override TLS server name when tunneling via HTTPS',
     required: false,
   }),
   'insecure-skip-verify': Flags.boolean({
-    description: 'Skip TLS or SSH certificate verification',
+    summary: 'Skip TLS or SSH certificate verification',
     default: false,
   }),
 } as const
 
 export const urlFlags = {
   'include-access-credentials': Flags.boolean({
-    description: 'Include access credentials for basic auth for each service URL',
+    summary: 'Include access credentials for basic auth for each service URL',
     default: false,
   }),
   'show-preevy-service-urls': Flags.boolean({
-    description: 'Show URLs for internal Preevy services',
+    summary: 'Show URLs for internal Preevy services',
     default: false,
   }),
   'access-credentials-type': Flags.custom<'browser' | 'api'>({
+    summary: 'Access credentials type',
     options: ['api', 'browser'],
     dependsOn: ['include-access-credentials'],
     default: 'browser',

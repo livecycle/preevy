@@ -7,7 +7,7 @@ export default class Version extends BaseCommand<typeof Version> {
   static enableJsonFlag = true
 
   async run(): Promise<unknown> {
-    const { flags } = await this.parse(Version)
+    const { flags } = this
     const log = this.logger
 
     if (flags.json) {

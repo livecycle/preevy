@@ -30,6 +30,7 @@
     "@preevy/driver-kube-pod": "0.0.56",
     "@preevy/driver-lightsail": "0.0.56",
     "@preevy/plugin-github": "0.0.56",
+    "disposablestack": "^1.1.2",
     "inquirer": "^8.0.0",
     "inquirer-autocomplete-prompt": "^2.0.0",
     "iter-tools-es": "^7.5.3",
@@ -44,8 +45,8 @@
     "@types/lodash": "^4.14.192",
     "@types/node": "18",
     "@types/shell-escape": "^0.2.1",
-    "@typescript-eslint/eslint-plugin": "6.7.4",
-    "@typescript-eslint/parser": "6.7.4",
+    "@typescript-eslint/eslint-plugin": "6.10.0",
+    "@typescript-eslint/parser": "6.10.0",
     "eslint": "^8.36.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-oclif": "^4",
@@ -61,7 +62,7 @@
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
     "tslib": "^2.5.0",
-    "typescript": "^5.0.4"
+    "typescript": "^5.2.2"
   },
   "oclif": {
     "bin": "preevy",

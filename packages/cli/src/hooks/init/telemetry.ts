@@ -8,7 +8,7 @@ const hook: Hook.Init = async ({ config }) => {
     return
   }
 
-  const emitter = await createTelemetryEmitter(config)
+  const emitter = await createTelemetryEmitter({ ...config, filename: config.scopedEnvVar('TELEMETRY_FILE') })
   registerEmitter(emitter)
   wireProcessExit(process, emitter)
 }

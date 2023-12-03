@@ -18,11 +18,12 @@ export {
   getStoredKeyOrUndefined as getStoredSshKeyOrUndefined,
   ForwardSocket,
   machineStatusNodeExporterCommand,
+  ensureMachine,
 } from './driver'
 export { profileStore, Profile, ProfileStore, link, Org } from './profile'
 export { telemetryEmitter, registerEmitter, wireProcessExit, createTelemetryEmitter, machineId } from './telemetry'
 export { fsTypeFromUrl, Store, VirtualFS, localFsFromUrl, localFs } from './store'
-export { localComposeClient, ComposeModel, resolveComposeFiles, getExposedTcpServicePorts, remoteUserModel, NoComposeFilesError, addScriptInjectionsToModel } from './compose'
+export { localComposeClient, ComposeModel, resolveComposeFiles, getExposedTcpServicePorts, fetchRemoteUserModel as remoteUserModel, NoComposeFilesError, addScriptInjectionsToServices as addScriptInjectionsToModel } from './compose'
 export { withSpinner } from './spinner'
 export { findEnvId, findProjectName, findEnvIdByProjectName, validateEnvId, normalize as normalizeEnvId, EnvId } from './env-id'
 export { sshKeysStore } from './state'
@@ -45,7 +46,8 @@ export {
   findComposeTunnelAgentUrl,
 } from './compose-tunnel-agent-client'
 export * as commands from './commands'
-export { wrapWithDockerSocket } from './docker'
+export { BuildSpec, ImageRegistry, parseRegistry } from './build'
+export { dockerEnvContext } from './docker'
 export {
   FlatTunnel,
   flattenTunnels,
@@ -57,7 +59,6 @@ export {
 } from './tunneling'
 export { TunnelOpts } from './ssh'
 export { Spinner } from './spinner'
-export { withClosable } from './closable'
 export { generateBasicAuthCredentials as getUserCredentials, jwtGenerator, jwkThumbprint, jwkThumbprintUri, parseKey } from './credentials'
 export { ciProviders, detectCiProvider, CiProvider } from './ci-providers'
 export { paginationIterator } from './pagination'

@@ -35,7 +35,7 @@ export const connectSshClient = async (
       listenAddress: string | number | ListenOptions,
       remoteSocket: string,
     ) => forwardOutStreamLocal({ ssh, log, listenAddress, remoteSocket }),
-    close: () => { ssh.end() },
+    [Symbol.dispose]: () => { ssh.end() },
   }
 
   return self
