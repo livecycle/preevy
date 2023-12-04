@@ -43,7 +43,7 @@ To run the build on the local machine (where the `preevy` CLI runs), or a remote
 
 ### Setting up a builder in GitHub Actions
 
-For GitHub actions, the [`setup-buildx-action`](https://github.com/marketplace/actions/docker-setup-buildx) can be used to simplify builder management.
+For GitHub actions, the [`setup-buildx-action`](https://github.com/marketplace/actions/docker-setup-buildx) can be used to simplify builder management. The generated builder name can then be specified using the `--builder` flag in the [preevy-up](https://github.com/marketplace/actions/preevy-up) action - see [example](https://github.com/marketplace/actions/preevy-up#build-on-the-ci-machine-with-cache-deploy-on-a-google-cloud-vm).
 
 ## Part 2: Automatically configure cache
 
@@ -51,7 +51,7 @@ Preevy can automatically add the `cache_to` and `cache_from` directives in the [
 
 To share the cache across different CI runs, it needs to be stored on a remote backend - not on the build machine, which is usually ephemeral.
 
-Note that exporting a cache
+Exporting a cache to a remote backend is not supported on the default Docker builder (see the table [here](https://docs.docker.com/build/drivers/)), so in order to use this feature, define and use a different BuildKit builder as described in [part 1](#part-1-offload-the-build).
 
 ### Generated image refs
 
@@ -273,8 +273,8 @@ This is an unlikely scenario in CI, but it serves as a control group for the oth
 |builder|registry|cache|setup time|build time|deploy time|total time|
 |:------|:-----|:-----|:-----|:-----|:----|:-----|
 | Environment |  |  | 0 | 9 | 6 | 15
-| CI&nbsp;machine | GHCR | GHA | 9 | 11 | 5 | 24
 | CI&nbsp;machine | GHCR |  | 10 | 8 | 5 | 23
+| CI&nbsp;machine | GHCR | GHA | 9 | 11 | 5 | 24
 | CI&nbsp;machine | GAR |  | 5 | 34 | 5 | 44
 | CI&nbsp;machine |  | GHA | 9 | 51 | 5 | 65
 | CI&nbsp;machine | GAR | GHA | 13 | 58 | 5 | 76
