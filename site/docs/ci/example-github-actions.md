@@ -25,7 +25,12 @@ Once configured, use the [AWS for GitHub Actions](https://github.com/marketplace
 ```
 
 ## Permissions
-Make sure your code has the required permissions. we are using `pull-requests: write` to write our deployed URLs on the PR, `contents: read` to read the docker file, and `id-token` for GitHub's OIDC Token endpoint
+Preevy requires the following [GitHub Actions permissions](https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs):
+
+* `contents: read`: used by Preevy to read the Docker Compose file(s)
+* `pull-requests: write`: used by the Preevy GitHub plugin to write the deployed URLs on the PR
+
+In addition, if you're using GitHub's OIDC Token endpoint to authenticate to your cloud provider (as in the below examples), `id-token: write`: is also needed.
 
 ```yaml
 permissions:
@@ -39,14 +44,17 @@ Make sure your code is checked out before using the preevy up action, using the 
 
 ```yaml
 - uses: actions/checkout@v3
-- uses: livecycle/preevy-up-action@latest
 ```
 
-With the `profile-url` arg, load the Preevy profile you [configured earlier](/ci/overview#how-to-run-preevy-from-the-ci), e.g.
-Use the `docker-compose-yaml-paths` to point to your docker compose file
+Specify the required `profile-url` input arg to load the Preevy profile you [configured earlier](/ci/overview#how-to-run-preevy-from-the-ci).
+
+Specify paths to the Docker Compose file using the `docker-compose-yaml-paths` input arg. If more than a single file exists, a comma-separated list of paths can be specified. The defaults are `docker-compose.ya?ml` or `compose.ya?ml` in the root directory.
+
 ```yaml
-  profile-url: "s3://preview-8450209857-ci?region=us-east-1"
-  docker-compose-yaml-paths: "./docker/docker-compose.yaml"
+- uses: livecycle/preevy-up-action@v2.0.0
+  with:
+    profile-url: "s3://preview-12345678-ci?region=us-east-1"
+    docker-compose-yaml-paths: "./docker/docker-compose.yaml"
 ```
 
 ## Complete workflow example
@@ -77,9 +85,6 @@ jobs:
           profile-url: "s3://preevy-12345678-my-profile?region=eu-west-1"
           # docker-compose-yaml-paths arg will point to the `docker-compose.yml` file. if you have multiple docker compose files, you can add them as a comma seperated string like so `'docker-compose.yml,docker-compose.dev.yml'`
           docker-compose-yaml-paths: "./docker/docker-compose.yaml"
-      - uses: mshick/add-pr-comment@v2
-        with:
-          message: ${{ steps.preevy.outputs.urls-markdown }}
 ```
 
 # Preevy-Down
@@ -90,19 +95,20 @@ Just like the preevy-up action, we need to authenticate and checkout.
 
 ```yaml
 - uses: actions/checkout@v3
-- uses: livecycle/preevy-down-action@latest
 ```
 
 With the `profile-url` arg, load the Preevy profile you [configured earlier](/ci/overview#how-to-run-preevy-from-the-ci), with the AWS S3 permissions we granted earlier.
 
 ```yaml
-  profile-url: "s3://preevy-12345678-my-profile?region=eu-west-1"
+- uses: livecycle/preevy-down-action@v1.1.0
+  with:
+    profile-url: "s3://preevy-12345678-my-profile?region=eu-west-1"
+    docker-compose-yaml-paths: "./docker/docker-compose.yaml"
 ```
 This part is a bit different from the preevy-up action,
 you should pass the args as if you are passing them to the [preevy down command](/cli-reference/down),
 note the `-f` before the docker-compose file path.
 ```yaml
-  args: "-f ./docker/docker-compose.yaml"
 ```
 for multiple docker files you can use `"-f ./docker/docker-compose.yaml -f ./docker/docker-compose.dev.yaml"`
 
