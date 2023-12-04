@@ -26,10 +26,6 @@ jobs:
         node-version: '18.x'
         cache: yarn
 
-    - run: |
-        rm -rf node_modules packages/*/node_modules
-        find `yarn cache dir` -maxdepth 1 -name '*oclif*' -delete
-
     - run: yarn
 
     - name: Set NPM token
