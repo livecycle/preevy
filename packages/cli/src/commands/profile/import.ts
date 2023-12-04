@@ -1,13 +1,13 @@
 import { Args, Flags } from '@oclif/core'
 import { find, range, map } from 'iter-tools-es'
-import { LocalProfilesConfig } from '@preevy/core'
+import { fsTypeFromUrl } from '@preevy/core'
 import { BaseCommand, text } from '@preevy/cli-common'
 import { loadProfileConfig, onProfileChange } from '../../profile-command'
 
 const DEFAULT_ALIAS_PREFIX = 'default'
 
-const defaultAlias = async (profileConfig: LocalProfilesConfig) => {
-  const profiles = new Set((await profileConfig.list()).map(l => l.alias))
+const defaultAlias = async (aliases: string[]) => {
+  const profiles = new Set(aliases)
   return find(
     (alias: string) => !profiles.has(alias),
     map(suffix => (suffix ? `${DEFAULT_ALIAS_PREFIX}${suffix + 1}` : DEFAULT_ALIAS_PREFIX), range()),
@@ -38,14 +38,11 @@ export default class ImportProfile extends BaseCommand<typeof ImportProfile> {
 
   async run(): Promise<void> {
     const profileConfig = loadProfileConfig(this.config)
-    const alias = this.flags.name ?? await defaultAlias(profileConfig)
+    const aliases = Object.keys((await profileConfig.list()).profiles)
+    const alias = this.flags.name ?? await defaultAlias(aliases)
 
-    const { info } = await profileConfig.importExisting(alias, this.args.location)
-    onProfileChange(info, alias, this.args.location)
-    if (this.flags.use) {
-      await profileConfig.setCurrent(alias)
-    }
-
+    const { info } = await profileConfig.importExisting(alias, this.args.location, this.flags.use)
+    onProfileChange(info, fsTypeFromUrl(this.args.location))
     text.success(`Profile ${text.code(info.id)} imported successfully as ${text.code(alias)} 👍`)
   }
 }

@@ -38,7 +38,6 @@ export default class Init extends BaseCommand {
   static flags = {
     from: Flags.string({
       description: 'Import profile from existing path',
-      char: 'f',
     }),
   }
 

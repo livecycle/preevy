@@ -20,7 +20,7 @@ export {
   machineStatusNodeExporterCommand,
   ensureMachine,
 } from './driver'
-export { profileStore, Profile, ProfileStore, link, Org } from './profile'
+export { profileStore, Profile, ProfileStore, link, Org, LocalProfilesConfigGetResult } from './profile'
 export { telemetryEmitter, registerEmitter, wireProcessExit, createTelemetryEmitter, machineId } from './telemetry'
 export { fsTypeFromUrl, Store, VirtualFS, localFsFromUrl, localFs } from './store'
 export { localComposeClient, ComposeModel, resolveComposeFiles, getExposedTcpServicePorts, fetchRemoteUserModel as remoteUserModel, NoComposeFilesError, addScriptInjectionsToServices as addScriptInjectionsToModel } from './compose'
@@ -57,6 +57,7 @@ export {
   getTunnelNamesToServicePorts,
   Connection as SshConnection,
 } from './tunneling'
+export { tryParseUrl } from './url'
 export { TunnelOpts } from './ssh'
 export { Spinner } from './spinner'
 export { generateBasicAuthCredentials as getUserCredentials, jwtGenerator, jwkThumbprint, jwkThumbprintUri, parseKey } from './credentials'
