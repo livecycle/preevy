@@ -3,7 +3,7 @@ import { rimraf } from 'rimraf'
 import { isEmpty, mapValues } from 'lodash'
 import { localFs } from '../store/fs/local'
 import { Store, VirtualFS, store, tarSnapshot } from '../store'
-import { ProfileStore, profileStore } from './store'
+import { ProfileEditor, profileStore } from './store'
 import { Profile } from './profile'
 
 type ProfileListEntry = {
@@ -26,7 +26,6 @@ type GetResult = {
   location: string
   info: Profile
   store: Store
-  alias: string
 }
 
 export type LocalProfilesConfigGetResult = GetResult
@@ -88,12 +87,11 @@ export const localProfilesConfig = (
       return throwOrUndefined()
     }
     const tarSnapshotStore = await storeFromUrl(locationUrl)
-    const profileInfo = await profileStore(tarSnapshotStore).info()
+    const profileInfo = await profileStore(tarSnapshotStore).ref.info()
     return {
       location: locationUrl,
       info: profileInfo,
       store: tarSnapshotStore,
-      alias: aliasToGet,
     }
   }
 
@@ -101,7 +99,7 @@ export const localProfilesConfig = (
     alias: string,
     location: string,
     profile: Omit<Profile, 'id'>,
-    init: (store: ProfileStore) => Promise<void>,
+    init: (pe: ProfileEditor) => Promise<void>,
     makeCurrent = false,
   ) => {
     const { profiles, current } = await listP.read()
@@ -111,13 +109,16 @@ export const localProfilesConfig = (
     const id = `${alias}-${Math.random().toString(36).substring(2, 9)}`
     const tar = await storeFromUrl(location)
     const pStore = profileStore(tar)
-    await pStore.init({ id, ...profile })
+    await pStore.transaction(async op => {
+      await op.info().write({ id, ...profile })
+      await init(op)
+    })
+
     profiles[alias] = {
       alias,
       id,
       location,
     }
-    await init(pStore)
     await listP.write({ profiles, current: makeCurrent ? alias : current })
     return {
       info: {
@@ -132,22 +133,23 @@ export const localProfilesConfig = (
     source: { location: string },
     target: { alias: string; location: string },
     drivers: string[],
+    makeCurrent = false,
   ) => {
     const sourceStore = await storeFromUrl(source.location)
-    const sourceProfileStore = profileStore(sourceStore)
+    const sourceProfileStore = profileStore(sourceStore).ref
     const { driver } = await sourceProfileStore.info()
-    await create(target.alias, target.location, { driver }, async pStore => {
-      await pStore.setTunnelingKey(await sourceProfileStore.getTunnelingKey())
+    await create(target.alias, target.location, { driver }, async pe => {
+      await pe.tunnelingKey().write(await sourceProfileStore.tunnelingKey())
       if (driver) {
-        await pStore.updateDriver(driver)
+        await pe.driver().write(driver)
       }
       await Promise.all(drivers.map(async sourceDriver => {
-        const driverFlags = await sourceProfileStore.defaultFlags(sourceDriver)
+        const driverFlags = await sourceProfileStore.defaultDriverFlags(sourceDriver)
         if (!isEmpty(driverFlags)) {
-          await pStore.setDefaultFlags(sourceDriver, driverFlags)
+          await pe.defaultDriverFlags(sourceDriver).write(driverFlags)
         }
       }))
-    })
+    }, makeCurrent)
   }
 
   return {
@@ -192,7 +194,7 @@ export const localProfilesConfig = (
         throw new Error(`Profile ${alias} already exists`)
       }
       const tarSnapshotStore = await storeFromUrl(fromLocation)
-      const info = await profileStore(tarSnapshotStore).info()
+      const info = await profileStore(tarSnapshotStore).ref.info()
       const newProfile = {
         id: info.id,
         alias,
@@ -204,7 +206,6 @@ export const localProfilesConfig = (
         location: fromLocation,
         info,
         store: tarSnapshotStore,
-        alias,
       }
     },
     create,

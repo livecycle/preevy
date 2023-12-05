@@ -20,7 +20,11 @@ export {
   machineStatusNodeExporterCommand,
   ensureMachine,
 } from './driver'
-export { profileStore, Profile, ProfileStore, link, Org, LocalProfilesConfigGetResult } from './profile'
+export {
+  profileStore, Profile, ProfileStore, ProfileStoreRef, ProfileStoreTransaction, ProfileEditor,
+  ProfileEditorOp,
+  link, Org, LocalProfilesConfigGetResult,
+} from './profile'
 export { telemetryEmitter, registerEmitter, wireProcessExit, createTelemetryEmitter, machineId } from './telemetry'
 export { fsTypeFromUrl, Store, VirtualFS, localFsFromUrl, localFs } from './store'
 export { localComposeClient, ComposeModel, resolveComposeFiles, getExposedTcpServicePorts, fetchRemoteUserModel as remoteUserModel, NoComposeFilesError, addScriptInjectionsToServices as addScriptInjectionsToModel } from './compose'

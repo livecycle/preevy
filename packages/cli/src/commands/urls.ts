@@ -1,7 +1,7 @@
 import fs from 'fs'
 import yaml from 'yaml'
 import { Args, ux, Interfaces } from '@oclif/core'
-import { FlatTunnel, Logger, ProfileStore, TunnelOpts, addBaseComposeTunnelAgentService, commands, findComposeTunnelAgentUrl, findEnvId, getTunnelNamesToServicePorts, profileStore } from '@preevy/core'
+import { FlatTunnel, Logger, TunnelOpts, addBaseComposeTunnelAgentService, commands, findComposeTunnelAgentUrl, findEnvId, getTunnelNamesToServicePorts, profileStore } from '@preevy/core'
 import { HooksListeners, PluginContext, tableFlags, text, tunnelServerFlags } from '@preevy/cli-common'
 import { asyncReduce } from 'iter-tools-es'
 import { tunnelNameResolver } from '@preevy/common'
@@ -77,11 +77,10 @@ export default class Urls extends ProfileCommand<typeof Urls> {
     envId: string,
     tunnelOpts: TunnelOpts,
     tunnelingKey: string | Buffer,
-    knownServerPublicKeys: ProfileStore['knownServerPublicKeys']
   ) {
     const { client: tunnelServerSshClient } = await connectToTunnelServerSsh({
       tunnelOpts,
-      knownServerPublicKeys,
+      profileStore: profileStore(this.store),
       tunnelingKey,
       log: this.logger,
     })
@@ -117,15 +116,14 @@ export default class Urls extends ProfileCommand<typeof Urls> {
       insecureSkipVerify: flags['insecure-skip-verify'],
     }
 
-    const pStore = profileStore(this.store)
+    const pStore = profileStore(this.store).ref
 
-    const tunnelingKey = await pStore.getTunnelingKey()
+    const tunnelingKey = await pStore.tunnelingKey()
 
     const composeTunnelServiceUrl = await this.getComposeTunnelAgentUrl(
       envId,
       tunnelOpts,
       tunnelingKey,
-      pStore.knownServerPublicKeys,
     )
 
     const flatTunnels = await commands.urls({

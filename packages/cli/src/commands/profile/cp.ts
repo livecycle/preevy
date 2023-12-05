@@ -89,13 +89,9 @@ export default class CopyProfile extends BaseCommand<typeof CopyProfile> {
     const profileConfig = loadProfileConfig(this.config)
     const source = await this.source(profileConfig)
     const target = await this.target(source)
-    await profileConfig.copy(source, target, Object.keys(machineDrivers))
+    await profileConfig.copy(source, target, Object.keys(machineDrivers), this.flags.use)
 
     ux.info(text.success(`Profile ${text.code(source.alias)} copied to ${text.code(target.location)} as ${text.code(target.alias)}`))
-
-    if (this.flags.use) {
-      await profileConfig.setCurrent(target.alias)
-    }
 
     return { source, target }
   }

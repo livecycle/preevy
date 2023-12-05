@@ -42,7 +42,7 @@ export default class Key extends ProfileCommand<typeof Key> {
   }
 
   async run(): Promise<unknown> {
-    const tunnelingKey = await profileStore(this.store).getTunnelingKey()
+    const tunnelingKey = await profileStore(this.store).ref.tunnelingKey()
     if (tunnelingKey === undefined) {
       throw new Error('Could not find tunneling key in profile store')
     }
