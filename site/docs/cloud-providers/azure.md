@@ -1,6 +1,6 @@
 ---
 sidebar_position: 3
-title: Microsoft Azure Driver
+title: Deploy to Microsoft Azure
 ---
 
 # Microsoft Azure Driver

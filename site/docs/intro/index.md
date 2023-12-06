@@ -3,11 +3,26 @@ title: About Preevy
 parent: /intro
 ---
 
-## **Add 5555555 to your workflow**
+## Preevy - Easily create and manage ephemeral environments
 
-Livecycle is flexible by design, so there are several ways to add Livecycle to your workflow:
+Preevy is an open source tool from Livecycle designed to easily provision, manage, and expose ephemeral environments for containerized applications in the cloud.
 
-- **Use our open source CLI to create self-hosted preview environments** - Our open source CLI “Preevy” provisions ephemeral preview environments on your cloud provider or Kubernetes cluster with a single command.
-- **Add Livecycle to your CI and get deploy previews for every PR** - By adding Livecycle to your CI/CD pipeline, you can automatically provision shareable preview environments for every commit or pull request.
-- **Instantly share local containers -** The Livecycle Docker Extension lets you share your local containerized app and get feedback while the code is still on your machine, without the hassle of CI builds or staging servers.
-- **Start collaborative review cycles with the team** - Every shared Livecycle preview environment includes built-in feedback tools that collect technical and visual feedback from the team. This means faster, more collaborative review cycles for everyone invovled.
+These environments are inexpensive, easy to integrate, customizable, and accessible for both technical and non-technical users.
+
+It’s simple, flexible, and doesn’t require deep DevOps knowledge, making it ideal for adding preview environments to your “pull/merge request” flows.
+
+Preevy can deploy your app with public or protected access, on the public internet or inside your existing private network.
+
+### Benefits of working with Preevy
+
+Deploying a preview environment per Pull Request offers a range of benefits:
+
+- 🌍 **Universal Access:** Just by sharing a URL, you can allow anyone to try your product revision on any device.
+- 📩 **Effortless Asynchronous Updates:** Keep non-technical stakeholders in the loop without coordinating synchronous meetings.
+- 🎨 **Hassle-free Design Reviews:** Designers can verify implementation independently, minimizing interruptions.
+- 🚀 **Parallel E2E Tests:** Use external test agents against preview environments expedite the testing process.
+- 💡 **Streamlined Feedback Cycle:** Preview environments let your team engage with and feedback on new features early in the pipeline.
+- 🧪 **Non-production Experimentation:** Develop and share unique versions of your product for presentations, examples, or tests.
+- 🔐 **Secure Collaboration:** Generate private sandboxes to share with external stakeholders, ensuring secure collaborative efforts.
+
+Read more about the Preevy [origin story and motivation](/intro/motivation).

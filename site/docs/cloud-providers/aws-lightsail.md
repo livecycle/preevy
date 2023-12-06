@@ -1,6 +1,6 @@
 ---
 sidebar_position: 1
-title: AWS Lightsail Driver
+title: Deploy to AWS Lightsail
 ---
 
 # AWS Lightsail Driver

@@ -7,6 +7,7 @@ hide_title: true
 ---
 
 import { Logo } from "@site/src/components/Logo";
+import LivecycleLogo from "./Livecycle_logo.png";
 
 <div>
   <h1 style={{marginTop: "1.25rem", marginBottom: "0.25rem", lineHeight: "38px"}}>
@@ -18,63 +19,28 @@ import { Logo } from "@site/src/components/Logo";
 </div>
 
 <span style={{ fontSize: "x-large" }}>
-  Provision <span style={{ fontStyle: "italic" }}>preview environments</span>{" "}
-  for Docker Compose applications with minimal configuration
+  Easily Provision <span style={{ fontStyle: "italic" }}>preview environments </span>{" "}
+  for Docker Compose applications 
 </span>
 
-## Livecycle and Preevy
+Preevy is an open source tool from Livecycle designed to easily provision, manage, and expose ephemeral environments for containerized applications in the cloud.
 
-Use Preevy to provision your [Docker Compose](https://docs.docker.com/compose/) application with minimal configurations.<br/>
-Simply run `preevy up`, and Preevy will return a public URL for every service in your configuration.
+These environments are inexpensive, easy to integrate, customizable, and accessible for both technical and non-technical users.
 
-You can read more about the Preevy [origin story and motivation](/intro/motivation).
+It’s simple, flexible, and doesn’t require deep DevOps knowledge, making it ideal for adding preview environments to your “pull/merge request” flows.
 
-## Prerequisites
+Read more about the Preevy [origin story and motivation](/intro/motivation).
 
-- Node.js installed.
-- Docker and Docker Compose V2 installed.
+![Livecycle Docker Extension](preevy-terminal.gif)
+ <span style={{ fontStyle: "italic" }}>The Preevy CLI </span>
 
-## Getting Started
+## About Livecycle
 
-Preevy is designed to be easy to use, with an API smiliar to [Docker Compose](https://docs.docker.com/compose/).
+[Livecycle](https://livecycle.io/) is the dev-friendly Internal Developer Platform that speeds up review cycles by making it easy to share previews and collect feedback in context. 
 
-1. Install Preevy CLI globally
+Built on the “Preevy” open source engine, Livecycle provisions preview environments that contain built-in feedback tools so you can share changes and initiate collaborative reviews at any point in the SDLC. 
 
-  ```bash npm2yarn
-  npm install -g preevy
-  ```
+<img src={LivecycleLogo} width="20%" />
 
-  Or use `npx` to run the CLI without installing it:
-
-  ```bash
-  npx preevy <command>
-  ```
-
-2. Choose the cloud provider or Kubernetes cluster you're going to use and configure credentials:
-   - For AWS: use `aws configure`. See [AWS lightsail credentials configurations](/drivers/aws-lightsail#credentials-configuration).
-   - For GCP: use `gcloud auth application-default login`. See [GCP credentials configuration](/drivers/gcp-gce#credentials-configuration)
-   - For Azure: use `az login`. See [Azure credentials configuration](/drivers/azure#credentials-configuration)
-   - For Kubernetes: See [Kubernetes credentials configuration](/drivers/kube-pod#requirements)
-
-3. Set up a profile
-
-  ```bash
-  preevy init
-  ```
-
-4. From the same directory where your `docker-compose.yml` or `compose.yml` file is located, run the command below, ensuring Docker is running:
-
-  ```bash
-  preevy up
-  ```
-
-**Note:** Preevy uses the git repo at the current directory to calculate a stable environment ID for your project. Make sure a git repo is initialized (with at least one commit), or add the `--id` flag to explicitly specify the environment ID.
-
-
-:::info Cloud provider credentials
-Managing and provisioning preview environments in Preevy, requires access and credentials to a cloud provider or Kubernetes cluster. Currently AWS, GCP, Azure and Kubernetes are supported, but more providers are [coming soon](/roadmap#more-cloud-drivers).
-Once you install and initialize your cloud provider CLI, Preevy will recognize and employ your configuration settings.
-
-
-For more info, see [AWS lightsail credentials configurations](/drivers/aws-lightsail#credentials-configuration), [GCP credentials configuration](/drivers/gcp-gce#credentials-configuration), [Azure credentials configuration](/drivers/azure#credentials-configuration) and [Kubernetes credentials configuration](/drivers/kube-pod#requirements).
-:::
+![Livecycle Welcome screen](welcome-screen.png)
+ <span style={{ fontStyle: "italic" }}>Getting started with Livecycle </span>

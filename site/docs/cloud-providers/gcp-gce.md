@@ -1,6 +1,6 @@
 ---
 sidebar_position: 2
-title: GCP Compute Engine Driver
+title: Deploy to Google Cloud Platform
 ---
 
 # GCP Compute Engine Driver
