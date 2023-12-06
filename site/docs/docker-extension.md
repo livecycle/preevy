@@ -1,5 +1,6 @@
 ---
 title: Livecycle Docker Extension
+sidebar_position: 11
 ---
 
 # Livecycle Docker Extension 🐳

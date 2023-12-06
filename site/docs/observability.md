@@ -1,6 +1,6 @@
 ---
-title: Roadmap
-sidebar_position: 14
+title: Observability
+sidebar_position: 13
 ---
 
 # Roadmap

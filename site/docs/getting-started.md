@@ -1,21 +1,7 @@
 ---
-sidebar_position: 1
-parent: /
-slug: /
-title: Getting started
-hide_title: true
+title: Installing the Preevy CLI
+sidebar_position: 1.2
 ---
-
-import { Logo } from "@site/src/components/Logo";
-
-<div>
-  <h1 style={{marginTop: "1.25rem", marginBottom: "0.25rem", lineHeight: "38px"}}>
-    <Logo /> Preevy
-  </h1>
-  <p style={{ fontSize: "14px" }}>
-    by <a href="https://livecycle.io">Livecycle</a>
-  </p>
-</div>
 
 <span style={{ fontSize: "x-large" }}>
   Provision <span style={{ fontStyle: "italic" }}>preview environments</span>{" "}

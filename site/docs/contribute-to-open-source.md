@@ -1,6 +1,6 @@
 ---
-title: Local Development
-sidebar_position: 9
+title: Contribute to Preevy Open Source
+sidebar_position: 8
 ---
 
 # Setting up a local dev environment
