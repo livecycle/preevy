@@ -50,6 +50,8 @@ const findProfile = async (
 ): Promise<LocalProfilesConfigGetResult | undefined> => {
   const profileUrl = tryParseUrl(profileFlag || '')
   if (!profileUrl) {
+    // eslint false positive here on case-sensitive filesystems due to unknown type
+    // eslint-disable-next-line @typescript-eslint/return-await
     return await profileConfig.get(profileFlag)
   }
 
@@ -57,6 +59,8 @@ const findProfile = async (
 
   const found = Object.values(profiles).find(p => p.location === profileFlag)
   if (found) {
+    // eslint false positive here on case-sensitive filesystems due to unknown type
+    // eslint-disable-next-line @typescript-eslint/return-await
     return await profileConfig.get(found.alias)
   }
 
@@ -65,6 +69,8 @@ const findProfile = async (
     prefix: profileUrl.hostname,
   })
 
+  // eslint false positive here on case-sensitive filesystems due to unknown type
+  // eslint-disable-next-line @typescript-eslint/return-await
   return await profileConfig.importExisting(newAlias, profileUrl.toString())
 }
 
