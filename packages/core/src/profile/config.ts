@@ -1,6 +1,7 @@
 import path from 'path'
 import { rimraf } from 'rimraf'
 import { isEmpty, mapValues } from 'lodash'
+import { find, range, map } from 'iter-tools-es'
 import { localFs } from '../store/fs/local'
 import { Store, VirtualFS, store, tarSnapshot } from '../store'
 import { ProfileEditor, profileStore } from './store'
@@ -23,6 +24,7 @@ type PersistedProfileList = {
 }
 
 type GetResult = {
+  alias: string
   location: string
   info: Profile
   store: Store
@@ -89,6 +91,7 @@ export const localProfilesConfig = (
     const tarSnapshotStore = await storeFromUrl(locationUrl)
     const profileInfo = await profileStore(tarSnapshotStore).ref.info()
     return {
+      alias: aliasToGet,
       location: locationUrl,
       info: profileInfo,
       store: tarSnapshotStore,
@@ -168,6 +171,9 @@ export const localProfilesConfig = (
     async list(): Promise<ProfileList> {
       return await listP.read()
     },
+    async has(alias: string) {
+      return (await listP.read()).profiles?.[alias] !== undefined
+    },
     get,
     async delete(alias: string, opts: { throwOnNotFound?: boolean } = {}) {
       const list = await listP.read()
@@ -203,6 +209,7 @@ export const localProfilesConfig = (
       profiles[alias] = newProfile
       await listP.write({ profiles, current: makeCurrent ? alias : current })
       return {
+        alias,
         location: fromLocation,
         info,
         store: tarSnapshotStore,
@@ -214,3 +221,13 @@ export const localProfilesConfig = (
 }
 
 export type LocalProfilesConfig = ReturnType<typeof localProfilesConfig>
+
+const DEFAULT_ALIAS_PREFIX = 'default'
+
+export const nextAvailableAlias = (aliases: string[], prefix = DEFAULT_ALIAS_PREFIX, sep = '-') => {
+  const profiles = new Set(aliases)
+  return find(
+    (alias: string) => !profiles.has(alias),
+    map(suffix => [prefix, suffix].filter(Boolean).join(sep), range()),
+  ) as string
+}

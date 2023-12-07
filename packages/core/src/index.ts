@@ -1,5 +1,5 @@
 export { Logger, LogFunc, nullLogFunc, LogLevel, logLevels } from './log'
-export { LocalProfilesConfig, localProfilesConfig } from './profile'
+export { LocalProfilesConfig, localProfilesConfig, nextAvailableAlias } from './profile'
 export {
   SshMachine,
   MachineBase,

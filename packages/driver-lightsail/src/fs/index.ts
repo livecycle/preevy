@@ -3,8 +3,8 @@ import { GetObjectCommandOutput, S3, S3ServiceException } from '@aws-sdk/client-
 import { VirtualFS } from '@preevy/core'
 
 export const defaultBucketName = (
-  { profileAlias, accountId }: { profileAlias: string; accountId: string },
-) => `preevy-${accountId}-${profileAlias}`
+  { profileAlias, accountId }: { profileAlias?: string; accountId: string },
+) => ['preevy', accountId, profileAlias].filter(Boolean).join('-')
 
 const isNotFoundError = (err: unknown) => err instanceof S3ServiceException && err.$metadata.httpStatusCode === 404
 

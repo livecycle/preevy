@@ -30,13 +30,23 @@ export const fsTypes = ['local', 's3', 'gs'] as const
 export type FsType = typeof fsTypes[number]
 export const isFsType = (s: string): s is FsType => fsTypes.includes(s as FsType)
 
-export const chooseFsType = async () => (
+const defaultFsType = (driver?: string): FsType => {
+  if (driver as DriverName === 'lightsail') {
+    return 's3'
+  }
+  if (driver as DriverName === 'gce') {
+    return 'gs'
+  }
+  return 'local'
+}
+
+export const chooseFsType = async ({ driver }: { driver?: string }) => (
   await inquirer.prompt<{ locationType: FsType }>([
     {
       type: 'list',
       name: 'locationType',
       message: 'Where do you want to store the profile?',
-      default: 'local',
+      default: defaultFsType(driver),
       choices: [
         { value: 'local', name: 'local file' },
         { value: 's3', name: 'AWS S3' },
@@ -46,10 +56,12 @@ export const chooseFsType = async () => (
   ])
 ).locationType
 
+type URL = `${string}://${string}`
+
 export type FsChooser = (opts: {
   profileAlias: string
   driver?: { name: DriverName; flags: Record<string, unknown> }
-}) => Promise<`${string}://${string}`>
+}) => Promise<URL>
 
 export const chooseFs: Record<FsType, FsChooser> = {
   local: async ({ profileAlias }: { profileAlias: string }) => `local://${profileAlias}`,
