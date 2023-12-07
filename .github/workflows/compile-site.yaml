@@ -2,9 +2,16 @@ name: compile-site
 
 on:
   workflow_dispatch:
-  push:
+  pull_request:
+    types:
+      - opened
+      - synchronize
     paths:
-      - 'site/**'
+      - site/**
+  push:
+    branches: ['**']
+    paths:
+      - site/**
 
 jobs:
   compile-site:
