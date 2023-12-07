@@ -31,8 +31,7 @@ export default class Link extends ProfileCommand<typeof Link> {
       ux.error('Please log in to link profile')
     }
     const { store, logger } = this
-    const pStore = profileStore(store)
-    const tunnelingKey = await pStore.getTunnelingKey()
+    const tunnelingKey = await profileStore(store).ref.tunnelingKey()
 
     await link({ tunnelingKey,
       lcUrl: this.flags['lc-api-url'],

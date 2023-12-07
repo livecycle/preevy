@@ -11,9 +11,9 @@ export default class ViewProfileConfig extends ProfileCommand<typeof ViewProfile
   static enableJsonFlag = true
 
   async run(): Promise<unknown> {
-    const pStore = profileStore(this.store)
+    const pStore = profileStore(this.store).ref
     const driver = this.profile.driver as DriverName
-    const config = await pStore.defaultFlags(driver)
+    const config = await pStore.defaultDriverFlags(driver)
     if (!driver) {
       ux.error([
         'Missing driver configuration in profile.',

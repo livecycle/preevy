@@ -54,7 +54,7 @@ export const tarSnapshot: FileBackedSnapshotter = async (fs, filename): Promise<
         await save()
       }
     },
-    close: async () => {
+    [Symbol.asyncDispose]: async () => {
       await rimraf(transactionDir)
     },
   }

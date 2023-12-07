@@ -1,13 +1,14 @@
 import {
   HostKeySignatureConfirmer,
   Logger,
-  ProfileStore,
   connectToTunnelServerSsh as baseConnect,
   TunnelOpts,
   Spinner,
+  ProfileStore,
 } from '@preevy/core'
 import os from 'os'
 import { ux } from '@oclif/core'
+import { parseSshUrl } from '@preevy/common'
 import { carefulBooleanPrompt } from './prompt'
 
 const confirmHostFingerprint = async (
@@ -22,15 +23,19 @@ const confirmHostFingerprint = async (
   return await carefulBooleanPrompt(message)
 }
 
-export const connectToTunnelServerSsh = async ({ tunnelOpts, log, tunnelingKey, knownServerPublicKeys, spinner }: {
+export const connectToTunnelServerSsh = async ({ tunnelOpts, log, tunnelingKey, profileStore, spinner }: {
   tunnelOpts: TunnelOpts
   tunnelingKey: string | Buffer
-  knownServerPublicKeys: ProfileStore['knownServerPublicKeys']
+  profileStore: ProfileStore
   log: Logger
   spinner?: Spinner
 }) => {
+  const connectionOpts = parseSshUrl(tunnelOpts.url)
+  const { hostname, port } = connectionOpts
+  const knownServerPublicKeys = await profileStore.ref.knownServerPublicKeys(hostname, port)
   const connectionResult = await baseConnect({
     log,
+    connectionOpts,
     tunnelOpts,
     clientPrivateKey: tunnelingKey,
     username: process.env.USER || 'preevy',
@@ -38,12 +43,18 @@ export const connectToTunnelServerSsh = async ({ tunnelOpts, log, tunnelingKey, 
       spinner?.stop()
       return await confirmHostFingerprint(...args)
     },
-    keysState: knownServerPublicKeys,
+    knownServerPublicKeys,
   })
 
   if (!connectionResult) {
     ux.log('Exiting')
     ux.exit(0)
+  }
+
+  if (!knownServerPublicKeys.includes(connectionResult.hostKey)) {
+    await profileStore.transaction(async op => {
+      await op.knownServerPublicKeys(hostname, port).write([...knownServerPublicKeys, connectionResult.hostKey])
+    })
   }
 
   return connectionResult

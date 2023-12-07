@@ -1,7 +1,9 @@
-import { BaseSshClient, SshClientOpts, baseSshClient, formatSshConnectionConfig, keyFingerprint, parseSshUrl } from '@preevy/common'
+import {
+  BaseSshClient, SshClientOpts, SshConnectionConfig, baseSshClient,
+  formatSshConnectionConfig, keyFingerprint,
+} from '@preevy/common'
 import { Logger } from '../log'
 import { TunnelOpts } from '../ssh'
-import { ProfileStore } from '../profile'
 
 export class UnverifiedHostKeyError extends Error {
   constructor(
@@ -50,41 +52,38 @@ const connect = ({
 export const connectToTunnelServerSsh = async ({
   log,
   tunnelOpts,
+  connectionOpts,
   clientPrivateKey,
   username,
-  keysState,
+  knownServerPublicKeys,
   confirmHostFingerprint,
 }: {
   log: Logger
-  tunnelOpts: TunnelOpts
+  tunnelOpts: Pick<TunnelOpts, 'url' | 'tlsServerName' | 'insecureSkipVerify'>
+  connectionOpts: Pick<SshConnectionConfig, 'hostname' | 'port' | 'isTls'>
   clientPrivateKey: string | Buffer
   username: string
-  keysState: ProfileStore['knownServerPublicKeys']
+  knownServerPublicKeys: readonly Buffer[]
   confirmHostFingerprint: HostKeySignatureConfirmer
 }): Promise<false | Connection> => {
-  const parsed = parseSshUrl(tunnelOpts.url)
-
   const connectionConfigBase = {
-    ...parsed,
+    ...connectionOpts,
     clientPrivateKey,
     username,
     tlsServerName: tunnelOpts.tlsServerName,
     insecureSkipVerify: tunnelOpts.insecureSkipVerify,
   }
 
+  const serverPublicKeysForThisConnection = [...knownServerPublicKeys]
+
   const attempt = async (): Promise<false | Connection> => {
-    const knownServerPublicKeys = await keysState.read(parsed.hostname, parsed.port)
-    const connectionConfig = { ...connectionConfigBase, knownServerPublicKeys }
+    const connectionConfig = { ...connectionConfigBase, knownServerPublicKeys: serverPublicKeysForThisConnection }
 
     log.debug('connecting to tunnel server ssh with config', formatSshConnectionConfig(connectionConfig))
 
     const result = await connect({ log, connectionConfig })
 
     if ('hostKey' in result) {
-      if (!knownServerPublicKeys.includes(result.hostKey)) { // TODO: check if this is correct
-        await keysState.write(parsed.hostname, parsed.port, result.hostKey)
-      }
-
       return result
     }
 
@@ -95,15 +94,15 @@ export const connectToTunnelServerSsh = async ({
 
     const confirmation = await confirmHostFingerprint({
       hostKeyFingerprint: keyFingerprint(result.unverifiedHostKey),
-      hostname: parsed.hostname,
-      port: parsed.port,
+      hostname: connectionOpts.hostname,
+      port: connectionOpts.port,
     })
 
     if (!confirmation) {
       return false
     }
 
-    await keysState.write(parsed.hostname, parsed.port, result.unverifiedHostKey)
+    serverPublicKeysForThisConnection.push(result.unverifiedHostKey)
 
     return await attempt()
   }

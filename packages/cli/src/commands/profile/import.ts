@@ -1,18 +1,8 @@
-import { Args, Flags } from '@oclif/core'
-import { find, range, map } from 'iter-tools-es'
-import { LocalProfilesConfig } from '@preevy/core'
+import { Args, Flags, ux } from '@oclif/core'
+import { fsTypeFromUrl, nextAvailableAlias } from '@preevy/core'
 import { BaseCommand, text } from '@preevy/cli-common'
+import { EOL } from 'os'
 import { loadProfileConfig, onProfileChange } from '../../profile-command'
-
-const DEFAULT_ALIAS_PREFIX = 'default'
-
-const defaultAlias = async (profileConfig: LocalProfilesConfig) => {
-  const profiles = new Set((await profileConfig.list()).map(l => l.alias))
-  return find(
-    (alias: string) => !profiles.has(alias),
-    map(suffix => (suffix ? `${DEFAULT_ALIAS_PREFIX}${suffix + 1}` : DEFAULT_ALIAS_PREFIX), range()),
-  ) as string
-}
 
 // eslint-disable-next-line no-use-before-define
 export default class ImportProfile extends BaseCommand<typeof ImportProfile> {
@@ -38,14 +28,21 @@ export default class ImportProfile extends BaseCommand<typeof ImportProfile> {
 
   async run(): Promise<void> {
     const profileConfig = loadProfileConfig(this.config)
-    const alias = this.flags.name ?? await defaultAlias(profileConfig)
-
-    const { info } = await profileConfig.importExisting(alias, this.args.location)
-    onProfileChange(info, alias, this.args.location)
-    if (this.flags.use) {
-      await profileConfig.setCurrent(alias)
+    let alias = this.flags.name
+    if (alias) {
+      if (await profileConfig.has(alias)) {
+        ux.error([
+          `A profile with the alias ${text.code(alias)} already exists.`,
+          `Run ${text.command(this.config, 'profile ls')} to list existing profiles.`,
+          `Run ${text.command(this.config, 'profile rm <profile-alias>')} to remove an existing profile.`,
+        ].join(EOL))
+      }
+    } else {
+      alias = nextAvailableAlias(Object.keys((await profileConfig.list()).profiles))
     }
 
-    text.success(`Profile ${text.code(info.id)} imported successfully as ${text.code(alias)} 👍`)
+    const { info } = await profileConfig.importExisting(alias, this.args.location, this.flags.use)
+    onProfileChange(info, fsTypeFromUrl(this.args.location))
+    ux.info(text.success(`Profile ${text.code(info.id)} imported successfully as ${text.code(alias)} 👍`))
   }
 }
