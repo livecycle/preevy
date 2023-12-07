@@ -44,7 +44,7 @@ const fetchTunnelServerDetails = async ({
 
     const { hostKey: hk, client: tunnelServerSshClient } = await connectToTunnelServerSsh({
       tunnelingKey,
-      knownServerPublicKeys: pStore.knownServerPublicKeys,
+      profileStore: pStore,
       tunnelOpts,
       log,
       spinner,
@@ -130,8 +130,9 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
     })
 
     const pStore = profileStore(this.store)
+    const pStoreRef = pStore.ref
     const tunnelingKey = await withSpinner(
-      () => pStore.getTunnelingKey(),
+      () => pStoreRef.tunnelingKey(),
       { text: 'Getting tunneling key from profile...', successText: 'Got tunneling key from profile' },
     )
     const thumbprint = await jwkThumbprint(tunnelingKey)

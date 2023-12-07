@@ -63,31 +63,35 @@ export default class UpdateProfileConfig extends ProfileCommand<typeof UpdatePro
   static enableJsonFlag = true
 
   async run(): Promise<void> {
-    const pStore = profileStore(this.store)
     const profileDriver = this.profile.driver as DriverName | undefined
     const driver: DriverName | undefined = (this.flags.driver || profileDriver)
     if (!driver) {
       ux.error('Missing driver configuration in profile, use the --driver flag to set the desired machine driver')
     }
-    if (driver !== profileDriver) {
-      await pStore.updateDriver(driver)
-    }
-
     const { unset } = this.flags
     validateUnset(driver, unset)
 
-    const source = await pStore.defaultFlags(driver) as Record<string, unknown>
+    const updatedResult = await profileStore(this.store).transaction(
+      async op => {
+        if (driver !== profileDriver) {
+          await op.driver().write(driver)
+        }
 
-    const updated = {
-      ...omit(source, ...unset.map((k: string) => removeDriverFlagPrefix(driver, k))),
-      ...extractDriverFlags(this.flags, driver, { excludeDefaultValues: false }),
-    }
+        const driverFlagsTx = op.defaultDriverFlags(driver)
+        const source = await driverFlagsTx.read()
+        const updated = {
+          ...omit(source, ...unset.map((k: string) => removeDriverFlagPrefix(driver, k))),
+          ...extractDriverFlags(this.flags, driver, { excludeDefaultValues: false }),
+        }
+        await driverFlagsTx.write(updated)
 
-    await pStore.setDefaultFlags(driver, updated)
+        return updated
+      },
+    )
 
     ux.info(`Updated configuration for driver ${text.code(driver)}:`)
-    if (Object.keys(updated).length) {
-      ux.styledObject(updated)
+    if (Object.keys(updatedResult).length) {
+      ux.styledObject(updatedResult)
     } else {
       ux.info('(empty)')
     }

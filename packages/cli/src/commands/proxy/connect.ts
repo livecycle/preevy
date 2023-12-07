@@ -55,8 +55,9 @@ export default class Connect extends ProfileCommand<typeof Connect> {
     const { flags, args, store } = this
 
     const pStore = profileStore(store)
+    const pStoreRef = pStore.ref
 
-    const tunnelingKey = await pStore.getTunnelingKey()
+    const tunnelingKey = await pStoreRef.tunnelingKey()
     const tunnelOpts = {
       url: flags['tunnel-url'],
       tlsServerName: flags['tls-hostname'],
@@ -77,7 +78,7 @@ export default class Connect extends ProfileCommand<typeof Connect> {
     try {
       const connnection = await connectToTunnelServerSsh({
         tunnelOpts,
-        knownServerPublicKeys: pStore.knownServerPublicKeys,
+        profileStore: pStore,
         tunnelingKey,
         log: this.logger,
       })

@@ -13,6 +13,13 @@ export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>
 
 const argsFromRaw = (raw: ParsingToken[]) => raw.filter(arg => arg.type === 'arg').map(arg => arg.input).filter(Boolean)
 
+const jsonFlags = {
+  json: Flags.boolean({
+    description: 'Format output as JSON',
+    helpGroup: 'GLOBAL',
+  }),
+} as const
+
 abstract class BaseCommand<T extends typeof Command=typeof Command> extends Command {
   static baseFlags = {
     'log-level': Flags.custom<LogLevel>({
@@ -86,7 +93,10 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
     await super.init()
     const { args, flags, raw } = await this.parse({
       flags: this.ctor.flags,
-      baseFlags: super.ctor.baseFlags,
+      baseFlags: {
+        ...this.ctor.baseFlags,
+        ...this.ctor.enableJsonFlag ? jsonFlags : {},
+      },
       args: this.ctor.args,
       strict: false,
     })

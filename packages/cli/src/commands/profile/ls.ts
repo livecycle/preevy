@@ -1,4 +1,5 @@
-import { ux } from '@oclif/core'
+import { Flags, ux } from '@oclif/core'
+import { tableFlags } from '@preevy/cli-common'
 import ProfileCommand from '../../profile-command'
 
 // eslint-disable-next-line no-use-before-define
@@ -7,21 +8,22 @@ export default class ListProfile extends ProfileCommand<typeof ListProfile> {
 
   static enableJsonFlag = true
 
+  static flags = {
+    ...tableFlags,
+    json: Flags.boolean({}),
+  }
+
   async run(): Promise<unknown> {
-    const currentProfile = await this.profileConfig.current()
-    const profiles = await this.profileConfig.list()
+    const { profiles, current } = await this.profileConfig.list()
 
     if (this.flags.json) {
-      return {
-        profiles: Object.fromEntries(profiles.map(({ alias, ...rest }) => [alias, rest])),
-        current: currentProfile?.alias,
-      }
+      return { profiles, current }
     }
 
-    ux.table(profiles, {
+    ux.table(Object.values(profiles), {
       alias: {
         header: 'Alias',
-        get: ({ alias }) => `${alias}${alias === currentProfile?.alias ? ' *' : ''}`,
+        get: ({ alias }) => `${alias}${alias === current ? ' *' : ''}`,
       },
       id: {
         header: 'Id',
