@@ -43,7 +43,7 @@ permissions:
 Make sure your code is checked out before using the preevy up action, using the [Checkout](https://github.com/marketplace/actions/checkout) action:
 
 ```yaml
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 ```
 
 Specify the required `profile-url` input arg to load the Preevy profile you [configured earlier](/ci/overview#how-to-run-preevy-from-the-ci).
@@ -78,7 +78,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::12345678:role/my-role
           aws-region: eu-west-1
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: livecycle/preevy-up-action@latest
         id: preevy
         with:
@@ -94,7 +94,7 @@ Use this action to stop and delete a preview environment using the Preevy CLI wh
 Just like the preevy-up action, we need to authenticate and checkout.
 
 ```yaml
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 ```
 
 With the `profile-url` arg, load the Preevy profile you [configured earlier](/ci/overview#how-to-run-preevy-from-the-ci), with the AWS S3 permissions we granted earlier.
@@ -129,7 +129,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::12345678:role/my-role
           aws-region: eu-west-1
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: livecycle/preevy-down-action@latest
         id: preevy
         with:
