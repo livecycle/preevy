@@ -1,0 +1,23 @@
+name: compile-site
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'site/**'
+
+jobs:
+  compile-site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          cache: yarn
+      - run: yarn
+        working-directory: site
+      - run: yarn typecheck
+        working-directory: site
+      - run: yarn build
+        working-directory: site
