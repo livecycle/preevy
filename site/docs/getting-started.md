@@ -37,10 +37,10 @@ Preevy is designed to be easy to use, with an API smiliar to [Docker Compose](ht
   ```
 
 2. Choose the cloud provider or Kubernetes cluster you're going to use and configure credentials:
-   - For AWS: use `aws configure`. See [AWS lightsail credentials configurations](/drivers/aws-lightsail#credentials-configuration).
-   - For GCP: use `gcloud auth application-default login`. See [GCP credentials configuration](/drivers/gcp-gce#credentials-configuration)
-   - For Azure: use `az login`. See [Azure credentials configuration](/drivers/azure#credentials-configuration)
-   - For Kubernetes: See [Kubernetes credentials configuration](/drivers/kube-pod#requirements)
+   - For AWS: use `aws configure`. See [AWS lightsail credentials configurations](/cloud-providers/aws-lightsail#credentials-configuration).
+   - For GCP: use `gcloud auth application-default login`. See [GCP credentials configuration](/cloud-providers/gcp-gce#credentials-configuration)
+   - For Azure: use `az login`. See [Azure credentials configuration](/cloud-providers/azure#credentials-configuration)
+   - For Kubernetes: See [Kubernetes credentials configuration](/cloud-providers/kube-pod#requirements)
 
 3. Set up a profile
 
@@ -62,5 +62,5 @@ Managing and provisioning preview environments in Preevy, requires access and cr
 Once you install and initialize your cloud provider CLI, Preevy will recognize and employ your configuration settings.
 
 
-For more info, see [AWS lightsail credentials configurations](/drivers/aws-lightsail#credentials-configuration), [GCP credentials configuration](/drivers/gcp-gce#credentials-configuration), [Azure credentials configuration](/drivers/azure#credentials-configuration) and [Kubernetes credentials configuration](/drivers/kube-pod#requirements).
+For more info, see [AWS lightsail credentials configurations](/cloud-providers/aws-lightsail#credentials-configuration), [GCP credentials configuration](/cloud-providers/gcp-gce#credentials-configuration), [Azure credentials configuration](/cloud-providers/azure#credentials-configuration) and [Kubernetes credentials configuration](/cloud-providers/kube-pod#requirements).
 :::

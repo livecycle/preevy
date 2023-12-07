@@ -160,8 +160,8 @@ If you already have a locally stored Preevy Profile, it can be migrated to a rem
 Once the profile is created, it can be imported to the CI runtime using `preevy init --from <profile-url>`
 
 Examples:
-- [Using AWS Lightsail](https://preevy.dev/ci/example-github-actions)
-- [Using Google Cloud Engine](https://preevy.dev/ci/example-github-actions-gce)
+- [Using AWS Lightsail](https://preevy.dev/ci-integration/example-github-actions)
+- [Using Google Cloud Engine](https://preevy.dev/ci-integration/example-github-actions-gce)
 
 ### Faster builds in CI
 
