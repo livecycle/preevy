@@ -1,6 +1,6 @@
 ---
 sidebar_position: 4
-title: Deploy to Kubernetes Single Pod
+title: Deploy to Kubernetes
 ---
 
 # Kubernetes single Pod driver
