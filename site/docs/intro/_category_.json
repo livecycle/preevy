@@ -1,7 +1,4 @@
 {
-  "label": "Introduction",
-  "position": 1,
-  "link": {
-    "type": "generated-index"
-  }
+  "label": "Intro to Preevy",
+  "position": 1.1
 }
