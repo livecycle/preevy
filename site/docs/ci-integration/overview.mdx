@@ -35,7 +35,7 @@ When asked where to store the profile, choose `AWS S3` or `Google Cloud Storage`
 <br />
 
 Then, choose a URL to store the profile (Preevy will conveniently suggest one for you).
-For S3, it should look something like `s3://preview-123456789-ci?region=us-east-1`
+For S3, it should look something like `s3://preview-8450209857-ci?region=us-east-1`
 
 #### Option 2: If you already have a profile stored locally, migrate it to a remote location:
 
@@ -51,7 +51,7 @@ Once the profile has migrated to a remote location, you can specify the new loca
 Use the following commands in your CI job to import the Preevy Profile and provision an environment for your PR:
 
 ```bash
-preevy init --from "s3://preview-123456789-ci?region=us-east-1"
+preevy init --from "s3://preview-8450209857-ci?region=us-east-1"
 preevy up
 ```
 

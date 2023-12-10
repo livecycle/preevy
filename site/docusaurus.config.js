@@ -112,8 +112,8 @@ const config = {
             return existingPath.replace('/ci-integration/', '/ci/')
           }
 
-          if (existingPath.startsWith('/cloud-providers/')) {
-            return existingPath.replace('/cloud-providers/', '/drivers/')
+          if (existingPath.startsWith('/deploy-runtimes/')) {
+            return existingPath.replace('/deploy-runtimes/', '/drivers/')
           }
 
           return undefined

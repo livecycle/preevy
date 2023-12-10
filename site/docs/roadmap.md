@@ -7,10 +7,10 @@ sidebar_position: 14
 
 ## More cloud drivers
 
-- [x] [AWS lightsail](/cloud-providers/aws-lightsail.md)
-- [x] [GCP Compute Engine](/cloud-providers/gcp-gce.md)
-- [x] [Azure](/cloud-providers/azure.md)
-- [x] [Kubernetes](/cloud-providers/kube-pod.md)
+- [x] [AWS lightsail](/deploy-runtimes/aws-lightsail.md)
+- [x] [GCP Compute Engine](/deploy-runtimes/gcp-gce.md)
+- [x] [Azure](/deploy-runtimes/azure.md)
+- [x] [Kubernetes](/deploy-runtimes/kube-pod.md)
 - [ ] [fly.io](https://fly.io/)
 
 ## Plugins

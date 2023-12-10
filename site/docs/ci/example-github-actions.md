@@ -12,7 +12,7 @@ In this section we'll show an example of how to run Preevy using our GitHub Acti
 ## Authentication
 
 In this example Preevy will get your stored profile from AWS S3, and will deploy the repo using docker compose file to AWS Lightsail.
-Make sure the action has [sufficient permissions](/cloud-providers/aws-lightsail#required-permissions) to AWS.
+Make sure the action has [sufficient permissions](/deploy-runtimes/aws-lightsail#required-permissions) to AWS.
 See: [Assume a rule](https://github.com/aws-actions/configure-aws-credentials#assuming-a-role)
 
 Once configured, use the [AWS for GitHub Actions](https://github.com/marketplace/actions/configure-aws-credentials-for-github-actions) action:
