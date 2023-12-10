@@ -1,9 +1,9 @@
 ---
-title: FAQ
-sidebar_position: 15
+title: FAQ - Docker Extension
+sidebar_position: 15.1
 ---
 
-## Common questions about using Preevy
+## Common questions about using the Livecycle Docker Extension
 
 <details>
   <summary>What is the difference between the Livecycle Docker Extension and Ngrok?</summary>
