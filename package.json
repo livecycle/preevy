@@ -1,10 +1,11 @@
 {
   "private": true,
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "devDependencies": {
     "husky": "^8.0.0",
     "lerna": "^6.6.2",
-    "lint-staged": "^14.0.1",
     "lodash": "^4.17.21",
     "patch-package": "^8.0.0",
     "postinstall-postinstall": "^2.1.0",
@@ -13,11 +14,6 @@
   },
   "resolutions": {
     "**/@oclif/core": "livecycle/oclif-core-patched-for-preevy#v3.12.0-preevy-patch-10"
-  },
-  "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --cache --fix"
-    ]
   },
   "scripts": {
     "test": "yarn -s run lerna -- run test --",
