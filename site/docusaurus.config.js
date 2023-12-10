@@ -39,7 +39,11 @@ const config = {
             'https://github.com/livecycle/preevy/tree/main/site',
           remarkPlugins: [
             [require('@docusaurus/remark-plugin-npm2yarn'), { sync: true }],
+            [require('./extract-markdown-section'), {}],
           ],
+          // beforeDefaultRemarkPlugins: [
+          //   [require('./extract-markdown-section'), {}],
+          // ],
         },
         blog: false,
         theme: {
