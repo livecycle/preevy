@@ -159,9 +159,7 @@ If you already have a locally stored Preevy Profile, it can be migrated to a rem
 
 Once the profile is created, it can be imported to the CI runtime using `preevy init --from <profile-url>`
 
-Examples:
-- [Using AWS Lightsail](https://preevy.dev/ci-integration/example-github-actions)
-- [Using Google Cloud Engine](https://preevy.dev/ci-integration/example-github-actions-gce)
+[Examples](https://preevy.dev/ci)
 
 ### Faster builds in CI
 
@@ -254,7 +252,7 @@ The following properties are supported, all of them optional:
 #### `driver`
 
 <!--lint disable double-link-->
-Override the default [driver](https://preevy.dev/category/drivers) to use for this Compose project.
+Override the default [driver](https://preevy.dev/deploy-runtimes/) to use for this Compose project.
 Available values: `lightsail`, `gce`, `azure`, `kube-pod`.
 <!--lint enable double-link-->
 
@@ -263,7 +261,7 @@ This value can be overridden per command execution using the `--driver` CLI flag
 #### `drivers`
 
 <!--lint disable double-link-->
-Override the default the default options per driver for this Compose project. See the [specific driver documentation](https://preevy.dev/category/drivers).
+Override the default options per driver for this Compose project. See the [specific driver documentation](https://preevy.dev/deploy-runtimes/).
 <!--lint enable double-link-->
 
 These values can be overridden per command execution using the specific driver CLI flags, e.g, `--lightsail-bundle-id=2xlarge_2_0`
