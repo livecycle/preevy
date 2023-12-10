@@ -112,10 +112,6 @@ const config = {
           // },
         ],
         createRedirects: existingPath => {
-          if (existingPath.startsWith('/ci-integration/')) {
-            return existingPath.replace('/ci-integration/', '/ci/')
-          }
-
           if (existingPath.startsWith('/deploy-runtimes/')) {
             return existingPath.replace('/deploy-runtimes/', '/drivers/')
           }
