@@ -26,6 +26,7 @@
     "rootDir": "src",
   },
   "include": ["**/*"],
+  "exclude": ["jest.config.js", "dist", "lint-staged.config.cjs"],
   "references": [
     { "path": "../common" },
     { "path": "../core" },
