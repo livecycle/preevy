@@ -23,4 +23,5 @@
     "outDir": "dist",
   },
   "include": ["index.ts", "src/**/*"],
+  "exclude": ["lint-staged.config.cjs"]
 }
