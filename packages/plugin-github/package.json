@@ -20,6 +20,7 @@
     "@typescript-eslint/eslint-plugin": "6.10.0",
     "@typescript-eslint/parser": "6.10.0",
     "eslint": "^8.36.0",
+    "lint-staged": "^15.2.0",
     "shx": "^0.3.3",
     "typescript": "^5.2.2"
   },

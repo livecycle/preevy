@@ -8,6 +8,7 @@ import { Interfaces } from '@oclif/core'
 import { formatFlagsToArgs } from '@preevy/cli-common'
 
 export const machineDrivers = {
+
   lightsail,
   gce,
   azure,

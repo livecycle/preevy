@@ -1,0 +1,1 @@
+../../build_utils/lint-staged.config.cjs
