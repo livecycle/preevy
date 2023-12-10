@@ -1,0 +1,162 @@
+---
+sidebar_position: 1
+title: Integrating with your CI
+---
+
+import StoreInS3Screenshot from "./screenshots/store-in-s3.png";
+
+Preevy is designed to be easily run in CI/CD workflows,
+such as [GH Actions](https://github.com/features/actions), [Circle CI](https://circleci.com/) and others.
+
+The most common use-case for a CI job that runs Preevy is to have a live preview environment for every Pull Request
+as part of the review process. This allows for [more collaborative and inclusive review workflows](/intro/motivation)
+
+## Walkthrough: Running Preevy in your GitHub actions CI
+
+***In this example, we'll use GitHub Actions CI and AWS Lightsail as a cloud provider.***
+
+For GitHub Actions with Google Cloud, see a complete recipe at the [`livecycle/preevy-gha-gce-demo` repo](https://github.com/livecycle/preevy-gha-gce-demo).
+
+### 1. Install Preevy and create a profile
+
+The Preevy [profile](https://preevy.dev/intro/under-the-hood#profile-configuration) provides a mechanism for storing and sharing configuration and state between different machines.
+This allows sharing of environments between different CI jobs, or different developers.
+Using the same profile between different CI runs ensures a consistent configuration and allows for stable URLs for your preview environments.
+
+Preevy includes built-in support for saving profiles on [AWS S3](https://aws.amazon.com/s3/) and [Google Cloud Storage](https://cloud.google.com/storage/).
+You can also store the profile on the local filesystem and copy it manually before running Preevy - we won't show this method here.
+
+- To create the Preevy profile, first install the Preevy CLI locally:
+
+```bash
+# npm:
+npm install -g preevy
+# yarn:
+yarn add -g preevy
+# or use npx to run the CLI without installing it:
+npx preevy ...
+```
+
+- Then, set up a Preevy profile:
+
+```bash
+preevy init [profile-name]
+```
+
+- When asked to choose a **cloud provider**, choose either `AWS Lightsail`.
+
+You will be asked for the default AWS region in which to create AWS resources.
+
+- Next, choose where to store your profile.
+
+The profile needs to be stored in the cloud where it can be accessed by your CI machines.
+
+When asked where to **store** the profile, choose `AWS S3`.
+The URL displayed in your terminal should look something like `s3://preevy-12345678-my-profile?region=eu-west-1`
+
+<img src={StoreInS3Screenshot} width="75%" />
+
+<br />
+<br />
+
+- Note the URL displayed in your terminal - this is the Preevy profile URL which we'll use in the actions below.
+
+### 2. Make sure GitHub Actions workflows have AWS permissions
+
+In this example, we'll be using the [`aws-actions/configure-aws-credentials` action](https://github.com/aws-actions/configure-aws-credentials) with GitHub's [OIDC provider](https://github.com/aws-actions/configure-aws-credentials#oidc).
+Make sure the configured role has the [required permissions](/deploy-runtimes/aws-lightsail#required-aws-permissions).
+
+### 3. Create your GitHub Actions workflows
+
+We'll create two workflows:
+
+The `Deploy Preevy environment` workflow will create the preview environments when a PR is opened or updated.
+
+The `Teardown Preevy environment` workflow will bring down the running preview environments when the PR is closed.
+
+- For the `Deploy Preevy environment` workflow, create the file `preevy-up.yaml` in the `.github/workflows` directory of your repo:
+
+```yaml
+name: Deploy Preevy environment
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+permissions:
+  id-token: write
+  contents: read
+
+  # Needed to write a PR comment with the environment URLs
+  pull-requests: write
+
+jobs:
+  deploy:
+    timeout-minutes: 15
+
+    # allow a single job to run per PR
+    concurrency: preevy-${{ github.event.number }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::12345678:role/my-role
+          aws-region: eu-west-1
+
+      - uses: actions/checkout@v3
+
+      - uses: livecycle/preevy-up-action@v2.0.0
+        id: preevy
+        with:
+          profile-url: "${{ vars.PREEVY_PROFILE_URL }}"
+          docker-compose-yaml-paths: "./docker/docker-compose.yaml"
+
+      # Change `frontend` and `3000` in this step to your main service and port
+      # This will appear as the GH environment URL
+      - id: store_url
+        name: Store URL of frontend
+        run: |
+          echo url=$(jq -r '.[] | select(.service=="frontend" and .port==3000).url' "${{ steps.preevy_up.outputs.urls-file }}") >> "$GITHUB_OUTPUT"
+```
+
+- For the `Teardown Preevy environment` workflow, create the file `preevy-down.yaml` in the `.github/workflows` directory of your repo:
+
+```yaml
+name: Teardown Preevy environment
+on:
+  pull_request:
+    types:
+      - closed
+permissions:
+  id-token: write
+  contents: read
+
+  # needed to update the PR comment with the environment URLs
+  pull-requests: write
+jobs:
+  teardown:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::12345678:role/my-role
+          aws-region: eu-west-1
+
+      - uses: actions/checkout@v3
+      - uses: livecycle/preevy-down-action@v1.1.0
+        id: preevy
+        with:
+          profile-url: "${{ vars.PREEVY_PROFILE_URL }}"
+          docker-compose-yaml-paths: "./docker/docker-compose.yaml"
+```
+
+- Add a [GitHub action configuration variable](https://docs.github.com/en/actions/learn-github-actions/variables#defining-configuration-variables-for-multiple-workflows) named `PREEVY_PROFILE_URL` and set the value to the URL printed at the `preevy init` output.
+
+### 4. Get Automatic GitHub Notifications
+
+You're all set! When you open a PR, Preevy will now build preview environments.
+The [Preevy Github Plugin](/github-plugin) will automatically detect the GitHub context and post a comment on your PR with the links to each of the relevant services when they are available for review.
+Teammates can simply click these links and preview your latest changes in their browser.

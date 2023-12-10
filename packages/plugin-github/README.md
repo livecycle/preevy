@@ -6,7 +6,7 @@ This plugin is bundled with Preevy and enabled by default. To disable it, see [b
 
 ## GitHub PR comment for your environment
 
-![Demo comment](./demo.png)
+![Demo comment](https://github.com/livecycle/preevy/blob/main/packages/plugin-github/demo.png?raw=true)
 
 ### Automatic PR comment at `up` and `down`
 
@@ -50,11 +50,11 @@ At runtime, the plugin will attempt to detect the configuration it needs from en
 
 The plugin can automatically detect its configuration when running in a CI provider supported by `@preevy/core`:
 
-* [GitHub Actions](../core/src/ci-providers/github-actions.ts)
-* [GitLab Actions](../core/src/ci-providers/gitlab.ts)
-* [Circle CI](../core/src/ci-providers/circle.ts)
-* [Travis CI](../core/src/ci-providers/travis.ts)
-* [Azure Pipelines](../core/src/ci-providers/azure-pipelines.ts)
+* [GitHub Actions](https://github.com/livecycle/preevy/tree/main/packages/core/src/ci-providers/github-actions.ts)
+* [GitLab Actions](https://github.com/livecycle/preevy/tree/main/packages/core/src/ci-providers/gitlab.ts)
+* [Circle CI](https://github.com/livecycle/preevy/tree/main/packages/core/src/ci-providers/circle.ts)
+* [Travis CI](https://github.com/livecycle/preevy/tree/main/packages/core/src/ci-providers/travis.ts)
+* [Azure Pipelines](https://github.com/livecycle/preevy/tree/main/packages/core/src/ci-providers/azure-pipelines.ts)
 
 To disable auto-detection, specify `detect: false` at the plugin configuration in the Docker Compose file.
 
@@ -131,7 +131,7 @@ The following flags can be specified at the Preevy CLI:
 The generated PR comment can be customized by specifying a template in your Docker Compose file, or in a separate file (see above). The template is rendered by [`nunjucks`](https://mozilla.github.io/nunjucks/templating.html) and receives a context containing a `urls` property which is one of the following:
 
 * `undefined`: The environment is being deleted, or the `uncomment` command has been invoked.
-* Otherwise, the result of the [preevy `urls` command](../cli/README.md#preevy-urls-service-port): an array of `{ service: string; port: number; url: string; project: string }`
+* Otherwise, the result of the [preevy `urls` command](https://github.com/livecycle/preevy/blob/main/packages/cli/README.md#preevy-urls-service-port): an array of `{ service: string; port: number; url: string; project: string }`
 
 Here is an example of a configuration file containing a customized template:
 

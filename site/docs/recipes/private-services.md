@@ -1,5 +1,5 @@
 ---
-title: "Private Services"
+title: "Private services"
 sidebar_position: 1
 ---
 
