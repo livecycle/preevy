@@ -8,7 +8,6 @@ import StoreInS3Screenshot from "./screenshots/store-in-s3.png";
 # Continuous Integration - Overview
 
 Preevy is designed to be easily run in CI/CD workflows, such as [GH Actions](https://github.com/features/actions), [Circle CI](https://circleci.com/) and others.
-By sharing [profiles](/intro/under-the-hood#profile-configuration), Preevy is able to easily deploy to the same VM when new code is pushed to some branch.
 
 The most common use-case for a CI job that runs Preevy is to have a live preview environment for every Pull Request as part of the review process. This allows for [more collaborative and inclusive review workflows](/intro/motivation)
 
@@ -16,8 +15,7 @@ The most common use-case for a CI job that runs Preevy is to have a live preview
 
 ### Make sure your profile is accessible remotely
 
-The Preevy Profile contains your tunneling key and driver data. The tunneling key determines the URLs generated per environment.
-The driver data allows you to update existing environments when a PR changes.
+The Preevy Profile contains your tunneling key and other configuration data. The tunneling key determines the URLs generated per environment.
 
 Preevy stores the profile on a file, on your local FS or on a remote storage on your cloud provider - currently AWS S3 and Google Cloud Storage are supported.
 To use the profile across CI jobs, it needs to be stored remotely.
@@ -37,7 +35,7 @@ When asked where to store the profile, choose `AWS S3` or `Google Cloud Storage`
 <br />
 
 Then, choose a URL to store the profile (Preevy will conveniently suggest one for you).
-For S3, it should look something like `s3://preview-8450209857-ci?region=us-east-1`
+For S3, it should look something like `s3://preview-123456789-ci?region=us-east-1`
 
 #### Option 2: If you already have a profile stored locally, migrate it to a remote location:
 
@@ -53,7 +51,7 @@ Once the profile has migrated to a remote location, you can specify the new loca
 Use the following commands in your CI job to import the Preevy Profile and provision an environment for your PR:
 
 ```bash
-preevy init --from "s3://preview-8450209857-ci?region=us-east-1"
+preevy init --from "s3://preview-123456789-ci?region=us-east-1"
 preevy up
 ```
 
