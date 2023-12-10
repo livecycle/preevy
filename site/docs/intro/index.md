@@ -5,7 +5,7 @@ parent: /intro
 
 ## Preevy - Easily create and manage ephemeral environments
 
-Preevy is an open source tool from Livecycle designed to easily provision, manage, and expose ephemeral environments for containerized applications in the cloud.
+Preevy is an Open Source tool from Livecycle designed to easily provision, manage, and expose ephemeral environments for containerized applications in the cloud.
 
 These environments are inexpensive, easy to integrate, customizable, and accessible for both technical and non-technical users.
 

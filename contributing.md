@@ -2,7 +2,7 @@
 
 Thanks for considering a contribution!
 
-Preevy is open source and we love to receive contributions from the community. Here are a few ideas for contributions:
+Preevy is Open Source and we love to receive contributions from the community. Here are a few ideas for contributions:
 
 * Expand and correct the documentation where needed
 * Add examples and how-tos for using Preevy in various scenarios: Guides on adding Preview Environments for your favorite front-end framework, Example CI integrations for more providers.
