@@ -5,54 +5,184 @@ title: Continuous Integration - Overview
 
 import StoreInS3Screenshot from "./screenshots/store-in-s3.png";
 
-# Continuous Integration - Overview
+# Add Preevy to your Continuous Integration Workflow
 
 Preevy is designed to be easily run in CI/CD workflows, such as [GH Actions](https://github.com/features/actions), [Circle CI](https://circleci.com/) and others.
 
 The most common use-case for a CI job that runs Preevy is to have a live preview environment for every Pull Request as part of the review process. This allows for [more collaborative and inclusive review workflows](/intro/motivation)
 
-## Running Preevy in your CI pipeline
 
-### Make sure your profile is accessible remotely
+## An overview of how to run Preevy in your CI pipeline
 
-The Preevy Profile contains your tunneling key and other configuration data. The tunneling key determines the URLs generated per environment.
+You can have your CI engine automatically create shareable preview environments for every upcoming pull request and get the team reviewing changes  [reviewing changes together](https://preevy.dev/intro/motivation) as soon as your ready to get their feedback.
 
-Preevy stores the profile on a file, on your local FS or on a remote storage on your cloud provider - currently AWS S3 and Google Cloud Storage are supported.
-To use the profile across CI jobs, it needs to be stored remotely.
-To create a new profile, run `preevy init`. To start using an existing profile stored remotely, run `preevy init --from <profile-location>`.
+Preevy is designed to be easily run in CI/CD workflows, such as [GH Actions](https://github.com/features/actions), [Circle CI](https://circleci.com/) and others. By sharing [profiles](https://preevy.dev/intro/under-the-hood#profile-configuration), Preevy is able to easily deploy to the same VM when new code is pushed to some branch.
 
-#### Option 1: Create a new Preevy Profile on a remote location
+Here are the steps we'll go through in this example:
+
+- 1. Install Preevy and Create a Profile
+- 2. Choose your cloud provider and store your profile
+- 3. Create your workflow files
+- 4. Add your Cloud Credentials
+- 5. Get automatic GitHub notifications
+
+***In this walkthrough, we’ll use GitHub Actions as an example.***
+
+The Preevy profile provides a mechanism for storing and sharing configuration and state between different machines. This allows sharing of environments between different CI jobs, or different developers. Using a shared profile ensures consistent configuration and stable URLs between different CI runs.
+
+Preevy includes built-in support for sharing profiles using [AWS S3](https://aws.amazon.com/s3/) and [Google Cloud Storage](https://cloud.google.com/storage/). You can also store the profile on the local filesystem and copy it manually.
+
+
+### 1. Install Preevy and Create Profile
+
+The first step is to install Preevy and create your profile file.
+
+- To create the Preevy profile, first install the Preevy CLI locally:
+
+```bash
+npm install -g preevy
+or
+yarn add -g preevy
+```
+
+- Or use `npx` to run the CLI without installing it:
+
+```bash
+npx preevy <command>
+
+```
+
+- Then, set up a Preevy profile:
 
 ```bash
 preevy init [profile-name]
+
 ```
 
-When asked where to store the profile, choose `AWS S3` or `Google Cloud Storage`.
+### 2. Choose your cloud provider and store your profile
+
+Next, choose where to store your profile. 
+
+The profile needs to be stored in the cloud (and not locally) because the profile needs to be kept in a remote location where it can be accessed by your CI/CD. 
+
+- When asked to choose a **cloud provider**, choose either `AWS` or `Google Cloud` .
+- When asked where to **store** the profile, choose `AWS S3` or `Google Cloud Storage`. For S3, the URL displayed in your terminal should look something like `s3://preview-8450209857-ci?region=us-east-1`
 
 <img src={StoreInS3Screenshot} width="75%" />
 
 <br />
 <br />
 
-Then, choose a URL to store the profile (Preevy will conveniently suggest one for you).
-For S3, it should look something like `s3://preview-8450209857-ci?region=us-east-1`
+- Add a repository variable named PREEVY_PROFILE_URL and set the value with the URL displayed in your terminal.
 
-#### Option 2: If you already have a profile stored locally, migrate it to a remote location:
+### 3. Create your workflow files
 
-```bash
-preevy profile cp --target-storage s3 # to use AWS S3
-preevy profile cp --target-storage gs # to use Google Cloud Storage
+Next you need to create two workflow files. The `Deploy Preevy environment` workflow file will create the preview environments based on specific triggers. The `Teardown Preevy environment` workflow file will bring down the running preview environments.
+
+- To create the `Deploy Preevy environment` workflow file, add the below workflow configuration by creating `preevy-up.yaml` file in the  `.github/workflows` directory:
+
+```yaml
+name: Deploy Preevy environment
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+concurrency: preevy-${{ github.event.number }}
+
+jobs:
+  deploy:
+    environment:
+      name: pr-${{ github.event.number }}
+      url: ${{ steps.store_url.outputs.url }}
+
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.PREEVY_SA_KEY }}'
+
+      - uses: livecycle/preevy-up-action@v1.2.0
+        id: preevy_up
+        with:
+          profile-url: ${{ vars.PREEVY_PROFILE_URL }}
+          # Set the compose files - comma separated
+          docker-compose-yaml-paths: compose.yaml
+
+      # Change `frontend` and `3000` in this step to your main service and port
+      # This will appear as the GH environment URL
+      - id: store_url
+        name: Store URL of frontend
+        run: |
+          echo url=$(echo '${{ steps.preevy_up.outputs.urls-json }}' | jq -r '.[] | select(.service=="frontend" and .port==3000).url') >> "$GITHUB_OUTPUT"
 ```
 
-Once the profile has migrated to a remote location, you can specify the new location URL in the `preevy init --from` command - see below.
+- To create the `Teardown Preevy environment` workflow file, add the below workflow configuration by creating `preevy-down.yaml` file in the  `.github/workflows` directory:
 
-### In your CI pipeline, import the profile
+```yaml
+name: Teardown Preevy environment
+on:
+  pull_request:
+    types:
+      - closed
 
-Use the following commands in your CI job to import the Preevy Profile and provision an environment for your PR:
+permissions:
+  id-token: write
+  contents: read
 
-```bash
-preevy init --from "s3://preview-8450209857-ci?region=us-east-1"
-preevy up
+concurrency: preevy-${{ github.event.number }}
+
+jobs:
+  teardown:
+    permissions: write-all
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          credentials_json: '${{ secrets.PREEVY_SA_KEY }}'
+
+      - uses: livecycle/preevy-down-action@latest
+        with:
+          profile-url: ${{ vars.PREEVY_PROFILE_URL }}
+          args: "--wait --force"
 ```
 
-See the next sections for detailed examples using GitHub Actions.
+- **Note:** The above workflow configuration example uses Google Cloud. If you are using AWS, use this configuration instead:
+
+```yaml
+- name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: [your-aws-role]
+        aws-region: [your-aws-region]
+```
+
+### 4. Add your Cloud Credentials
+
+You need to add your cloud credentials so that your CI can use them in your workflow.
+
+- Add a GitHub Actions Secrets with the name `PREEVY_SA_KEY` and the value set as your cloud credentials. For reference, see the Google Github Actions documentation [here](https://github.com/google-github-actions/auth).
+
+### 5. Get Automatic GitHub Notifications
+
+You’re all set! When you open a PR, Preevy will now build preview environments. You can also use the Preevy Github Plugin to post a GitHub notification with the links to each of the relevant services when they are available for review. Teammates can simply click these links and preview your latest changes in their browser. 
