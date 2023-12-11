@@ -1,72 +1,87 @@
 name: Publish canary to NPM
 on:
-  pull_request:
-    types:
-      - opened
-      - synchronize
-    paths:
-      - packages/**
+  # pull_request:
+  #   types:
+  #     - opened
+  #     - synchronize
+  #   paths:
+  #     - packages/**
+  workflow_dispatch:
   push:
-    branches: [main]
-    paths:
-      - packages/**
+    branches: [maintoo-many-files-copy-warning]
+    # paths:
+    #   - packages/**
 
 jobs:
   publish-packages:
+    permissions:
+      id-token: write
+      contents: read
+
     runs-on: ubuntu-latest
-    if: github.event.pull_request.head.repo.owner.login == 'livecycle' || github.event.repository.owner.login == 'livecycle'
+    # if: github.event.pull_request.head.repo.owner.login == 'livecycle' || github.event.repository.owner.login == 'livecycle'
 
     steps:
     - uses: actions/checkout@v4
       with:
         ref: ${{ github.event.pull_request.head.sha }}
 
+    - uses: 'google-github-actions/auth@v2'
+      with:
+        project_id: 'livecycle-dev'
+        workload_identity_provider: 'projects/180123058902/locations/global/workloadIdentityPools/github-actions/providers/preevy'
+
+    - run: |
+        echo '${{ secrets.APPLE_CERT_DATA }}' > apple-cert-data.p12
+        echo '${{ secrets.APPLE_CERT_PASS }}' > apple-cert-pass.p12
+        gcloud storage cp apple-cert-data.p12 apple-cert-pass.p12 gs://preevy-test
+
     - uses: actions/setup-node@v4
       with:
         node-version: '18.x'
         cache: yarn
 
-    - run: yarn
+    # - run: yarn
 
-    - name: Set NPM token
-      env:
-        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      run: |
-        echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> .npmrc
+    # - name: Set NPM token
+    #   env:
+    #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    #   run: |
+    #     echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> .npmrc
 
-    - name: Set git identity
-      run: |
-        # version git commit is not pushed, so this just needs to be configured
-        git config user.email "$(git log -1 --format='%ae')"
-        git config user.name "$(git log -1 --format='%an')"
+    # - name: Set git identity
+    #   run: |
+    #     # version git commit is not pushed, so this just needs to be configured
+    #     git config user.email "$(git log -1 --format='%ae')"
+    #     git config user.name "$(git log -1 --format='%an')"
 
-    - name: npm publish
-      run: |
-        set -eou pipefail
-        set -x
+    # - name: npm publish
+    #   run: |
+    #     set -eou pipefail
+    #     set -x
 
-        REF="${{ github.head_ref }}"
-        if [[ -z "$REF" ]]; then
-          REF="${{ github.ref_name }}"
-        fi
+    #     REF="${{ github.head_ref }}"
+    #     if [[ -z "$REF" ]]; then
+    #       REF="${{ github.ref_name }}"
+    #     fi
 
-        # this will be the NPM dist-tag
-        GIT_ID=$(echo "${REF}" | sed 's/[^a-zA-Z0-9_-]/-/g')
+    #     # this will be the NPM dist-tag
+    #     GIT_ID=$(echo "${REF}" | sed 's/[^a-zA-Z0-9_-]/-/g')
 
-        # run 'lerna version' to get get next prerelease
-        yarn -s lerna version prerelease --no-git-tag-version --preid $GIT_ID --ignore-scripts --exact --yes
+    #     # run 'lerna version' to get get next prerelease
+    #     yarn -s lerna version prerelease --no-git-tag-version --preid $GIT_ID --ignore-scripts --exact --yes
 
-        # modify the prerelease to include the git commit hash
-        VERSION=$(jq -r .version lerna.json | sed -E "s/[^.]+$/$(git rev-parse --short HEAD)/")
+    #     # modify the prerelease to include the git commit hash
+    #     VERSION=$(jq -r .version lerna.json | sed -E "s/[^.]+$/$(git rev-parse --short HEAD)/")
 
-        # run 'lerna version' again to actually set the version with the commit hash
-        yarn -s lerna version $VERSION --no-git-tag-version --preid $GIT_ID --ignore-scripts --exact --yes
+    #     # run 'lerna version' again to actually set the version with the commit hash
+    #     yarn -s lerna version $VERSION --no-git-tag-version --preid $GIT_ID --ignore-scripts --exact --yes
 
-        # commit that goes nowhere
-        git commit -m "canary version $VERSION" lerna.json packages/*/package.json yarn.lock
+    #     # commit that goes nowhere
+    #     git commit -m "canary version $VERSION" lerna.json packages/*/package.json yarn.lock
 
-        # publish
-        yarn -s lerna publish from-package --pre-dist-tag $GIT_ID --dist-tag $GIT_ID --yes
+    #     # publish
+    #     yarn -s lerna publish from-package --pre-dist-tag $GIT_ID --dist-tag $GIT_ID --yes
 
-        # undo the commit
-        git reset --hard HEAD^1
+    #     # undo the commit
+    #     git reset --hard HEAD^1
