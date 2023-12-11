@@ -44,6 +44,7 @@ const up = async ({
   tunnelOpts,
   userSpecifiedProjectName,
   userSpecifiedServices,
+  volumeSkipList,
   scriptInjections,
   composeFiles,
   log,
@@ -67,6 +68,7 @@ const up = async ({
   tunnelOpts: TunnelOpts
   userSpecifiedProjectName: string | undefined
   userSpecifiedServices: string[]
+  volumeSkipList: string[]
   composeFiles: string[]
   log: Logger
   dataDir: string
@@ -87,6 +89,7 @@ const up = async ({
   const {
     model,
     filesToCopy,
+    skippedVolumes,
     projectLocalDataDir,
     createCopiedFile,
   } = await modelCommand({
@@ -98,6 +101,7 @@ const up = async ({
     tunnelOpts,
     userSpecifiedProjectName,
     userSpecifiedServices,
+    volumeSkipList,
     scriptInjections,
     version,
     envId,
@@ -127,6 +131,10 @@ const up = async ({
       env: dockerContext.env,
     })).deployModel
   }
+
+  skippedVolumes.forEach(({ service, source, matchingRule }) => {
+    log.info(`Not copying volume "${source}" for service "${service}" because it matched skip glob "${matchingRule}"`)
+  })
 
   const modelStr = yaml.stringify(composeModel)
   log.debug('model', modelStr)

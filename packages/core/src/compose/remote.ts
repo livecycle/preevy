@@ -1,10 +1,11 @@
 import yaml from 'yaml'
 import path from 'path'
 import { mapValues } from 'lodash'
+import { MMRegExp, makeRe } from 'minimatch'
 import { asyncMap, asyncToArray } from 'iter-tools-es'
 import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, MachineStatusCommand, ScriptInjection, formatPublicKey } from '@preevy/common'
 import { MachineConnection } from '../driver'
-import { ComposeModel, ComposeSecretOrConfig, composeModelFilename } from './model'
+import { ComposeBindVolume, ComposeModel, ComposeSecretOrConfig, composeModelFilename } from './model'
 import { REMOTE_DIR_BASE, remoteProjectDir } from '../remote-files'
 import { TunnelOpts } from '../ssh'
 import { addComposeTunnelAgentService } from '../compose-tunnel-agent-client'
@@ -28,23 +29,42 @@ const serviceLinkEnvVars = (
     .map(({ name, port, url }) => [`PREEVY_BASE_URI_${name.replace(/[^a-zA-Z0-9_]/g, '_')}_${port}`.toUpperCase(), url])
 )
 
-const volumeSkipList = [
-  /^\/var\/log(\/|$)/,
-  /^\/var\/run(\/|$)/,
-  /^\/$/,
+export const defaultVolumeSkipList: string[] = [
+  '/var/log',
+  '/var/log/**',
+  '/var/run',
+  '/var/run/**',
+  '/',
 ]
 
 const toPosix = (x:string) => x.split(path.sep).join(path.posix.sep)
 
+export type SkippedVolume = { service: string; source: string; matchingRule: string }
+
 const fixModelForRemote = async (
-  { skipServices = [], cwd, remoteBaseDir }: {
+  { skipServices = [], cwd, remoteBaseDir, volumeSkipList = defaultVolumeSkipList }: {
     skipServices?: string[]
     cwd: string
     remoteBaseDir: string
+    volumeSkipList: string[]
   },
   model: ComposeModel,
-): Promise<{ model: Required<Omit<ComposeModel, 'x-preevy' | 'version'>>; filesToCopy: FileToCopy[] }> => {
+): Promise<{
+  model: Required<Omit<ComposeModel, 'x-preevy' | 'version'>>
+  filesToCopy: FileToCopy[]
+  skippedVolumes: SkippedVolume[]
+}> => {
+  const volumeSkipRes = volumeSkipList
+    .map(s => makeRe(path.resolve(cwd, s)))
+    .map((r, i) => {
+      if (!r) {
+        throw new Error(`Invalid glob pattern in volumeSkipList: "${volumeSkipList[i]}"`)
+      }
+      return r as MMRegExp
+    })
+
   const filesToCopy: FileToCopy[] = []
+  const skippedVolumes: SkippedVolume[] = []
 
   const remotePath = (absolutePath: string) => {
     if (!path.isAbsolute(absolutePath)) {
@@ -86,7 +106,9 @@ const fixModelForRemote = async (
         if (volume.type !== 'bind') {
           throw new Error(`Unsupported volume type: ${volume.type} in service ${serviceName}`)
         }
-        if (volumeSkipList.some(re => re.test(volume.source))) {
+        const matchingVolumeSkipIndex = volumeSkipRes.findIndex(re => re.test(volume.source))
+        if (matchingVolumeSkipIndex !== -1) {
+          skippedVolumes.push({ service: serviceName, source: volume.source, matchingRule: volumeSkipList[matchingVolumeSkipIndex] })
           return volume
         }
 
@@ -117,6 +139,7 @@ const fixModelForRemote = async (
       networks: model.networks ?? {},
     },
     filesToCopy,
+    skippedVolumes,
   }
 }
 
@@ -136,6 +159,7 @@ export const remoteComposeModel = async ({
   debug,
   userSpecifiedProjectName,
   userSpecifiedServices,
+  volumeSkipList,
   composeFiles,
   log,
   cwd,
@@ -147,6 +171,7 @@ export const remoteComposeModel = async ({
   debug: boolean
   userSpecifiedProjectName: string | undefined
   userSpecifiedServices: string[]
+  volumeSkipList: string[]
   composeFiles: string[]
   log: Logger
   cwd: string
@@ -172,8 +197,8 @@ export const remoteComposeModel = async ({
     ? [...userSpecifiedServices].concat(COMPOSE_TUNNEL_AGENT_SERVICE_NAME)
     : []
 
-  const { model: fixedModel, filesToCopy } = await fixModelForRemote(
-    { cwd, remoteBaseDir: remoteDir },
+  const { model: fixedModel, filesToCopy, skippedVolumes } = await fixModelForRemote(
+    { cwd, remoteBaseDir: remoteDir, volumeSkipList },
     await modelFilter(await composeClientWithInjectedArgs.getModel(services)),
   )
 
@@ -215,5 +240,5 @@ export const remoteComposeModel = async ({
     filesToCopy.push(sshPrivateKeyFile, knownServerPublicKey)
   }
 
-  return { model, filesToCopy, linkEnvVars }
+  return { model, filesToCopy, skippedVolumes, linkEnvVars }
 }

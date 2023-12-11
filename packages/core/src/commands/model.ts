@@ -14,6 +14,7 @@ const composeModel = async ({
   tunnelOpts,
   userSpecifiedProjectName,
   userSpecifiedServices,
+  volumeSkipList,
   scriptInjections,
   composeFiles,
   log,
@@ -33,6 +34,7 @@ const composeModel = async ({
   tunnelOpts: TunnelOpts
   userSpecifiedProjectName: string | undefined
   userSpecifiedServices: string[]
+  volumeSkipList: string[]
   composeFiles: string[]
   log: Logger
   dataDir: string
@@ -55,6 +57,7 @@ const composeModel = async ({
     debug,
     userSpecifiedProjectName,
     userSpecifiedServices,
+    volumeSkipList,
     composeFiles,
     log,
     cwd,
