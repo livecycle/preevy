@@ -30,6 +30,7 @@ const serviceLinkEnvVars = (
 
 const volumeSkipList = [
   /^\/var\/log(\/|$)/,
+  /^\/var\/run(\/|$)/,
   /^\/$/,
 ]
 
