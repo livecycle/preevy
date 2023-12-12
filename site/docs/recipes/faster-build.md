@@ -30,15 +30,15 @@ Preevy can use [BuildKit builders](https://docs.docker.com/build/builders/) to o
 
 Specify a builder using the `--builder` flag at the `preevy up` command. If not specified, the [default builder](https://docs.docker.com/build/builders/#selected-builder) will be used.
 
-Out-of-the-box, Docker's default builder uses the [Docker driver](https://docs.docker.com/build/drivers/docker/). This driver uses the connected Docker Server to build. Preevy sets the Docker Server to the provisioned machine's Docker Server (using the `DOCKER_HOST` environment variable), so the build runs there.
+Out-of-the-box, Docker's default builder uses the [Docker driver](https://docs.docker.com/build/deploy-runtimes/docker/). This driver uses the connected Docker Server to build. Preevy sets the Docker Server to the provisioned machine's Docker Server (using the `DOCKER_HOST` environment variable), so the build runs there.
 
 To run the build on the local machine (where the `preevy` CLI runs), or a remote server, configure a builder with a different driver. The [`docker buildx create` command](https://docs.docker.com/engine/reference/commandline/buildx_create) can be used to created a builder.
 
 ### Choosing a builder driver
 
-- The [Docker container](https://docs.docker.com/build/drivers/docker-container/) driver is the simplest option - it will run the build on the Docker server of the local machine.
-- Use the [Kubernetes driver](https://docs.docker.com/build/drivers/kubernetes/) to run the build on a Kubernetes cluster. Kubernetes can be set up to allocate powerful servers to the build.
-- Use the [Remote driver](https://docs.docker.com/build/drivers/remote/) to connect to a remote BuildKit daemon.
+- The [Docker container](https://docs.docker.com/build/deploy-runtimes/docker-container/) driver is the simplest option - it will run the build on the Docker server of the local machine.
+- Use the [Kubernetes driver](https://docs.docker.com/build/deploy-runtimes/kubernetes/) to run the build on a Kubernetes cluster. Kubernetes can be set up to allocate powerful servers to the build.
+- Use the [Remote driver](https://docs.docker.com/build/deploy-runtimes/remote/) to connect to a remote BuildKit daemon.
 - Use a 3rd party service like [Depot](https://depot.dev/docs/guides/docker-build) to host the build. Preevy can work with any builder that runs via `docker buildx build`.
 
 ### Setting up a builder in GitHub Actions
@@ -51,7 +51,7 @@ Preevy can automatically add the `cache_to` and `cache_from` directives in the [
 
 To share the cache across different CI runs, it needs to be stored on a remote backend - not on the build machine, which is usually ephemeral.
 
-Exporting a cache to a remote backend is not supported on the default Docker builder (see the table [here](https://docs.docker.com/build/drivers/)), so in order to use this feature, define and use a different BuildKit builder as described in [part 1](#part-1-offload-the-build).
+Exporting a cache to a remote backend is not supported on the default Docker builder (see the table [here](https://docs.docker.com/build/deploy-runtimes/)), so in order to use this feature, define and use a different BuildKit builder as described in [part 1](#part-1-offload-the-build).
 
 ### Generated image refs
 

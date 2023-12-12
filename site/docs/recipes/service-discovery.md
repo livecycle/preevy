@@ -1,5 +1,5 @@
 ---
-title: "Service discovery using environment variables"
+title: "Service discovery"
 sidebar_position: 3
 ---
 

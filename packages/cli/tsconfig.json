@@ -15,7 +15,7 @@
   "include": [
     "src/**/*"
   ],
-  "exclude": ["dist"],
+  "exclude": ["dist", "lint-staged.config.cjs"],
   "references": [
     { "path": "../core" },
     { "path": "../compose-tunnel-agent" },

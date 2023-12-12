@@ -7,7 +7,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula')
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'Preevy',
-  tagline: 'Provision preview environments with minimal configuration m',
+  tagline: 'Provision preview environments with minimal configuration',
   favicon: 'img/favicon.svg',
 
   // Set the production url of your site here
@@ -39,7 +39,11 @@ const config = {
             'https://github.com/livecycle/preevy/tree/main/site',
           remarkPlugins: [
             [require('@docusaurus/remark-plugin-npm2yarn'), { sync: true }],
+            [require('./extract-markdown-section'), {}],
           ],
+          // beforeDefaultRemarkPlugins: [
+          //   [require('./extract-markdown-section'), {}],
+          // ],
         },
         blog: false,
         theme: {
@@ -95,6 +99,28 @@ const config = {
         darkTheme: darkCodeTheme,
       },
     }),
+
+  plugins: [
+    [
+      '@docusaurus/plugin-client-redirects',
+      /** @type {import('@docusaurus/plugin-client-redirects').Options} */
+      {
+        redirects: [
+          // {
+          //   from: '/integrations/github-plugin.md',
+          //   to: '/ci-integration/.md',
+          // },
+        ],
+        createRedirects: existingPath => {
+          if (existingPath.startsWith('/deploy-runtimes/')) {
+            return existingPath.replace('/deploy-runtimes/', '/drivers/')
+          }
+
+          return undefined
+        }
+      },
+    ],
+  ],
 }
 
 module.exports = config
