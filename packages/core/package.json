@@ -73,7 +73,7 @@
     "typescript": "^5.2.2"
   },
   "scripts": {
-    "test": "yarn jest",
+    "test": "yarn node --experimental-vm-modules $(yarn bin jest)",
     "lint": "eslint . --ext .ts,.tsx --cache",
     "clean": "shx rm -rf dist tsconfig.tsbuildinfo",
     "build": "tsc -b",
