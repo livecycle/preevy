@@ -1,10 +1,12 @@
-import { readable as isReadableStream } from 'is-stream'
+import { default as isStreamModule } from 'is-stream'
 import { ProcessOutputBuffers } from '@preevy/common'
 import { Readable, Writable } from 'stream'
 import { ChildProcess, StdioOptions, spawn } from 'child_process'
 import { BaseExecOpts, ExecError, ReadableBufferStream, callbackWritableStream } from './common.js'
 
 const isStreamWithFileDescriptor = (s: unknown) => typeof (s as { fd: number }).fd === 'number'
+
+const { readable: isReadableStream } = isStreamModule
 
 export class ProcessExecError extends ExecError {
   constructor(

@@ -3,7 +3,7 @@ import path from 'path'
 import Docker from 'dockerode'
 import { rimraf } from 'rimraf'
 import { pino } from 'pino'
-import { PinoPretty } from 'pino-pretty'
+import { default as pinoPrettyModule } from 'pino-pretty'
 import {
   requiredEnv,
   formatPublicKey,
@@ -20,6 +20,8 @@ import { runMachineStatusCommand } from './src/machine-status.js'
 import { envMetadata } from './src/metadata.js'
 import { readAllFiles } from './src/files.js'
 import { eventsClient as dockerEventsClient, filteredClient as dockerFilteredClient } from './src/docker/index.js'
+
+const PinoPretty = pinoPrettyModule.default
 
 const homeDir = process.env.HOME || '/root'
 const dockerSocket = '/var/run/docker.sock'

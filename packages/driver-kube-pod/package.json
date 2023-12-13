@@ -18,7 +18,7 @@
     "@preevy/common": "0.0.58",
     "@preevy/core": "0.0.58",
     "fast-safe-stringify": "^2.1.1",
-    "inquirer": "^8.0.0",
+    "@inquirer/prompts": "^3.3.0",
     "is-stream": "^2.0.1",
     "iter-tools-es": "^7.5.3",
     "lodash-es": "^4.17.21",
@@ -46,13 +46,13 @@
     "shx": "^0.3.3",
     "ts-node": "^10.9.1",
     "tslib": "^2.5.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.3.3"
   },
   "scripts": {
     "test": "yarn node --experimental-vm-modules ../../node_modules/.bin/jest",
     "lint": "eslint . --ext .ts,.tsx --cache",
     "clean": "shx rm -rf dist tsconfig.tsbuildinfo",
-    "build": "tsc -b",
+    "build": "tsc -b && shx cp -r static dist",
     "prepack": "yarn clean && yarn build",
     "prepare": "cd ../.. && husky install"
   }

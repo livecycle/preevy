@@ -16,7 +16,7 @@ import { Readable, Writable } from 'stream'
 import { orderedOutput } from '@preevy/common'
 import { DeploymentMachine, ResourceType, machineFromDeployment } from './common.js'
 import createClient, { Client, extractName, loadKubeConfig } from './client/index.js'
-import { PACKAGE_JSON, DEFAULT_TEMPLATE } from '../static.js'
+import { DEFAULT_TEMPLATE, packageJson } from '../static.js'
 
 export type DriverContext = {
   log: Logger
@@ -177,8 +177,8 @@ export const clientFromConfiguration = ({ flags: f, profileId, log }: {
   kc: loadKubeConfig(f.kubeconfig, f.context),
   kubeconfig: f.kubeconfig,
   profileId,
-  package: fs.promises.readFile(PACKAGE_JSON, 'utf-8').then(JSON.parse),
-  template: fs.promises.readFile(f.template || DEFAULT_TEMPLATE, 'utf-8'),
+  package: packageJson,
+  template: fs.readFileSync(f.template || DEFAULT_TEMPLATE, 'utf-8'),
 })
 
 export const factory: MachineDriverFactory<

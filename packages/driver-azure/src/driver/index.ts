@@ -1,7 +1,7 @@
 import { Flags, Interfaces } from '@oclif/core'
 import { asyncFirst, asyncMap } from 'iter-tools-es'
-import inquirer, { Question } from 'inquirer'
-import inquirerAutoComplete from 'inquirer-autocomplete-prompt'
+import * as inquirer from '@inquirer/prompts'
+import inquirerAutoComplete from 'inquirer-autocomplete-standalone'
 import { InferredFlags } from '@oclif/core/lib/interfaces'
 import { Resource, VirtualMachine } from '@azure/arm-compute'
 import { inspect } from 'util'
@@ -26,8 +26,6 @@ import { pick } from 'lodash-es'
 import { Client, client as createClient, REGIONS } from './client.js'
 import { CUSTOMIZE_BARE_MACHINE } from './scripts.js'
 import { AzureCustomTags, extractResourceGroupNameFromId } from './vm-creation-utils.js'
-
-inquirer.registerPrompt('autocomplete', inquirerAutoComplete)
 
 type RootObjectDetailsError = {
   code: string
@@ -145,32 +143,25 @@ const flags = {
 
 type FlagTypes = Omit<Interfaces.InferredFlags<typeof flags>, 'json'>
 
-const questions = async (): Promise<Question[]> => [
-  {
-    type: 'autocomplete',
-    name: 'region',
-    message: flags.region.description,
-    source: async (_opts, input) => !input || REGIONS.filter(r => r.includes(input.toLowerCase())),
+const inquireFlags = async () => {
+  const region = await inquirerAutoComplete<string>({
+    message: flags.region.description as string,
+    source: async input => REGIONS.filter(r => !input || r.includes(input.toLowerCase())).map(value => ({ value })),
     suggestOnly: true,
-    filter: i => i.toLowerCase(),
-  } as inquirerAutoComplete.AutocompleteQuestionOptions,
-  {
-    type: 'input',
-    name: 'subscription-id',
-    default: async () => {
-      const credential = new DefaultAzureCredential()
-      const subscriptionClient = new SubscriptionClient(credential)
-      const subscription = await asyncFirst(subscriptionClient.subscriptions.list())
-      return subscription?.subscriptionId || ''
-    },
-    message: flags['subscription-id'].description,
-  },
-]
+    transformer: i => i.toLowerCase(),
+  })
 
-const flagsFromAnswers = async (answers: Record<string, unknown>) => ({
-  region: answers.region,
-  'subscription-id': answers['subscription-id'],
-})
+  const credential = new DefaultAzureCredential()
+  const subscriptionClient = new SubscriptionClient(credential)
+  const defaultSubscriptionId = (await asyncFirst(subscriptionClient.subscriptions.list()))?.subscriptionId
+
+  const subscriptionId = await inquirer.input({
+    message: flags['subscription-id'].description as string,
+    default: defaultSubscriptionId,
+  })
+
+  return { region, 'subscription-id': subscriptionId }
+}
 
 const contextFromFlags = ({
   region,
@@ -297,6 +288,5 @@ export default {
   factory,
   machineCreationFlags,
   machineCreationFactory,
-  questions,
-  flagsFromAnswers,
+  inquireFlags,
 } as const

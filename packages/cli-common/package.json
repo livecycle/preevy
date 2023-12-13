@@ -3,6 +3,7 @@
   "version": "0.0.58",
   "description": "Common library for the Preevy CLI and plugins",
   "type": "module",
+  "main": "dist/index.js",
   "exports": {
     ".": "./dist/index.js"
   },
@@ -33,7 +34,7 @@
     "lint-staged": "^15.2.0",
     "shx": "^0.3.3",
     "tslib": "^2.5.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.3.3"
   },
   "scripts": {
     "lint": "eslint . --ext .ts,.tsx --cache",

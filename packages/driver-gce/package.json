@@ -19,8 +19,8 @@
     "@preevy/core": "0.0.58",
     "google-auth-library": "^8.7.0",
     "google-gax": "^4.0.5",
-    "inquirer": "^8.0.0",
-    "inquirer-autocomplete-prompt": "^2.0.0",
+    "@inquirer/prompts": "^3.3.0",
+    "inquirer-autocomplete-standalone": "^0.8.1",
     "iter-tools-es": "^7.5.3",
     "lodash-es": "^4.17.21"
   },
@@ -44,12 +44,12 @@
     "shx": "^0.3.3",
     "ts-node": "^10.9.1",
     "tslib": "^2.5.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.3.3"
   },
   "scripts": {
     "lint": "eslint . --ext .ts,.tsx --cache",
     "clean": "shx rm -rf dist tsconfig.tsbuildinfo",
-    "build": "tsc -b",
+    "build": "tsc -b && shx cp -r static dist",
     "prepack": "yarn clean && yarn build",
     "prepare": "cd ../.. && husky install"
   }
