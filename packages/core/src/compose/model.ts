@@ -1,4 +1,4 @@
-import { PreevyConfig } from '../config'
+import { PreevyConfig } from '../config.js'
 
 export type ComposeSecretOrConfig = {
   name: string

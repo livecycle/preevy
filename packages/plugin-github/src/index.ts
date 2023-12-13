@@ -1,9 +1,9 @@
 import { Plugin } from '@preevy/cli-common'
-import { envCreated, envDeleted, userModelFilter } from './hooks'
-import { PluginConfig } from './config'
-import { upDownFlagsDef } from './flags'
-import CommentGithubPr from './commands/github/pr/comment'
-import UnCommentGithubPr from './commands/github/pr/uncomment'
+import { envCreated, envDeleted, userModelFilter } from './hooks.js'
+import { PluginConfig } from './config.js'
+import { upDownFlagsDef } from './flags.js'
+import CommentGithubPr from './commands/github/pr/comment.js'
+import UnCommentGithubPr from './commands/github/pr/uncomment.js'
 
 export const preevyPlugin: Plugin<PluginConfig> = {
   init: async context => ({

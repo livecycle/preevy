@@ -1,5 +1,5 @@
 import ora from 'ora'
-import { overrideGetterSetter } from './object'
+import { overrideGetterSetter } from './object.js'
 
 export type SpinnerOptions = ora.Options & {
   opPrefix?: string

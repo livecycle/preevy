@@ -1,5 +1,5 @@
 import path from 'path'
-import { SCRIPT_DIR as DIR } from '../static'
+import { SCRIPT_DIR as DIR } from '../static.js'
 
 export const CUSTOMIZE_BARE_MACHINE = [
   'increase-open-files-limits.sh',

@@ -1,7 +1,7 @@
 import { mapValues, pickBy } from 'lodash'
-import { ComposeModel } from './compose'
-import { randomString } from './strings'
-import { hasProp } from './nulls'
+import { ComposeModel } from './compose/index.js'
+import { randomString } from './strings.js'
+import { hasProp } from './nulls.js'
 
 export type ImageRegistry = { registry: string; singleName?: string }
 

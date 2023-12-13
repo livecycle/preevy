@@ -1,8 +1,11 @@
 {
   "name": "@preevy/plugin-github",
   "version": "0.0.58",
-  "description": "",
-  "main": "dist/index.js",
+  "description": "Preevy plugin for GitHub",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "type": "module",
   "files": [
     "dist"
   ],

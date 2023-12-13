@@ -1,7 +1,7 @@
 import { ScriptInjection, COMPOSE_TUNNEL_AGENT_SERVICE_LABELS as PREEVY_LABELS, parseScriptInjectionLabels } from '@preevy/common'
 import Docker from 'dockerode'
-import { portFilter } from './filters'
-import { COMPOSE_PROJECT_LABEL, COMPOSE_SERVICE_LABEL } from './labels'
+import { portFilter } from './filters.js'
+import { COMPOSE_PROJECT_LABEL, COMPOSE_SERVICE_LABEL } from './labels.js'
 
 export type RunningService = {
   project: string

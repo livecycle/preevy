@@ -2,10 +2,10 @@ import path from 'path'
 import { rimraf } from 'rimraf'
 import { isEmpty, mapValues } from 'lodash'
 import { find, range, map } from 'iter-tools-es'
-import { localFs } from '../store/fs/local'
-import { Store, VirtualFS, store, tarSnapshot } from '../store'
-import { ProfileEditor, profileStore } from './store'
-import { Profile } from './profile'
+import { localFs } from '../store/fs/local.js'
+import { Store, VirtualFS, store, tarSnapshot } from '../store/index.js'
+import { ProfileEditor, profileStore } from './store.js'
+import { Profile } from './profile.js'
 
 type ProfileListEntry = {
   alias: string

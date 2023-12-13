@@ -2,8 +2,8 @@ import Docker from 'dockerode'
 import { tryParseJson, Logger, ScriptInjection } from '@preevy/common'
 import { throttle } from 'lodash'
 import { inspect } from 'util'
-import { filters } from './filters'
-import { containerToService } from './services'
+import { filters } from './filters.js'
+import { containerToService } from './services.js'
 
 export type RunningService = {
   project: string

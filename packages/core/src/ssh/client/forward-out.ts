@@ -1,7 +1,7 @@
 import util from 'util'
 import net, { AddressInfo, ListenOptions } from 'net'
 import ssh2 from 'ssh2'
-import { Logger } from '../../log'
+import { Logger } from '../../log.js'
 
 export type ForwardOutStreamLocal = AsyncDisposable & {
   localSocket: string | AddressInfo

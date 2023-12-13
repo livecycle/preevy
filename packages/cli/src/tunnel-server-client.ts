@@ -9,7 +9,7 @@ import {
 import os from 'os'
 import { ux } from '@oclif/core'
 import { parseSshUrl } from '@preevy/common'
-import { carefulBooleanPrompt } from './prompt'
+import { carefulBooleanPrompt } from './prompt.js'
 
 const confirmHostFingerprint = async (
   { hostKeyFingerprint: hostKeySignature, hostname, port }: Parameters<HostKeySignatureConfirmer>[0],

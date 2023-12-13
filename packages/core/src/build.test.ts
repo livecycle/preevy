@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from '@jest/globals'
-import { ImageRegistry, generateBuild, parseRegistry } from './build'
-import { ComposeModel, ComposeService } from './compose'
+import { ImageRegistry, generateBuild, parseRegistry } from './build.js'
+import { ComposeModel, ComposeService } from './compose/index.js'
 
 describe('build', () => {
   const ECR_BASE_REGISTRY = '123456789.dkr.ecr.us-east-1.amazonaws.com'

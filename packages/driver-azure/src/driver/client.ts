@@ -18,7 +18,7 @@ import {
   extractResourceNameFromId,
   findVMImage,
   getIpAddresses,
-} from './vm-creation-utils'
+} from './vm-creation-utils.js'
 
 // Uncomment to see Azure logs (import @azure/logger)
 // setLogLevel('info')

@@ -3,9 +3,9 @@ import { createWebSocketStream } from 'ws'
 import z from 'zod'
 import { FastifyPluginAsync } from 'fastify'
 import Dockerode from 'dockerode'
-import { DockerFilterClient } from '../../docker'
-import { containerIdSchema, execQueryString } from './schema'
-import { inspectFilteredContainer } from './filter'
+import { DockerFilterClient } from '../../docker/index.js'
+import { containerIdSchema, execQueryString } from './schema.js'
+import { inspectFilteredContainer } from './filter.js'
 
 const handler: FastifyPluginAsync<{
   docker: Dockerode

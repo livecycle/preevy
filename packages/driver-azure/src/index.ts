@@ -1,3 +1,3 @@
-import azure from './driver'
+import azure from './driver/index.js'
 
 export default azure

@@ -1,5 +1,5 @@
-import { CiProvider } from './base'
-import { nanToUndefined } from './common'
+import { CiProvider } from './base.js'
+import { nanToUndefined } from './common.js'
 
 // https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
 export const travisCiProvider = (): CiProvider => ({

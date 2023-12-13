@@ -1,8 +1,8 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
 import { MachineConnection, MachineDriver, isPartialMachine, profileStore } from '@preevy/core'
 import { pickBy } from 'lodash'
-import { DriverFlags, DriverName, FlagType, flagsForAllDrivers, machineDrivers, removeDriverPrefix } from './drivers'
-import ProfileCommand from './profile-command'
+import { DriverFlags, DriverName, FlagType, flagsForAllDrivers, machineDrivers, removeDriverPrefix } from './drivers.js'
+import ProfileCommand from './profile-command.js'
 
 // eslint-disable-next-line no-use-before-define
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof DriverCommand['baseFlags'] & T['flags']>

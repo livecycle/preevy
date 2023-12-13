@@ -2,7 +2,10 @@
   "name": "@preevy/driver-lightsail",
   "version": "0.0.58",
   "description": "AWS Lightsail driver for Preevy",
-  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "type": "module",
   "types": "dist/index.d.ts",
   "files": [
     "dist",

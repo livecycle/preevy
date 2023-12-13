@@ -4,8 +4,8 @@ import fs from 'fs'
 import os from 'os'
 import { rimraf } from 'rimraf'
 import { pseudoRandomBytes } from 'crypto'
-import { tarStreamer } from './tar'
-import { execPromise, execPromiseStdout } from '../child-process'
+import { tarStreamer } from './tar.js'
+import { execPromise, execPromiseStdout } from '../child-process.js'
 
 describe('tar', () => {
   let tempDir: string

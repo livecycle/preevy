@@ -6,12 +6,12 @@ import { rimraf } from 'rimraf'
 import { inspect } from 'util'
 import { AddressInfo } from 'net'
 import retry, { Options as RetryOptions } from 'p-retry'
-import { Store } from '../store'
-import { SshKeyPair, connectSshClient } from '../ssh'
-import { MachineConnection, MachineDriver } from './driver'
-import { MachineBase } from './machine-model'
-import { sshKeysStore } from '../state'
-import { Logger } from '../log'
+import { Store } from '../store/index.js'
+import { SshKeyPair, connectSshClient } from '../ssh/index.js'
+import { MachineConnection, MachineDriver } from './driver.js'
+import { MachineBase } from './machine-model.js'
+import { sshKeysStore } from '../state/index.js'
+import { Logger } from '../log.js'
 
 export type SshMachine = MachineBase & {
   version: string

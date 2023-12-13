@@ -1,6 +1,6 @@
 import { describe, it, expect } from '@jest/globals'
 import { repeat } from 'lodash'
-import { envRandomName } from './metadata'
+import { envRandomName } from './metadata.js'
 
 describe('metadata', () => {
   describe('envRandomName', () => {

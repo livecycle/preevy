@@ -6,9 +6,9 @@ import {
   extractDriverFlags,
   flagsForAllDrivers,
   machineCreationflagsForAllDrivers,
-} from '../../drivers'
-import ProfileCommand from '../../profile-command'
-import DriverCommand from '../../driver-command'
+} from '../../drivers.js'
+import ProfileCommand from '../../profile-command.js'
+import DriverCommand from '../../driver-command.js'
 
 // eslint-disable-next-line no-use-before-define
 export default class CreateProfile extends ProfileCommand<typeof CreateProfile> {

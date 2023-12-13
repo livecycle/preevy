@@ -1,4 +1,4 @@
-import { tryParseUrl } from '../url'
+import { tryParseUrl } from '../url.js'
 
 export const nanToUndefined = (value: number) => (Number.isNaN(value) ? undefined : value)
 

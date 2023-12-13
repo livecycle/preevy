@@ -1,4 +1,4 @@
-import { simpleEmitter } from './simple'
+import { simpleEmitter } from './simple.js'
 
 const EVENT = 'state'
 

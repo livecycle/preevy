@@ -2,8 +2,8 @@ import {
   BaseSshClient, SshClientOpts, SshConnectionConfig, baseSshClient,
   formatSshConnectionConfig, keyFingerprint,
 } from '@preevy/common'
-import { Logger } from '../log'
-import { TunnelOpts } from '../ssh'
+import { Logger } from '../log.js'
+import { TunnelOpts } from '../ssh/index.js'
 
 export class UnverifiedHostKeyError extends Error {
   constructor(

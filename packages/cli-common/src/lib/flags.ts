@@ -1,5 +1,5 @@
 import { Flag } from '@oclif/core/lib/interfaces'
-import { Parser } from '@oclif/core/lib/parser/parse'
+import { Parser } from '@oclif/core/lib/parser/parse.js'
 
 type FlagSpec<T> =Pick<Flag<T>, 'type' | 'default'>
 

@@ -1,12 +1,11 @@
 /* eslint-disable no-await-in-loop */
-import fetch from 'node-fetch'
 import * as jose from 'jose'
 import { z } from 'zod'
 import open from 'open'
 import inquirer from 'inquirer'
-import { VirtualFS, localFs } from './store'
-import { Logger } from './log'
-import { withSpinner } from './spinner'
+import { VirtualFS, localFs } from './store/index.js'
+import { Logger } from './log.js'
+import { withSpinner } from './spinner.js'
 
 export class TokenExpiredError extends Error {
   constructor() {
@@ -164,7 +163,7 @@ export const login = async (dataDir: string, loginUrl: string, lcUrl: string, cl
   )
 
   if (postLoginResponse.ok) {
-    const postLoginData: PostLoginResult = await postLoginResponse.json()
+    const postLoginData = await postLoginResponse.json() as PostLoginResult
     if (!('currentOrg' in postLoginData)) {
       const {
         orgName,

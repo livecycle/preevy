@@ -4,9 +4,9 @@ import confirm from '@inquirer/confirm'
 import { BaseCommand, text } from '@preevy/cli-common'
 import { Flag } from '@oclif/core/lib/interfaces'
 import { nextAvailableAlias } from '@preevy/core'
-import { DriverName, formatDriverFlagsToArgs, machineDrivers } from '../drivers'
-import { loadProfileConfig } from '../profile-command'
-import { chooseFs, chooseFsType } from '../fs'
+import { DriverName, formatDriverFlagsToArgs, machineDrivers } from '../drivers.js'
+import { loadProfileConfig } from '../profile-command.js'
+import { chooseFs, chooseFsType } from '../fs.js'
 
 const chooseDriver = async () => (await inquirer.prompt<{ driver: DriverName }>([
   {

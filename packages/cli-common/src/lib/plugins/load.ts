@@ -1,11 +1,11 @@
 import { Config } from '@oclif/core'
 import { InferredFlags } from '@oclif/core/lib/interfaces'
 import { config as coreConfig } from '@preevy/core'
-import { InitResults, PluginModule } from './model'
-import { PluginInitContext } from './context'
+import { InitResults, PluginModule } from './model.js'
+import { PluginInitContext } from './context.js'
 import PreevyPluginConfig = coreConfig.PreevyPluginConfig
-import { pluginFlags } from '../common-flags'
-import { DEFAULT_PLUGINS } from './default-plugins'
+import { pluginFlags } from '../common-flags/index.js'
+import { DEFAULT_PLUGINS } from './default-plugins.js'
 
 export type LoadedPlugin = {
   initResults: InitResults

@@ -14,9 +14,9 @@ import { asyncMap } from 'iter-tools-es'
 import { AddressInfo } from 'net'
 import { Readable, Writable } from 'stream'
 import { orderedOutput } from '@preevy/common'
-import { DeploymentMachine, ResourceType, machineFromDeployment } from './common'
-import createClient, { Client, extractName, loadKubeConfig } from './client'
-import { PACKAGE_JSON, DEFAULT_TEMPLATE } from '../static'
+import { DeploymentMachine, ResourceType, machineFromDeployment } from './common.js'
+import createClient, { Client, extractName, loadKubeConfig } from './client/index.js'
+import { PACKAGE_JSON, DEFAULT_TEMPLATE } from '../static.js'
 
 export type DriverContext = {
   log: Logger

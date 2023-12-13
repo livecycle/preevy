@@ -5,8 +5,8 @@ import {
   localComposeClient, findEnvId, MachineConnection, ComposeModel, remoteUserModel, dockerEnvContext,
 } from '@preevy/core'
 import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME } from '@preevy/common'
-import DriverCommand from '../driver-command'
-import { envIdFlags } from '../common-flags'
+import DriverCommand from '../driver-command.js'
+import { envIdFlags } from '../common-flags.js'
 
 const validateServices = (
   specifiedServices: string[],

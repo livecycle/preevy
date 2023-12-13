@@ -1,6 +1,6 @@
 import { InputQuestion, ListQuestion, ConfirmQuestion, Separator } from 'inquirer'
-import { MachineCreationFlagTypes, flags } from './creation-driver'
-import { loadKubeConfig } from './client'
+import { MachineCreationFlagTypes, flags } from './creation-driver.js'
+import { loadKubeConfig } from './client/index.js'
 
 export const questions = async (): Promise<(InputQuestion | ListQuestion | ConfirmQuestion)[]> => [
   {

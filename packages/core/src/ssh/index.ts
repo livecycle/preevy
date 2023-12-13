@@ -1,3 +1,3 @@
-export * from './keypair'
-export * from './url'
-export * from './client'
+export * from './keypair.js'
+export * from './url.js'
+export * from './client/index.js'

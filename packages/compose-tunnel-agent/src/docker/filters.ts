@@ -1,6 +1,6 @@
 import Docker from 'dockerode'
 import { COMPOSE_TUNNEL_AGENT_SERVICE_LABELS } from '@preevy/common'
-import { COMPOSE_PROJECT_LABEL } from './labels'
+import { COMPOSE_PROJECT_LABEL } from './labels.js'
 
 export type RunningService = {
   project: string

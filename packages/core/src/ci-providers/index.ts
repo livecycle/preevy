@@ -1,9 +1,9 @@
-import { azurePipelinesCiProvider } from './azure-pipelines'
-import { CiProvider } from './base'
-import { circleCiProvider } from './circle'
-import { githubActionsCiProvider } from './github-actions'
-import { gitlabActionsCiProvider } from './gitlab'
-import { travisCiProvider } from './travis'
+import { azurePipelinesCiProvider } from './azure-pipelines.js'
+import { CiProvider } from './base.js'
+import { circleCiProvider } from './circle.js'
+import { githubActionsCiProvider } from './github-actions.js'
+import { gitlabActionsCiProvider } from './gitlab.js'
+import { travisCiProvider } from './travis.js'
 
 export const ciProviders = {
   githubActions: githubActionsCiProvider(),
@@ -16,4 +16,4 @@ export const ciProviders = {
 export const detectCiProvider = (): CiProvider | undefined => Object.values(ciProviders)
   .find(p => p.currentlyRunningInProvider())
 
-export { CiProvider } from './base'
+export { CiProvider } from './base.js'

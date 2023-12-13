@@ -1,5 +1,5 @@
-import { CiProvider } from './base'
-import { extractPrNumberFromUrlPath, stringOrUndefinedToNumber } from './common'
+import { CiProvider } from './base.js'
+import { extractPrNumberFromUrlPath, stringOrUndefinedToNumber } from './common.js'
 
 // https://circleci.com/docs/variables/#built-in-environment-variables
 export const circleCiProvider = (): CiProvider => ({

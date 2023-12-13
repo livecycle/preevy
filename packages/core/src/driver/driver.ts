@@ -1,10 +1,10 @@
 import { MachineStatusCommand } from '@preevy/common'
-import { PartialStdioOptions } from '../child-process'
-import { CommandExecuter } from '../command-executer'
-import { Profile } from '../profile'
-import { MachineBase, PartialMachine, Resource, SpecDiffItem } from './machine-model'
-import { Store } from '../store'
-import { Logger } from '../log'
+import { PartialStdioOptions } from '../child-process.js'
+import { CommandExecuter } from '../command-executer.js'
+import { Profile } from '../profile/index.js'
+import { MachineBase, PartialMachine, Resource, SpecDiffItem } from './machine-model.js'
+import { Store } from '../store/index.js'
+import { Logger } from '../log.js'
 
 export type ForwardSocket = AsyncDisposable & {
   address: { host: string; port: number }

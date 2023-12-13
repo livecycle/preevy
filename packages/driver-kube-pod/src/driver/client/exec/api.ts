@@ -5,7 +5,7 @@ import { readable as isReadableStream } from 'is-stream'
 import { Logger } from '@preevy/core'
 import { Writable } from 'stream'
 import { ProcessOutputBuffers } from '@preevy/common'
-import { BaseExecOpts, ExecError, ReadableBufferStream, callbackWritableStream } from './common'
+import { BaseExecOpts, ExecError, ReadableBufferStream, callbackWritableStream } from './common.js'
 
 export class WebSocketExecError extends ExecError {
   constructor(

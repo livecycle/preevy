@@ -3,8 +3,8 @@ import { Flags, ux } from '@oclif/core'
 import { asyncFilter, asyncToArray } from 'iter-tools-es'
 import { groupBy, partition } from 'lodash'
 import { MachineResource, isPartialMachine, machineResourceType } from '@preevy/core'
-import DriverCommand from '../driver-command'
-import { carefulBooleanPrompt } from '../prompt'
+import DriverCommand from '../driver-command.js'
+import { carefulBooleanPrompt } from '../prompt.js'
 
 const isMachineResource = (r: { type: string }): r is MachineResource => r.type === machineResourceType
 

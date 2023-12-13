@@ -1,4 +1,4 @@
-import { VirtualFS } from './fs'
+import { VirtualFS } from './fs/index.js'
 
 export type Snapshot = VirtualFS & AsyncDisposable & {
   save: () => Promise<void>

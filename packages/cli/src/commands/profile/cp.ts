@@ -2,9 +2,9 @@ import { Flags, ux } from '@oclif/core'
 import inquirer from 'inquirer'
 import { BaseCommand, text } from '@preevy/cli-common'
 import { LocalProfilesConfig } from '@preevy/core'
-import { loadProfileConfig } from '../../profile-command'
-import { FsType, chooseFs, chooseFsType, fsTypes, isFsType } from '../../fs'
-import { machineDrivers } from '../../drivers'
+import { loadProfileConfig } from '../../profile-command.js'
+import { FsType, chooseFs, chooseFsType, fsTypes, isFsType } from '../../fs.js'
+import { machineDrivers } from '../../drivers.js'
 
 const validateFsType = (fsType: string) => {
   if (!isFsType(fsType)) {

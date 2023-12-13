@@ -1,8 +1,8 @@
 import path from 'path'
 import { randomBytes } from 'crypto'
-import { CommandExecuter, ExecResult, mkdir } from './command-executer'
-import { Logger } from './log'
-import { upload } from './upload-files'
+import { CommandExecuter, ExecResult, mkdir } from './command-executer.js'
+import { Logger } from './log.js'
+import { upload } from './upload-files/index.js'
 
 export type RemoteScriptExecuter = (
   script: string,

@@ -1,7 +1,7 @@
 import { Command } from '@oclif/core'
 import { groupBy } from 'lodash'
-import { CommandFlags } from './model'
-import { LoadedPlugin } from './load'
+import { CommandFlags } from './model.js'
+import { LoadedPlugin } from './load.js'
 
 const addFlags = (
   commands: Command.Loadable[],

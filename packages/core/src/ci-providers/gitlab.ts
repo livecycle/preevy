@@ -1,5 +1,5 @@
-import { CiProvider } from './base'
-import { stringOrUndefinedToNumber } from './common'
+import { CiProvider } from './base.js'
+import { stringOrUndefinedToNumber } from './common.js'
 
 // https://docs.gitlab.com/ee/ci/variables/predefined_variables.html
 export const gitlabActionsCiProvider = (): CiProvider => ({

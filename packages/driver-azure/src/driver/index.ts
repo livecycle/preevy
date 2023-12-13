@@ -23,9 +23,9 @@ import {
   machineStatusNodeExporterCommand,
 } from '@preevy/core'
 import { pick } from 'lodash'
-import { Client, client as createClient, REGIONS } from './client'
-import { CUSTOMIZE_BARE_MACHINE } from './scripts'
-import { AzureCustomTags, extractResourceGroupNameFromId } from './vm-creation-utils'
+import { Client, client as createClient, REGIONS } from './client.js'
+import { CUSTOMIZE_BARE_MACHINE } from './scripts.js'
+import { AzureCustomTags, extractResourceGroupNameFromId } from './vm-creation-utils.js'
 
 inquirer.registerPrompt('autocomplete', inquirerAutoComplete)
 

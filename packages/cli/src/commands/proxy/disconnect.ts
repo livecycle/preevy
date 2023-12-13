@@ -1,7 +1,7 @@
 import { Args } from '@oclif/core'
 import { commands, execPromiseStdout } from '@preevy/core'
 import { tableFlags } from '@preevy/cli-common'
-import ProfileCommand from '../../profile-command'
+import ProfileCommand from '../../profile-command.js'
 
 // eslint-disable-next-line no-use-before-define
 export default class Disconnect extends ProfileCommand<typeof Disconnect> {

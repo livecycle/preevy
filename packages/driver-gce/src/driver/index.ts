@@ -17,9 +17,9 @@ import {
   PartialMachine,
 } from '@preevy/core'
 import { memoize, pick } from 'lodash'
-import createClient, { Client, Instance, availableRegions, defaultProjectId, instanceError, shortResourceName } from './client'
-import { deserializeMetadata, metadataKey } from './metadata'
-import { LABELS } from './labels'
+import createClient, { Client, Instance, availableRegions, defaultProjectId, instanceError, shortResourceName } from './client.js'
+import { deserializeMetadata, metadataKey } from './metadata.js'
+import { LABELS } from './labels.js'
 
 inquirer.registerPrompt('autocomplete', inquirerAutoComplete)
 
@@ -253,4 +253,4 @@ export default {
   flagsFromAnswers,
 } as const
 
-export { defaultProjectId } from './client'
+export { defaultProjectId } from './client.js'

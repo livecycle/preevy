@@ -1,8 +1,7 @@
 import { parseKey } from '@preevy/common'
 import crypto from 'crypto'
-import fetch from 'node-fetch'
-import { Logger } from '../log'
-import { jwtGenerator } from '../credentials'
+import { Logger } from '../log.js'
+import { jwtGenerator } from '../credentials/index.js'
 
 export type Org = {id: string; name: string; role: string; slug: string}
 

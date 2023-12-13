@@ -1,5 +1,5 @@
-import { gitContext } from './git'
-import { detectCiProvider } from './ci-providers'
+import { gitContext } from './git.js'
+import { detectCiProvider } from './ci-providers/index.js'
 
 export type GitAuthor = { name: string; email: string }
 

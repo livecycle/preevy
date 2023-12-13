@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { sumArray } from '../../array'
+import { sumArray } from '../../array.js'
 
 export type FileInfo = { path: string; stats: fs.Stats; symlinkTarget?: string }
 

@@ -1,8 +1,8 @@
 import { link, Org, localFs, profileStore, TokenExpiredError, getLivecycleTokensFromLocalFs } from '@preevy/core'
 import { Flags, ux } from '@oclif/core'
 import inquirer from 'inquirer'
-import ProfileCommand from '../../profile-command'
-import { LC_API_URL } from '../../defaults'
+import ProfileCommand from '../../profile-command.js'
+import { LC_API_URL } from '../../defaults.js'
 
 // eslint-disable-next-line no-use-before-define
 export default class Link extends ProfileCommand<typeof Link> {

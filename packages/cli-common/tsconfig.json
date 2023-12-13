@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "lib": ["ES2022"],
-    "module": "CommonJS",
-    "target": "ES2019",
-    "moduleResolution": "node",
+    "module": "Node16",
+    "target": "ES2020",
+    "moduleResolution": "Node16",
+    "lib": ["es2022", "ESNext.Disposable"],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -23,6 +23,9 @@
     "outDir": "dist",
     "baseUrl": ".",
     "rootDir": "src",
+  },
+  "ts-node": {
+    "esm": true
   },
   "include": ["**/*"],
   "exclude": ["jest.config.js", "dist", "lint-staged.config.cjs"],

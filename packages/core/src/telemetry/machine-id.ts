@@ -2,8 +2,8 @@ import fs from 'fs/promises'
 import os from 'os'
 import path from 'path'
 import crypto from 'crypto'
-import { execPromiseStdout } from '../child-process'
-import { localFs } from '../store'
+import { execPromiseStdout } from '../child-process.js'
+import { localFs } from '../store/index.js'
 
 const readFileOrUndefined = (file: string) => fs.readFile(file, 'utf-8').catch(() => undefined)
 

@@ -3,7 +3,7 @@ import { googleCloudStorageFs, defaultBucketName as gsDefaultBucketName, default
 import { s3fs, defaultBucketName as s3DefaultBucketName, awsUtils, S3_REGIONS } from '@preevy/driver-lightsail'
 import inquirer from 'inquirer'
 import inquirerAutoComplete from 'inquirer-autocomplete-prompt'
-import { DriverName } from './drivers'
+import { DriverName } from './drivers.js'
 import ambientAwsAccountId = awsUtils.ambientAccountId
 
 inquirer.registerPrompt('autocomplete', inquirerAutoComplete)

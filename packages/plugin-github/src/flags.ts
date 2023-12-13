@@ -1,7 +1,7 @@
 import { Flags } from '@oclif/core'
 import { mapKeys } from 'lodash'
 import { ParsedFlags, parseFlags } from '@preevy/cli-common'
-import { tryParseRepo } from './repo'
+import { tryParseRepo } from './repo.js'
 
 const HELP_GROUP = 'GitHub integration'
 

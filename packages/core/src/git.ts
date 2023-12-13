@@ -1,4 +1,4 @@
-import { execPromiseStdout } from './child-process'
+import { execPromiseStdout } from './child-process.js'
 
 export function gitContext(cwd: string = process.cwd()) {
   const execGit = async (command: string) => await execPromiseStdout(`git ${command}`, { cwd })

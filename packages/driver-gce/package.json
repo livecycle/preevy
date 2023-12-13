@@ -2,7 +2,10 @@
   "name": "@preevy/driver-gce",
   "version": "0.0.58",
   "description": "Google Compute Engine driver for Preevy",
-  "main": "dist/index.js",
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "types": "dist/index.d.ts",
   "files": [
     "dist",
@@ -15,7 +18,7 @@
     "@oclif/core": "livecycle/oclif-core-patched-for-preevy#v3.12.0-preevy-patch-10",
     "@preevy/core": "0.0.58",
     "google-auth-library": "^8.7.0",
-    "google-gax": "^4.0.4",
+    "google-gax": "^4.0.5",
     "inquirer": "^8.0.0",
     "inquirer-autocomplete-prompt": "^2.0.0",
     "iter-tools-es": "^7.5.3",

@@ -1,8 +1,8 @@
 import { Octokit } from 'octokit'
 import { FlatTunnel } from '@preevy/core'
-import { upsertPreevyComment } from '../../../lib/github-comment'
-import BaseGithubPrCommand from './base'
-import { commentTemplateFlagDef } from '../../../flags'
+import { upsertPreevyComment } from '../../../lib/github-comment.js'
+import BaseGithubPrCommand from './base.js'
+import { commentTemplateFlagDef } from '../../../flags.js'
 
 // eslint-disable-next-line no-use-before-define
 class CommentGithubPr extends BaseGithubPrCommand<typeof CommentGithubPr> {

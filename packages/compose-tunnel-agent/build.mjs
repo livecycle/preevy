@@ -7,7 +7,7 @@ await esbuild.build({
   outdir: './out',
   platform: 'node',
   target: 'es2020',
-  format: 'cjs',
+  format: 'esm',
   loader: {
     '.node': 'file',
   },

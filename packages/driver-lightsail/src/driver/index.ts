@@ -13,10 +13,10 @@ import {
   getStoredSshKey, sshDriver, extractDefined, Logger, machineStatusNodeExporterCommand,
 } from '@preevy/core'
 import { pick } from 'lodash'
-import createClient, { Client, REGIONS } from './client'
-import { BUNDLE_IDS, BundleId, bundleIdFromString } from './bundle-id'
-import { CUSTOMIZE_BARE_MACHINE } from './scripts'
-import { CURRENT_MACHINE_VERSION, TAGS, requiredTag } from './tags'
+import createClient, { Client, REGIONS } from './client.js'
+import { BUNDLE_IDS, BundleId, bundleIdFromString } from './bundle-id.js'
+import { CUSTOMIZE_BARE_MACHINE } from './scripts.js'
+import { CURRENT_MACHINE_VERSION, TAGS, requiredTag } from './tags.js'
 
 export { BundleId, BUNDLE_IDS, bundleIdFromString as bundleId }
 

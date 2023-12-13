@@ -2,7 +2,7 @@ import { Args, Flags, ux } from '@oclif/core'
 import { fsTypeFromUrl, nextAvailableAlias } from '@preevy/core'
 import { BaseCommand, text } from '@preevy/cli-common'
 import { EOL } from 'os'
-import { loadProfileConfig, onProfileChange } from '../../profile-command'
+import { loadProfileConfig, onProfileChange } from '../../profile-command.js'
 
 // eslint-disable-next-line no-use-before-define
 export default class ImportProfile extends BaseCommand<typeof ImportProfile> {
