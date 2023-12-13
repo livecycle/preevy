@@ -2,7 +2,7 @@ import { AddressInfo } from 'node:net'
 import { describe, expect, beforeAll, afterAll, jest, it } from '@jest/globals'
 import { ChildProcess, spawn, exec } from 'child_process'
 import { pino } from 'pino'
-import { PinoPretty } from 'pino-pretty'
+import { default as pinoPrettyModule } from 'pino-pretty'
 import Dockerode from 'dockerode'
 import { inspect, promisify } from 'node:util'
 import { default as waitForExpectModule } from 'wait-for-expect'
@@ -12,6 +12,8 @@ import { createApp } from './index.js'
 import { filteredClient } from '../docker/index.js'
 import { SshState } from '../ssh/index.js'
 import { COMPOSE_PROJECT_LABEL } from '../docker/labels.js'
+
+const PinoPretty = pinoPrettyModule.default
 
 const waitForExpect = waitForExpectModule.default
 const TEST_COMPOSE_PROJECT = 'my-project'

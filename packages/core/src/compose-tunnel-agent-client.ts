@@ -1,7 +1,8 @@
 import path from 'path'
 import retry from 'p-retry'
 import util from 'util'
-import { mapValues, merge } from 'lodash'
+import { createRequire } from 'module'
+import { mapValues, merge } from 'lodash-es'
 import { COMPOSE_TUNNEL_AGENT_PORT, COMPOSE_TUNNEL_AGENT_SERVICE_LABELS, COMPOSE_TUNNEL_AGENT_SERVICE_NAME, MachineStatusCommand, ScriptInjection, dateReplacer } from '@preevy/common'
 import { ComposeModel, ComposeService, composeModelFilename } from './compose/model.js'
 import { TunnelOpts } from './ssh/url.js'
@@ -13,6 +14,7 @@ import { isPacked, pkgSnapshotDir } from './pkg.js'
 import { EnvId } from './env-id.js'
 import { addScriptInjectionsToServices } from './compose/script-injection.js'
 
+const require = createRequire(import.meta.url)
 const COMPOSE_TUNNEL_AGENT_DIR = path.join(path.dirname(require.resolve('@preevy/compose-tunnel-agent')), '..')
 
 const baseDockerProxyService = () => {

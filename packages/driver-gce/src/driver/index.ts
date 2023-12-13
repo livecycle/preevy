@@ -16,7 +16,7 @@ import {
   extractDefined,
   PartialMachine,
 } from '@preevy/core'
-import { memoize, pick } from 'lodash'
+import { memoize, pick } from 'lodash-es'
 import createClient, { Client, Instance, availableRegions, defaultProjectId, instanceError, shortResourceName } from './client.js'
 import { deserializeMetadata, metadataKey } from './metadata.js'
 import { LABELS } from './labels.js'

@@ -2,8 +2,8 @@ import { describe, expect, beforeAll, afterAll, test } from '@jest/globals'
 import path from 'path'
 import fs from 'fs'
 import os from 'os'
+import crypto from 'crypto'
 import { rimraf } from 'rimraf'
-import { pseudoRandomBytes } from 'crypto'
 import { tarStreamer } from './tar.js'
 import { execPromise, execPromiseStdout } from '../child-process.js'
 
@@ -24,7 +24,7 @@ describe('tar', () => {
     await Promise.all([
       fs.promises.writeFile(path.join(d1, 'f1.txt'), 'this is f1'),
       fs.promises.writeFile(path.join(d3, 'f2.txt'), ['this is f2', 'with multiple lines'].join(os.EOL)),
-      fs.promises.writeFile(path.join(d3, 'blob1'), pseudoRandomBytes(100)),
+      fs.promises.writeFile(path.join(d3, 'blob1'), crypto.pseudoRandomBytes(100)),
     ])
     await fs.promises.symlink(path.join('d3', 'f2.txt'), path.join(d2, 'l2.txt'))
   })

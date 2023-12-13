@@ -1,5 +1,5 @@
 import { Flags } from '@oclif/core'
-import { mapKeys } from 'lodash'
+import { mapKeys } from 'lodash-es'
 import { ParsedFlags, parseFlags } from '@preevy/cli-common'
 import { tryParseRepo } from './repo.js'
 

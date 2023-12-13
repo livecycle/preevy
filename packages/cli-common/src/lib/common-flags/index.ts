@@ -1,5 +1,5 @@
 import { Flags, ux } from '@oclif/core'
-import { mapValues } from 'lodash'
+import { mapValues } from 'lodash-es'
 import { EOL } from 'os'
 import { DEFAULT_PLUGINS } from '../plugins/default-plugins.js'
 

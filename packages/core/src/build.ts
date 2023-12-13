@@ -1,4 +1,4 @@
-import { mapValues, pickBy } from 'lodash'
+import { mapValues, pickBy } from 'lodash-es'
 import { ComposeModel } from './compose/index.js'
 import { randomString } from './strings.js'
 import { hasProp } from './nulls.js'

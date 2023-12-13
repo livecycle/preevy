@@ -1,5 +1,5 @@
 import zlib from 'zlib'
-import { throttle } from 'lodash'
+import { throttle } from 'lodash-es'
 import { withSpinner } from '../spinner.js'
 import { telemetryEmitter } from '../telemetry/index.js'
 import { filterCommand, filterStore } from './files-filter.js'

@@ -1,7 +1,7 @@
 import * as k8s from '@kubernetes/client-node'
 import { HasRequired, ensureDefined } from '@preevy/core'
 import { asyncConcat, asyncMap } from 'iter-tools-es'
-import { defaults } from 'lodash'
+import { defaults } from 'lodash-es'
 import { paginationIterator } from '../pagination.js'
 import apply from './apply.js'
 import waiter from './wait.js'

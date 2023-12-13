@@ -22,7 +22,7 @@ import {
   Logger,
   machineStatusNodeExporterCommand,
 } from '@preevy/core'
-import { pick } from 'lodash'
+import { pick } from 'lodash-es'
 import { Client, client as createClient, REGIONS } from './client.js'
 import { CUSTOMIZE_BARE_MACHINE } from './scripts.js'
 import { AzureCustomTags, extractResourceGroupNameFromId } from './vm-creation-utils.js'

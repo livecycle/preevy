@@ -14,7 +14,7 @@
     "@oclif/core": "livecycle/oclif-core-patched-for-preevy#v3.12.0-preevy-patch-10",
     "@preevy/cli-common": "0.0.58",
     "@preevy/core": "0.0.58",
-    "lodash": "^4.17.21",
+    "lodash-es": "^4.17.21",
     "nunjucks": "^3.2.4",
     "octokit": "^3.1.1"
   },

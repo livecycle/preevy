@@ -1,6 +1,6 @@
 import { profileStore } from '@preevy/core'
 import { Flags, ux } from '@oclif/core'
-import { mapValues, omit, pickBy } from 'lodash'
+import { mapValues, omit, pickBy } from 'lodash-es'
 import { text } from '@preevy/cli-common'
 import {
   removeDriverFlagPrefix,

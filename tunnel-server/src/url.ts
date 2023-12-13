@@ -1,4 +1,4 @@
-import lodash from 'lodash'
+import lodash from 'lodash-es'
 
 export const editUrl = (
   url: URL | string,

@@ -1,4 +1,4 @@
-import { mapValues } from 'lodash'
+import { mapValues } from 'lodash-es'
 import { truncateWithHash } from '@preevy/core'
 
 const MAX_LABEL_LENGTH = 63

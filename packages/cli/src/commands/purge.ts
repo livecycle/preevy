@@ -1,7 +1,7 @@
 import os from 'os'
 import { Flags, ux } from '@oclif/core'
 import { asyncFilter, asyncToArray } from 'iter-tools-es'
-import { groupBy, partition } from 'lodash'
+import { groupBy, partition } from 'lodash-es'
 import { MachineResource, isPartialMachine, machineResourceType } from '@preevy/core'
 import DriverCommand from '../driver-command.js'
 import { carefulBooleanPrompt } from '../prompt.js'

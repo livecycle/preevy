@@ -1,6 +1,6 @@
 import path from 'path'
 import { rimraf } from 'rimraf'
-import { isEmpty, mapValues } from 'lodash'
+import { isEmpty, mapValues } from 'lodash-es'
 import { find, range, map } from 'iter-tools-es'
 import { localFs } from '../store/fs/local.js'
 import { Store, VirtualFS, store, tarSnapshot } from '../store/index.js'

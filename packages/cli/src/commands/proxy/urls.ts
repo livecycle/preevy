@@ -1,7 +1,7 @@
 import { Args } from '@oclif/core'
 import { tunnelServerFlags, urlFlags, formatFlagsToArgs, tableFlags } from '@preevy/cli-common'
 import { commands } from '@preevy/core'
-import { pick } from 'lodash'
+import { pick } from 'lodash-es'
 import PreevyUrlsCmd from '../urls.js'
 import ProfileCommand from '../../profile-command.js'
 

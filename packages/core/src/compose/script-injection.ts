@@ -1,5 +1,5 @@
 import { ScriptInjection, scriptInjectionsToLabels } from '@preevy/common'
-import { mapValues } from 'lodash'
+import { mapValues } from 'lodash-es'
 import { ComposeModel, ComposeService } from './model.js'
 
 const addScriptInjectionsToService = (

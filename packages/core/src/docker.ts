@@ -1,4 +1,4 @@
-import { omitBy } from 'lodash'
+import { omitBy } from 'lodash-es'
 import { Logger } from './log.js'
 import { MachineConnection, ForwardSocket } from './driver/index.js'
 import { withSpinner } from './spinner.js'

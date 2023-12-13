@@ -1,5 +1,5 @@
 import { Command } from '@oclif/core'
-import { groupBy } from 'lodash'
+import { groupBy } from 'lodash-es'
 import { CommandFlags } from './model.js'
 import { LoadedPlugin } from './load.js'
 

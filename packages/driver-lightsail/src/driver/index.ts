@@ -12,7 +12,7 @@ import {
   MachineDriverFactory, sshKeysStore, Store,
   getStoredSshKey, sshDriver, extractDefined, Logger, machineStatusNodeExporterCommand,
 } from '@preevy/core'
-import { pick } from 'lodash'
+import { pick } from 'lodash-es'
 import createClient, { Client, REGIONS } from './client.js'
 import { BUNDLE_IDS, BundleId, bundleIdFromString } from './bundle-id.js'
 import { CUSTOMIZE_BARE_MACHINE } from './scripts.js'

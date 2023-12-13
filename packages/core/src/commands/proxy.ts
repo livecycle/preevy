@@ -2,7 +2,7 @@ import { COMPOSE_TUNNEL_AGENT_PORT, COMPOSE_TUNNEL_AGENT_SERVICE_NAME, tunnelNam
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { tmpdir } from 'node:os'
-import { set } from 'lodash'
+import { set } from 'lodash-es'
 import { Connection } from '../tunneling/index.js'
 import { execPromiseStdout } from '../child-process.js'
 import { addComposeTunnelAgentService } from '../compose-tunnel-agent-client.js'

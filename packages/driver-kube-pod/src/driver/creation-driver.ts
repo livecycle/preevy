@@ -1,6 +1,6 @@
 import { Flags, Interfaces } from '@oclif/core'
 import { MachineCreationDriver, MachineCreationDriverFactory, telemetryEmitter } from '@preevy/core'
-import { pick } from 'lodash'
+import { pick } from 'lodash-es'
 import { DeploymentMachine, machineFromDeployment } from './common.js'
 import { DriverContext, clientFromConfiguration, machineConnection, flags as machineDriverFlags } from './driver.js'
 

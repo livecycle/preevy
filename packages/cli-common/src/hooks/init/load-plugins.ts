@@ -2,7 +2,7 @@ import { Hook as OclifHook, Command, Flags } from '@oclif/core'
 import { Parser } from '@oclif/core/lib/parser/parse.js'
 import { BooleanFlag, Config, Topic } from '@oclif/core/lib/interfaces'
 import { localComposeClient, ComposeModel, resolveComposeFiles, withSpinner, NoComposeFilesError } from '@preevy/core'
-import { cloneDeep } from 'lodash'
+import { cloneDeep } from 'lodash-es'
 import { composeFlags, pluginFlags } from '../../lib/common-flags/index.js'
 import { addPluginFlags, loadPlugins, hooksFromPlugins, addPluginCommands } from '../../lib/plugins/index.js'
 

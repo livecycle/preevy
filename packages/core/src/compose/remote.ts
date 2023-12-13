@@ -1,6 +1,6 @@
 import yaml from 'yaml'
 import path from 'path'
-import { mapValues } from 'lodash'
+import { mapValues } from 'lodash-es'
 import { MMRegExp, makeRe } from 'minimatch'
 import { asyncMap, asyncToArray } from 'iter-tools-es'
 import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, MachineStatusCommand, ScriptInjection, formatPublicKey } from '@preevy/common'

@@ -1,6 +1,6 @@
 import { Command } from '@oclif/core'
 import { Logger, LogLevel, logLevels, nullLogFunc } from '@preevy/core'
-import { mapValues } from 'lodash'
+import { mapValues } from 'lodash-es'
 
 export const commandLogger = (
   command: { logLevel: LogLevel },

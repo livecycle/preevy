@@ -28,7 +28,7 @@
     "esm": true
   },
   "include": ["**/*"],
-  "exclude": ["jest.config.js", "dist", "lint-staged.config.cjs"],
+  "exclude": ["jest.config.cjs", "dist", "lint-staged.config.cjs"],
   "references": [
     { "path": "../cli-common" },
   ]

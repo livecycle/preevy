@@ -1,6 +1,6 @@
 import Docker from 'dockerode'
 import { tryParseJson, Logger, ScriptInjection } from '@preevy/common'
-import { throttle } from 'lodash'
+import { throttle } from 'lodash-es'
 import { inspect } from 'util'
 import { filters } from './filters.js'
 import { containerToService } from './services.js'
