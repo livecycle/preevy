@@ -108,7 +108,11 @@ const fixModelForRemote = async (
         }
         const matchingVolumeSkipIndex = volumeSkipRes.findIndex(re => re.test(volume.source))
         if (matchingVolumeSkipIndex !== -1) {
-          skippedVolumes.push({ service: serviceName, source: volume.source, matchingRule: volumeSkipList[matchingVolumeSkipIndex] })
+          skippedVolumes.push({
+            service: serviceName,
+            source: volume.source,
+            matchingRule: volumeSkipList[matchingVolumeSkipIndex],
+          })
           return volume
         }
 

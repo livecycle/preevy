@@ -1,7 +1,7 @@
 import * as k8s from '@kubernetes/client-node'
 import util from 'util'
 import retry from 'p-retry'
-import { default as isStreamModule } from 'is-stream'
+import isStreamModule from 'is-stream'
 import { Logger } from '@preevy/core'
 import { Writable } from 'stream'
 import { ProcessOutputBuffers } from '@preevy/common'

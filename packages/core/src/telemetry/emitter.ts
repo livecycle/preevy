@@ -1,7 +1,7 @@
 import os from 'os'
 import fs from 'fs'
 import crypto from 'crypto'
-import { default as stringifyModule } from 'fast-safe-stringify'
+import stringifyModule from 'fast-safe-stringify'
 import { debounce } from 'lodash-es'
 import pLimit from 'p-limit'
 import { inspect } from 'util'

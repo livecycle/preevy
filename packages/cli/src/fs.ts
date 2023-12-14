@@ -63,7 +63,9 @@ export const chooseFs: Record<FsType, FsChooser> = {
   }) => {
     const region = await inquirerAutoComplete<string>({
       message: 'S3 bucket region',
-      source: async input => S3_REGIONS.filter(r => !input || r.includes(input.toLowerCase())).map(value => ({ value })),
+      source: async input => S3_REGIONS
+        .filter(r => !input || r.includes(input.toLowerCase()))
+        .map(value => ({ value })),
       default: driver?.name === 'lightsail' && S3_REGIONS.includes(driver.flags.region as string)
         ? driver.flags.region as string
         : 'us-east-1',

@@ -3,7 +3,7 @@ import path from 'path'
 import Docker from 'dockerode'
 import { rimraf } from 'rimraf'
 import { pino } from 'pino'
-import { default as pinoPrettyModule } from 'pino-pretty'
+import pinoPrettyModule from 'pino-pretty'
 import {
   requiredEnv,
   formatPublicKey,

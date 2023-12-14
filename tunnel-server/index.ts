@@ -16,6 +16,7 @@ import { cookieSessionStore } from './src/session'
 import { claimsSchema } from './src/auth'
 import { createSshServer } from './src/ssh'
 
+// eslint-disable-next-line no-underscore-dangle
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
 const log = pino(appLoggerFromEnv())

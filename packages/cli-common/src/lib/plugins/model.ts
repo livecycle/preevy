@@ -1,6 +1,6 @@
 import { FlagProps } from '@oclif/core/lib/interfaces/parser.js'
 import { Topic } from '@oclif/core/lib/interfaces'
-import { Command, Interfaces } from '@oclif/core'
+import { Command } from '@oclif/core'
 import { ComposeModel, config as coreConfig } from '@preevy/core'
 import { PluginInitContext } from './context.js'
 import { HookFuncs, HooksListeners } from '../hooks.js'

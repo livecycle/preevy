@@ -1,5 +1,5 @@
 import fs from 'fs'
-import { default as PQueueModule } from 'p-queue'
+import PQueueModule from 'p-queue'
 import { DirInfo, FileInfo } from './files.js'
 
 const PQueue = PQueueModule.default

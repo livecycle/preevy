@@ -2,7 +2,7 @@
 import * as jose from 'jose'
 import { z } from 'zod'
 import open from 'open'
-import inquirer from 'inquirer'
+import * as inquirer from '@inquirer/prompts'
 import { VirtualFS, localFs } from './store/index.js'
 import { Logger } from './log.js'
 import { withSpinner } from './spinner.js'
@@ -165,24 +165,14 @@ export const login = async (dataDir: string, loginUrl: string, lcUrl: string, cl
   if (postLoginResponse.ok) {
     const postLoginData = await postLoginResponse.json() as PostLoginResult
     if (!('currentOrg' in postLoginData)) {
-      const {
-        orgName,
-        associateDomain,
-        // eslint-disable-next-line no-use-before-define
-      } = await inquirer.prompt<{ orgName: string; associateDomain: string }>([
-        {
-          type: 'input',
-          name: 'orgName',
-          message: 'Select a name for your organization',
-          default: postLoginData.organizationDomainDetails.name,
-        },
-        {
-          type: 'confirm',
-          name: 'associateDomain',
-          message: `Allow anyone with @${postLoginData.organizationDomainDetails.domain} email domain to join your organization as viewers`,
-          default: true,
-        },
-      ])
+      const orgName = await inquirer.input({
+        message: 'Select a name for your organization',
+        default: postLoginData.organizationDomainDetails.name,
+      })
+      const associateDomain = await inquirer.confirm({
+        message: `Allow anyone with @${postLoginData.organizationDomainDetails.domain} email domain to join your organization as viewers`,
+        default: true,
+      })
 
       const createOrganizationResponse = await withSpinner(
         () => fetch(

@@ -1,5 +1,5 @@
 import ssh2 from 'ssh2'
-import { default as isStreamModule } from 'is-stream'
+import isStreamModule from 'is-stream'
 import { orderedOutput } from '@preevy/common'
 import { ExecResult, CommandExecuter, commandWith, checkResult, execResultFromOrderedOutput } from '../../command-executer.js'
 import { outputFromStdio } from '../../child-process.js'

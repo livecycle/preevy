@@ -1,4 +1,4 @@
-import { default as isStreamModule } from 'is-stream'
+import isStreamModule from 'is-stream'
 import { ProcessOutputBuffers } from '@preevy/common'
 import { Readable, Writable } from 'stream'
 import { ChildProcess, StdioOptions, spawn } from 'child_process'

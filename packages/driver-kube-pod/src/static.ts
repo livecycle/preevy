@@ -1,7 +1,8 @@
 import path from 'path'
-import packageJsonImport from '../package.json' assert { type: 'json' }
 import url from 'url'
+import packageJsonImport from '../package.json' assert { type: 'json' }
 
+// eslint-disable-next-line no-underscore-dangle
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
 export const DIR = path.join(__dirname, '../static')

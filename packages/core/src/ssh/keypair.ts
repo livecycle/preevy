@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 import { promisify } from 'util'
-import { default as sshpkModule } from 'sshpk'
+import sshpkModule from 'sshpk'
 
 const { parseKey, parsePrivateKey } = sshpkModule
 
