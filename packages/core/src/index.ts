@@ -26,7 +26,7 @@ export {
   link, Org, LocalProfilesConfigGetResult,
 } from './profile/index.js'
 export { telemetryEmitter, registerEmitter, wireProcessExit, createTelemetryEmitter, machineId } from './telemetry/index.js'
-export { fsTypeFromUrl, Store, VirtualFS, localFsFromUrl, localFs } from './store/index.js'
+export { fsTypeFromUrl, Store, VirtualFS, FsReader, localFsFromUrl, localFs } from './store/index.js'
 export {
   localComposeClient, ComposeModel, resolveComposeFiles, getExposedTcpServicePorts,
   fetchRemoteUserModel as remoteUserModel, NoComposeFilesError,
@@ -55,7 +55,7 @@ export {
   findComposeTunnelAgentUrl,
 } from './compose-tunnel-agent-client.js'
 export * as commands from './commands/index.js'
-export { BuildSpec, ImageRegistry, parseRegistry } from './build.js'
+export { BuildSpec, ImageRegistry, parseRegistry } from './build/index.js'
 export { dockerEnvContext } from './docker.js'
 export {
   FlatTunnel,

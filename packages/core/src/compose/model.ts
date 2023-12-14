@@ -23,14 +23,14 @@ export type ComposeVolume = { type: 'volume' | 'tmpfs' | 'npipe' } | ComposeBind
 
 export type ComposeBuild = {
   context: string
+  args?: Record<string, string> | string[]
   target?: string
-  dockerfile?: string
   tags?: string[]
   cache_from?: string[]
   cache_to?: string[]
   platforms?: string[]
   no_cache?: boolean
-}
+} & ({ dockerfile: string } | { dockerfile_inline: string })
 
 type ComposePort = {
   mode: 'ingress'

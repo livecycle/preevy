@@ -27,11 +27,14 @@ export function gitContext(cwd: string = process.cwd()) {
     return await execGit(`config remote.${trackingRemote}.url`)
   }
 
+  const localChanges = async () => await execGit('diff-index HEAD --').catch(() => '')
+
   return {
     branchName,
     commit: head,
     author,
     remoteTrackingBranchUrl,
+    localChanges,
   }
 }
 

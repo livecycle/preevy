@@ -29,6 +29,7 @@ await esbuild.build({
   bundle: true,
   treeShaking: true,
   outdir: './out',
+  outExtension: { '.js': '.mjs' },
   platform: 'node',
   target: 'es2020',
   format: 'esm',
@@ -37,14 +38,4 @@ await esbuild.build({
   },
   sourcemap: true,
   banner: { js: ESM_REQUIRE_SHIM },
-  // banner:{
-  //   js: `
-  //   import { fileURLToPath as topLevelFileURLToPath } from 'url';
-  //   import topLevelPath from 'path';
-  //   import { createRequire as topLevelCreateRequire } from 'module';
-  //   const require = topLevelCreateRequire(import.meta.url);
-  //   const __filename = topLevelFileURLToPath(import.meta.url);
-  //   const __dirname = topLevelPath.dirname(__filename);
-  //   `
-  // },
 })

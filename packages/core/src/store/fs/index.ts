@@ -1,4 +1,4 @@
-export { VirtualFS } from './base.js'
+export { VirtualFS, FsReader } from './base.js'
 export { localFs, localFsFromUrl } from './local.js'
 export { jsonReader } from './json-reader.js'
 

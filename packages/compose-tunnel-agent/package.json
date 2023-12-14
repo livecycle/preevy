@@ -2,9 +2,9 @@
   "name": "@preevy/compose-tunnel-agent",
   "version": "0.0.58",
   "description": "",
-  "main": "out/index.js",
+  "main": "out/index.mjs",
   "exports": {
-    ".": "./out/index.js"
+    ".": "./out/index.mjs"
   },
   "type": "module",
   "files": [
@@ -56,7 +56,7 @@
     "wait-for-expect": "^3.0.2"
   },
   "scripts": {
-    "start": "node out/index.js",
+    "start": "node out/index.mjs",
     "dev": "tsx watch ./index.ts",
     "lint": "eslint . --ext .ts,.tsx --cache",
     "clean": "shx rm -rf dist out",

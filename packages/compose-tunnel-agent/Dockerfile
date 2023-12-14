@@ -3,4 +3,4 @@ WORKDIR /app
 
 FROM base as production
 COPY out /app/
-CMD [ "node", "/app/index.js" ]
+CMD [ "node", "/app/index.mjs" ]

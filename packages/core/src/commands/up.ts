@@ -8,12 +8,15 @@ import { remoteProjectDir } from '../remote-files.js'
 import { Logger } from '../log.js'
 import { FileToCopy, uploadWithSpinner } from '../upload-files/index.js'
 import { EnvId } from '../env-id.js'
-import { BuildSpec } from '../build.js'
+import { BuildSpec } from '../build/index.js'
 import modelCommand from './model.js'
 import buildCommand from './build.js'
 import { CommandExecuter } from '../command-executer.js'
 import { telemetryEmitter } from '../telemetry/index.js'
 import { measureTime } from '../timing.js'
+import { imageTagCalculator } from '../build/image-tag.js'
+import { gitContext } from '../git.js'
+import { localFs } from '../index.js'
 
 const uploadFiles = async ({
   log,
@@ -120,7 +123,6 @@ const up = async ({
 
   if (buildSpec) {
     await using dockerContext = await dockerEnvContext({ connection, log })
-
     composeModel = (await buildCommand({
       log,
       buildSpec,
@@ -129,6 +131,10 @@ const up = async ({
       projectLocalDataDir,
       machineDockerPlatform: dockerPlatform,
       env: dockerContext.env,
+      imageTagCalculator: imageTagCalculator({
+        gitContext,
+        fsReader: localFs('/'),
+      }),
     })).deployModel
   }
 

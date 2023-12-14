@@ -22,6 +22,7 @@ const baseDockerProxyService = () => {
   return {
     build: {
       context: contextDir,
+      dockerfile: path.join(contextDir, 'Dockerfile'),
     },
     ports: [
       {
