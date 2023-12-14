@@ -22,7 +22,7 @@ FLAGS
                          <options: lightsail|gce|azure|kube-pod>
       --all              Remove all resources types (snapshots, keypairs, and other resource types)
       --force            Do not ask for confirmation
-      --profile=<value>  Run in a specific profile context
+      --profile=<value>  Run in a specific profile context (either an alias or a URL)
       --type=<value>...  [default: machine] Resource type(s) to delete
       --wait             Wait for resource deletion to complete. If false (the default), the deletion will be started
                          but not waited for
@@ -58,4 +58,4 @@ DESCRIPTION
   Delete all cloud provider machines, and potentially other resources
 ```
 
-_See code: [src/commands/purge.ts](https://github.com/livecycle/preevy/blob/v0.0.56/src/commands/purge.ts)_
+_See code: [src/commands/purge.ts](https://github.com/livecycle/preevy/blob/v0.0.58/src/commands/purge.ts)_

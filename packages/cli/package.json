@@ -110,7 +110,7 @@
     "lint": "eslint . --ext .ts --cache",
     "postpack": "shx rm -f oclif.manifest.json",
     "posttest": "yarn lint",
-    "prepack": "yarn build && ./scripts/validate-tsconfig && oclif manifest && oclif readme --dir docs --multi && ./scripts/prepare_and_copy_docs.sh",
+    "prepack": "yarn build && ./scripts/validate-tsconfig.cjs && oclif manifest && oclif readme --dir docs --multi && ./scripts/prepare_and_copy_docs.sh",
     "cli": "./bin/dev",
     "version": "oclif readme && git add README.md"
   },

@@ -25,9 +25,9 @@ FLAGS
   -d, --driver=<option>  Machine driver to use
                          <options: lightsail|gce|azure|kube-pod>
       --follow           Follow log output
-      --id=<value>       Environment id - affects created URLs. If not specified, will try to detect automatically
+      --id=<value>       Environment id
       --no-log-prefix    Don't print log prefix in logs
-      --profile=<value>  Run in a specific profile context
+      --profile=<value>  Run in a specific profile context (either an alias or a URL)
       --since=<value>    Show logs since timestamp
       --tail=<value>     Number of lines to show from the end of the logs for each container (default: all)
       --timestamps       Show timestamps
@@ -61,6 +61,12 @@ LIGHTSAIL DRIVER FLAGS
 
 DESCRIPTION
   Show logs for an existing environment
+
+FLAG DESCRIPTIONS
+  --id=<value>  Environment id
+
+    Affects created URLs
+    If not specified, will detect from the current Git context
 ```
 
-_See code: [src/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.56/src/commands/logs.ts)_
+_See code: [src/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.58/src/commands/logs.ts)_

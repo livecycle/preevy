@@ -24,24 +24,14 @@ ARGUMENTS
 FLAGS
   -t, --tunnel-url=<value>                [default: ssh+tls://livecycle.run] Tunnel url, specify ssh://hostname[:port]
                                           or ssh+tls://hostname[:port]
-  -x, --extended                          show extra columns
-      --access-credentials-type=<option>  (required) [default: browser]
+      --access-credentials-type=<option>  (required) [default: browser] Access credentials type
                                           <options: api|browser>
-      --columns=<value>                   only show provided columns (comma-separated)
-      --csv                               output is csv format [alias: --output=csv]
-      --filter=<value>                    filter property by partial string matching, ex: name=foo
-      --id=<value>                        Environment id - affects created URLs. If not specified, will try to detect
-                                          automatically
+      --id=<value>                        Environment id
       --include-access-credentials        Include access credentials for basic auth for each service URL
       --insecure-skip-verify              Skip TLS or SSH certificate verification
-      --no-header                         hide table header from output
-      --no-truncate                       do not truncate output to fit screen
-      --output=<option>                   output in a more machine friendly format
-                                          <options: csv|json|yaml>
       --output-urls-to=<value>            Output URLs to file
-      --profile=<value>                   Run in a specific profile context
+      --profile=<value>                   Run in a specific profile context (either an alias or a URL)
       --show-preevy-service-urls          Show URLs for internal Preevy services
-      --sort=<value>                      property to sort by (prepend '-' for descending)
       --tls-hostname=<value>              Override TLS server name when tunneling via HTTPS
 
 GLOBAL FLAGS
@@ -53,8 +43,25 @@ GLOBAL FLAGS
       --json                            Format output as json.
       --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
 
+OUTPUT FLAGS
+  -x, --extended         show extra columns
+      --columns=<value>  only show provided columns (comma-separated)
+      --csv              output is csv format [alias: --output=csv]
+      --filter=<value>   filter property by partial string matching, ex: name=foo
+      --no-header        hide table header from output
+      --no-truncate      do not truncate output to fit screen
+      --output=<option>  output in a more machine friendly format
+                         <options: csv|json|yaml>
+      --sort=<value>     property to sort by (prepend '-' for descending)
+
 DESCRIPTION
   Show urls for an existing environment
+
+FLAG DESCRIPTIONS
+  --id=<value>  Environment id
+
+    Affects created URLs
+    If not specified, will detect from the current Git context
 ```
 
-_See code: [src/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.56/src/commands/urls.ts)_
+_See code: [src/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.58/src/commands/urls.ts)_
