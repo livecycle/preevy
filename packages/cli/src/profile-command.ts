@@ -5,7 +5,7 @@ import {
   localProfilesConfig, telemetryEmitter, LocalProfilesConfigGetResult,
 } from '@preevy/core'
 import { BaseCommand, text } from '@preevy/cli-common'
-import { fsFromUrl } from './fs'
+import { fsFromUrl } from './fs.js'
 
 export const onProfileChange = (profile: Profile, profileStoreType: string) => {
   const ciProvider = detectCiProvider()

@@ -1,17 +1,17 @@
 import { createHash } from 'crypto'
 import { ListenOptions } from 'net'
-import stringify from 'fast-safe-stringify'
+import stringifyModule from 'fast-safe-stringify'
 import * as k8s from '@kubernetes/client-node'
 import nunjucks from 'nunjucks'
 import yaml from 'yaml'
 import { asyncToArray, asyncFirst } from 'iter-tools-es'
-import { maxBy } from 'lodash'
+import { maxBy } from 'lodash-es'
 import { inspect } from 'util'
 import { Logger } from '@preevy/core'
-import baseExec from './exec'
-import dynamicApi, { ApplyFilter, applyStrategies, compositeApplyFilter } from './dynamic'
-import basePortForward from './port-forward'
-import k8sHelpers from './k8s-helpers'
+import baseExec from './exec/index.js'
+import dynamicApi, { ApplyFilter, applyStrategies, compositeApplyFilter } from './dynamic/index.js'
+import basePortForward from './port-forward.js'
+import k8sHelpers from './k8s-helpers.js'
 import {
   LABELS,
   addEnvMetadata,
@@ -25,9 +25,11 @@ import {
   extractName,
   isDockerHostDeployment,
   ANNOTATIONS,
-} from './metadata'
-import { Package } from './common'
-import { logError } from './log-error'
+} from './metadata.js'
+import { Package } from './common.js'
+import { logError } from './log-error.js'
+
+const stringify = stringifyModule.default
 
 export const loadKubeConfig = (kubeconfig?: string, context?: string) => {
   const kc = new k8s.KubeConfig()
@@ -210,7 +212,7 @@ const kubeClient = ({ log, namespace, kc, profileId, template, package: packageD
 
 export type Client = ReturnType<typeof kubeClient>
 
-export { extractInstance, extractEnvId, extractName, extractNamespace, extractTemplateHash } from './metadata'
-export { DeploymentNotReadyError, DeploymentNotReadyErrorReason } from './k8s-helpers'
+export { extractInstance, extractEnvId, extractName, extractNamespace, extractTemplateHash } from './metadata.js'
+export { DeploymentNotReadyError, DeploymentNotReadyErrorReason } from './k8s-helpers.js'
 
 export default kubeClient

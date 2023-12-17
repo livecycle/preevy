@@ -1,8 +1,8 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
 import { ParsedFlags } from '@preevy/cli-common'
-import { commentTemplateFlagDef, flagsDef, pullRequestFlagsDef } from '../../../flags'
-import BaseGithubCommand from '../base'
-import { GithubConfig, loadGithubPullRequestCommentConfig, loadGithubPullRequestConfig } from '../../../config'
+import { commentTemplateFlagDef, flagsDef, pullRequestFlagsDef } from '../../../flags.js'
+import BaseGithubCommand from '../base.js'
+import { GithubConfig, loadGithubPullRequestCommentConfig, loadGithubPullRequestConfig } from '../../../config.js'
 
 const ensureConfig = <T extends GithubConfig>(config: T | undefined) => {
   if (!config) {

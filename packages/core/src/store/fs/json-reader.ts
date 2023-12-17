@@ -1,4 +1,4 @@
-import { FsReader } from './base'
+import { FsReader } from './base.js'
 
 export const jsonReader = (reader: FsReader) => ({
   async readJSON<T>(file: string) {

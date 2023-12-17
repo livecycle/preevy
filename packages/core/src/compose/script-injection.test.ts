@@ -1,7 +1,7 @@
 import { describe, expect, jest, beforeEach, it } from '@jest/globals'
 import { ScriptInjection } from '@preevy/common'
-import { ComposeModel } from './model'
-import { addScriptInjectionsToServices } from './script-injection'
+import { ComposeModel } from './model.js'
+import { addScriptInjectionsToServices } from './script-injection.js'
 
 describe('addScriptInjectionsToModel', () => {
   const model: ComposeModel['services'] = Object.freeze({

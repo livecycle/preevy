@@ -1,6 +1,6 @@
 import * as k8s from '@kubernetes/client-node'
 import { ensureDefined, extractDefined } from '@preevy/core'
-import objectKindUrl from './url'
+import objectKindUrl from './url.js'
 
 const waiter = ({ watcher, client }: { watcher: k8s.Watch; client: k8s.KubernetesObjectApi }) => {
   const urlGetter = objectKindUrl(client)

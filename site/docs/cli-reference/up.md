@@ -19,10 +19,12 @@ USAGE
     [--lightsail-availability-zone <value>] [--lightsail-bundle-id
     nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0] [--gce-machine-type <value>]
     [--azure-vm-size <value>] [--kube-pod-server-side-apply] [--id <value>] [-t <value>] [--tls-hostname <value>]
-    [--insecure-skip-verify] [--skip-unchanged-files] [--show-preevy-service-urls] [--output-urls-to <value>] [--columns
-    <value> | -x] [--filter <value>] [--no-header | [--csv | --no-truncate]] [--output csv|json|yaml |  | ] [--sort
-    <value>] [--github-token <value>] [--github-repo <value>] [--github-pull-request <value>]
-    [--github-pr-comment-template-file <value>] [--github-pr-comment-enabled auto|no|always]
+    [--insecure-skip-verify] [--no-build] [--no-registry-single-name | [--registry-single-name <value> --registry
+    <value>]] [--no-registry-cache ] [--builder <value>] [--no-cache] [--skip-volume <value>] [--skip-unchanged-files]
+    [--show-preevy-service-urls] [--output-urls-to <value>] [--columns <value> | -x] [--filter <value>] [--no-header |
+    [--csv | --no-truncate]] [--output csv|json|yaml |  | ] [--sort <value>] [--github-token <value>] [--github-repo
+    <value>] [--github-pull-request <value>] [--github-pr-comment-template-file <value>] [--github-add-build-cache]
+    [--github-pr-comment-enabled auto|no|always]
 
 ARGUMENTS
   SERVICE  Service name(s). If not specified, will deploy all services
@@ -32,25 +34,16 @@ FLAGS
                                           <options: lightsail|gce|azure|kube-pod>
   -t, --tunnel-url=<value>                [default: ssh+tls://livecycle.run] Tunnel url, specify ssh://hostname[:port]
                                           or ssh+tls://hostname[:port]
-  -x, --extended                          show extra columns
-      --access-credentials-type=<option>  (required) [default: browser]
+      --access-credentials-type=<option>  (required) [default: browser] Access credentials type
                                           <options: api|browser>
-      --columns=<value>                   only show provided columns (comma-separated)
-      --csv                               output is csv format [alias: --output=csv]
-      --filter=<value>                    filter property by partial string matching, ex: name=foo
-      --id=<value>                        Environment id - affects created URLs. If not specified, will try to detect
-                                          automatically
+      --id=<value>                        Environment id
       --include-access-credentials        Include access credentials for basic auth for each service URL
       --insecure-skip-verify              Skip TLS or SSH certificate verification
-      --no-header                         hide table header from output
-      --no-truncate                       do not truncate output to fit screen
-      --output=<option>                   output in a more machine friendly format
-                                          <options: csv|json|yaml>
       --output-urls-to=<value>            Output URLs to file
-      --profile=<value>                   Run in a specific profile context
+      --profile=<value>                   Run in a specific profile context (either an alias or a URL)
       --show-preevy-service-urls          Show URLs for internal Preevy services
       --[no-]skip-unchanged-files         Detect and skip unchanged files when copying (default: true)
-      --sort=<value>                      property to sort by (prepend '-' for descending)
+      --skip-volume=<value>...            [default: ] Additional volume glob patterns to skip copying
       --tls-hostname=<value>              Override TLS server name when tunneling via HTTPS
 
 GLOBAL FLAGS
@@ -61,10 +54,32 @@ GLOBAL FLAGS
       --enable-plugin=<value>...        [default: @preevy/plugin-github] Enable plugin with specified package name
       --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
 
+OUTPUT FLAGS
+  -x, --extended         show extra columns
+      --columns=<value>  only show provided columns (comma-separated)
+      --csv              output is csv format [alias: --output=csv]
+      --filter=<value>   filter property by partial string matching, ex: name=foo
+      --no-header        hide table header from output
+      --no-truncate      do not truncate output to fit screen
+      --output=<option>  output in a more machine friendly format
+                         <options: csv|json|yaml>
+      --sort=<value>     property to sort by (prepend '-' for descending)
+
 AZURE DRIVER FLAGS
   --azure-region=<value>           Microsoft Azure region in which resources will be provisioned
   --azure-subscription-id=<value>  Microsoft Azure subscription id
   --azure-vm-size=<value>          [default: Standard_B2s] Machine type to be provisioned
+
+BUILD FLAGS
+  --builder=<value>               Builder to use
+  --no-build                      Do not build images
+  --no-cache                      Do not use cache when building the images
+  --no-registry-cache             Do not add the registry as a cache source and target
+  --no-registry-single-name       Disable auto-detection for ECR-style registry single name
+  --registry=<value>              Image registry. If this flag is specified, the "build-context" flag defaults to
+                                  "*local"
+  --registry-single-name=<value>  Use single name for image registry, ECR-style. Default: auto-detect from "registry"
+                                  flag
 
 GCE DRIVER FLAGS
   --gce-machine-type=<value>  Machine type to be provisioned
@@ -72,6 +87,7 @@ GCE DRIVER FLAGS
   --gce-zone=<value>          Google Cloud zone in which resources will be provisioned
 
 GITHUB INTEGRATION FLAGS
+  --github-add-build-cache                   Add github cache to the build
   --github-pr-comment-enabled=<option>       [default: auto] Whether to enable posting to the GitHub PR
                                              <options: auto|no|always>
   --github-pr-comment-template-file=<value>  Path to nunjucks template file
@@ -97,6 +113,12 @@ LIGHTSAIL DRIVER FLAGS
 
 DESCRIPTION
   Bring up a preview environment
+
+FLAG DESCRIPTIONS
+  --id=<value>  Environment id
+
+    Affects created URLs
+    If not specified, will detect from the current Git context
 ```
 
-_See code: [src/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.56/src/commands/up.ts)_
+_See code: [src/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.58/src/commands/up.ts)_

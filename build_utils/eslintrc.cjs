@@ -40,6 +40,7 @@ module.exports = {
       'single',
       { avoidEscape: true, allowTemplateLiterals: false },
     ],
+    'import/extensions': 'off',
     'dot-location': 'warn',
     'no-trailing-spaces': 'warn',
     'no-multi-spaces': 'warn',
@@ -101,9 +102,6 @@ module.exports = {
       }
     ],
     'jest/valid-describe': ['off'],
-    'import/extensions': ['error', 'never', {
-      'json': 'always',
-    }],
     'no-restricted-imports': ['error', { patterns: ['**/dist/**', 'src/*'] }],
     // copied from https://github.com/airbnb/javascript/blob/master/packages/eslint-config-airbnb-base/rules/style.js#L334
     // removed rule about generators/iterators since es2019 natively supports them

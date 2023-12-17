@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from '@jest/globals'
-import { repeat } from 'lodash'
-import { alphabets, randomString, truncatePrefix, truncateWithHash } from './strings'
+import { repeat } from 'lodash-es'
+import { alphabets, randomString, truncatePrefix, truncateWithHash } from './strings.js'
 
 describe('strings', () => {
   describe('truncateWithHash', () => {

@@ -16,14 +16,15 @@ USAGE
     <value>] [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
     [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template
     <value>] [--id <value>] [--force] [--wait] [--github-token <value>] [--github-repo <value>] [--github-pull-request
-    <value>] [--github-pr-comment-template-file <value>] [--github-pr-comment-enabled auto|no|always]
+    <value>] [--github-pr-comment-template-file <value>] [--github-add-build-cache] [--github-pr-comment-enabled
+    auto|no|always]
 
 FLAGS
   -d, --driver=<option>  Machine driver to use
                          <options: lightsail|gce|azure|kube-pod>
       --force            Do not error if the environment is not found
-      --id=<value>       Environment id - affects created URLs. If not specified, will try to detect automatically
-      --profile=<value>  Run in a specific profile context
+      --id=<value>       Environment id
+      --profile=<value>  Run in a specific profile context (either an alias or a URL)
       --wait             Wait for resource deletion to complete. If false (the default), the deletion will be started
                          but not waited for
 
@@ -45,6 +46,7 @@ GCE DRIVER FLAGS
   --gce-zone=<value>        Google Cloud zone in which resources will be provisioned
 
 GITHUB INTEGRATION FLAGS
+  --github-add-build-cache                   Add github cache to the build
   --github-pr-comment-enabled=<option>       [default: auto] Whether to enable posting to the GitHub PR
                                              <options: auto|no|always>
   --github-pr-comment-template-file=<value>  Path to nunjucks template file
@@ -65,6 +67,12 @@ LIGHTSAIL DRIVER FLAGS
 
 DESCRIPTION
   Delete preview environments
+
+FLAG DESCRIPTIONS
+  --id=<value>  Environment id
+
+    Affects created URLs
+    If not specified, will detect from the current Git context
 ```
 
-_See code: [src/commands/down.ts](https://github.com/livecycle/preevy/blob/v0.0.56/src/commands/down.ts)_
+_See code: [src/commands/down.ts](https://github.com/livecycle/preevy/blob/v0.0.58/src/commands/down.ts)_

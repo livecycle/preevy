@@ -1,8 +1,11 @@
 {
   "name": "@preevy/plugin-github",
   "version": "0.0.58",
-  "description": "",
-  "main": "dist/index.js",
+  "description": "Preevy plugin for GitHub",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "type": "module",
   "files": [
     "dist"
   ],
@@ -11,18 +14,18 @@
     "@oclif/core": "livecycle/oclif-core-patched-for-preevy#v3.12.0-preevy-patch-10",
     "@preevy/cli-common": "0.0.58",
     "@preevy/core": "0.0.58",
-    "lodash": "^4.17.21",
+    "lodash-es": "^4.17.21",
     "nunjucks": "^3.2.4",
     "octokit": "^3.1.1"
   },
   "devDependencies": {
     "@types/nunjucks": "^3.2.2",
-    "@typescript-eslint/eslint-plugin": "6.10.0",
-    "@typescript-eslint/parser": "6.10.0",
+    "@typescript-eslint/eslint-plugin": "6.14.0",
+    "@typescript-eslint/parser": "6.14.0",
     "eslint": "^8.36.0",
     "lint-staged": "^15.2.0",
     "shx": "^0.3.3",
-    "typescript": "^5.2.2"
+    "typescript": "^5.3.3"
   },
   "scripts": {
     "lint": "eslint . --ext .ts,.tsx --cache",

@@ -1,2 +1,2 @@
-export * from './model'
-export * from './tunnel-server-client'
+export * from './model.js'
+export * from './tunnel-server-client.js'

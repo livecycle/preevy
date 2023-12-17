@@ -1,7 +1,7 @@
 import { Logger } from 'pino'
 import { inspect } from 'util'
 import { Gauge } from 'prom-client'
-import lodash from 'lodash'
+import lodash from 'lodash-es'
 import { BaseSshClient, baseSshServer } from './base-server'
 import { ActiveTunnelStore, activeTunnelStoreKey } from '../tunnel-store'
 import { KeyAlreadyExistsError } from '../memory-store'

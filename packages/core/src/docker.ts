@@ -1,7 +1,7 @@
-import { omitBy } from 'lodash'
-import { Logger } from './log'
-import { MachineConnection, ForwardSocket } from './driver'
-import { withSpinner } from './spinner'
+import { omitBy } from 'lodash-es'
+import { Logger } from './log.js'
+import { MachineConnection, ForwardSocket } from './driver/index.js'
+import { withSpinner } from './spinner.js'
 
 // export type FuncWrapper = <Return, Args extends unknown[] = []>(
 //   f: (...args: Args) => Promise<Return>,

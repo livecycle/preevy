@@ -1,4 +1,4 @@
-import { execPromiseStdout } from './child-process'
+import { execPromiseStdout } from './child-process.js'
 
 export function gitContext(cwd: string = process.cwd()) {
   const execGit = async (command: string) => await execPromiseStdout(`git ${command}`, { cwd })
@@ -27,11 +27,14 @@ export function gitContext(cwd: string = process.cwd()) {
     return await execGit(`config remote.${trackingRemote}.url`)
   }
 
+  const localChanges = async () => await execGit('diff-index HEAD --').catch(() => '')
+
   return {
     branchName,
     commit: head,
     author,
     remoteTrackingBranchUrl,
+    localChanges,
   }
 }
 

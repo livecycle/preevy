@@ -1,6 +1,6 @@
 const deepMerge = require('../build_utils/deep_merge')
 
-module.exports = deepMerge(require('../build_utils/eslintrc'), {
+module.exports = deepMerge(require('../build_utils/eslintrc.cjs'), {
   rules: {
     'no-underscore-dangle': [
       'warn',

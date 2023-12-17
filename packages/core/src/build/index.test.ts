@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeEach } from '@jest/globals'
-import { ImageRegistry, generateBuild, parseRegistry } from './build'
-import { ComposeModel, ComposeService } from './compose'
+import { describe, it, expect, beforeEach, jest } from '@jest/globals'
+import { ImageRegistry, generateBuild, parseRegistry } from './index.js'
+import { ComposeModel, ComposeService } from '../compose/index.js'
+import { ImageTagCalculator } from './image-tag.js'
+import { mockFunction } from '../test-helpers.js'
 
 describe('build', () => {
   const ECR_BASE_REGISTRY = '123456789.dkr.ecr.us-east-1.amazonaws.com'
@@ -84,18 +86,25 @@ describe('build', () => {
   })
 
   describe('generateBuild', () => {
-    let result: ReturnType<typeof generateBuild>
+    let result: Awaited<ReturnType<typeof generateBuild>>
     let bakeArgs: string[]
 
+    let mockTagCalculator: jest.MockedFunction<ImageTagCalculator>
+    beforeEach(() => {
+      mockTagCalculator = mockFunction<ImageTagCalculator>(async () => 'abcdef')
+    })
+
     describe('sanity', () => {
-      beforeEach(() => {
-        result = generateBuild({
+      beforeEach(async () => {
+        result = await generateBuild({
+          imageTagCalculator: mockTagCalculator,
           composeModel: {
             name: 'my-project',
             services: {
               frontend: {
                 build: {
-                  context: '.',
+                  context: '/context',
+                  dockerfile: 'x/Dockerfile',
                   target: 'dev',
                 },
                 environment: {
@@ -114,7 +123,6 @@ describe('build', () => {
             registry: { registry: 'my-registry' },
           },
           machineDockerPlatform: 'linux/amd64',
-          gitHash: 'abcdef',
         })
 
         bakeArgs = result.createBakeArgs('my-file.yaml')
@@ -126,7 +134,8 @@ describe('build', () => {
           services: {
             frontend: {
               build: {
-                context: '.',
+                context: '/context',
+                dockerfile: 'x/Dockerfile',
                 target: 'dev',
                 cache_from: [
                   'my-registry/preevy-my-project-frontend:latest',
@@ -161,7 +170,8 @@ describe('build', () => {
           services: {
             frontend: {
               build: {
-                context: '.',
+                context: '/context',
+                dockerfile: 'x/Dockerfile',
                 target: 'dev',
               },
               image: 'my-registry/preevy-my-project-frontend:abcdef',
@@ -178,14 +188,16 @@ describe('build', () => {
     })
 
     describe('ECR-style registry', () => {
-      beforeEach(() => {
-        result = generateBuild({
+      beforeEach(async () => {
+        result = await generateBuild({
+          imageTagCalculator: mockTagCalculator,
           composeModel: {
             name: 'my-project',
             services: {
               frontend: {
                 build: {
-                  context: '.',
+                  context: '/context',
+                  dockerfile_inline: 'bla',
                   target: 'dev',
                 },
                 environment: {
@@ -204,7 +216,6 @@ describe('build', () => {
             registry: { registry: 'my-registry', singleName: 'my-repo' },
           },
           machineDockerPlatform: 'linux/amd64',
-          gitHash: 'abcdef',
         })
       })
 
@@ -235,14 +246,16 @@ describe('build', () => {
     })
 
     describe('when no registry is given', () => {
-      beforeEach(() => {
-        result = generateBuild({
+      beforeEach(async () => {
+        result = await generateBuild({
+          imageTagCalculator: mockTagCalculator,
           composeModel: {
             name: 'my-project',
             services: {
               frontend: {
                 build: {
-                  context: '.',
+                  context: '/context',
+                  dockerfile: 'x/Dockerfile',
                   target: 'dev',
                 },
                 environment: {
@@ -261,7 +274,6 @@ describe('build', () => {
             registry: undefined,
           },
           machineDockerPlatform: 'linux/amd64',
-          gitHash: 'abcdef',
         })
 
         bakeArgs = result.createBakeArgs('my-file.yaml')
@@ -291,81 +303,17 @@ describe('build', () => {
       })
     })
 
-    describe('when no git hash is given', () => {
-      beforeEach(() => {
-        result = generateBuild({
-          composeModel: {
-            name: 'my-project',
-            services: {
-              frontend: {
-                build: {
-                  context: '.',
-                  target: 'dev',
-                },
-                environment: {
-                  FOO: 'bar',
-                },
-              },
-              backend: {
-                build: { context: '.' },
-              },
-              db: {
-                image: 'mydb',
-              },
-            },
-          },
-          buildSpec: {
-            builder: 'my-builder',
-            cacheFromRegistry: true,
-            noCache: false,
-            registry: { registry: 'my-registry' },
-          },
-          machineDockerPlatform: 'linux/amd64',
-          gitHash: undefined,
-        })
-
-        bakeArgs = result.createBakeArgs('my-file.yaml')
-      })
-
-      describe('build model', () => {
-        it('should contain a random tag', () => {
-          expect(result.buildModel.services?.frontend).toMatchObject({
-            build: {
-              tags: [
-                'my-registry/preevy-my-project-frontend:latest',
-                expect.stringMatching(/^my-registry\/preevy-my-project-frontend:[a-z0-9]{8}$/),
-              ],
-            },
-            image: expect.stringMatching(/^my-registry\/preevy-my-project-frontend:[a-z0-9]{8}$/),
-          })
-        })
-
-        it('should match the image', () => {
-          expect(result.buildModel.services?.frontend?.build?.tags).toContain(
-            result.buildModel.services?.frontend?.image,
-          )
-          expect(result.deployModel.services?.frontend?.image).toEqual(
-            result.buildModel.services?.frontend?.image,
-          )
-        })
-
-        it('should match the random tag of the other service', () => {
-          const backendRandomTag = result.buildModel.services?.backend?.image?.split?.(':')?.[1] as string
-          expect(backendRandomTag).toMatch(/^[a-z0-9]{8}$/)
-          expect(backendRandomTag).toEqual(result.buildModel.services?.backend?.image?.split?.(':')?.[1])
-        })
-      })
-    })
-
     describe('when buildSpec.cacheFromRegistry=false and an image is given', () => {
-      beforeEach(() => {
-        result = generateBuild({
+      beforeEach(async () => {
+        result = await generateBuild({
+          imageTagCalculator: mockTagCalculator,
           composeModel: {
             name: 'my-project',
             services: {
               frontend: {
                 build: {
-                  context: '.',
+                  context: '/context',
+                  dockerfile: 'x/Dockerfile',
                   target: 'dev',
                   cache_from: ['cf1', 'cf2'],
                   cache_to: ['ct1'],
@@ -387,7 +335,6 @@ describe('build', () => {
             registry: { registry: 'my-registry' },
           },
           machineDockerPlatform: 'linux/amd64',
-          gitHash: 'abcdef',
         })
 
         bakeArgs = result.createBakeArgs('my-file.yaml')
@@ -396,7 +343,8 @@ describe('build', () => {
       it('should return a correct build model', () => {
         expect(result.buildModel.services?.frontend).toMatchObject({
           build: {
-            context: '.',
+            context: '/context',
+            dockerfile: 'x/Dockerfile',
             target: 'dev',
             tags: [
               'my-registry/preevy-my-project-frontend:latest',

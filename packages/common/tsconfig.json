@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "lib": ["ES2022"],
-    "module": "CommonJS",
-    "target": "ES2019",
-    "moduleResolution": "node",
+    "lib": ["es2022", "ESNext.Disposable"],
+    "module": "Node16",
+    "target": "ES2020",
+    "moduleResolution": "Node16",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -21,6 +21,9 @@
     "strictNullChecks": true,
     "composite": true,
     "outDir": "dist",
+  },
+  "ts-node": {
+    "esm": true
   },
   "include": ["index.ts", "src/**/*"],
   "exclude": ["lint-staged.config.cjs"]

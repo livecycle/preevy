@@ -23,7 +23,7 @@ ARGUMENTS
 FLAGS
   -d, --driver=<option>  Machine driver to use
                          <options: lightsail|gce|azure|kube-pod>
-      --profile=<value>  Run in a specific profile context
+      --profile=<value>  Run in a specific profile context (either an alias or a URL)
 
 GLOBAL FLAGS
   -D, --debug                           Enable debug logging

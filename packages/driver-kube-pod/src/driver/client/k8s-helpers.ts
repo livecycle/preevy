@@ -1,8 +1,8 @@
 import * as k8s from '@kubernetes/client-node'
 import { ensureDefined, extractDefined } from '@preevy/core'
 import { asyncFilter, asyncFirst, asyncToArray } from 'iter-tools-es'
-import { paginationIterator } from './pagination'
-import { FuncWrapper } from './log-error'
+import { paginationIterator } from './pagination.js'
+import { FuncWrapper } from './log-error.js'
 
 export type DeploymentNotReadyErrorReason = 'NoRevision' | 'NoReplicaSet' | 'NoReadyPod'
 export class DeploymentNotReadyError extends Error {

@@ -1,10 +1,10 @@
 import { Flags, ux } from '@oclif/core'
-import inquirer from 'inquirer'
+import * as inquirer from '@inquirer/prompts'
 import { BaseCommand, text } from '@preevy/cli-common'
 import { LocalProfilesConfig } from '@preevy/core'
-import { loadProfileConfig } from '../../profile-command'
-import { FsType, chooseFs, chooseFsType, fsTypes, isFsType } from '../../fs'
-import { machineDrivers } from '../../drivers'
+import { loadProfileConfig } from '../../profile-command.js'
+import { FsType, chooseFs, chooseFsType, fsTypes, isFsType } from '../../fs.js'
+import { machineDrivers } from '../../drivers.js'
 
 const validateFsType = (fsType: string) => {
   if (!isFsType(fsType)) {
@@ -13,16 +13,10 @@ const validateFsType = (fsType: string) => {
   return fsType
 }
 
-const chooseTargetAlias = async (defaultAlias: string) => (
-  await inquirer.prompt<{ targetAlias: string }>([
-    {
-      type: 'input',
-      name: 'targetAlias',
-      message: 'Target profile name',
-      default: defaultAlias,
-    },
-  ])
-).targetAlias
+const chooseTargetAlias = async (defaultAlias: string) => await inquirer.input({
+  message: 'Target profile name',
+  default: defaultAlias,
+})
 
 // eslint-disable-next-line no-use-before-define
 export default class CopyProfile extends BaseCommand<typeof CopyProfile> {

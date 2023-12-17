@@ -1,5 +1,5 @@
 import { describe, test, expect, it } from '@jest/globals'
-import { ScriptInjection, parseScriptInjectionLabels, scriptInjectionsToLabels } from './script-injection'
+import { ScriptInjection, parseScriptInjectionLabels, scriptInjectionsToLabels } from './script-injection.js'
 
 describe('script injection labels', () => {
   describe('parseScriptInjectionLabels', () => {

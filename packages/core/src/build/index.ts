@@ -1,7 +1,8 @@
-import { mapValues, pickBy } from 'lodash'
-import { ComposeModel } from './compose'
-import { randomString } from './strings'
-import { hasProp } from './nulls'
+import { mapValues, pickBy } from 'lodash-es'
+import { ComposeModel } from '../compose/index.js'
+import { hasProp } from '../nulls.js'
+import { asyncMapValues } from '../async.js'
+import { ImageTagCalculator } from './image-tag.js'
 
 export type ImageRegistry = { registry: string; singleName?: string }
 
@@ -36,19 +37,17 @@ const registryImageRefFactory = ({ registry, singleName }: ImageRegistry): Image
     : ({ image, tag }) => `${registry}/${image}:${tag}`
 )
 
-export const generateBuild = ({
+export const generateBuild = async ({
   composeModel,
   buildSpec,
   machineDockerPlatform,
-  gitHash,
+  imageTagCalculator,
 }: {
   composeModel: ComposeModel
   buildSpec: BuildSpec
   machineDockerPlatform: string
-  gitHash: string | undefined
+  imageTagCalculator: ImageTagCalculator
 }) => {
-  const tagSuffix = gitHash ?? randomString.lowercaseNumeric(8)
-
   const imageRef = buildSpec.registry
     ? registryImageRefFactory(buildSpec.registry)
     : plainImageRefFactory
@@ -58,11 +57,12 @@ export const generateBuild = ({
     tag,
   })
 
-  const services = mapValues(
+  const services = await asyncMapValues(
     pickBy(composeModel.services ?? {}, hasProp('build')),
-    ({ build, image }, serviceName) => {
+    async ({ build, image }, serviceName) => {
       const latestImage = imageRefForService(serviceName, 'latest')
-      const thisImage = imageRefForService(serviceName, tagSuffix)
+      const serviceTagSuffix = await imageTagCalculator(build)
+      const thisImage = imageRefForService(serviceName, serviceTagSuffix)
 
       const cacheFrom = build.cache_from ?? []
       const cacheTo = build.cache_to ?? []

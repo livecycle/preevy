@@ -5,8 +5,8 @@ import { Readable } from 'stream'
 import { pipeline } from 'stream/promises'
 import { mkdtemp } from 'fs/promises'
 import tar from 'tar'
-import { localFs } from './fs'
-import { FileBackedSnapshotter, Snapshot } from './snapshot'
+import { localFs } from './fs/index.js'
+import { FileBackedSnapshotter, Snapshot } from './snapshot.js'
 
 const readStream = (stream: Readable): Promise<Buffer> => new Promise<Buffer>((resolve, reject) => {
   const buffer: Buffer[] = []

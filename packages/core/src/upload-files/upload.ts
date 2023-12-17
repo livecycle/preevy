@@ -1,12 +1,12 @@
 import zlib from 'zlib'
-import { throttle } from 'lodash'
-import { withSpinner } from '../spinner'
-import { telemetryEmitter } from '../telemetry'
-import { filterCommand, filterStore } from './files-filter'
-import { FileInfo, FileToCopy } from './files'
-import { ExpandedTransferProgress, expandedTransferProgressEmitter } from './progress'
-import { StartStreamingResult, tarStreamer } from './tar'
-import { CommandExecuter } from '../command-executer'
+import { throttle } from 'lodash-es'
+import { withSpinner } from '../spinner.js'
+import { telemetryEmitter } from '../telemetry/index.js'
+import { filterCommand, filterStore } from './files-filter.js'
+import { FileInfo, FileToCopy } from './files.js'
+import { ExpandedTransferProgress, expandedTransferProgressEmitter } from './progress.js'
+import { StartStreamingResult, tarStreamer } from './tar.js'
+import { CommandExecuter } from '../command-executer.js'
 
 const displayAndUnit = (nbytes: number) => {
   if (nbytes < 1024) {

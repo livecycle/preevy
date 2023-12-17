@@ -12,13 +12,13 @@ Initialize or import a new profile
 ```
 USAGE
   $ preevy init [PROFILE-ALIAS] [-D] [-f <value>] [--system-compose-file <value>] [-p <value>]
-    [--enable-plugin <value>] [--disable-plugin <value>] [-f <value>]
+    [--enable-plugin <value>] [--disable-plugin <value>] [--from <value>]
 
 ARGUMENTS
-  PROFILE-ALIAS  [default: default] Alias of the profile
+  PROFILE-ALIAS  Name of the profile
 
 FLAGS
-  -f, --from=<value>  Import profile from existing path
+  --from=<value>  Import profile from existing path
 
 GLOBAL FLAGS
   -D, --debug                           Enable debug logging
@@ -32,4 +32,4 @@ DESCRIPTION
   Initialize or import a new profile
 ```
 
-_See code: [src/commands/init.ts](https://github.com/livecycle/preevy/blob/v0.0.56/src/commands/init.ts)_
+_See code: [src/commands/init.ts](https://github.com/livecycle/preevy/blob/v0.0.58/src/commands/init.ts)_

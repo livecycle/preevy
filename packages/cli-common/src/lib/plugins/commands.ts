@@ -1,5 +1,5 @@
 import { Command } from '@oclif/core'
-import { LoadedPlugin } from './load'
+import { LoadedPlugin } from './load.js'
 
 const pluginCommands = (loadedPlugins: LoadedPlugin[]) => loadedPlugins
   .flatMap(p => (p.initResults.commands ?? []).map(c => ({ command: c, pluginConfig: p.config })))

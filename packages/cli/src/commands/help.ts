@@ -1,7 +1,7 @@
 // Taken from: https://github.com/oclif/plugin-help/blob/main/src/commands/help.ts (MIT License)
 // The only change is that we're using our own Help class, which displays global files on topics.
 import { Args, Command, Flags } from '@oclif/core'
-import Help from '../help'
+import Help from '../help.js'
 
 export default class HelpCommand extends Command {
   static args = {

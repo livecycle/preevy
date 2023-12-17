@@ -1,4 +1,4 @@
-import { TransferProgressEmitter } from './progress'
+import { TransferProgressEmitter } from './progress.js'
 
 export type TransferOptions = {
   mode?: number | string

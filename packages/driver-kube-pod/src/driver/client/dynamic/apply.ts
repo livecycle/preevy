@@ -1,9 +1,9 @@
 import * as k8s from '@kubernetes/client-node'
 import { pSeries } from '@preevy/core'
 import { inspect } from 'util'
-import { bodyOrUndefined } from '../common'
-import waiter from './wait'
-import { FuncWrapper } from '../log-error'
+import { bodyOrUndefined } from '../common.js'
+import waiter from './wait.js'
+import { FuncWrapper } from '../log-error.js'
 
 export type ApplyFunc<Return = k8s.KubernetesObject | undefined> = (
   existingObject: k8s.KubernetesObject | undefined,

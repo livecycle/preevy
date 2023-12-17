@@ -2,8 +2,8 @@ import { ChildProcess, spawn, StdioOptions } from 'child_process'
 import yaml from 'yaml'
 import { WriteStream } from 'fs'
 import { RequiredProperties, hasPropertyDefined } from '@preevy/common'
-import { ComposeModel, ComposeService } from './model'
-import { childProcessPromise, childProcessStdoutPromise, ProcessError } from '../child-process'
+import { ComposeModel, ComposeService } from './model.js'
+import { childProcessPromise, childProcessStdoutPromise, ProcessError } from '../child-process.js'
 
 const DOCKER_COMPOSE_NO_CONFIGURATION_FILE_ERROR_CODE = 14
 

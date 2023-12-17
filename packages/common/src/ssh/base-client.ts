@@ -2,9 +2,9 @@ import events from 'events'
 import tls, { TLSSocket } from 'tls'
 import ssh2, { ParsedKey } from 'ssh2'
 import { promisify } from 'util'
-import { tryParseJson } from '../json'
-import { Logger } from '../log'
-import { formatPublicKey, parseKey } from './keys'
+import { tryParseJson } from '../json.js'
+import { Logger } from '../log.js'
+import { formatPublicKey, parseKey } from './keys.js'
 
 export type SshBaseConnectionConfig = {
   hostname: string

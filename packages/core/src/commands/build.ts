@@ -2,13 +2,13 @@ import fs from 'fs'
 import path from 'path'
 import yaml from 'yaml'
 import { spawn } from 'child_process'
-import { ComposeModel } from '../compose'
-import { Logger } from '../log'
-import { BuildSpec, generateBuild } from '../build'
-import { gitContext } from '../git'
-import { childProcessPromise } from '../child-process'
-import { telemetryEmitter } from '../telemetry'
-import { measureTime } from '../timing'
+import { ComposeModel } from '../compose/index.js'
+import { Logger } from '../log.js'
+import { BuildSpec, generateBuild } from '../build/index.js'
+import { childProcessPromise } from '../child-process.js'
+import { telemetryEmitter } from '../telemetry/index.js'
+import { measureTime } from '../timing.js'
+import { ImageTagCalculator } from '../build/image-tag.js'
 
 const buildCommand = async ({
   log,
@@ -18,6 +18,7 @@ const buildCommand = async ({
   buildSpec,
   machineDockerPlatform,
   env,
+  imageTagCalculator,
 }: {
   log: Logger
   composeModel: ComposeModel
@@ -26,12 +27,13 @@ const buildCommand = async ({
   buildSpec: BuildSpec
   machineDockerPlatform: string
   env?: Record<string, string>
+  imageTagCalculator: ImageTagCalculator
 }) => {
-  const { buildModel, createBakeArgs, deployModel } = generateBuild({
+  const { buildModel, createBakeArgs, deployModel } = await generateBuild({
     composeModel,
     buildSpec,
-    gitHash: await gitContext(cwd)?.commit({ short: true }),
     machineDockerPlatform,
+    imageTagCalculator,
   })
 
   const modelStr = yaml.stringify(buildModel)

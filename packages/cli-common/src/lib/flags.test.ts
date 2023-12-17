@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals'
-import { formatFlagsToArgs } from './flags'
+import { formatFlagsToArgs } from './flags.js'
 
 describe('formatFlagsToArgs', () => {
   describe('when given accepted characters', () => {

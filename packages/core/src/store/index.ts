@@ -1,7 +1,7 @@
-import { Snapshot, snapshotStore } from './snapshot'
+import { Snapshot, snapshotStore } from './snapshot.js'
 
-export * from './tar'
-export { VirtualFS, jsonReader, fsTypeFromUrl, localFsFromUrl, localFs } from './fs'
+export * from './tar.js'
+export { VirtualFS, jsonReader, fsTypeFromUrl, localFsFromUrl, localFs, FsReader } from './fs/index.js'
 
 export type TransactionOp<T> = (s: Pick<Snapshot, 'write' | 'delete' | 'read'>) => Promise<T>
 

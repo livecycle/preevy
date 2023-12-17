@@ -9,10 +9,10 @@ import { randomBytes } from 'crypto'
 import { asyncFilter, asyncFind, asyncFirst } from 'iter-tools-es'
 
 import { ensureDefined, extractDefined } from '@preevy/core'
-import { paginationIterator } from '../aws-utils/pagination'
-import { waitUntilAllOperationsSucceed } from './operation-waiter'
-import { BundleId, bundleIdEqualOrLarger, bundleIdFromString } from './bundle-id'
-import { instanceTags, instanceTagsPredicate, keypairTags, keypairTagsPredicate, snapshotTags, snapshotTagsPredicate } from './tags'
+import { paginationIterator } from '../aws-utils/pagination.js'
+import { waitUntilAllOperationsSucceed } from './operation-waiter.js'
+import { BundleId, bundleIdEqualOrLarger, bundleIdFromString } from './bundle-id.js'
+import { instanceTags, instanceTagsPredicate, keypairTags, keypairTagsPredicate, snapshotTags, snapshotTagsPredicate } from './tags.js'
 
 export const REGIONS = [
   'us-east-2',

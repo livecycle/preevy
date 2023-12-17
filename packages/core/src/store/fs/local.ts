@@ -1,7 +1,7 @@
 import fs from 'fs/promises'
 import path, { dirname } from 'path'
 import { rimraf } from 'rimraf'
-import { VirtualFS } from './base'
+import { VirtualFS } from './base.js'
 
 const isNotFoundError = (e: unknown) => (e as { code?: unknown })?.code === 'ENOENT'
 

@@ -1,6 +1,6 @@
 import { profileStore } from '@preevy/core'
 import { Flags, ux } from '@oclif/core'
-import { mapValues, omit, pickBy } from 'lodash'
+import { mapValues, omit, pickBy } from 'lodash-es'
 import { text } from '@preevy/cli-common'
 import {
   removeDriverFlagPrefix,
@@ -10,9 +10,9 @@ import {
   DriverName,
   driverFlags,
   machineCreationDriverFlags,
-} from '../../../drivers'
-import ProfileCommand from '../../../profile-command'
-import DriverCommand from '../../../driver-command'
+} from '../../../drivers.js'
+import ProfileCommand from '../../../profile-command.js'
+import DriverCommand from '../../../driver-command.js'
 
 const removeDefaultValues = <T extends Record<string, { default?: unknown }>>(
   flags: T

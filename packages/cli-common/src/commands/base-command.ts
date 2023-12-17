@@ -3,9 +3,10 @@ import {
   LogLevel, Logger, logLevels, ComposeModel, ProcessError, telemetryEmitter,
 } from '@preevy/core'
 import { asyncReduce } from 'iter-tools-es'
-import { ParsingToken } from '@oclif/core/lib/interfaces/parser'
-import { commandLogger } from '../lib/log'
-import { composeFlags, pluginFlags } from '../lib/common-flags'
+import { ParsingToken } from '@oclif/core/lib/interfaces/parser.js'
+import { commandLogger } from '../lib/log.js'
+import { composeFlags, pluginFlags } from '../lib/common-flags/index.js'
+import { PreevyConfig } from '../../../core/src/config.js'
 
 // eslint-disable-next-line no-use-before-define
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof BaseCommand['baseFlags'] & T['flags']>
@@ -68,7 +69,7 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
     )
   }
 
-  protected get preevyConfig() {
+  protected get preevyConfig(): PreevyConfig {
     return this.config.preevyConfig
   }
 

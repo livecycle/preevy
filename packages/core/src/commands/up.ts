@@ -1,19 +1,22 @@
 import { MachineStatusCommand, ScriptInjection } from '@preevy/common'
 import yaml from 'yaml'
-import { TunnelOpts } from '../ssh'
-import { ComposeModel, composeModelFilename, localComposeClient } from '../compose'
-import { dockerEnvContext } from '../docker'
-import { MachineConnection } from '../driver'
-import { remoteProjectDir } from '../remote-files'
-import { Logger } from '../log'
-import { FileToCopy, uploadWithSpinner } from '../upload-files'
-import { EnvId } from '../env-id'
-import { BuildSpec } from '../build'
-import modelCommand from './model'
-import buildCommand from './build'
-import { CommandExecuter } from '../command-executer'
-import { telemetryEmitter } from '../telemetry'
-import { measureTime } from '../timing'
+import { TunnelOpts } from '../ssh/index.js'
+import { ComposeModel, composeModelFilename, localComposeClient } from '../compose/index.js'
+import { dockerEnvContext } from '../docker.js'
+import { MachineConnection } from '../driver/index.js'
+import { remoteProjectDir } from '../remote-files.js'
+import { Logger } from '../log.js'
+import { FileToCopy, uploadWithSpinner } from '../upload-files/index.js'
+import { EnvId } from '../env-id.js'
+import { BuildSpec } from '../build/index.js'
+import modelCommand from './model.js'
+import buildCommand from './build.js'
+import { CommandExecuter } from '../command-executer.js'
+import { telemetryEmitter } from '../telemetry/index.js'
+import { measureTime } from '../timing.js'
+import { imageTagCalculator } from '../build/image-tag.js'
+import { gitContext } from '../git.js'
+import { localFs } from '../index.js'
 
 const uploadFiles = async ({
   log,
@@ -120,7 +123,6 @@ const up = async ({
 
   if (buildSpec) {
     await using dockerContext = await dockerEnvContext({ connection, log })
-
     composeModel = (await buildCommand({
       log,
       buildSpec,
@@ -129,6 +131,10 @@ const up = async ({
       projectLocalDataDir,
       machineDockerPlatform: dockerPlatform,
       env: dockerContext.env,
+      imageTagCalculator: imageTagCalculator({
+        gitContext,
+        fsReader: localFs('/'),
+      }),
     })).deployModel
   }
 

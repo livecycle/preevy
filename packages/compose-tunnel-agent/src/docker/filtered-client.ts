@@ -1,5 +1,5 @@
 import Docker from 'dockerode'
-import { filters } from './filters'
+import { filters } from './filters.js'
 
 export const filteredClient = ({
   docker,

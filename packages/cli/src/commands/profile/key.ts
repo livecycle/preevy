@@ -1,7 +1,7 @@
 import { Args, ux } from '@oclif/core'
 import { jwkThumbprint, jwkThumbprintUri, parseKey, profileStore } from '@preevy/core'
 import { formatPublicKey } from '@preevy/common'
-import ProfileCommand from '../../profile-command'
+import ProfileCommand from '../../profile-command.js'
 
 const keyTypes = ['private', 'public-pem', 'public-ssh', 'thumbprint', 'thumbprint-uri'] as const
 type KeyType = typeof keyTypes[number]

@@ -1,2 +1,2 @@
-export * from './events-client'
-export * from './filtered-client'
+export * from './events-client.js'
+export * from './filtered-client.js'

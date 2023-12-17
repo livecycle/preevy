@@ -1,8 +1,8 @@
 import { link, Org, localFs, profileStore, TokenExpiredError, getLivecycleTokensFromLocalFs } from '@preevy/core'
 import { Flags, ux } from '@oclif/core'
-import inquirer from 'inquirer'
-import ProfileCommand from '../../profile-command'
-import { LC_API_URL } from '../../defaults'
+import * as inquirer from '@inquirer/prompts'
+import ProfileCommand from '../../profile-command.js'
+import { LC_API_URL } from '../../defaults.js'
 
 // eslint-disable-next-line no-use-before-define
 export default class Link extends ProfileCommand<typeof Link> {
@@ -43,14 +43,13 @@ export default class Link extends ProfileCommand<typeof Link> {
           if (orgs.length === 1) {
             return orgs[0]
           }
-          const selection = await inquirer.prompt<{org: string}>({ type: 'list',
-            name: 'org',
+          org = await inquirer.select({
             message: 'Choose the organization to link the profile to',
             choices: orgs.map(o => ({
               name: o.name,
               value: o.slug,
-            })) })
-          org = selection.org
+            })),
+          })
         }
         const orgInfo = orgs.find(o => o.slug === org)
         if (!orgInfo) {

@@ -1,9 +1,9 @@
 import { Flags, ux } from '@oclif/core'
-import { mapValues } from 'lodash'
+import { mapValues } from 'lodash-es'
 import { EOL } from 'os'
-import { DEFAULT_PLUGINS } from '../plugins/default-plugins'
+import { DEFAULT_PLUGINS } from '../plugins/default-plugins.js'
 
-export * from './build-flags'
+export * from './build-flags.js'
 
 export const tableFlags = mapValues(ux.table.flags(), f => ({ ...f, helpGroup: 'OUTPUT' })) as ReturnType<typeof ux.table['flags']>
 

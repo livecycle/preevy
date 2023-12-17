@@ -1,4 +1,4 @@
-import { TelemetryEmitter } from './emitter'
+import { TelemetryEmitter } from './emitter.js'
 
 export const wireProcessExit = (process: NodeJS.Process, emitter: TelemetryEmitter) => {
   const captureExit = (() => {

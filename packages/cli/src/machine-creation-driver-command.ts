@@ -1,8 +1,8 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
 import { MachineCreationDriver } from '@preevy/core'
 import { BaseCommand } from '@preevy/cli-common'
-import DriverCommand from './driver-command'
-import { machineCreationflagsForAllDrivers, machineDrivers } from './drivers'
+import DriverCommand from './driver-command.js'
+import { machineCreationflagsForAllDrivers, machineDrivers } from './drivers.js'
 
 // eslint-disable-next-line no-use-before-define
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof MachineCreationDriverCommand['baseFlags'] & T['flags']>

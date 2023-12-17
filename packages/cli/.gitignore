@@ -11,7 +11,7 @@ node_modules/
 coverage
 
 # Transpiled files
-build/
+/build/
 
 # Optional npm cache directory
 .npm

@@ -1,4 +1,4 @@
-export { parseKey, formatPublicKey, keyFingerprint } from './keys'
+export { parseKey, formatPublicKey, keyFingerprint } from './keys.js'
 export {
   parseSshUrl,
   formatSshConnectionConfig,
@@ -7,4 +7,4 @@ export {
   SshConnectionConfig,
   SshClientOpts,
   HelloResponse,
-} from './base-client'
+} from './base-client.js'

@@ -4,23 +4,20 @@ import { asyncConcat, asyncMap } from 'iter-tools-es'
 import { Flags } from '@oclif/core'
 import { randomBytes } from 'crypto'
 import { InferredFlags } from '@oclif/core/lib/interfaces'
-import inquirer, { Question } from 'inquirer'
-import inquirerAutoComplete from 'inquirer-autocomplete-prompt'
+import inquirerAutoComplete from 'inquirer-autocomplete-standalone'
 import {
   telemetryEmitter,
   SshMachine, MachineDriver, MachineCreationDriver, MachineCreationDriverFactory, machineResourceType,
   MachineDriverFactory, sshKeysStore, Store,
   getStoredSshKey, sshDriver, extractDefined, Logger, machineStatusNodeExporterCommand,
 } from '@preevy/core'
-import { pick } from 'lodash'
-import createClient, { Client, REGIONS } from './client'
-import { BUNDLE_IDS, BundleId, bundleIdFromString } from './bundle-id'
-import { CUSTOMIZE_BARE_MACHINE } from './scripts'
-import { CURRENT_MACHINE_VERSION, TAGS, requiredTag } from './tags'
+import { pick } from 'lodash-es'
+import createClient, { Client, REGIONS } from './client.js'
+import { BUNDLE_IDS, BundleId, bundleIdFromString } from './bundle-id.js'
+import { CUSTOMIZE_BARE_MACHINE } from './scripts.js'
+import { CURRENT_MACHINE_VERSION, TAGS, requiredTag } from './tags.js'
 
 export { BundleId, BUNDLE_IDS, bundleIdFromString as bundleId }
-
-inquirer.registerPrompt('autocomplete', inquirerAutoComplete)
 
 type ResourceType = typeof machineResourceType | 'snapshot' | 'keypair'
 
@@ -122,21 +119,16 @@ const contextFromFlags = ({ region }: FlagTypes): { region: string } => ({
   region: region as string,
 })
 
-const questions = async (): Promise<Question[]> => [
-  {
-    type: 'autocomplete',
-    name: 'region',
+const inquireFlags = async () => {
+  const region = await inquirerAutoComplete<string>({
     default: process.env.AWS_REGION ?? 'us-east-1',
-    message: flags.region.description,
-    source: async (_opts, input) => REGIONS.filter(r => !input || r.includes(input.toLowerCase())),
+    message: flags.region.description as string,
+    source: async input => REGIONS.filter(r => !input || r.includes(input.toLowerCase())).map(value => ({ value })),
     suggestOnly: true,
-    filter: i => i.toLowerCase(),
-  } as inquirerAutoComplete.AutocompleteQuestionOptions,
-]
-
-const flagsFromAnswers = async (answers: Record<string, unknown>): Promise<FlagTypes> => ({
-  region: answers.region as string,
-})
+    transformer: i => i.toLowerCase(),
+  })
+  return { region }
+}
 
 const factory: MachineDriverFactory<FlagTypes, SshMachine, ResourceType> = ({
   flags: f,
@@ -294,6 +286,5 @@ export default {
   factory,
   machineCreationFlags,
   machineCreationFactory,
-  questions,
-  flagsFromAnswers,
+  inquireFlags,
 } as const

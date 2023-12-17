@@ -1,26 +1,28 @@
 import path from 'path'
-import fetch from 'node-fetch'
 import retry from 'p-retry'
 import util from 'util'
-import { mapValues, merge } from 'lodash'
+import { createRequire } from 'module'
+import { mapValues, merge } from 'lodash-es'
 import { COMPOSE_TUNNEL_AGENT_PORT, COMPOSE_TUNNEL_AGENT_SERVICE_LABELS, COMPOSE_TUNNEL_AGENT_SERVICE_NAME, MachineStatusCommand, ScriptInjection, dateReplacer } from '@preevy/common'
-import { ComposeModel, ComposeService, composeModelFilename } from './compose/model'
-import { TunnelOpts } from './ssh/url'
-import { Tunnel } from './tunneling'
-import { withBasicAuthCredentials } from './credentials'
-import { EnvMetadata, driverMetadataFilename } from './env-metadata'
-import { REMOTE_DIR_BASE } from './remote-files'
-import { isPacked, pkgSnapshotDir } from './pkg'
-import { EnvId } from './env-id'
-import { addScriptInjectionsToServices } from './compose/script-injection'
+import { ComposeModel, ComposeService, composeModelFilename } from './compose/model.js'
+import { TunnelOpts } from './ssh/url.js'
+import { Tunnel } from './tunneling/index.js'
+import { withBasicAuthCredentials } from './credentials/index.js'
+import { EnvMetadata, driverMetadataFilename } from './env-metadata.js'
+import { REMOTE_DIR_BASE } from './remote-files.js'
+import { isPacked, pkgSnapshotDir } from './pkg.js'
+import { EnvId } from './env-id.js'
+import { addScriptInjectionsToServices } from './compose/script-injection.js'
 
+const require = createRequire(import.meta.url)
 const COMPOSE_TUNNEL_AGENT_DIR = path.join(path.dirname(require.resolve('@preevy/compose-tunnel-agent')), '..')
 
 const baseDockerProxyService = () => {
-  const contextDir = isPacked() ? pkgSnapshotDir(path.join(__dirname, '../../compose-tunnel-agent')) : COMPOSE_TUNNEL_AGENT_DIR
+  const contextDir = isPacked() ? pkgSnapshotDir(path.join(import.meta.url, '../../compose-tunnel-agent')) : COMPOSE_TUNNEL_AGENT_DIR
   return {
     build: {
       context: contextDir,
+      dockerfile: path.join(contextDir, 'Dockerfile'),
     },
     ports: [
       {
@@ -175,7 +177,7 @@ export const queryTunnels = async ({
   const { tunnels } = await retry(async () => {
     const r = await fetch(
       `${composeTunnelServiceUrl}/tunnels`,
-      { timeout: 2500, headers: { Authorization: `Bearer ${credentials.password}` } }
+      { signal: AbortSignal.timeout(2500), headers: { Authorization: `Bearer ${credentials.password}` } }
     )
     if (!r.ok) {
       throw new Error(`Failed to connect to docker proxy at ${composeTunnelServiceUrl}: ${r.status}: ${r.statusText}`)

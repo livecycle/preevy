@@ -2,9 +2,9 @@ import path from 'path'
 import util from 'util'
 import fs from 'fs'
 import { rimraf } from 'rimraf'
-import { tarStreamer } from './tar'
+import { tarStreamer } from './tar.js'
 
-const PREEVY_ROOT_DIR = path.resolve(__dirname, '..', '..', '..', '..')
+const PREEVY_ROOT_DIR = path.resolve(import.meta.url, '..', '..', '..', '..')
 
 const TARGET_FILE = '/tmp/aa.tar'
 

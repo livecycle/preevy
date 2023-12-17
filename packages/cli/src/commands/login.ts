@@ -1,7 +1,7 @@
 import { Flags } from '@oclif/core'
 import { BaseCommand } from '@preevy/cli-common'
 import { login } from '@preevy/core'
-import { LC_API_URL, LC_AUTH_URL, LC_CLIENT_ID } from '../defaults'
+import { LC_API_URL, LC_AUTH_URL, LC_CLIENT_ID } from '../defaults.js'
 
 // eslint-disable-next-line no-use-before-define
 export default class Login extends BaseCommand<typeof Login> {

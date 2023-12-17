@@ -1,14 +1,15 @@
 import os from 'os'
 import fs from 'fs'
 import crypto from 'crypto'
-import stringify from 'fast-safe-stringify'
-import fetch from 'node-fetch'
-import { debounce } from 'lodash'
+import stringifyModule from 'fast-safe-stringify'
+import { debounce } from 'lodash-es'
 import pLimit from 'p-limit'
 import { inspect } from 'util'
-import { memoizedMachineId } from './machine-id'
-import { TelemetryEvent, TelemetryProperties, serializableEvent } from './events'
-import { detectCiProvider } from '../ci-providers'
+import { memoizedMachineId } from './machine-id.js'
+import { TelemetryEvent, TelemetryProperties, serializableEvent } from './events.js'
+import { detectCiProvider } from '../ci-providers/index.js'
+
+const stringify = stringifyModule.default
 
 const newRunId = () => `ses_${crypto.randomBytes(16).toString('base64url').replace(/[^a-zA-Z0-9]/g, '').substring(0, 10)}`
 
@@ -48,7 +49,7 @@ export const telemetryEmitter = async ({ dataDir, version, debug, filename }: {
       method: 'POST',
       redirect: 'follow',
       body,
-      timeout: 1500,
+      signal: AbortSignal.timeout(1500),
     }).catch(err => {
       if (debug) {
         process.stderr.write(`Error sending telemetry: ${inspect(err)}${os.EOL}`)

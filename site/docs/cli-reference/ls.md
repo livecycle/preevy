@@ -21,16 +21,7 @@ USAGE
 FLAGS
   -d, --driver=<option>  Machine driver to use
                          <options: lightsail|gce|azure|kube-pod>
-  -x, --extended         show extra columns
-      --columns=<value>  only show provided columns (comma-separated)
-      --csv              output is csv format [alias: --output=csv]
-      --filter=<value>   filter property by partial string matching, ex: name=foo
-      --no-header        hide table header from output
-      --no-truncate      do not truncate output to fit screen
-      --output=<option>  output in a more machine friendly format
-                         <options: csv|json|yaml>
-      --profile=<value>  Run in a specific profile context
-      --sort=<value>     property to sort by (prepend '-' for descending)
+      --profile=<value>  Run in a specific profile context (either an alias or a URL)
 
 GLOBAL FLAGS
   -D, --debug                           Enable debug logging
@@ -40,6 +31,17 @@ GLOBAL FLAGS
       --enable-plugin=<value>...        [default: @preevy/plugin-github] Enable plugin with specified package name
       --json                            Format output as json.
       --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
+
+OUTPUT FLAGS
+  -x, --extended         show extra columns
+      --columns=<value>  only show provided columns (comma-separated)
+      --csv              output is csv format [alias: --output=csv]
+      --filter=<value>   filter property by partial string matching, ex: name=foo
+      --no-header        hide table header from output
+      --no-truncate      do not truncate output to fit screen
+      --output=<option>  output in a more machine friendly format
+                         <options: csv|json|yaml>
+      --sort=<value>     property to sort by (prepend '-' for descending)
 
 AZURE DRIVER FLAGS
   --azure-region=<value>           Microsoft Azure region in which resources will be provisioned
@@ -63,4 +65,4 @@ DESCRIPTION
   List preview environments
 ```
 
-_See code: [src/commands/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.56/src/commands/ls.ts)_
+_See code: [src/commands/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.58/src/commands/ls.ts)_

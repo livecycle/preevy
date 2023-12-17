@@ -1,6 +1,6 @@
 import fs from 'fs'
-import { CiProvider } from './base'
-import { stringOrUndefinedToNumber } from './common'
+import { CiProvider } from './base.js'
+import { stringOrUndefinedToNumber } from './common.js'
 
 const readEventPayload = () => (
   process.env.GITHUB_EVENT_PATH

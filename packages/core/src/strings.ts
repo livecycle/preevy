@@ -1,5 +1,5 @@
 import { createHash, randomInt } from 'crypto'
-import { mapValues } from 'lodash'
+import { mapValues } from 'lodash-es'
 
 export const truncatePrefix = (prefix: string, suffix: string, maxLength: number, separator = '-') => {
   const truncateLength = maxLength - suffix.length - separator.length

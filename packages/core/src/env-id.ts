@@ -1,7 +1,7 @@
-import { detectCiProvider } from './ci-providers'
-import { gitContext } from './git'
-import { ComposeModel } from './compose/model'
-import { Logger } from './log'
+import { detectCiProvider } from './ci-providers/index.js'
+import { gitContext } from './git.js'
+import { ComposeModel } from './compose/model.js'
+import { Logger } from './log.js'
 
 export type EnvId = string & {
   __tag: 'EnvId'

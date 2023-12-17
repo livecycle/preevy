@@ -1,8 +1,8 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
 import { Octokit } from 'octokit'
-import { upsertPreevyComment } from '../../../lib/github-comment'
-import BaseGithubPrCommand from './base'
-import { commentTemplateFlagDef } from '../../../flags'
+import { upsertPreevyComment } from '../../../lib/github-comment.js'
+import BaseGithubPrCommand from './base.js'
+import { commentTemplateFlagDef } from '../../../flags.js'
 
 // eslint-disable-next-line no-use-before-define
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof UnCommentGithubPr['baseFlags'] & T['flags']>

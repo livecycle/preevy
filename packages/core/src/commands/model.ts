@@ -1,11 +1,11 @@
 import { MachineStatusCommand, ScriptInjection } from '@preevy/common'
 import path from 'path'
 import { rimraf } from 'rimraf'
-import { TunnelOpts } from '../ssh'
-import { ComposeModel, remoteComposeModel } from '../compose'
-import { createCopiedFileInDataDir } from '../remote-files'
-import { Logger } from '../log'
-import { EnvId } from '../env-id'
+import { TunnelOpts } from '../ssh/index.js'
+import { ComposeModel, remoteComposeModel } from '../compose/index.js'
+import { createCopiedFileInDataDir } from '../remote-files.js'
+import { Logger } from '../log.js'
+import { EnvId } from '../env-id.js'
 
 const composeModel = async ({
   debug,

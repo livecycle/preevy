@@ -1,6 +1,6 @@
-export { default as up } from './up'
-export { default as ls } from './ls'
-export { default as shell } from './shell'
+export { default as up } from './up.js'
+export { default as ls } from './ls.js'
+export { default as shell } from './shell.js'
 
-export { urls } from './urls'
-export * as proxy from './proxy'
+export { urls } from './urls.js'
+export * as proxy from './proxy.js'

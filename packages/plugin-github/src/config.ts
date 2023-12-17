@@ -1,9 +1,9 @@
 import fs from 'fs'
 import { CiProvider, gitContext } from '@preevy/core'
 import { ParsedFlags } from '@preevy/cli-common'
-import { tryParseUrlToRepo } from './repo'
-import { commentTemplateFlagDef, flagsDef, pullRequestFlagsDef } from './flags'
-import { defaultCommentTemplate } from './lib/github-comment'
+import { tryParseUrlToRepo } from './repo.js'
+import { commentTemplateFlagDef, flagsDef, pullRequestFlagsDef } from './flags.js'
+import { defaultCommentTemplate } from './lib/github-comment.js'
 
 export type PluginConfig = {
   repo?: string

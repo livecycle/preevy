@@ -1,9 +1,9 @@
 import path from 'path'
 import { formatPublicKey } from '@preevy/common'
-import { Profile } from './profile'
-import { Store, TransactionOp, jsonReader } from '../store'
-import { FsReader } from '../store/fs/base'
-import { Snapshot } from '../store/snapshot'
+import { Profile } from './profile.js'
+import { Store, TransactionOp, jsonReader } from '../store/index.js'
+import { FsReader } from '../store/fs/base.js'
+import { Snapshot } from '../store/snapshot.js'
 
 const filenames = {
   info: 'info.json',

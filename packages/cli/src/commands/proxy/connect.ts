@@ -4,9 +4,9 @@ import { tableFlags, text, tunnelServerFlags, urlFlags } from '@preevy/cli-commo
 import { inspect } from 'util'
 import { formatPublicKey } from '@preevy/common'
 import { spawn } from 'child_process'
-import { connectToTunnelServerSsh } from '../../tunnel-server-client'
-import ProfileCommand from '../../profile-command'
-import { filterUrls, printUrls, writeUrlsToFile } from '../urls'
+import { connectToTunnelServerSsh } from '../../tunnel-server-client.js'
+import ProfileCommand from '../../profile-command.js'
+import { filterUrls, printUrls, writeUrlsToFile } from '../urls.js'
 
 // eslint-disable-next-line no-use-before-define
 export default class Connect extends ProfileCommand<typeof Connect> {

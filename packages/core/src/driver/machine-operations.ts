@@ -1,14 +1,14 @@
 import { EOL } from 'os'
 import retry from 'p-retry'
 import { dateReplacer } from '@preevy/common'
-import { withSpinner } from '../spinner'
-import { telemetryEmitter } from '../telemetry'
-import { Logger } from '../log'
-import { scriptExecuter } from '../remote-script-executer'
-import { EnvMetadata, driverMetadataFilename } from '../env-metadata'
-import { REMOTE_DIR_BASE } from '../remote-files'
-import { MachineBase, SpecDiffItem, isPartialMachine, machineResourceType } from './machine-model'
-import { MachineConnection, MachineCreationDriver, MachineDriver } from './driver'
+import { withSpinner } from '../spinner.js'
+import { telemetryEmitter } from '../telemetry/index.js'
+import { Logger } from '../log.js'
+import { scriptExecuter } from '../remote-script-executer.js'
+import { EnvMetadata, driverMetadataFilename } from '../env-metadata.js'
+import { REMOTE_DIR_BASE } from '../remote-files.js'
+import { MachineBase, SpecDiffItem, isPartialMachine, machineResourceType } from './machine-model.js'
+import { MachineConnection, MachineCreationDriver, MachineDriver } from './driver.js'
 
 const machineDiffText = (diff: SpecDiffItem[]) => diff
   .map(({ name, old, new: n }) => `* ${name}: ${old} -> ${n}`).join(EOL)

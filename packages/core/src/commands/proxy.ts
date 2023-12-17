@@ -2,14 +2,14 @@ import { COMPOSE_TUNNEL_AGENT_PORT, COMPOSE_TUNNEL_AGENT_SERVICE_NAME, tunnelNam
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { tmpdir } from 'node:os'
-import { set } from 'lodash'
-import { Connection } from '../tunneling'
-import { execPromiseStdout } from '../child-process'
-import { addComposeTunnelAgentService } from '../compose-tunnel-agent-client'
-import { ComposeModel } from '../compose'
-import { TunnelOpts } from '../ssh'
-import { EnvId } from '../env-id'
-import { EnvMetadata, detectGitMetadata } from '../env-metadata'
+import { set } from 'lodash-es'
+import { Connection } from '../tunneling/index.js'
+import { execPromiseStdout } from '../child-process.js'
+import { addComposeTunnelAgentService } from '../compose-tunnel-agent-client.js'
+import { ComposeModel } from '../compose/index.js'
+import { TunnelOpts } from '../ssh/index.js'
+import { EnvId } from '../env-id.js'
+import { EnvMetadata, detectGitMetadata } from '../env-metadata.js'
 
 export const agentServiceName = COMPOSE_TUNNEL_AGENT_SERVICE_NAME
 

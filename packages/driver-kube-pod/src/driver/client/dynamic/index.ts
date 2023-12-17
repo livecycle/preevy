@@ -1,11 +1,11 @@
 import * as k8s from '@kubernetes/client-node'
 import { HasRequired, ensureDefined } from '@preevy/core'
 import { asyncConcat, asyncMap } from 'iter-tools-es'
-import { defaults } from 'lodash'
-import { paginationIterator } from '../pagination'
-import apply from './apply'
-import waiter from './wait'
-import { FuncWrapper } from '../log-error'
+import { defaults } from 'lodash-es'
+import { paginationIterator } from '../pagination.js'
+import apply from './apply.js'
+import waiter from './wait.js'
+import { FuncWrapper } from '../log-error.js'
 
 const dynamicApi = (
   { client, wrap }: { client: k8s.KubernetesObjectApi; wrap: FuncWrapper },
@@ -58,4 +58,4 @@ const dynamicApi = (
 
 export default dynamicApi
 
-export { applyStrategies, applyStrategy, ApplyStrategy, compositeApplyFilter, ApplyFilter } from './apply'
+export { applyStrategies, applyStrategy, ApplyStrategy, compositeApplyFilter, ApplyFilter } from './apply.js'

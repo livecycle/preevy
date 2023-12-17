@@ -1,16 +1,21 @@
 {
   "compilerOptions": {
     "declaration": true,
+    "skipLibCheck": true,
     "importHelpers": true,
-    "module": "commonjs",
+    "module": "Node16",
+    "moduleResolution": "Node16",
     "outDir": "dist",
     "rootDir": "src",
     "strict": true,
-    "target": "es2019",
+    "target": "ES2020",
     "lib": ["es2022", "ESNext.Disposable"],
     "esModuleInterop": true,
     "sourceMap": true,
     "baseUrl": "."
+  },
+  "ts-node": {
+    "esm": true
   },
   "include": [
     "src/**/*"

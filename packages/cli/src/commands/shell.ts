@@ -1,6 +1,6 @@
 import { Args } from '@oclif/core'
 import { commands } from '@preevy/core'
-import DriverCommand from '../driver-command'
+import DriverCommand from '../driver-command.js'
 
 // eslint-disable-next-line no-use-before-define
 export default class Shell extends DriverCommand<typeof Shell> {

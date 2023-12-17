@@ -1,8 +1,8 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
 import { BaseCommand, ParsedFlags, envIdFlags } from '@preevy/cli-common'
 import { CiProvider, detectCiProvider, findEnvId } from '@preevy/core'
-import { PluginConfig, loadGithubConfig } from '../../config'
-import { flagsDef } from '../../flags'
+import { PluginConfig, loadGithubConfig } from '../../config.js'
+import { flagsDef } from '../../flags.js'
 
 // eslint-disable-next-line no-use-before-define
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof BaseGithubCommand['baseFlags'] & T['flags']>

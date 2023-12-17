@@ -1,37 +1,29 @@
 import { Flags, Args, ux } from '@oclif/core'
-import inquirer from 'inquirer'
+import * as inquirer from '@inquirer/prompts'
 import confirm from '@inquirer/confirm'
 import { BaseCommand, text } from '@preevy/cli-common'
 import { Flag } from '@oclif/core/lib/interfaces'
 import { nextAvailableAlias } from '@preevy/core'
-import { DriverName, formatDriverFlagsToArgs, machineDrivers } from '../drivers'
-import { loadProfileConfig } from '../profile-command'
-import { chooseFs, chooseFsType } from '../fs'
+import { DriverName, formatDriverFlagsToArgs, machineDrivers } from '../drivers.js'
+import { loadProfileConfig } from '../profile-command.js'
+import { chooseFs, chooseFsType } from '../fs.js'
 
-const chooseDriver = async () => (await inquirer.prompt<{ driver: DriverName }>([
-  {
-    type: 'list',
-    name: 'driver',
-    message: 'Which cloud provider do you want to use?',
-    choices: [
-      { value: 'lightsail', name: 'AWS Lightsail' },
-      { value: 'gce', name: 'Google Compute Engine' },
-      { value: 'azure', name: 'Microsoft Azure Virtual Machines' },
-      { value: 'kube-pod', name: 'Kubernetes' },
-    ],
-  },
-])).driver
+const chooseDriver = async () => await inquirer.select<DriverName>({
+  message: 'Which cloud provider do you want to use?',
+  choices: [
+    { value: 'lightsail', name: 'AWS Lightsail' },
+    { value: 'gce', name: 'Google Compute Engine' },
+    { value: 'azure', name: 'Microsoft Azure Virtual Machines' },
+    { value: 'kube-pod', name: 'Kubernetes' },
+  ],
+})
 
-const chooseAlias = async (aliases: string[]) => (await inquirer.prompt<{ alias: string }>([
-  {
-    type: 'input',
-    name: 'alias',
-    message: 'Name of the profile',
-    default: async () => nextAvailableAlias(aliases),
-    filter: input => input.trim(),
-    validate: async input => (aliases.includes(input) ? 'This name already exists' : true),
-  },
-])).alias
+const chooseAlias = async (aliases: string[]) => (await inquirer.input({
+  message: 'Name of the profile',
+  default: nextAvailableAlias(aliases),
+  transformer: s => s.trim(),
+  validate: async input => (aliases.includes(input) ? 'This name already exists' : true),
+})).trim()
 
 export default class Init extends BaseCommand {
   static description = 'Initialize or import a new profile'
@@ -63,8 +55,7 @@ export default class Init extends BaseCommand {
 
     const driver = await chooseDriver()
     const driverStatic = machineDrivers[driver]
-    const driverAnswers = await inquirer.prompt<Record<string, unknown>>(await driverStatic.questions())
-    const driverFlags = await driverStatic.flagsFromAnswers(driverAnswers) as Record<string, unknown>
+    const driverFlags = await driverStatic.inquireFlags()
 
     ux.info(text.recommendation('To use Preevy in a CI flow, select a remote storage for your profile.'))
     const locationType = await chooseFsType(({ driver }))

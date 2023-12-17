@@ -14,10 +14,10 @@ import {
 import { buildFlags, parseBuildFlags, tableFlags, text, tunnelServerFlags } from '@preevy/cli-common'
 import { inspect } from 'util'
 import { editUrl, tunnelNameResolver } from '@preevy/common'
-import MachineCreationDriverCommand from '../machine-creation-driver-command'
-import { envIdFlags, urlFlags } from '../common-flags'
-import { filterUrls, printUrls, writeUrlsToFile } from './urls'
-import { connectToTunnelServerSsh } from '../tunnel-server-client'
+import MachineCreationDriverCommand from '../machine-creation-driver-command.js'
+import { envIdFlags, urlFlags } from '../common-flags.js'
+import { filterUrls, printUrls, writeUrlsToFile } from './urls.js'
+import { connectToTunnelServerSsh } from '../tunnel-server-client.js'
 
 const fetchTunnelServerDetails = async ({
   log,

@@ -1,6 +1,6 @@
 import { describe, it, expect } from '@jest/globals'
-import { repeat } from 'lodash'
-import { sanitizeLabel, sanitizeLabels } from './labels'
+import { repeat } from 'lodash-es'
+import { sanitizeLabel, sanitizeLabels } from './labels.js'
 
 describe('labels', () => {
   describe('sanitizeLabel', () => {

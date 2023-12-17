@@ -5,9 +5,9 @@ import { FlatTunnel, Logger, TunnelOpts, addBaseComposeTunnelAgentService, comma
 import { HooksListeners, PluginContext, tableFlags, text, tunnelServerFlags } from '@preevy/cli-common'
 import { asyncReduce } from 'iter-tools-es'
 import { tunnelNameResolver } from '@preevy/common'
-import { connectToTunnelServerSsh } from '../tunnel-server-client'
-import ProfileCommand from '../profile-command'
-import { envIdFlags, urlFlags } from '../common-flags'
+import { connectToTunnelServerSsh } from '../tunnel-server-client.js'
+import ProfileCommand from '../profile-command.js'
+import { envIdFlags, urlFlags } from '../common-flags.js'
 
 export const writeUrlsToFile = async (
   { log }: { log: Logger },

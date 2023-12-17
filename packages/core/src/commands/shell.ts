@@ -1,5 +1,5 @@
-import { MachineDriver, isPartialMachine } from '../driver'
-import { Logger } from '../log'
+import { MachineDriver, isPartialMachine } from '../driver/index.js'
+import { Logger } from '../log.js'
 
 const shell = async ({
   envId,

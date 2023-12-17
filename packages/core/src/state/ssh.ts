@@ -1,6 +1,6 @@
 import path from 'path'
-import { SSHKeyConfig, SshKeyPairType, generateSshKeyPair } from '../ssh/keypair'
-import { Store } from '../store'
+import { SSHKeyConfig, SshKeyPairType, generateSshKeyPair } from '../ssh/keypair.js'
+import { Store } from '../store/index.js'
 
 export const sshKeysStore = (store: Store) => {
   const sshKeysDir = 'ssh-keys'

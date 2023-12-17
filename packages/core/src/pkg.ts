@@ -1,5 +1,5 @@
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, statSync } from 'fs'
-import { memoize } from 'lodash'
+import { memoize } from 'lodash-es'
 import { tmpdir } from 'os'
 import path from 'path'
 
