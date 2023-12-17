@@ -40,7 +40,7 @@
     "yaml": "^2.3.2"
   },
   "scripts": {
-    "test": "yarn node --experimental-vm-modules ../../node_modules/.bin/jest",
+    "test": "node --no-warnings=ExperimentalWarning --experimental-vm-modules ../../node_modules/.bin/jest",
     "lint": "eslint . --ext .ts,.tsx --cache",
     "build": "tsc -b",
     "clean": "shx rm -rf dist tsconfig.tsbuildinfo",

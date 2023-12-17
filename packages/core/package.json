@@ -73,7 +73,7 @@
     "typescript": "^5.3.3"
   },
   "scripts": {
-    "test": "yarn node --experimental-vm-modules ../../node_modules/.bin/jest",
+    "test": "node --no-warnings=ExperimentalWarning --experimental-vm-modules ../../node_modules/.bin/jest",
     "lint": "eslint . --ext .ts,.tsx --cache",
     "clean": "shx rm -rf dist tsconfig.tsbuildinfo",
     "build": "tsc -b",

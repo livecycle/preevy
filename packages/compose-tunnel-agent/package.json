@@ -63,6 +63,6 @@
     "build": "yarn tsc --noEmit && node build.mjs",
     "prepack": "yarn build",
     "prepare": "cd ../.. && husky install",
-    "test": "yarn node --experimental-vm-modules ../../node_modules/.bin/jest"
+    "test": "node --no-warnings=ExperimentalWarning --experimental-vm-modules ../../node_modules/.bin/jest"
   }
 }
