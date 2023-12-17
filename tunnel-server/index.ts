@@ -1,5 +1,4 @@
 import { promisify } from 'util'
-import url from 'url'
 import path from 'path'
 import pino from 'pino'
 import fs from 'fs'
@@ -16,13 +15,10 @@ import { cookieSessionStore } from './src/session.js'
 import { claimsSchema } from './src/auth.js'
 import { createSshServer } from './src/ssh/index.js'
 
-// eslint-disable-next-line no-underscore-dangle
-const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
-
 const log = pino.default(appLoggerFromEnv())
 
 const { sshPrivateKey } = await getSSHKeys({
-  defaultKeyLocation: path.join(__dirname, './ssh/ssh_host_key'),
+  defaultKeyLocation: './ssh/ssh_host_key',
   log,
 })
 
