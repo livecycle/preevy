@@ -1,7 +1,7 @@
 import { Logger } from 'pino'
 import { IEventEmitter, EventEmitter } from 'tseep'
 import { nextTick } from 'process'
-import { idGenerator } from './id-generator'
+import { idGenerator } from './id-generator.js'
 
 export class KeyAlreadyExistsError<V> extends Error {
   constructor(readonly key: string, readonly value: V) {

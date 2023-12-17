@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach } from '@jest/globals'
 import stream from 'node:stream'
 import { StringDecoder } from 'node:string_decoder'
 import { promisify } from 'node:util'
-import { InjectHtmlScriptTransform } from './inject-transform'
-import { injectedContentFromSpec } from './injected-content'
+import { InjectHtmlScriptTransform } from './inject-transform.js'
+import { injectedContentFromSpec } from './injected-content.js'
 
 // taken from: https://nodejs.org/api/stream.html#decoding-buffers-in-a-writable-stream
 class StringWritable extends stream.Writable {

@@ -1,4 +1,4 @@
-import { ScriptInjectionSpec } from './proxy/injection'
+import { ScriptInjectionSpec } from './proxy/injection/index.js'
 
 export const access = ['private', 'public'] as const
 

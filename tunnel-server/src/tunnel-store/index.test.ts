@@ -2,15 +2,15 @@ import { describe, it, expect, beforeEach, jest } from '@jest/globals'
 import pinoPretty from 'pino-pretty'
 import { Logger, pino } from 'pino'
 import { nextTick } from 'process'
-import { ActiveTunnel, ActiveTunnelStore, inMemoryActiveTunnelStore } from '.'
-import { EntryWatcher, TransactionDescriptor } from '../memory-store'
+import { ActiveTunnel, ActiveTunnelStore, inMemoryActiveTunnelStore } from './index.js'
+import { EntryWatcher, TransactionDescriptor } from '../memory-store.js'
 
 describe('inMemoryActiveTunnelStore', () => {
   let store: ActiveTunnelStore
   let log: Logger
 
   beforeEach(() => {
-    log = pino({ level: 'silent' }, pinoPretty())
+    log = pino({ level: 'silent' }, pinoPretty.default())
     store = inMemoryActiveTunnelStore({ log })
   })
 

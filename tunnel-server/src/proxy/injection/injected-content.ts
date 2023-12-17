@@ -1,5 +1,5 @@
 import fnv1a from '@sindresorhus/fnv1a'
-import { ScriptInjectionSpecBase } from './model'
+import { ScriptInjectionSpecBase } from './model.js'
 
 const scriptTag = (
   { src, async, defer }: ScriptInjectionSpecBase,

@@ -1,6 +1,6 @@
 import { IncomingMessage } from 'http'
 import type { Logger } from 'pino'
-import { ActiveTunnel, ActiveTunnelStore } from '../tunnel-store'
+import { ActiveTunnel, ActiveTunnelStore } from '../tunnel-store/index.js'
 
 const tunnelPathRe = /^\/proxy\/([^/]+)(\/.*)/
 const parseTunnelPath = (path: string) => {

@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from '@jest/globals'
-import { MultiMap, multimap } from './multimap'
+import { MultiMap, multimap } from './multimap.js'
 
 describe('multimap', () => {
   type ObjType = { x: number }

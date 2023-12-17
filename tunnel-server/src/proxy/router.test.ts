@@ -1,14 +1,16 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals'
 import pino from 'pino'
-import pinoPretty from 'pino-pretty'
+import pinoPrettyModule from 'pino-pretty'
 import { IncomingMessage } from 'http'
 import { Socket } from 'net'
-import { TunnelFinder, proxyRouter } from './router'
-import { ActiveTunnelStore } from '../tunnel-store'
+import { TunnelFinder, proxyRouter } from './router.js'
+import { ActiveTunnelStore } from '../tunnel-store/index.js'
 
-const log = pino({
+const PinoPretty = pinoPrettyModule.default
+
+const log = pino.default({
   level: 'debug',
-}, pinoPretty({ destination: pino.destination(process.stderr) }))
+}, PinoPretty({ destination: pino.destination(process.stderr) }))
 
 const mockFunction = <T extends (...args: never[]) => unknown>(): jest.MockedFunction<T> => (
   jest.fn() as unknown as jest.MockedFunction<T>

@@ -1,7 +1,7 @@
 import { EventEmitter } from 'tseep'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals'
 import { TimeoutError } from 'p-timeout'
-import { onceWithTimeout } from './events'
+import { onceWithTimeout } from './events.js'
 
 describe('onceWithTimeout', () => {
   beforeAll(() => {

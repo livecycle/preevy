@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from '@jest/globals'
-import { editUrl } from './url'
+import { editUrl } from './url.js'
 
 describe('url', () => {
   describe('editUrl', () => {

@@ -4,7 +4,7 @@ import events from 'node:events'
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals'
 import { promisify } from 'node:util'
 import waitForExpect from 'wait-for-expect'
-import { createDestroy } from './destroy-server'
+import { createDestroy } from './destroy-server.js'
 
 describe('createDestroy', () => {
   let server: net.Server
@@ -42,7 +42,7 @@ describe('createDestroy', () => {
       })
 
       it('emits the close event immediately', async () => {
-        await waitForExpect(async () => {
+        await waitForExpect.default(async () => {
           expect(closed).toBe(true)
         }, 1000, 100)
       })
@@ -83,7 +83,7 @@ describe('createDestroy', () => {
       })
 
       it('emits the close event immediately', async () => {
-        await waitForExpect(async () => {
+        await waitForExpect.default(async () => {
           expect(closed).toBe(true)
         }, 1000, 100)
       })

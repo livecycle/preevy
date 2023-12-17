@@ -1,15 +1,15 @@
 import crypto, { createPublicKey, randomBytes } from 'crypto'
-import { FastifyBaseLogger } from 'fastify/types/logger'
+import { FastifyBaseLogger } from 'fastify/types/logger.js'
 import net from 'net'
 import path from 'path'
 import ssh2, { SocketBindInfo } from 'ssh2'
 import { inspect } from 'util'
 import { EventEmitter, IEventEmitter } from 'tseep'
 import { calculateJwkThumbprintUri, exportJWK } from 'jose'
-import { ForwardRequest, parseForwardRequest } from '../forward-request'
-import { createDestroy } from '../destroy-server'
-import { onceWithTimeout } from '../events'
-import { memoizeForDuration } from '../memoize'
+import { ForwardRequest, parseForwardRequest } from '../forward-request.js'
+import { createDestroy } from '../destroy-server.js'
+import { onceWithTimeout } from '../events.js'
+import { memoizeForDuration } from '../memoize.js'
 
 const clientIdFromPublicSsh = (key: Buffer) =>
   crypto.createHash('sha1').update(key).digest('base64url').replace(/[_-]/g, '')

@@ -4,22 +4,22 @@ import path from 'path'
 import pino from 'pino'
 import fs from 'fs'
 import { createPublicKey } from 'crypto'
-import { app as createApp } from './src/app'
-import { activeTunnelStoreKey, inMemoryActiveTunnelStore } from './src/tunnel-store'
-import { getSSHKeys } from './src/ssh-keys'
-import { proxy } from './src/proxy'
-import { appLoggerFromEnv } from './src/logging'
-import { tunnelsGauge, runMetricsServer, sshConnectionsGauge } from './src/metrics'
-import { numberFromEnv, requiredEnv } from './src/env'
-import { editUrl } from './src/url'
-import { cookieSessionStore } from './src/session'
-import { claimsSchema } from './src/auth'
-import { createSshServer } from './src/ssh'
+import { app as createApp } from './src/app.js'
+import { activeTunnelStoreKey, inMemoryActiveTunnelStore } from './src/tunnel-store/index.js'
+import { getSSHKeys } from './src/ssh-keys.js'
+import { proxy } from './src/proxy/index.js'
+import { appLoggerFromEnv } from './src/logging.js'
+import { tunnelsGauge, runMetricsServer, sshConnectionsGauge } from './src/metrics.js'
+import { numberFromEnv, requiredEnv } from './src/env.js'
+import { editUrl } from './src/url.js'
+import { cookieSessionStore } from './src/session.js'
+import { claimsSchema } from './src/auth.js'
+import { createSshServer } from './src/ssh/index.js'
 
 // eslint-disable-next-line no-underscore-dangle
 const __dirname = url.fileURLToPath(new URL('.', import.meta.url))
 
-const log = pino(appLoggerFromEnv())
+const log = pino.default(appLoggerFromEnv())
 
 const { sshPrivateKey } = await getSSHKeys({
   defaultKeyLocation: path.join(__dirname, './ssh/ssh_host_key'),

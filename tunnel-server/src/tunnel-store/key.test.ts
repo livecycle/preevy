@@ -1,7 +1,7 @@
 /* eslint-disable jest/no-standalone-expect */
 import { it, describe, expect } from '@jest/globals'
 import { createHash } from 'crypto'
-import { activeTunnelStoreKey } from './key'
+import { activeTunnelStoreKey } from './key.js'
 
 describe('tunnel store key formatting', () => {
   it('should create the format {envId}-{clientId}', () => {
