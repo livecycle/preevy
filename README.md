@@ -115,7 +115,7 @@ Docker Settings -> Kubernetes -> Enable Kubernetes and follow the instructions b
 - In GCP, it could be done by using `gcloud auth application-default login`
 - In Azure, it could be done by using `az login`
 
-*For provisioning a Pod on Kubernetes*, make sure a kubeconfig file exists and that you can run `kubectl` commands locally (e.g, `kubectl get pod`)
+*For provisioning a Pod on Kubernetes*, make sure a kubeconfig file exists and that you can run `kubectl` commands locally (e.g. `kubectl get pod`)
 
 Running Preevy:
 
@@ -205,7 +205,7 @@ Preevy loads its configuration from the following sources, in order:
 The Preevy profile is created by the `init` command and can be stored locally or remotely on your cloud provider. A profile is required to create environments. The profile includes the following:
 
 <!--lint disable double-link-->
-- A tunneling key is used to identify your services when connecting to the [Tunnel Server](#tunnel-server).
+- A tunneling key, that is used to identify your services when connecting to the [Tunnel Server](#tunnel-server).
 - The default driver to use for provisioning environments.
 - Default driver options to use per driver (e.g. AWS region, K8s namespace).
 - Driver state whose contents depend on the specific driver.
@@ -264,7 +264,7 @@ This value can be overridden per command execution using the `--driver` CLI flag
 Override the default options per driver for this Compose project. See the [specific driver documentation](https://preevy.dev/deploy-runtimes/).
 <!--lint enable double-link-->
 
-These values can be overridden per command execution using the specific driver CLI flags, e.g, `--lightsail-bundle-id=2xlarge_2_0`
+These values can be overridden per command execution using the specific driver CLI flags, e.g. `--lightsail-bundle-id=2xlarge_2_0`
 
 Example:
 
