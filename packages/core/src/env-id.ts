@@ -16,7 +16,7 @@ const envIdFromBranch = (branch: string) => normalize(branch)
 
 export class AmbientEnvIdNotFoundError extends Error {
   constructor() {
-    super('Cannot find an ambient environment ID. Either specify an environment ID or have a git context')
+    super('Cannot find an ambient environment ID. Either specify an environment ID with the --id flag or run in a git repo with at least one commit')
   }
 }
 
