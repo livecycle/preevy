@@ -12,6 +12,7 @@ import { createApp } from './index.js'
 import { filteredClient } from '../docker/index.js'
 import { SshState } from '../ssh/index.js'
 import { COMPOSE_PROJECT_LABEL } from '../docker/labels.js'
+import { composeProjectFilters } from '../docker/filters.js'
 
 const PinoPretty = pinoPrettyModule.default
 
@@ -69,7 +70,10 @@ const setupApiServer = () => {
     app = await createApp({
       log,
       docker,
-      dockerFilter: filteredClient({ docker, composeProject: TEST_COMPOSE_PROJECT }),
+      dockerFilter: filteredClient({
+        docker,
+        filters: composeProjectFilters({ composeProject: TEST_COMPOSE_PROJECT })
+      }),
       composeModelPath: '',
       currentSshState: () => Promise.resolve({} as unknown as SshState),
     })

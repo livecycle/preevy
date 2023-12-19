@@ -1,48 +1,42 @@
 import Docker from 'dockerode'
-import { tryParseJson, Logger, ScriptInjection } from '@preevy/common'
+import { tryParseJson, Logger, TunnelNameResolver } from '@preevy/common'
 import { throttle } from 'lodash-es'
 import { inspect } from 'util'
-import { filters } from './filters.js'
-import { containerToService } from './services.js'
-
-export type RunningService = {
-  project: string
-  name: string
-  networks: string[]
-  ports: number[]
-  access: 'private' | 'public'
-  inject: ScriptInjection[]
-}
+import { DockerFilters } from './filters.js'
+import { composeContainerToForwards } from './services.js'
+import { Forward } from '../ssh/tunnel-client.js'
 
 export const eventsClient = ({
   log,
   docker,
   debounceWait,
-  composeProject,
+  filters: { apiFilter },
+  tunnelNameResolver,
   defaultAccess,
 }: {
   log: Logger
   docker: Pick<Docker, 'getEvents' | 'listContainers' | 'getContainer'>
   debounceWait: number
-  composeProject?: string
+  filters: Pick<DockerFilters, 'apiFilter'>
+  tunnelNameResolver: TunnelNameResolver
   defaultAccess: 'private' | 'public'
 }) => {
-  const { listContainers, apiFilter } = filters({ docker, composeProject })
-
-  const getRunningServices = async (): Promise<RunningService[]> => (await listContainers()).map(container => {
-    const { errors, ...service } = containerToService({ container, defaultAccess })
+  const getForwards = async (): Promise<Forward[]> => (
+    await docker.listContainers({ all: true, filters: { ...apiFilter } })
+  ).flatMap(container => {
+    const { errors, forwards } = composeContainerToForwards({ container, defaultAccess, tunnelNameResolver })
     if (errors.length) {
       log.warn('error parsing docker container "%s" info, some information may be missing: %j', container.Names?.[0], inspect(errors))
     }
-    return service
+    return forwards
   })
 
-  const startListening = async ({ onChange }: { onChange: (services: RunningService[]) => void }) => {
+  const startListening = async ({ onChange }: { onChange: (forwards: Forward[]) => void }) => {
     const handler = throttle(async (data?: Buffer) => {
       log.debug('event handler: %j', data && tryParseJson(data.toString()))
 
-      const services = await getRunningServices()
-      onChange(services)
+      const forwards = await getForwards()
+      onChange(forwards)
     }, debounceWait, { leading: true, trailing: true })
 
     const stream = await docker.getEvents({
@@ -59,7 +53,7 @@ export const eventsClient = ({
     return { close: () => stream.removeAllListeners() }
   }
 
-  return { getRunningServices, startListening }
+  return { getForwards, startListening }
 }
 
 export type DockerEventsClient = ReturnType<typeof eventsClient>

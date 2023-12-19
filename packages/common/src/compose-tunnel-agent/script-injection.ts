@@ -9,11 +9,23 @@ export type ScriptInjection = {
   async?: boolean
 }
 
-const parseBooleanLabelValue = (s:string) => s === 'true' || s === '1'
+export type ContainerScriptInjection = ScriptInjection & {
+  port?: number
+}
 
-const parseScriptInjection = (o: Record<string, string>): ScriptInjection | Error => {
+const parseBooleanLabelValue = (s: string) => s === 'true' || s === '1'
+
+const parseNumber = (s: string): number => {
+  const result = Number(s)
+  if (Number.isNaN(result)) {
+    throw new Error(`invalid number "${s}"`)
+  }
+  return result
+}
+
+const parseScriptInjection = (o: Record<string, string>): ContainerScriptInjection | Error => {
   // eslint-disable-next-line camelcase
-  const { src, defer, async, path_regex } = o
+  const { src, defer, async, path_regex, port } = o
   try {
     if (!src) {
       throw new Error('missing src')
@@ -23,6 +35,7 @@ const parseScriptInjection = (o: Record<string, string>): ScriptInjection | Erro
       ...path_regex && { pathRegex: new RegExp(path_regex) },
       ...defer && { defer: parseBooleanLabelValue(defer) },
       ...async && { async: parseBooleanLabelValue(async) },
+      ...port && { port: parseNumber(port) },
       src,
     }
   } catch (e) {
@@ -32,12 +45,13 @@ const parseScriptInjection = (o: Record<string, string>): ScriptInjection | Erro
 
 const scriptInjectionToLabels = (
   id: string,
-  { src, async, defer, pathRegex }: ScriptInjection,
+  { src, async, defer, pathRegex, port }: ContainerScriptInjection,
 ): Record<string, string> => mapKeys<Record<string, string>>({
   src,
   ...async && { async: 'true' },
   ...defer && { defer: 'true' },
   ...pathRegex && { path_regex: pathRegex.source },
+  ...port && { port: port.toString() },
 }, (_value, key) => [COMPOSE_TUNNEL_AGENT_SERVICE_LABELS.INJECT_SCRIPT_PREFIX, id, key].join('.'))
 
 export const scriptInjectionsToLabels = (
@@ -66,11 +80,11 @@ const parseLabelsWithPrefixAndId = (
 
 export const parseScriptInjectionLabels = (
   labels: Record<string, string>,
-): [ScriptInjection[], Error[]] => {
+): [ContainerScriptInjection[], Error[]] => {
   const stringifiedInjections = parseLabelsWithPrefixAndId(
     labels,
     COMPOSE_TUNNEL_AGENT_SERVICE_LABELS.INJECT_SCRIPT_PREFIX,
   )
   const injectionOrErrors = stringifiedInjections.map(parseScriptInjection)
-  return partition(injectionOrErrors, x => !(x instanceof Error)) as [ScriptInjection[], Error[]]
+  return partition(injectionOrErrors, x => !(x instanceof Error)) as [ContainerScriptInjection[], Error[]]
 }

@@ -9,6 +9,7 @@ describe('script injection labels', () => {
         'preevy.inject_script.widget.defer': 'true',
         'preevy.inject_script.widget.async': 'false',
         'preevy.inject_script.widget.path_regex': 't.*t',
+        'preevy.inject_script.widget.port': '3000',
       }
 
       const [scripts, errors] = parseScriptInjectionLabels(labels)
@@ -19,6 +20,7 @@ describe('script injection labels', () => {
         defer: true,
         async: false,
         pathRegex: expect.any(RegExp),
+        port: 3000,
       })
       expect(scripts[0].pathRegex?.source).toBe('t.*t')
     })
@@ -36,6 +38,17 @@ describe('script injection labels', () => {
     test('should drop scripts without src', () => {
       const labels = {
         'preevy.inject_script.widget.defer': 'true',
+      }
+      const [scripts, errors] = parseScriptInjectionLabels(labels)
+      expect(scripts).toHaveLength(0)
+      expect(errors).toHaveLength(1)
+    })
+
+    test('should drop scripts with an invalid number as port', () => {
+      const labels = {
+        'preevy.inject_script.widget.src': 'https://my-script',
+        'preevy.inject_script.widget.defer': 'true',
+        'preevy.inject_script.widget.port': 'a',
       }
       const [scripts, errors] = parseScriptInjectionLabels(labels)
       expect(scripts).toHaveLength(0)

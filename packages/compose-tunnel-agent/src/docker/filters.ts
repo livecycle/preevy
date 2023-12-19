@@ -1,4 +1,4 @@
-import Docker from 'dockerode'
+import Docker, { GetEventsOptions } from 'dockerode'
 import { COMPOSE_TUNNEL_AGENT_SERVICE_LABELS } from '@preevy/common'
 import { COMPOSE_PROJECT_LABEL } from './labels.js'
 
@@ -22,27 +22,29 @@ export const portFilter = (
   return (p: Docker.Port) => Boolean(p.PublicPort)
 }
 
-export const filters = ({
-  docker,
+export type DockerApiFilter = {
+  label?: string[]
+}
+
+export type DockerFilters = {
+  apiFilter: DockerApiFilter
+  adhocFilter: (c: Pick<Docker.ContainerInfo, 'Labels'>) => boolean
+}
+
+export const composeProjectFilters = ({
   composeProject,
 }: {
-  docker: Pick<Docker, 'listContainers'>
-  composeProject?: string
-}) => {
-  const apiFilter = {
-    label: composeProject ? [`${COMPOSE_PROJECT_LABEL}=${composeProject}`] : [COMPOSE_PROJECT_LABEL],
-  }
+  composeProject: string
+}): DockerFilters => ({
+  apiFilter: {
+    label: [`${COMPOSE_PROJECT_LABEL}=${composeProject}`],
+  },
+  adhocFilter: c => c.Labels[COMPOSE_PROJECT_LABEL] === composeProject,
+})
 
-  const listContainers = async () => await docker.listContainers({
-    all: true,
-    filters: { ...apiFilter },
-  })
-
-  const adhocFilter = (c: Pick<Docker.ContainerInfo, 'Labels'>): boolean => (
-    composeProject
-      ? c.Labels[COMPOSE_PROJECT_LABEL] === composeProject
-      : COMPOSE_PROJECT_LABEL in c.Labels
-  )
-
-  return { listContainers, adhocFilter, apiFilter }
+export const anyComposeProjectFilters: DockerFilters = {
+  apiFilter: {
+    label: [COMPOSE_PROJECT_LABEL],
+  },
+  adhocFilter: c => COMPOSE_PROJECT_LABEL in c.Labels,
 }

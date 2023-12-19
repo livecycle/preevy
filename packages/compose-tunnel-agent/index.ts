@@ -20,6 +20,7 @@ import { runMachineStatusCommand } from './src/machine-status.js'
 import { envMetadata } from './src/metadata.js'
 import { readAllFiles } from './src/files.js'
 import { eventsClient as dockerEventsClient, filteredClient as dockerFilteredClient } from './src/docker/index.js'
+import { anyComposeProjectFilters, composeProjectFilters } from './src/docker/filters.js'
 
 const PinoPretty = pinoPrettyModule.default
 
@@ -81,21 +82,22 @@ const main = async () => {
     clientPublicKey: formatPublicKey(connectionConfig.clientPrivateKey),
   })
 
+  const dockerFilters = targetComposeProject
+    ? composeProjectFilters({ composeProject: targetComposeProject })
+    : anyComposeProjectFilters
+
   const docker = new Docker({ socketPath: dockerSocket })
   const dockerClient = dockerEventsClient({
     log: log.child({ name: 'docker' }),
     docker,
     debounceWait: 500,
     defaultAccess,
-    composeProject: targetComposeProject,
+    filters: dockerFilters,
+    tunnelNameResolver: tunnelNameResolver({ envId: requiredEnv('PREEVY_ENV_ID') }),
   })
 
   const sshLog = log.child({ name: 'ssh' })
-  const sshClient = await createSshClient({
-    connectionConfig,
-    tunnelNameResolver: tunnelNameResolver({ envId: requiredEnv('PREEVY_ENV_ID') }),
-    log: sshLog,
-  })
+  const sshClient = await createSshClient({ connectionConfig, log: sshLog })
 
   sshClient.ssh.on('close', () => {
     if (!endRequested) {
@@ -106,11 +108,11 @@ const main = async () => {
   })
 
   sshLog.info('ssh client connected to %j', sshUrl)
-  let currentTunnels = dockerClient.getRunningServices().then(services => sshClient.updateTunnels(services))
+  let currentTunnels = dockerClient.getForwards().then(services => sshClient.updateTunnels(services))
 
   void dockerClient.startListening({
-    onChange: async services => {
-      currentTunnels = sshClient.updateTunnels(services)
+    onChange: async forwards => {
+      currentTunnels = sshClient.updateTunnels(forwards)
     },
   })
 
@@ -123,7 +125,7 @@ const main = async () => {
     envMetadata: await envMetadata({ env: process.env, log }),
     composeModelPath: '/preevy/docker-compose.yaml',
     docker,
-    dockerFilter: dockerFilteredClient({ docker, composeProject: targetComposeProject }),
+    dockerFilter: dockerFilteredClient({ docker, filters: dockerFilters }),
   })
 
   void app.listen({ ...await fastifyListenArgsFromEnv() })

@@ -25,6 +25,7 @@ export { tunnelNameResolver, TunnelNameResolver } from './src/tunnel-name.js'
 export { editUrl } from './src/url.js'
 export {
   ScriptInjection,
+  ContainerScriptInjection,
   parseScriptInjectionLabels,
   scriptInjectionsToLabels,
   COMPOSE_TUNNEL_AGENT_PORT,
