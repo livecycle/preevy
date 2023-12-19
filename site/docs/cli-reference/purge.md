@@ -1,13 +1,13 @@
 `preevy purge`
 ==============
 
-Delete all cloud provider machines, and potentially other resources
+Delete all cloud provider machines and potentially other resources
 
-* [`preevy purge`](#preevy-purge)
+- [`preevy purge`](#preevy-purge-1)
 
 ## `preevy purge`
 
-Delete all cloud provider machines, and potentially other resources
+Delete all cloud provider machines and potentially other resources
 
 ```
 USAGE

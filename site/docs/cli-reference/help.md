@@ -3,7 +3,7 @@
 
 Display help for preevy.
 
-* [`preevy help [COMMANDS]`](#preevy-help-commands)
+- [`preevy help [COMMANDS]`](#preevy-help-commands)
 
 ## `preevy help [COMMANDS]`
 

@@ -3,7 +3,7 @@
 
 Initialize or import a new profile
 
-* [`preevy init [PROFILE-ALIAS]`](#preevy-init-profile-alias)
+- [`preevy init [PROFILE-ALIAS]`](#preevy-init-profile-alias)
 
 ## `preevy init [PROFILE-ALIAS]`
 

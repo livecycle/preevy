@@ -22,9 +22,9 @@ Preevy will generate the following environment variable which will contain the g
 
 In development environments, it's common for frontend applications to communicate with backend services using exposed ports.
 
-Service to service communication within containers can be handled using Docker Compose's built-in feature, where services can access other containers using the service name as a hostname [Docker Networking](https://docs.docker.com/compose/networking/).
+Service-to-service communication within containers can be handled using Docker Compose's built-in feature, where services can access other containers using the service name as a hostname [Docker Networking](https://docs.docker.com/compose/networking/).
 
-However, this method is not applicable to code executed in the browser, which creates difficulties for frontend applications when connecting to backend services through exposed ports. The tunneling URL needs to be substituted, but it cannot be determined at build time.
+However, this method does not apply to code executed in the browser, which creates difficulties for frontend applications when connecting to backend services through exposed ports. The tunneling URL needs to be substituted, but it cannot be determined at build time.
 ## Solution
 
 Preevy offers a simple solution for this problem by exposing the tunneling URL as an environment variable at Compose *build time*. Environment variables can be [interpolated](https://docs.docker.com/compose/compose-file/12-interpolation/) in the Compose file.

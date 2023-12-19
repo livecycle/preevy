@@ -35,7 +35,7 @@ There are 2 options to develop preevy locally:
 ## Option 1 - Using the public livecycle.run Tunnel Server
 
 
-This option is simpler and using the the deployed Tunnel Server under livecycle.run. Use this if you're only interested in testing and developing the CLI or the Compose Tunnel Agent
+This option is simpler and uses the deployed Tunnel Server under livecycle.run. Use this if you're only interested in testing and developing the CLI or the Compose Tunnel Agent
 
 Wherever you would normally run the `preevy` command, simply replace it with: 
 
@@ -75,7 +75,7 @@ BASE_URL=http://localhost:8030 docker compose -f docker-compose.yml -f docker-co
 
 ### 3. Expose the service's SSH endpoint
 
-Now we want to expose the tunnel service to the internet, so the machines running in the cloud could access it. In this example we'll be using [ngrok](https://ngrok.com/) to achieve that:
+Now we want to expose the tunnel service to the internet, so the machines running in the cloud can access it. In this example, we'll be using [ngrok](https://ngrok.com/) to achieve that:
 
 ```bash
 ngrok tcp 2223

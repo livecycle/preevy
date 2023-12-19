@@ -1,13 +1,13 @@
 `preevy urls`
 =============
 
-Show urls for an existing environment
+Show URLs for an existing environment
 
-* [`preevy urls [SERVICE] [PORT]`](#preevy-urls-service-port)
+- [`preevy urls [SERVICE] [PORT]`](#preevy-urls-service-port)
 
 ## `preevy urls [SERVICE] [PORT]`
 
-Show urls for an existing environment
+Show URLs for an existing environment
 
 ```
 USAGE

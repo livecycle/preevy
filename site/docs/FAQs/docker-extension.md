@@ -9,9 +9,9 @@ sidebar_position: 15.1
 <details>
   <summary>What is the difference between the Livecycle Docker Extension and Ngrok?</summary>
 
-  The Livecycle Docker Extension is integrated with Docker, and provides a smoother experience for Docker users.
-  Consistent URLs, private environments, organizations and Google/Github authentication are supported out of the box.
-  Livecycle dashboard provides debugging capabilities that includes log inspection, shell access, and container inspection.
+  The Livecycle Docker Extension is integrated with Docker and provides a smoother experience for Docker users.
+  Consistent URLs, private environments, organizations, and Google/Github authentication are supported out of the box.
+  The Livecycle dashboard provides debugging capabilities that include log inspection, shell access, and container inspection.
   Lastly, integration with the Preevy CLI allows you to create preview environments for Pull Requests - remote ephemeral environments that can be used when your development machine is offline.
 </details>
 
@@ -41,7 +41,7 @@ sidebar_position: 15.1
   Livecycle Docker extension is integrated with the Preevy CLI and the Livecycle managed service.
   Using the Preevy CLI, you can provision remote ephemeral environments that can be used in addition to sharing local environments.
   This functionality can also be used in your CI pipeline to provision preview environments for Pull Requests.
-  The Livecycle managed service adds additional layers of management, collaboration, review and debugging on top of shared environments.
+  The Livecycle managed service adds additional layers of management, collaboration, review, and debugging on top of shared environments.
 </details>
 
 <details>

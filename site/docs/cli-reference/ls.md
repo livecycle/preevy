@@ -3,7 +3,7 @@
 
 List preview environments
 
-* [`preevy ls`](#preevy-ls)
+- [`preevy ls`](#preevy-ls-1)
 
 ## `preevy ls`
 

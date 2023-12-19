@@ -13,16 +13,16 @@ To build faster in your CI:
 
 ## Problem
 
-By default, Preevy runs the build in the Docker server of the remote machine that Preevy provisions. Builds are often more resource intensive than the environment runtime - but those resources are only required when the environment is created or updated.
+By default, Preevy runs the build in the Docker server of the remote machine that Preevy provisions. Builds are often more resource-intensive than the environment runtime - but those resources are only required when the environment is created or updated.
 
-In addition, builds often run with no cache (especially when the machine was just created, e.g, a new PR on a new branch) taking longer than they should. Configuring a remote cache manually is possible, but requires some work.
+In addition, builds often run with no cache (especially when the machine was just created, e.g. a new PR on a new branch) taking longer than they should. Configuring a remote cache manually is possible, but requires some work.
 
 ## Solutions
 
-1. Offloading the build step to a specialized server can reduce the memory, disk and CPU requirements of the machines provisioned for environments. It can also help speed up the build step so Preview Environments can be created faster in your CI.
-2. Reusing cached layers from previous builds can accelerate the build by skipping expensive build steps (e.g, `yarn install`). When creating Preview Environments In CI, cached image layers from the base branch, or previous builds of the same branch can be reused.
+1. Offloading the build step to a specialized server can reduce the memory, disk, and CPU requirements of the machines provisioned for environments. It can also help speed up the build step so Preview Environments can be created faster in your CI.
+2. Reusing cached layers from previous builds can accelerate the build by skipping expensive build steps (e.g .`yarn install`). When creating Preview Environments In CI, cached image layers from the base branch or previous builds of the same branch can be reused.
 
-Starting with version `0.0.57`, Preevy runs a separate build step using the [`docker buildx bake`](https://docs.docker.com/engine/reference/commandline/buildx_bake/) command, before running the deploy step using `docker compose up`. Preevy can customize the build step to make use of BuildKit builders, and automatically configure caching for the build. These two features work together to speed up the creation of Preview Environments in your CI.
+Starting with version `0.0.57`, Preevy runs a separate build step using the [`docker buildx bake`](https://docs.docker.com/engine/reference/commandline/buildx_bake/) command, before running the deploy step using `docker compose up`. Preevy can customize the build step to make use of BuildKit builders and automatically configure caching for the build. These two features work together to speed up the creation of Preview Environments in your CI.
 
 ## Part 1: Offload the build
 
@@ -32,7 +32,7 @@ Specify a builder using the `--builder` flag at the `preevy up` command. If not 
 
 Out-of-the-box, Docker's default builder uses the [Docker driver](https://docs.docker.com/build/deploy-runtimes/docker/). This driver uses the connected Docker Server to build. Preevy sets the Docker Server to the provisioned machine's Docker Server (using the `DOCKER_HOST` environment variable), so the build runs there.
 
-To run the build on the local machine (where the `preevy` CLI runs), or a remote server, configure a builder with a different driver. The [`docker buildx create` command](https://docs.docker.com/engine/reference/commandline/buildx_create) can be used to created a builder.
+To run the build on the local machine (where the `preevy` CLI runs), or a remote server, configure a builder with a different driver. The [`docker buildx create` command](https://docs.docker.com/engine/reference/commandline/buildx_create) can be used to create a builder.
 
 ### Choosing a builder driver
 
@@ -47,7 +47,7 @@ For GitHub actions, the [`setup-buildx-action`](https://github.com/marketplace/a
 
 ## Part 2: Automatically configure cache
 
-Preevy can automatically add the `cache_to` and `cache_from` directives in the [build section of the Compose file](https://docs.docker.com/compose/compose-file/build/) to specify a layer cache to be used when building your images.
+Preevy can automatically add the `cache_to` and `cache_from` directives in the [build section of the Compose file](https://docs.docker.com/compose/compose-file/build/) to specify a layered cache to be used when building your images.
 
 To share the cache across different CI runs, it needs to be stored on a remote backend - not on the build machine, which is usually ephemeral.
 
@@ -55,15 +55,15 @@ Exporting a cache to a remote backend is not supported on the default Docker bui
 
 ### Generated image refs
 
-To allow reusing the cached image layers, stable IDs are required for each image - the image refs. Preevy generates image refs for each service comprising of the Compose project name (usually the directory name), service name and the current git hash. It will then use the generated image refs to add `cache_from` and `cache_to` directives for each service build.
+To allow reusing the cached image layers, stable IDs are required for each image - the image refs. Preevy generates image refs for each service comprising of the Compose project name (usually the directory name), service name, and the current git hash. It will then use the generated image refs to add `cache_from` and `cache_to` directives for each service build.
 
-At the end of the build step, images will be pushed to the registry. Preevy will then run the provisioning step (`docker compose up`) with a modified Compose file which has the built image refs for each service. The result is a build which automatically uses the specified registry as a cache.
+At the end of the build step, images will be pushed to the registry. Preevy will then run the provisioning step (`docker compose up`) with a modified Compose file which has the built image refs for each service. The result is a build that automatically uses the specified registry as a cache.
 
 ### Using an image registry as a cache backend
 
 An [image registry](https://docs.docker.com/build/cache/backends/) can serve as a cache backend.
 
-When the `--registry` flag is specified, Preevy can automatically add cache directives which use the registry to the Compose project.
+When the `--registry` flag is specified, Preevy can automatically add cache directives that use the registry to the Compose project.
 
 #### Example
 
@@ -84,7 +84,7 @@ The command:
 preevy up --registry my-registry --builder my-builder
 ```
 
-Will result the following interim build Compose file:
+This will result in the following interim build Compose file:
 
 ```yaml
 services:
@@ -116,7 +116,7 @@ services:
 
 Using Amazon [Elastic Container Registry](https://aws.amazon.com/ecr/) as your image registry requires creating a "repository" before pushing an image. When creating image refs for ECR, Preevy uses a slightly different scheme, because image names (the part after the slash) cannot be dynamic - so the dynamic part is moved to the tag.
 
-Example, with the same project and registry above:
+For example, with the same project and registry above:
 
 - Non-ECR image ref: `my-registry/my-project-frontend:12abcdef`
 - ECR image ref for the existing repository `my-repo`: `my-registry/my-repo:my-project-frontend-12abcdef`
@@ -128,9 +128,9 @@ Preevy uses the ECR image ref scheme automatically when it detects an ECR regist
 Several options exist:
 
 * Creating a registry on the same cloud provider used by Preevy to provision the environment machines is usually inexpensive: [ECR](https://aws.amazon.com/ecr/) for AWS, [GAR](https://cloud.google.com/artifact-registry/) for Google Cloud, [ACR](https://azure.microsoft.com/en-us/products/container-registry/) for Azure.
-* Creating a registry on the CI provider, e.g, [GHR](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry) on GitHub actions.
+* Creating a registry on the CI provider, e.g. [GHR](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry) on GitHub actions.
 * [Docker Hub](https://www.docker.com/products/docker-hub/)
-* [ttl.sh](https://ttl.sh/) is a free, ephemeral and anonymous image registry.
+* [ttl.sh](https://ttl.sh/) is a free, ephemeral, and anonymous image registry.
 * Other 3rd party registries exist with some free tiers: JFrog, Treescale, Canister, GitLab
 
 #### Careful when using a builder without a registry
@@ -149,7 +149,7 @@ More backends are described in the [Docker docs](https://docs.docker.com/build/c
 
 ## Manual optimization
 
-If you already have an [efficient build pipeline](https://docs.docker.com/build/cache/) which creates images for the current commit, you can skip Preevy's build step entirely and provision an environment with existing images.
+If you already have an [efficient build pipeline](https://docs.docker.com/build/cache/) that creates images for the current commit, you can skip Preevy's build step entirely and provision an environment with existing images.
 
 Specify `--no-build` to skip the build step. Preevy will run `docker compose up --no-build` with the given Compose file, which needs to have an `image` property for each service.
 
@@ -163,11 +163,11 @@ Specify `--no-build` to skip the build step. Preevy will run `docker compose up 
 * `--no-cache`: Do not use cache when building the images
 * `--github-add-build-cache`: Add GHA cache directives to all services
 
-## Real world performance: A case study
+## Real-world performance: A case study
 
 Optimizing the CI build involves using multiple techniques while balancing their benefits and constraints. It might be useful to test and measure some combinations to make sure your CI setup works best for your specific use case.
 
-We tested a [simple app](https://github.com/livecycle/preevy-gha-gce-demo) comprising of two built images (in addition to an external db image). In each run, Preevy was used to provision a Preview Environment in GitHub Actions on Google Cloud.
+We tested a [simple app](https://github.com/livecycle/preevy-gha-gce-demo) comprising two built images (in addition to an external db image). In each run, Preevy was used to provision a Preview Environment in GitHub Actions on Google Cloud.
 
 #### Environment machine sizes
 
@@ -181,7 +181,7 @@ The small machine is good enough for running the app and costs exactly half of t
 
 #### Build flag configurations
 
-A few variations of the builder, registry and cache were tested:
+A few variations of the builder, registry, and cache were tested:
 
 | |Builder         |Registry|Cache|`preevy up` flags|
 |:--|:----------------|:--------|:-----|:-----------|
@@ -225,12 +225,12 @@ VM preparation time was not measured.
 
 Offloading the build to the stronger CI machine can reduce the cost of running preview environments significantly - in this sample case by nearly 50%!
 
-- For the small environment machine, build was decidedly faster when done on the CI machine.
+- For the small environment machine, the build was decidedly faster when done on the CI machine.
 - For the bigger environment machine, it was faster to build a new PR on the CI machine, and especially fast with the GitHub registry (which has a good network connection to the CI machine).
 
 ### Discussion
 
-Network transfers are a major cause for long builds. Both our GAR and the Environment VMs were in the same region, which is geographically remote from [GitHub's hosted CI runners](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners).
+Network transfers are a major cause of long builds. Both our GAR and the Environment VMs were in the same region, which is geographically remote from [GitHub's hosted CI runners](https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners).
 
 Building on the Environment machine is advantageous: It does not require cache import/export, nor registry download/upload, and utilizes fully a local cache.
 
