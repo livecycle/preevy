@@ -20,12 +20,12 @@ export default class Shell extends DriverCommand<typeof Shell> {
   static enableJsonFlag = false
 
   async run(): Promise<unknown> {
-    const { args, rawArgs: restArgs } = this
+    const { args, rawArgs } = this
     const driver = await this.driver()
 
     const result = await commands.shell({
       envId: args.envId,
-      args: restArgs,
+      args: rawArgs.slice(1),
       machineDriver: driver,
       log: this.logger,
     })
