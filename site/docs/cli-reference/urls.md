@@ -3,7 +3,7 @@
 
 Show URLs for an existing environment
 
-- [`preevy urls [SERVICE] [PORT]`](#preevy-urls-service-port)
+* [`preevy urls [SERVICE] [PORT]`](#preevy-urls-service-port)
 
 ## `preevy urls [SERVICE] [PORT]`
 

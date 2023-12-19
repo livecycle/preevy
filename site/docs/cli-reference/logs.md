@@ -3,7 +3,7 @@
 
 Show logs for an existing environment
 
-- [`preevy logs [SERVICES]`](#preevy-logs-services)
+* [`preevy logs [SERVICES]`](#preevy-logs-services)
 
 ## `preevy logs [SERVICES]`
 

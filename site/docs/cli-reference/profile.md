@@ -3,17 +3,17 @@
 
 View and update profile configuration
 
-- [`preevy profile config update`](#preevy-profile-config-update)
-- [`preevy profile config view`](#preevy-profile-config-view)
-- [`preevy profile cp`](#preevy-profile-cp)
-- [`preevy profile create NAME URL`](#preevy-profile-create-name-url)
-- [`preevy profile current`](#preevy-profile-current)
-- [`preevy profile import LOCATION`](#preevy-profile-import-location)
-- [`preevy profile key [TYPE]`](#preevy-profile-key-type)
-- [`preevy profile link`](#preevy-profile-link)
-- [`preevy profile ls`](#preevy-profile-ls)
-- [`preevy profile rm NAME`](#preevy-profile-rm-name)
-- [`preevy profile use NAME`](#preevy-profile-use-name)
+* [`preevy profile config update`](#preevy-profile-config-update)
+* [`preevy profile config view`](#preevy-profile-config-view)
+* [`preevy profile cp`](#preevy-profile-cp)
+* [`preevy profile create NAME URL`](#preevy-profile-create-name-url)
+* [`preevy profile current`](#preevy-profile-current)
+* [`preevy profile import LOCATION`](#preevy-profile-import-location)
+* [`preevy profile key [TYPE]`](#preevy-profile-key-type)
+* [`preevy profile link`](#preevy-profile-link)
+* [`preevy profile ls`](#preevy-profile-ls)
+* [`preevy profile rm NAME`](#preevy-profile-rm-name)
+* [`preevy profile use NAME`](#preevy-profile-use-name)
 
 ## `preevy profile config update`
 

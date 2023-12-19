@@ -3,7 +3,7 @@
 
 Delete all cloud provider machines and potentially other resources
 
-- [`preevy purge`](#preevy-purge-1)
+* [`preevy purge`](#preevy-purge)
 
 ## `preevy purge`
 

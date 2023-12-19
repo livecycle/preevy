@@ -3,7 +3,7 @@
 
 Delete preview environments
 
-- [`preevy down`](#preevy-down-1)
+* [`preevy down`](#preevy-down)
 
 ## `preevy down`
 
