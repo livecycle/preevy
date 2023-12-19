@@ -27,7 +27,7 @@ https://github.com/Pradumnasaraf/preevy/assets/51878265/a699a356-f524-48fc-9b6d-
 
 Preevy is a Command Line Interface (CLI) tool designed to simplify the process of creating ephemeral preview environments from Dockerized applications. Integrate Preevy into your CI flow to deploy Pull Requests as preview environments, using your existing cloud provider or Kubernetes cluster.
 
-Preevy makes use of affordable VMs from [AWS Lightsail](https://aws.amazon.com/free/compute/lightsail), [Google Cloud](https://cloud.google.com/compute/), and [Microsoft Azure](https://azure.microsoft.com/en-us/products/virtual-machines), or any [Kubernetes cluster](https://preevy.dev/drivers/kube-pod).
+Preevy makes use of affordable VMs from [AWS Lightsail](https://aws.amazon.com/free/compute/lightsail), [Google Cloud](https://cloud.google.com/compute/), [Microsoft Azure](https://azure.microsoft.com/en-us/products/virtual-machines), or any [Kubernetes cluster](https://preevy.dev/drivers/kube-pod).
 
 Preevy can deploy your app with public or protected access, on the public internet or inside your existing private network.
 
@@ -39,7 +39,7 @@ Deploying a preview environment per Pull Request offers a range of benefits:
 
 - 🎨 **Hassle-free Design Reviews**: Designers can verify implementation independently, minimizing interruptions.
 
-- 🚀 **Parallel E2E Tests**: Use external test agents against preview environments expedite the testing process.
+- 🚀 **Parallel E2E Tests**: Use external test agents against preview environments to expedite the testing process.
 
 - 💡 **Streamlined Feedback Cycle**: Preview environments let your team engage with and feedback on new features early in the pipeline.
 
@@ -107,13 +107,13 @@ To start using the Preevy CLI you will need:
 - A cloud provider for provisioning VMs (AWS/GCP/Azure), or a Kubernetes cluster (local, remote or managed)
 
 If you don't have an existing cloud account or prefer to try Preevy first locally, you can use the [Docker Desktop Kubernetes server](https://docs.docker.com/desktop/kubernetes/). Go to:
-Docker Settings -> Kubernetes -> Enable Kubernetes.
-And follow the instructions below.
+Docker Settings -> Kubernetes -> Enable Kubernetes and follow the instructions below.
 
 *For provisioning a VM*, configure your provider:
-- In AWS, it could be by using `aws configure`
-- In GCP, it could be by using `gcloud auth application-default login`
-- In Azure, it could be by using `az login`
+
+- In AWS, it could be done by using `aws configure`
+- In GCP, it could be done by using `gcloud auth application-default login`
+- In Azure, it could be done by using `az login`
 
 *For provisioning a Pod on Kubernetes*, make sure a kubeconfig file exists and that you can run `kubectl` commands locally (e.g, `kubectl get pod`)
 
@@ -151,11 +151,11 @@ A Docker/OCI image is available on ghcr.io: ghcr.io/livecycle/preevy/tunnel-serv
 
 ## CI Integration
 
-Preevy is designed to work seamlessly with your CI, allowing you to easily import a shared preview profile shared in AWS S3 and Google Cloud Storage (GCS).
+Preevy is designed to work seamlessly with your CI, allowing you to easily import a shared preview profile in AWS S3 and Google Cloud Storage (GCS).
 
 Profiles are created using `preevy init`. Choose a S3/GCS URL for storing the profile - Preevy will create a bucket if one doesn't exist.
 
-If you already have a locally stored Preevy Profile, it can be migrated to a remote storage using [`preevy profile cp`](https://github.com/livecycle/preevy/blob/main/packages/cli/docs/profile.md#preevy-profile-cp)
+If you already have a locally stored Preevy Profile, it can be migrated to remote storage using [`preevy profile cp`](https://github.com/livecycle/preevy/blob/main/packages/cli/docs/profile.md#preevy-profile-cp)
 
 Once the profile is created, it can be imported to the CI runtime using `preevy init --from <profile-url>`
 
@@ -163,7 +163,7 @@ Once the profile is created, it can be imported to the CI runtime using `preevy 
 
 ### Faster builds in CI
 
-Check out our [documentation](https://preevy.dev/recipes/faster-build) to find out how to speed up your builds and reduce the costs of your preview environments by running Preevy with BuildKit builders in CI.
+Check out our [documentation](https://preevy.dev/recipes/faster-build) to find out how to speed up your builds and reduce the costs of your preview environments by running Preevy with BuildKit Builders in CI.
 
 ## Security
 
@@ -188,7 +188,7 @@ Every Compose service is exposed individually with a generated URL in the follow
 
 ### Network isolation
 
-The Tunnel Server can be deployed on a your private network (e.g, VPC), which access to your environments at the network level.
+The Tunnel Server can be deployed on your private network (e.g. VPC), which access to your environments at the network level.
 
 ## Configuration
 
@@ -205,10 +205,10 @@ Preevy loads its configuration from the following sources, in order:
 The Preevy profile is created by the `init` command and can be stored locally or remotely on your cloud provider. A profile is required to create environments. The profile includes the following:
 
 <!--lint disable double-link-->
-- A tunneling key, used to identify your services when connecting to the [Tunnel Server](#tunnel-server).
+- A tunneling key is used to identify your services when connecting to the [Tunnel Server](#tunnel-server).
 - The default driver to use for provisioning environments.
-- Default driver options to use per driver (e.g, AWS region, K8s namespace).
-- Driver state whos contents depend on the specific driver.
+- Default driver options to use per driver (e.g. AWS region, K8s namespace).
+- Driver state whose contents depend on the specific driver.
 <!--lint enable double-link-->
 
 Profiles can be migrated to a different storage location using `preevy profile cp`.
@@ -223,11 +223,11 @@ Preevy extracts its runtime settings from the [Compose file](https://docs.docker
 
 #### Project Compose files
 
-Just like with the `docker compose` CLI, you can use the global `--file | -f` command line argument to specify path(s) for the Compose file. If not specified, the [default loading order](https://docs.docker.com/compose/reference/#use--f-to-specify-name-and-path-of-one-or-more-compose-files) is used. Multiple files are [supported](https://docs.docker.com/compose/extends/#multiple-compose-files).
+Just like with the `docker compose` CLI, you can use the global `--file | -f` command line argument to specify the path(s) for the Compose file. If not specified, the [default loading order](https://docs.docker.com/compose/reference/#use--f-to-specify-name-and-path-of-one-or-more-compose-files) is used. Multiple files are [supported](https://docs.docker.com/compose/extends/#multiple-compose-files).
 
 #### Preevy-specific Compose file
 
-In addition to the project compose files, an optional Preevy-specific Compose file can be used. Preevy attempts to load files named `compose.preevy.yaml`, `compose.preevy.yml`, `docker-compose.preevy.yaml` or `docker-compose.preevy.yml`. If one of these exists, it is loaded BEFORE the project compose file(s). The name of the Preevy-specific compose file can be overriden by spefcifying the argument `--system-compose-file`.
+In addition to the project compose files, an optional Preevy-specific Compose file can be used. Preevy attempts to load files named `compose.preevy.yaml`, `compose.preevy.yml`, `docker-compose.preevy.yaml` or `docker-compose.preevy.yml`. If one of these exists, it is loaded BEFORE the project composes file(s). The name of the Preevy-specific compose file can be overridden by specifying the argument `--system-compose-file`.
 
 ### `x-preevy`: Preevy-specific configuration in the Compose file(s)
 
@@ -287,7 +287,7 @@ See [Plugins](#plugins) below.
 
 Plugins are a way to extend Preevy's functionality via externally-published NPM packages.
 
-A plugin can add hooks which execute code in response to events. It can also define new commands, and add flags to existing commands to customize their behavior.
+A plugin can add hooks that execute code in response to events. It can also define new commands, and add flags to existing commands to customize their behavior.
 
 ### Default plugins
 
@@ -341,4 +341,3 @@ To see the collected data, set the environment variable `PREEVY_TELEMETRY_FILE` 
 We appreciate the usage data sent to us as - it's the most basic and raw type of feedback we get from our users. However, if you are concerned about sending out data, you may choose to disable telemetry.
 
 Telemetry collection can be disabled by setting the environment variable `PREEVY_DISABLE_TELEMETRY` to `1` or `true`.
-

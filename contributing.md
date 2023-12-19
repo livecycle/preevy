@@ -14,6 +14,6 @@ Preevy is Open Source and we love to receive contributions from the community. H
 When contributing, please follow the guidelines:
 
 1. **Contributors should be Preevy users**. If you haven't used Preevy yet, please take a few moments to set up an environment on your cloud provider, or even on a local K8S cluster.
-1. Open a PR, issue or discussion on the repo to communicate your intents
+1. Open a PR, issue, or discussion on the repo to communicate your intent
 1. Either add automated tests or make sure to test the relevant adjacent flows manually.
 1. Fix the documentation to reflect code changes where applicable.
