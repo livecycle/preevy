@@ -35,6 +35,7 @@ Preevy includes built-in support for sharing profiles using [AWS S3](https://aws
 
 :::note
 The profile does not contain any cloud provider credentials.
+:::
 
 When using S3, the Preevy CLI uses the local AWS credential chain (e.g, from environment variables, AWS profile, or EC2 role)
 
