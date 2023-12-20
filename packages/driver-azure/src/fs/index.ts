@@ -1,4 +1,4 @@
-import { BlobServiceClient, ContainerClient, BlobDeleteOptions, BlobDeleteIfExistsResponse } from '@azure/storage-blob'
+import { BlobServiceClient, ContainerClient, BlobDeleteOptions, BlobDeleteResponse } from '@azure/storage-blob'
 import { DefaultAzureCredential } from '@azure/identity'
 import { VirtualFS } from '@preevy/core'
 
@@ -78,10 +78,14 @@ export const azureStorageBlobFs = async (azureBlobUrl: string): Promise<VirtualF
       const options: BlobDeleteOptions = {
         deleteSnapshots: 'include',
       }
-      const blobDeleteIfExistsResponse: BlobDeleteIfExistsResponse = await blockBlobClient.deleteIfExists(options)
+      const blobExists = await blockBlobClient.exists()
+      if (!blobExists) {
+        return
+      }
+      const blobDeleteResponse: BlobDeleteResponse = await blockBlobClient.delete(options)
 
-      if (blobDeleteIfExistsResponse.errorCode) {
-        throw new Error(`Error: ${blobDeleteIfExistsResponse.errorCode}`)
+      if (blobDeleteResponse.errorCode) {
+        throw new Error(`Error: ${blobDeleteResponse.errorCode}`)
       }
     },
   }
