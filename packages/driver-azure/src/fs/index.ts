@@ -18,19 +18,15 @@ const ensureContainerExists = async (blobServiceClient: BlobServiceClient, conta
 export const parseAzureBlobUrl = (azureBlobUrl: string) => {
   const url = new URL(azureBlobUrl)
 
-  if (!(url.protocol === 'az:')) {
-    throw new Error('Azure Blob urls must start with az:')
+  if (url.protocol !== 'azblob:') {
+    throw new Error('Azure Blob urls must start with azblob:')
   }
-
-  const accountName = url.hostname.split('.')[0]
-
-  const pathSegments = url.pathname.split('/')
-  const containerName = pathSegments[1]
 
   return {
     url,
-    accountName,
-    containerName,
+    containerName: url.hostname,
+    path: url.pathname,
+    accountName: url.searchParams.get('domain') ?? undefined,
   }
 }
 
