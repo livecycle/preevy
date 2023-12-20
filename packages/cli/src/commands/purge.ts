@@ -36,7 +36,7 @@ const confirmPurge = async (
 
 // eslint-disable-next-line no-use-before-define
 export default class Purge extends DriverCommand<typeof Purge> {
-  static description = 'Delete all cloud provider machines, and potentially other resources'
+  static description = 'Delete all cloud provider machines and potentially other resources'
 
   static flags = {
     all: Flags.boolean({
