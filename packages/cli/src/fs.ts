@@ -24,7 +24,7 @@ export const fsFromUrl = async (url: string, localBaseDir: string) => {
     // eslint-disable-next-line @typescript-eslint/return-await
     return await googleCloudStorageFs(url)
   }
-  if (fsType === 'az') {
+  if (fsType === 'azblob') {
     // eslint false positive here on case-sensitive filesystems due to unknown type
     // eslint-disable-next-line @typescript-eslint/return-await
     return await azureStorageBlobFs(url)
