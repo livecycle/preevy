@@ -6,21 +6,20 @@ export const defaultBucketName = (
   { profileAlias, accountId }: { profileAlias: string; accountId: string },
 ) => `preevy-${accountId}-${profileAlias}`
 
-const ensureBucketExists = async (blobServiceClient: BlobServiceClient, containerName: string) => {
+const ensureContainerExists = async (blobServiceClient: BlobServiceClient, containerName: string) => {
   const containerClient: ContainerClient = blobServiceClient.getContainerClient(containerName)
-  const exists = await containerClient.exists()
+  const exists = await containerClient.createIfNotExists()
 
   if (!exists) {
     await containerClient.create()
   }
-  return containerName
 }
 
 export const parseAzureBlobUrl = (azureBlobUrl: string) => {
   const url = new URL(azureBlobUrl)
 
-  if (!(url.protocol === 'https:')) {
-    throw new Error('Azure Blob urls must start with https:')
+  if (!(url.protocol === 'az:')) {
+    throw new Error('Azure Blob urls must start with az:')
   }
 
   const accountName = url.hostname.split('.')[0]
@@ -59,7 +58,7 @@ export const azureStorageBlobFs = async (azureBlobUrl: string): Promise<VirtualF
   )
   const containerClient = blobServiceClient.getContainerClient(containerName)
 
-  await ensureBucketExists(blobServiceClient, containerName)
+  await ensureContainerExists(blobServiceClient, containerName)
 
   return {
     read: async (filename: string) => {
