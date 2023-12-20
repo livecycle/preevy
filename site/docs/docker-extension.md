@@ -45,14 +45,14 @@ The Livecycle Docker extension embeds a standalone version of the Preevy CLI, wh
 
    ![Livecycle Docker Extension](docker-ext-3.png)
 
-   You can choose between public and private access. If you choose public access, you will get a public URL that you can share with anyone. If you choose private access, you will get a private URL that require authentication and can only be used by your organization members. Then click on the "Share" button to get the shareable URL.
+   You can choose between public and private access. If you choose public access, you will get a public URL that you can share with anyone. If you choose private access, you will get a private URL that requires authentication and can only be used by your organization members. Then click on the "Share" button to get the shareable URL.
 
    ![Livecycle Docker Extension](docker-ext-4.png)
 
 4. **Accessing the shared URL**
 
-   URLs created by the extension are consistent, shareable and can be used by a browser or any other http client.
-   Using these URLs, your team members will be able to see and interact with your local version of the app as long as the tunnel is open your workstation is running.  
+   URLs created by the extension are consistent, shareable, and can be used by a browser or any other http client.
+   Using these URLs, your team members will be able to see and interact with your local version of the app as long as the tunnel is open and your workstation is running.  
    Private environments require adding team members to your organization, and upon access, your team members will be prompted to authenticate.
    
    ![Livecycle Docker Extension](docker-ext-5.png)
@@ -60,7 +60,7 @@ The Livecycle Docker extension embeds a standalone version of the Preevy CLI, wh
 5. **Accessing Livecycle dashboard**
 
    You can also access the Livecycle dashboard to see the logs and debug your application. Click on the "Open Link" button to open the Livecycle dashboard. On the dashboard, you can see all the running applications and services.
-   The Livecycle dashboard requires authentication and organization membership, similarly to private environments/services 
+   The Livecycle dashboard requires authentication and organization membership, similar to private environments/services 
 
    ![Livecycle Docker Extension](docker-ext-6.png)
 
@@ -77,9 +77,9 @@ That's it! You have successfully installed the Livecycle Docker Extension and sh
 <details>
   <summary>What is the difference between the Livecycle Docker Extension and Ngrok?</summary>
   
-  The Livecycle Docker Extension is integrated with Docker, and provides a smoother experience for Docker users.  
-  Consistent URLs, private environments, organizations and Google/Github authentication are supported out of the box.  
-  Livecycle dashboard provides debugging capabilities that includes log inspection, shell access, and container inspection.  
+  The Livecycle Docker Extension is integrated with Docker and provides a smoother experience for Docker users.  
+  Consistent URLs, private environments, organizations, and Google/Github authentication are supported out of the box.  
+  Livecycle dashboard provides debugging capabilities that include log inspection, shell access, and container inspection.  
   Lastly, integration with the Preevy CLI allows you to create preview environments for Pull Requests - remote ephemeral environments that can be used when your development machine is offline.
 </details>
 
@@ -109,7 +109,7 @@ That's it! You have successfully installed the Livecycle Docker Extension and sh
   Livecycle Docker extension is integrated with the Preevy CLI and the Livecycle managed service.
   Using the Preevy CLI, you can provision remote ephemeral environments that can be used in addition to sharing local environments.  
   This functionality can also be used in your CI pipeline to provision preview environments for Pull Requests.  
-  The Livecycle managed service adds additional layers of management, collaboration, review and debugging on top of shared environments.  
+  The Livecycle managed service adds additional layers of management, collaboration, review, and debugging on top of shared environments.  
 </details>
 
 <details>

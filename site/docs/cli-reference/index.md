@@ -32,16 +32,16 @@ USAGE
 # Command Topics
 
 * [`preevy down`](down.md) - Delete preview environments
-* [`preevy help`](help.md) - Display help for preevy.
+* [`preevy help`](help.md) - Display help for preevy
 * [`preevy init`](init.md) - Initialize or import a new profile
 * [`preevy login`](login.md) - Login to the Livecycle SaaS
 * [`preevy logs`](logs.md) - Show logs for an existing environment
 * [`preevy ls`](ls.md) - List preview environments
 * [`preevy profile`](profile.md) - View and update profile configuration
-* [`preevy purge`](purge.md) - Delete all cloud provider machines, and potentially other resources
+* [`preevy purge`](purge.md) - Delete all cloud provider machines and potentially other resources
 * [`preevy ssh`](ssh.md) - Execute a command or start an interactive shell inside an environment
 * [`preevy up`](up.md) - Bring up a preview environment
-* [`preevy urls`](urls.md) - Show urls for an existing environment
+* [`preevy urls`](urls.md) - Show URLs for an existing environment
 * [`preevy version`](version.md) - Show Preevy version
 
 <!-- commandsstop -->

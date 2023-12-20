@@ -9,11 +9,11 @@ Preevy can provision environments on a Kubernetes cluster using the bundled [Kub
 
 ## Why deploy on Kubernetes?
 
-If you're a a Kubernetes user, cost and time to provision ephemeral preview environments can be reduced considerably.
+If you're a Kubernetes user, the cost and time to provision ephemeral preview environments can be reduced considerably.
 
-While preview environments live for the duration of a Pull Request, they will typically only see little bursts of actual usage. Kubernetes is a great way to oversubsrcibe compute resources. Environments can be configured to require little CPU and memory while idle and waiting for a review.
+While preview environments live for the duration of a Pull Request, they will typically only see little bursts of actual usage. Kubernetes is a great way to oversubscribe compute resources. Environments can be configured to require little CPU and memory while idle and waiting for a review.
 
-Deployments are faster on Kubernetes comparing to your regular cloud provider VMs.
+Deployments are faster on Kubernetes compared to your regular cloud provider VMs.
 
 ## How?
 
@@ -67,7 +67,7 @@ preevy up --kube-pod-namespace=other-namespace
 It's possible to customize the Kubernetes resources provisioned by the driver per environment. Use cases include, but are not limited to:
 
 - Customize the Docker Server image or the Docker Server configuration
-- Add labels/annotations to the provisioned resources, e.g, for selecting specific Kuebernetes nodes
+- Add labels/annotations to the provisioned resources, e.g, for selecting specific Kubernetes nodes
 - Provisioning additional resources per environment, e.g, a database server
 
 The resources are specified as [Kubernetes object specs](https://kubernetes.io/docs/concepts/overview/working-with-objects/#describing-a-kubernetes-object) in a single YAML file rendered from a [nunjucks template](https://mozilla.github.io/nunjucks/templating.html). The template file may contain multiple definitions separated by lines containing `---` (three dashes).
@@ -78,11 +78,11 @@ Start by copying the [default template](https://github.com/livecycle/preevy/blob
 
 ### Requirements for the provisioned resources
 
-All resources need to be deployed in a single namepsace, specified as a template argument (see below).
+All resources need to be deployed in a single namespace, specified as a template argument (see below).
 
 While multiple [Kubernetes Deployment](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/deployment-v1/#Deployment) objects may be defined, exactly one Deployment must have the label `app.kubernetes.io/component: docker-host`:
 - The [status](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#deployment-status) of the Deployment is used to determine whether the Preevy environment is ready.
-- The first [container](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#containers) of the Deployment spec is used for copying files, and so it [must have](https://kubernetes.io/docs/reference/kubectl/cheatsheet/#copying-files-and-directories-to-and-from-containers) the `tar` and `find` commands available.
+- The first [container](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#containers) of the Deployment spec is used for copying files, so it [must have](https://kubernetes.io/docs/reference/kubectl/cheatsheet/#copying-files-and-directories-to-and-from-containers) the `tar` and `find` commands available.
 
 A Docker server must be listening on port 2375 of the Deployment's Pod. As Preevy uses the [port-forward API](https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/) to connect to the Docker server, it does not need to be exposed as a service. For the same reason, TLS is not supported and needs to be disabled for this port.
 
@@ -94,11 +94,11 @@ The lifecycle of all resources is tied to a Preevy environment - they will be cr
 
 The following arguments are specified when rendering the template:
 
-- `namespace`: the Kuberentes namespace saved in the Preevy profile or specified in the `--kube-pod-namespace` flag. All resources must be defined in this namespace.
-- `id`: A generated ID for this environment, 53 characters or less, comprised of the Preevy environment ID and a random suffix. `id` can be used as part for of a label value, with up to 10 additional characters as to not exceed the [63 character limit for labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set)
+- `namespace`: the Kubernetes namespace saved in the Preevy profile or specified in the `--kube-pod-namespace` flag. All resources must be defined in this namespace.
+- `id`: A generated ID for this environment, 53 characters or less, comprised of the Preevy environment ID and a random suffix. `id` can be used as part of a label value, with up to 10 additional characters so as to not exceed the [63-character limit for labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set)
 
 ## Configuring rootless unprivileged Docker-in-Docker
 
 By default, the Kubernetes Docker-in-Docker driver creates a Deployment which runs the [`docker:dind` image](https://hub.docker.com/_/docker). Traditionally, running Docker inside a container requires the [`privileged: true` security context](https://kubernetes.io/docs/concepts/security/pod-security-standards/#privileged), which may be a security concern.
 
-[Sysbox](https://github.com/nestybox/sysbox) is an OSS project (acquired by Docker) which allows running unprivileged containers in a Kubernetes cluster. It can be [installed](https://github.com/nestybox/sysbox/blob/master/docs/user-guide/install-k8s.md) on most of the popular Kubernetes distros including managed cloud platforms like Amazon EKS, Google GKE and Azure AKA. Once installed, a custom template can be used to [provision Pods](https://github.com/nestybox/sysbox/blob/master/docs/user-guide/deploy.md#deploying-pods-with-kubernetes--sysbox) without the `privileged` security context.
+[Sysbox](https://github.com/nestybox/sysbox) is an OSS project (acquired by Docker) that allows running unprivileged containers in a Kubernetes cluster. It can be [installed](https://github.com/nestybox/sysbox/blob/master/docs/user-guide/install-k8s.md) on most of the popular Kubernetes distros including managed cloud platforms like Amazon EKS, Google GKE, and Azure AKA. Once installed, a custom template can be used to [provision Pods](https://github.com/nestybox/sysbox/blob/master/docs/user-guide/deploy.md#deploying-pods-with-kubernetes--sysbox) without the `privileged` security context.
