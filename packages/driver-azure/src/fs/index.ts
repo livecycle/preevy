@@ -63,6 +63,10 @@ export const azureStorageBlobFs = async (azureBlobUrl: string): Promise<VirtualF
   return {
     read: async (filename: string) => {
       const blobClient = containerClient.getBlobClient(filename)
+      const blobExists = await blobClient.exists()
+      if (!blobExists) {
+        return undefined
+      }
       const result = await blobClient.download()
       if (result.readableStreamBody !== undefined) {
         return await streamToBuffer(result.readableStreamBody)
