@@ -70,12 +70,11 @@ export const proxy = ({
       try {
         authResult = await authenticate(req)
       } catch (e) {
-        if (!(e instanceof AuthError)) {
-          throw e
+        if (e instanceof AuthError) {
+          log.warn('Auth error %j', inspect(e))
+          throw new BadRequestError(`Auth error: ${e.message}`, e)
         }
-
-        log.warn('Auth error %j', inspect(e))
-        authResult = { isAuthenticated: false }
+        throw e
       }
 
       if (!authResult.isAuthenticated) {
