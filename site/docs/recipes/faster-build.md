@@ -352,7 +352,7 @@ This is an unlikely scenario in CI, but it serves as a control group for the oth
 | CI&nbsp;machine |  |  | 3 | 117 | 37 | 157
 | CI&nbsp;machine | GAR |  | 6 | 88 | 69 | 164
 | CI&nbsp;machine | GAR | GHA | 17 | 91 | 66 | 174
-| Environment |  | | | 0 | 153 | 56 | 210
+| Environment |  | | 0 | 153 | 56 | 210
 | CI&nbsp;machine | GHCR |  | 7 | 46 | 1066 | 1119
 | CI&nbsp;machine | GHCR | GHA | 13 | 41 | 1082 | 1136
 
