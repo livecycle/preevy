@@ -2,11 +2,7 @@ import { ScriptInjection, COMPOSE_TUNNEL_AGENT_SERVICE_LABELS as PREEVY_LABELS, 
 import Docker from 'dockerode'
 import { portFilter } from './filters.js'
 import { COMPOSE_PROJECT_LABEL, COMPOSE_SERVICE_LABEL } from './labels.js'
-import { Forward } from '../ssh/tunnel-client.js'
-
-const GLOBAL_INJECT_SCRIPTS = process.env.GLOBAL_INJECT_SCRIPTS
-  ? JSON.parse(process.env.GLOBAL_INJECT_SCRIPTS) as ScriptInjection[]
-  : []
+import { Forward } from '../forwards.js'
 
 type ContainerInfo = Pick<Docker.ContainerInfo, 'Ports' | 'Labels'>
 
@@ -25,11 +21,13 @@ export type ComposeServiceMeta = {
   port: number
 }
 
-export const containerToForwards = <Meta>({
+const containerToForwards = <Meta>({
+  globalInjects,
   resolvedPorts,
   container,
   defaultAccess,
 }: {
+  globalInjects: ScriptInjection[]
   resolvedPorts: ResolvedPort<Meta>[]
   container: ContainerInfo
   defaultAccess: 'private' | 'public'
@@ -45,17 +43,19 @@ export const containerToForwards = <Meta>({
       port,
       externalName,
       access: access ?? defaultAccess,
-      injects: [...inject.filter(i => i.port === undefined || i.port === port), ...GLOBAL_INJECT_SCRIPTS],
+      injects: [...inject.filter(i => i.port === undefined || i.port === port), ...globalInjects],
     }
   })
   return { errors, forwards }
 }
 
 export const composeContainerToForwards = ({
+  globalInjects = [],
   tunnelNameResolver,
   defaultAccess,
   container,
 }: {
+  globalInjects?: ScriptInjection[]
   tunnelNameResolver: TunnelNameResolver
   defaultAccess: 'private' | 'public'
   container: ContainerInfo
@@ -67,6 +67,7 @@ export const composeContainerToForwards = ({
     tunnelNameResolver({ name: service, ports }).map(({ port, tunnel }) => [port, tunnel]),
   )
   return containerToForwards({
+    globalInjects,
     resolvedPorts: ports.map(port => ({
       meta: { project, service, port },
       externalName: portExternalNames.get(port) as string,

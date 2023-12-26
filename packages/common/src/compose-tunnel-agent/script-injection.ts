@@ -1,17 +1,22 @@
-import { groupBy, mapKeys, partition } from 'lodash-es'
+import z from 'zod'
+import { groupBy, mapKeys, partition, snakeCase } from 'lodash-es'
 import { inspect } from 'util'
 import { COMPOSE_TUNNEL_AGENT_SERVICE_LABELS } from './labels.js'
 
-export type ScriptInjection = {
-  pathRegex?: RegExp
-  src: string
-  defer?: boolean
-  async?: boolean
-}
+export const scriptInjectionSchema = z.object({
+  pathRegex: z.string().transform(s => new RegExp(s)).optional(),
+  src: z.string(),
+  defer: z.boolean().optional(),
+  async: z.boolean().optional(),
+})
 
-export type ContainerScriptInjection = ScriptInjection & {
-  port?: number
-}
+export type ScriptInjection = z.infer<typeof scriptInjectionSchema>
+
+export const containerScriptInjectionSchema = scriptInjectionSchema.extend({
+  port: z.coerce.number().optional(),
+})
+
+export type ContainerScriptInjection = z.infer<typeof containerScriptInjectionSchema>
 
 const parseBooleanLabelValue = (s: string) => s === 'true' || s === '1'
 
@@ -23,16 +28,25 @@ const parseNumber = (s: string): number => {
   return result
 }
 
-const parseScriptInjection = (o: Record<string, string>): ContainerScriptInjection | Error => {
-  // eslint-disable-next-line camelcase
-  const { src, defer, async, path_regex, port } = o
+export const parseScriptInjection = (
+  o: Record<string, string>,
+  transformKey: (k: string) => string = k => k,
+): ContainerScriptInjection | Error => {
+  const {
+    [transformKey('src')]: src,
+    [transformKey('defer')]: defer,
+    [transformKey('async')]: async,
+    [transformKey('pathRegex')]: pathRegex,
+    [transformKey('port')]: port,
+  } = o
+
   try {
     if (!src) {
       throw new Error('missing src')
     }
     return {
       // eslint-disable-next-line camelcase
-      ...path_regex && { pathRegex: new RegExp(path_regex) },
+      ...pathRegex && { pathRegex: new RegExp(pathRegex) },
       ...defer && { defer: parseBooleanLabelValue(defer) },
       ...async && { async: parseBooleanLabelValue(async) },
       ...port && { port: parseNumber(port) },
@@ -43,21 +57,23 @@ const parseScriptInjection = (o: Record<string, string>): ContainerScriptInjecti
   }
 }
 
-const scriptInjectionToLabels = (
+const scriptInjectionToRecord = (
   id: string,
   { src, async, defer, pathRegex, port }: ContainerScriptInjection,
+  transformKey: (k: string) => string = k => k,
 ): Record<string, string> => mapKeys<Record<string, string>>({
   src,
   ...async && { async: 'true' },
   ...defer && { defer: 'true' },
-  ...pathRegex && { path_regex: pathRegex.source },
+  ...pathRegex && { pathRegex: pathRegex.source },
   ...port && { port: port.toString() },
-}, (_value, key) => [COMPOSE_TUNNEL_AGENT_SERVICE_LABELS.INJECT_SCRIPT_PREFIX, id, key].join('.'))
+}, (_value, key) => [COMPOSE_TUNNEL_AGENT_SERVICE_LABELS.INJECT_SCRIPT_PREFIX, id, transformKey(key)].join('.'))
 
 export const scriptInjectionsToLabels = (
   injections: Record<string, ScriptInjection>
 ) => Object.fromEntries(
-  Object.entries(injections).flatMap(([id, injection]) => Object.entries(scriptInjectionToLabels(id, injection)))
+  Object.entries(injections)
+    .flatMap(([id, injection]) => Object.entries(scriptInjectionToRecord(id, injection, snakeCase)))
 )
 
 const groupedLabelsRe = /^(?<prefix>[^\s]+)\.(?<id>[^.\s]+)\.(?<key>[^.\s]+)$/
@@ -85,6 +101,6 @@ export const parseScriptInjectionLabels = (
     labels,
     COMPOSE_TUNNEL_AGENT_SERVICE_LABELS.INJECT_SCRIPT_PREFIX,
   )
-  const injectionOrErrors = stringifiedInjections.map(parseScriptInjection)
+  const injectionOrErrors = stringifiedInjections.map(x => parseScriptInjection(x, snakeCase))
   return partition(injectionOrErrors, x => !(x instanceof Error)) as [ContainerScriptInjection[], Error[]]
 }

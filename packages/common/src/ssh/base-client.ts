@@ -4,43 +4,8 @@ import ssh2, { ParsedKey } from 'ssh2'
 import { promisify } from 'util'
 import { tryParseJson } from '../json.js'
 import { Logger } from '../log.js'
-import { formatPublicKey, parseKey } from './keys.js'
-
-export type SshBaseConnectionConfig = {
-  hostname: string
-  port: number
-  username: string
-  clientPrivateKey: string | Buffer
-  insecureSkipVerify: boolean
-  knownServerPublicKeys: (string | Buffer)[]
-}
-
-export type SshTlsConnectionConfig = SshBaseConnectionConfig & {
-  isTls: true
-  tlsServerName?: string
-}
-
-export type SshPlainConnectionConfig = SshBaseConnectionConfig & {
-  isTls: false
-}
-
-export type SshConnectionConfig = SshTlsConnectionConfig | SshPlainConnectionConfig
-
-export const formatSshConnectionConfig = (connectionConfig: SshConnectionConfig) => ({
-  ...connectionConfig,
-  clientPrivateKey: '*** REDACTED ***',
-  clientPublicKey: formatPublicKey(connectionConfig.clientPrivateKey),
-})
-
-export const parseSshUrl = (s: string): Pick<SshConnectionConfig, 'hostname' | 'port' | 'isTls'> => {
-  const u = new URL(s)
-  const isTls = Boolean(u.protocol.match(/(tls)|(https)/))
-  return {
-    hostname: u.hostname,
-    port: Number(u.port || (isTls ? 443 : 22)),
-    isTls,
-  }
-}
+import { parseKey } from './keys.js'
+import { SshConnectionConfig, SshTlsConnectionConfig } from './config.js'
 
 export type HelloResponse = {
   clientId: string

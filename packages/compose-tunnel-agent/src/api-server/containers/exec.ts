@@ -5,12 +5,12 @@ import { FastifyPluginAsync } from 'fastify'
 import Dockerode from 'dockerode'
 import { DockerFilterClient } from '../../docker/index.js'
 import { containerIdSchema, execQueryString } from './schema.js'
-import { inspectFilteredContainer } from './filter.js'
+import { ContainerNotFoundError } from './errors.js'
 
 const handler: FastifyPluginAsync<{
-  docker: Dockerode
+  dockerModem: Pick<Dockerode['modem'], 'demuxStream'>
   dockerFilter: DockerFilterClient
-}> = async (app, { docker, dockerFilter }) => {
+}> = async (app, { dockerModem, dockerFilter }) => {
   app.get<{
     Params: z.infer<typeof containerIdSchema>
     Querystring: z.infer<typeof execQueryString>
@@ -21,9 +21,12 @@ const handler: FastifyPluginAsync<{
     },
     websocket: true,
   }, async (connection, { params: { containerId }, query: { tty, cmd }, log }) => {
-    await inspectFilteredContainer(dockerFilter, containerId)
+    const container = await dockerFilter.getContainer(containerId)
+    if (!container) {
+      throw new ContainerNotFoundError(containerId)
+    }
     const abort = new AbortController()
-    const exec = await docker.getContainer(containerId).exec({
+    const exec = await container.exec({
       AttachStdin: true,
       AttachStdout: true,
       AttachStderr: true,
@@ -57,7 +60,7 @@ const handler: FastifyPluginAsync<{
     if (tty) {
       execStream.pipe(wsStream, { end: false }).pipe(execStream)
     } else {
-      docker.modem.demuxStream(execStream, wsStream, wsStream)
+      dockerModem.demuxStream(execStream, wsStream, wsStream)
       wsStream.pipe(execStream)
     }
 

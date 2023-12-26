@@ -1,9 +1,9 @@
-import { simpleEmitter } from './simple.js'
+import { BaseEmitter, simpleEmitter } from './simple.js'
 
 const EVENT = 'state'
 
-export const stateEmitter = <T>(initial?: T) => {
-  const emitter = simpleEmitter<{ [EVENT]: T }>()
+export const stateEmitter = <T>(initial?: T | undefined, base?: BaseEmitter) => {
+  const emitter = simpleEmitter<{ [EVENT]: T }>(base)
 
   let current: T
   const first = new Promise<void>(resolve => {

@@ -1,33 +1,17 @@
-import { baseSshClient, HelloResponse, ScriptInjection, SshClientOpts } from '@preevy/common'
+import { baseSshClient, HelloResponse, ScriptInjection, SshClientOpts, stateEmitter } from '@preevy/common'
 import net from 'net'
 import plimit from 'p-limit'
 import { inspect } from 'util'
 import { difference } from '../maps.js'
-import { RunningService } from '../service-discovery.js'
-import { ComposeServiceMeta } from '../docker/services.js'
-
-export type Forward<Meta = {}> = {
-  host: string
-  port: number
-  externalName: string
-  meta: Meta
-  access: 'private' | 'public'
-  injects: ScriptInjection[]
-}
+import { Forward } from '../forwards.js'
+import { EventEmitter } from 'tseep'
 
 type InternalForward = Forward & {
   sockets: Set<net.Socket>
 }
 
-type SshStateTunnel = {
-  project: string
-  service: string
-  ports: Record<number, string>
-}
-
 export type SshState = {
   clientId: string
-  tunnels: SshStateTunnel[]
   forwards: { forward: Forward; url: string }[]
 }
 
@@ -118,36 +102,10 @@ export const sshClient = async ({
     })
   })
 
-  const tunnelsFromHelloResponse = (helloTunnels: HelloResponse['tunnels']): SshStateTunnel[] => {
-    const serviceKey = ({ name, project }: Pick<RunningService, 'name' | 'project'>) => `${name}/${project}`
-
-    const r = Object.entries(helloTunnels)
-      .reduce(
-        (res, [forwardRequestId, url]) => {
-          const forward = currentForwards.get(forwardRequestId)
-          if (!forward) {
-            throw new Error(`no such forward: ${forwardRequestId}`)
-          }
-          const { meta, port } = forward
-          const { service, project } = meta as ComposeServiceMeta
-          ((res[serviceKey({ name: service, project })] ||= {
-            service,
-            project,
-            ports: {},
-          }).ports[port] = url)
-          return res
-        },
-        {} as Record<string, SshStateTunnel>,
-      )
-
-    return Object.values(r)
-  }
-
   const stateFromHelloResponse = (
     { clientId, tunnels }: Pick<HelloResponse, 'clientId' | 'tunnels'>,
   ): SshState => ({
     clientId,
-    tunnels: tunnelsFromHelloResponse(tunnels),
     forwards: Object.entries(tunnels).map(([forwardRequestId, url]) => ({
       forward: currentForwards.get(forwardRequestId) as Forward,
       url,
@@ -166,11 +124,14 @@ export const sshClient = async ({
     return `/${externalName}#${argsStr}`
   }
 
-  let state: SshState
+  const state = stateEmitter<SshState>(undefined, new EventEmitter<{ state(val: SshState): void }>())
+  let hasState = false
+  state.addOneTimeListener(() => { hasState = true })
   const limit = plimit(1)
 
   return {
-    updateTunnels: async (forwards: Forward[]): Promise<SshState> => await limit(async () => {
+    state: () => state.current(),
+    updateForwards: async (forwards: Forward[]): Promise<void> => await limit(async () => {
       const newForwardRequests = new Map<string, Forward>(
         forwards.map(f => [stringifyForwardRequest(f), f])
       )
@@ -193,12 +154,11 @@ export const sshClient = async ({
 
       const haveChanges = inserts.length > 0 || deletes.length > 0
 
-      if (haveChanges || !state) {
-        state = stateFromHelloResponse(await execHello())
-        log.info('tunnel state: %j', state)
+      if (haveChanges || !hasState) {
+        const stateValue = stateFromHelloResponse(await execHello())
+        log.info('ssh state: %j', stateValue)
+        state.emit(stateValue)
       }
-
-      return state
     }),
     end,
     ssh,

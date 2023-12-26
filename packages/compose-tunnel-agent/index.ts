@@ -12,6 +12,7 @@ import {
   tunnelNameResolver,
   MachineStatusCommand,
   COMPOSE_TUNNEL_AGENT_PORT,
+  ScriptInjection,
 } from '@preevy/common'
 import { inspect } from 'util'
 import { createApp } from './src/api-server/index.js'
@@ -19,13 +20,18 @@ import { sshClient as createSshClient } from './src/ssh/index.js'
 import { runMachineStatusCommand } from './src/machine-status.js'
 import { envMetadata } from './src/metadata.js'
 import { readAllFiles } from './src/files.js'
-import { eventsClient as dockerEventsClient, filteredClient as dockerFilteredClient } from './src/docker/index.js'
+import {
+  forwardsEmitter as createDockerForwardsEmitter,
+  filteredClient as createDockerFilteredClient,
+} from './src/docker/index.js'
 import { anyComposeProjectFilters, composeProjectFilters } from './src/docker/filters.js'
 
 const PinoPretty = pinoPrettyModule.default
 
 const homeDir = process.env.HOME || '/root'
 const dockerSocket = '/var/run/docker.sock'
+const composeModelPath = '/preevy/docker-compose.yaml'
+const envId = requiredEnv('PREEVY_ENV_ID')
 
 const targetComposeProject = process.env.COMPOSE_PROJECT
 const defaultAccess = process.env.DEFAULT_ACCESS_LEVEL === 'private' ? 'private' : 'public'
@@ -46,7 +52,7 @@ const sshConnectionConfigFromEnv = async (): Promise<{ connectionConfig: SshConn
     connectionConfig: {
       ...parsed,
       clientPrivateKey,
-      username: requiredEnv('PREEVY_ENV_ID'),
+      username: envId,
       knownServerPublicKeys,
       insecureSkipVerify: Boolean(process.env.INSECURE_SKIP_VERIFY),
       tlsServerName: process.env.TLS_SERVERNAME || undefined,
@@ -68,6 +74,10 @@ const machineStatusCommand = process.env.MACHINE_STATUS_COMMAND
   ? JSON.parse(process.env.MACHINE_STATUS_COMMAND) as MachineStatusCommand
   : undefined
 
+const globalInjects = process.env.GLOBAL_INJECT_SCRIPTS
+  ? JSON.parse(process.env.GLOBAL_INJECT_SCRIPTS) as ScriptInjection[]
+  : []
+
 const log = pino({
   level: process.env.DEBUG || process.env.DOCKER_PROXY_DEBUG ? 'debug' : 'info',
 }, PinoPretty({ destination: pino.destination(process.stderr) }))
@@ -87,13 +97,14 @@ const main = async () => {
     : anyComposeProjectFilters
 
   const docker = new Docker({ socketPath: dockerSocket })
-  const dockerClient = dockerEventsClient({
+  const dockerForwardsEmitter = createDockerForwardsEmitter({
     log: log.child({ name: 'docker' }),
     docker,
     debounceWait: 500,
     defaultAccess,
     filters: dockerFilters,
-    tunnelNameResolver: tunnelNameResolver({ envId: requiredEnv('PREEVY_ENV_ID') }),
+    tunnelNameResolver: tunnelNameResolver({ envId }),
+    globalInjects,
   })
 
   const sshLog = log.child({ name: 'ssh' })
@@ -108,24 +119,19 @@ const main = async () => {
   })
 
   sshLog.info('ssh client connected to %j', sshUrl)
-  let currentTunnels = dockerClient.getForwards().then(services => sshClient.updateTunnels(services))
 
-  void dockerClient.startListening({
-    onChange: async forwards => {
-      currentTunnels = sshClient.updateTunnels(forwards)
-    },
-  })
+  void dockerForwardsEmitter.then(client => client.on('forwards', forwards => sshClient.updateForwards(forwards)))
 
   const app = await createApp({
     log: log.child({ name: 'api' }),
-    currentSshState: async () => (await currentTunnels),
+    currentSshState: () => sshClient.state(),
     machineStatus: machineStatusCommand
       ? async () => await runMachineStatusCommand({ log, docker })(machineStatusCommand)
       : undefined,
     envMetadata: await envMetadata({ env: process.env, log }),
-    composeModelPath: '/preevy/docker-compose.yaml',
-    docker,
-    dockerFilter: dockerFilteredClient({ docker, filters: dockerFilters }),
+    composeModelPath: fs.existsSync(composeModelPath) ? composeModelPath : undefined,
+    dockerModem: docker.modem,
+    dockerFilter: createDockerFilteredClient({ docker, filters: dockerFilters }),
   })
 
   void app.listen({ ...await fastifyListenArgsFromEnv() })
@@ -136,6 +142,7 @@ const main = async () => {
     await Promise.all([
       app.close(),
       sshClient.end(),
+      dockerForwardsEmitter.then(client => client[Symbol.asyncDispose]()),
     ])
   }
 

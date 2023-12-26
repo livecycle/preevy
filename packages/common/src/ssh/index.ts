@@ -1,10 +1,16 @@
 export { parseKey, formatPublicKey, keyFingerprint } from './keys.js'
 export {
-  parseSshUrl,
-  formatSshConnectionConfig,
   baseSshClient,
   BaseSshClient,
-  SshConnectionConfig,
   SshClientOpts,
   HelloResponse,
 } from './base-client.js'
+export {
+  parseSshUrl,
+  formatSshConnectionConfig,
+  SshConnectionConfig,
+  sshBaseConnectionConfigSchema,
+  sshPlainConnectionConfigSchema,
+  sshTlsConnectionConfigSchema,
+  sshConnectionConfigSchema,
+} from './config.js'

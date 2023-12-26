@@ -6,9 +6,9 @@ export const env: FastifyPluginAsync<{
   currentSshState: () => Promise<SshState>
   machineStatus?: () => Promise<{ data: Buffer; contentType: string }>
   envMetadata?: Record<string, unknown>
-  composeModelPath: string
+  composeModelPath?: string
 }> = async (app, { currentSshState, machineStatus, envMetadata, composeModelPath }) => {
-  app.get('/tunnels', async () => await currentSshState())
+  app.get('/forwards', async () => await currentSshState())
 
   if (machineStatus) {
     app.get('/machine-status', async (_req, res) => {
@@ -23,10 +23,11 @@ export const env: FastifyPluginAsync<{
     app.get('/env-metadata', async () => envMetadata)
   }
 
-  app.get('/compose-model', async ({ log }, res) => {
-    log.debug('compose-model handler')
-    void res
-      .header('Content-Type', 'application/x-yaml')
-      .send(await fs.promises.readFile(composeModelPath, { encoding: 'utf-8' }))
-  })
+  if (composeModelPath) {
+    app.get('/compose-model', async (_req, res) => {
+      void res
+        .header('Content-Type', 'application/x-yaml')
+        .send(await fs.promises.readFile(composeModelPath, { encoding: 'utf-8' }))
+    })
+  }
 }

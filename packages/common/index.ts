@@ -6,6 +6,10 @@ export {
   formatSshConnectionConfig,
   SshConnectionConfig, HelloResponse,
   baseSshClient, BaseSshClient, SshClientOpts,
+  sshBaseConnectionConfigSchema,
+  sshPlainConnectionConfigSchema,
+  sshTlsConnectionConfigSchema,
+  sshConnectionConfigSchema,
 } from './src/ssh/index.js'
 
 export {
@@ -26,11 +30,19 @@ export { editUrl } from './src/url.js'
 export {
   ScriptInjection,
   ContainerScriptInjection,
+  parseScriptInjection,
   parseScriptInjectionLabels,
   scriptInjectionsToLabels,
+  containerScriptInjectionSchema,
+  scriptInjectionSchema,
   COMPOSE_TUNNEL_AGENT_PORT,
   COMPOSE_TUNNEL_AGENT_SERVICE_LABELS,
   COMPOSE_TUNNEL_AGENT_SERVICE_NAME,
 } from './src/compose-tunnel-agent/index.js'
-export { MachineStatusCommand, DockerMachineStatusCommandRecipe } from './src/machine-status-command.js'
+export {
+  MachineStatusCommand,
+  DockerMachineStatusCommandRecipe,
+  dockerMachineStatusCommandRecipeSchema,
+  machineStatusCommandSchema,
+} from './src/machine-status-command.js'
 export { ProcessOutputBuffers, orderedOutput, OrderedOutput } from './src/process-output-buffers.js'

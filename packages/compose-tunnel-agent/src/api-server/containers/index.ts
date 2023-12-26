@@ -6,7 +6,7 @@ import { DockerFilterClient } from '../../docker/index.js'
 import { containerIdSchema } from './schema.js'
 import exec from './exec.js'
 import logs from './logs.js'
-import { inspectFilteredContainer } from './filter.js'
+import { ContainerNotFoundError } from './errors.js'
 
 const containerIdActionSchema = z.object({
   containerId: z.string(),
@@ -14,9 +14,9 @@ const containerIdActionSchema = z.object({
 })
 
 export const containers: FastifyPluginAsync<{
-  docker: Dockerode
+  dockerModem: Pick<Dockerode['modem'], 'demuxStream'>
   dockerFilter: DockerFilterClient
-}> = async (app, { docker, dockerFilter }) => {
+}> = async (app, { dockerModem, dockerFilter }) => {
   app.get('/', async () => await dockerFilter.listContainers())
 
   app.get<{
@@ -25,7 +25,13 @@ export const containers: FastifyPluginAsync<{
     schema: {
       params: containerIdSchema,
     },
-  }, async ({ params: { containerId } }) => await inspectFilteredContainer(dockerFilter, containerId))
+  }, async ({ params: { containerId } }) => {
+    const inspect = await dockerFilter.inspectContainer(containerId)
+    if (!inspect) {
+      throw new ContainerNotFoundError(containerId)
+    }
+    return inspect
+  })
 
   app.post<{
     Params: z.infer<typeof containerIdActionSchema>
@@ -33,13 +39,15 @@ export const containers: FastifyPluginAsync<{
     schema: {
       params: containerIdActionSchema,
     },
-    preValidation: async ({ params: { containerId } }) => await inspectFilteredContainer(dockerFilter, containerId),
   }, async ({ params: { containerId, action } }) => {
-    const container = docker.getContainer(containerId)
+    const container = await dockerFilter.getContainer(containerId)
+    if (!container) {
+      throw new ContainerNotFoundError(containerId)
+    }
     await (container[action] as () => Promise<void>)()
   })
 
   await app.register(fastifyWebsocket)
-  await app.register(exec, { docker, dockerFilter })
-  await app.register(logs, { docker, dockerFilter })
+  await app.register(exec, { dockerModem, dockerFilter })
+  await app.register(logs, { dockerModem, dockerFilter })
 }

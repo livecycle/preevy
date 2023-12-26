@@ -69,7 +69,7 @@ const setupApiServer = () => {
     const docker = new Dockerode()
     app = await createApp({
       log,
-      docker,
+      dockerModem: docker.modem,
       dockerFilter: filteredClient({
         docker,
         filters: composeProjectFilters({ composeProject: TEST_COMPOSE_PROJECT })

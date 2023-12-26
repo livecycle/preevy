@@ -15,15 +15,15 @@ export const createApp = async ({
   envMetadata,
   composeModelPath,
   dockerFilter,
-  docker,
+  dockerModem,
 }: {
   log: Logger
   currentSshState: () => Promise<SshState>
   machineStatus?: () => Promise<{ data: Buffer; contentType: string }>
   envMetadata?: Record<string, unknown>
-  composeModelPath: string
+  composeModelPath?: string
   dockerFilter: DockerFilterClient
-  docker: Dockerode
+  dockerModem: Pick<Dockerode['modem'], 'demuxStream'>
 }) => {
   const app = await fastify({ logger: log })
   app.setValidatorCompiler(validatorCompiler)
@@ -40,7 +40,7 @@ export const createApp = async ({
   app.get('/healthz', { logLevel: 'warn' }, async () => 'OK')
 
   await app.register(env, { composeModelPath, currentSshState, envMetadata, machineStatus })
-  await app.register(containers, { docker, dockerFilter, prefix: '/containers' })
+  await app.register(containers, { dockerModem, dockerFilter, prefix: '/containers' })
 
   return app
 }

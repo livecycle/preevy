@@ -5,12 +5,12 @@ import { FastifyPluginAsync } from 'fastify'
 import Dockerode from 'dockerode'
 import { DockerFilterClient } from '../../docker/index.js'
 import { containerIdSchema, logsQueryString } from './schema.js'
-import { inspectFilteredContainer } from './filter.js'
+import { ContainerNotFoundError } from './errors.js'
 
 const handler: FastifyPluginAsync<{
-  docker: Dockerode
+  dockerModem: Pick<Dockerode['modem'], 'demuxStream'>
   dockerFilter: DockerFilterClient
-}> = async (app, { docker, dockerFilter }) => {
+}> = async (app, { dockerModem, dockerFilter }) => {
   app.get<{
     Params: z.infer<typeof containerIdSchema>
     Querystring: z.infer<typeof logsQueryString>
@@ -24,9 +24,12 @@ const handler: FastifyPluginAsync<{
     connection,
     { params: { containerId }, query: { stdout, stderr, since, until, timestamps, tail }, log }
   ) => {
-    await inspectFilteredContainer(dockerFilter, containerId)
+    const container = await dockerFilter.getContainer(containerId)
+    if (!container) {
+      throw new ContainerNotFoundError(containerId)
+    }
     const abort = new AbortController()
-    const logStream = await docker.getContainer(containerId).logs({
+    const logStream = await container.logs({
       stdout,
       stderr,
       since,
@@ -47,7 +50,7 @@ const handler: FastifyPluginAsync<{
 
     const wsStream = createWebSocketStream(connection.socket)
     wsStream.on('error', err => { log.error('wsStream error %j', inspect(err)) })
-    docker.modem.demuxStream(logStream, wsStream, wsStream)
+    dockerModem.demuxStream(logStream, wsStream, wsStream)
 
     return undefined
   })
