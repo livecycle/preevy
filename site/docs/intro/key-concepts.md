@@ -1,9 +1,9 @@
 ---
-sidebar_position: 4
-title: Key Concepts
+sidebar_position: 5
+title: Key concepts
 ---
 
-# Key Concepts for Using Preevy
+# Key concepts for Using Preevy
 
 Here are some key concepts and terminology that you should be familiar with as you begin using Preevy and referencing this documentation:
 
