@@ -10,7 +10,7 @@
     "lodash-es": "^4.17.21",
     "patch-package": "^8.0.0",
     "postinstall-postinstall": "^2.1.0",
-    "syncpack": "^9.8.4",
+    "syncpack": "11.2.1",
     "typescript": "^5.3.3"
   },
   "resolutions": {
