@@ -45,6 +45,18 @@ sidebar_position: 15.1
 </details>
 
 <details>
+  <summary>Is using the Livecycle Docker Extension free?</summary>
+
+  Yes, the Livecycle Docker Extension is free to use.
+</details>
+
+<details>
+  <summary>Does Livecycle have my access to my/company data or code?</summary>
+
+  No, Livecycle does not have access to your data or code. We just do tunneling. The building and running of your code is done on your machine or cloud.
+</details>
+
+<details>
   <summary>How do I get support for the Livecycle Docker Extension?</summary>
 
   Join the <a href="https://community.livecycle.io" target="_blank">Livecycle Community</a> on Slack to get support for the Livecycle Docker Extension.
