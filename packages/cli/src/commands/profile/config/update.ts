@@ -54,7 +54,7 @@ export default class UpdateProfileConfig extends ProfileCommand<typeof UpdatePro
       default: [],
       multiple: true,
       delimiter: ',',
-      singleValue: true,
+      multipleNonGreedy: true,
     }),
   }
 

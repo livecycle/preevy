@@ -85,7 +85,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
     'skip-volume': Flags.string({
       description: 'Additional volume glob patterns to skip copying',
       multiple: true,
-      singleValue: true,
+      multipleNonGreedy: true,
       default: [],
     }),
     'skip-unchanged-files': Flags.boolean({

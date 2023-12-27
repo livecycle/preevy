@@ -48,7 +48,7 @@ export default class Purge extends DriverCommand<typeof Purge> {
       default: [machineResourceType],
       multiple: true,
       delimiter: ',',
-      singleValue: true,
+      multipleNonGreedy: true,
     }),
     force: Flags.boolean({
       description: 'Do not ask for confirmation',
