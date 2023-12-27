@@ -13,4 +13,9 @@ sidebar_position: 15.2
 </details>
 
 
+<details>
+  <summary>How do I get support for Preevy CLI?</summary>
+
+  Join the <a href="https://community.livecycle.io" target="_blank">Livecycle Community</a> on Slack to get support for Preevy CLI.
+</details>
 
