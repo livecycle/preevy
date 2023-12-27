@@ -3,66 +3,10 @@ sidebar_position: 1
 title: Getting started
 ---
 
-## Prerequisites
-
 :::note Don't like fiddling with the CLI? Want to first test Preevy with an easy web UI? Check out our [Docker Extension](/docker-extension)!
 :::
 
-### Required software
-
-- [Node.js](https://nodejs.org/en/download) v18 or greater on Mac, Linux or Windows.
-- Docker CLI with the default Docker Compose and [BuildX](https://github.com/docker/buildx#installing) plug ins. The Docker CLI is included with the [Docker Engine installation](https://docs.docker.com/engine/install/) and can also be [installed separately](https://docs.docker.com/compose/install/).
-- To use Kubernetes as a deploy runtime: [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl).
-
-### Your Docker Compose app
-
-If you don't have an existing [Compose](https://docs.docker.com/compose/) app, check out [Awesome Compose](https://github.com/docker/awesome-compose) - a curated list of Compose samples, from React to Minecraft.
-
-### Your cloud provider or Kubernetes cluster
-
-Preevy deploys your app to one of the supported [deploy runtimes](/deploy-runtimes/).
-
-Choose the cloud provider or Kubernetes cluster you're going to use and configure access credentials for it:
-
-- For AWS: use `aws configure`. See [AWS lightsail credentials configurations](/deploy-runtimes/aws-lightsail#credentials-configuration).
-- For GCP: use `gcloud auth application-default login`. See [GCP credentials configuration](/deploy-runtimes/gcp-gce#credentials-configuration)
-- For Azure: use `az login`. See [Azure credentials configuration](/deploy-runtimes/azure#credentials-configuration)
-- For Kubernetes: See [Kubernetes credentials configuration](/deploy-runtimes/kube-pod#requirements)
-
-:::note Preevy only uses your credentials when you run the Preevy CLI to set up and connect to your environments. Your credentials are not sent or stored anywhere outside of your computer.
-:::
-
-## Install the Preevy CLI
-
-To install the Preevy CLI globally:
-
-```bash
-npm install -g preevy
-```
-
-Or use `npx` to run the CLI without installing it:
-
-```bash
-npx preevy <command>
-```
-
-## Set up a profile
-
-```bash
-preevy init
-```
-
-Preevy will ask you to select a deploy target and a storage location for your profile. You can start by storing the profile locally.
-
-## Deploy your first environment!
-
-From the same directory where your `docker-compose.yml` or `compose.yml` file is located, run the command below:
-
-```bash
-preevy up
-```
-
-**Note:** Preevy uses the git repo at the current directory to calculate a stable environment ID for your project. Make sure a git repo is initialized (with at least one commit), or add the `--id` flag to explicitly specify the environment ID.
+{@import ../../../README.md Getting started}
 
 ## What's next?
 

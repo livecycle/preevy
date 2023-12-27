@@ -57,6 +57,13 @@ Visit The full documentation here: https://preevy.dev/
 - [What](#what)
 - [Why](#why)
 - [Getting started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Install the Preevy CLI](#install-the-preevy-cli)
+  - [Set up a profile](#set-up-a-profile)
+  - [Deploy your first environment](#deploy-your-first-environment)
+  - [Update your environment](#update-your-environment)
+  - [List and remove your environment](#list-and-remove-your-environment)
+- [Service URLs](#service-urls)
 - [Under the hood](#under-the-hood)
   - [CLI](#cli)
   - [Tunnel server](#tunnel-server)
@@ -64,7 +71,8 @@ Visit The full documentation here: https://preevy.dev/
   - [Faster builds in CI](#faster-builds-in-ci)
 - [Security](#security)
   - [Private environments](#private-environments)
-  - [Notice on preview environments exposure](#notice-on-preview-environments-exposure)
+  - [Exposure of preview environments](#exposure-of-preview-environments)
+  - [Livecycle access to data](#livecycle-access-to-data)
   - [Network isolation](#network-isolation)
 - [Configuration](#configuration)
   - [Preevy Profile](#preevy-profile)
@@ -79,10 +87,11 @@ Visit The full documentation here: https://preevy.dev/
 
 ## What
 
-Preevy can take any Docker-Compose application definition and with a single `up` command perform the following:
+Preevy can take any [Docker-Compose](https://docs.docker.com/compose/) application definition and with a single `up` command perform the following:
 
 - Provision and configure a virtual machine (VM) on your cloud, or a Pod on your Kubernetes cluster.
-- Build and deploy your application on the VM/Pod.
+- Build your application on the VM/Pod or on any BuildKit builder (optional)
+- Deploy your application on the VM/Pod.
 - Expose each service of your application to the web with a user-friendly public HTTPS URL without any DNS/Certificate configuration.
 
 These environments can be managed using the Preevy command-line interface (CLI) and can be easily updated or destroyed when necessary.
@@ -99,38 +108,95 @@ You can read more about the story and philosophy behind Preevy [here](https://pr
 
 ## Getting started
 
-To start using the Preevy CLI you will need:
+### Prerequisites
 
-- Docker for desktop/Docker CLI
-- Node 18
-- A Docker-Compose application (examples can be found [here](https://github.com/docker/awesome-compose))
-- A cloud provider for provisioning VMs (AWS/GCP/Azure), or a Kubernetes cluster (local, remote or managed)
+#### Required software
 
-If you don't have an existing cloud account or prefer to try Preevy first locally, you can use the [Docker Desktop Kubernetes server](https://docs.docker.com/desktop/kubernetes/). Go to:
-Docker Settings -> Kubernetes -> Enable Kubernetes and follow the instructions below.
+- Node.js [v18 or greater](https://nodejs.org/en/download) on Mac, Linux or Windows.
+- Docker CLI with the default Docker Compose and [BuildX](https://github.com/docker/buildx#installing) plug ins. The Docker CLI is included with the [Docker Engine installation](https://docs.docker.com/engine/install/) and can also be [installed separately](https://docs.docker.com/compose/install/).
+- To use Kubernetes as a deploy runtime: [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl).
 
-*For provisioning a VM*, configure your provider:
+#### Your Docker Compose app
 
-- In AWS, it could be done by using `aws configure`
-- In GCP, it could be done by using `gcloud auth application-default login`
-- In Azure, it could be done by using `az login`
+If you don't have an existing Docker Compose app, check out [Awesome Compose](https://github.com/docker/awesome-compose) - a curated list of Compose samples, from React to Minecraft.
 
-*For provisioning a Pod on Kubernetes*, make sure a kubeconfig file exists and that you can run `kubectl` commands locally (e.g. `kubectl get pod`)
+#### Your cloud provider or Kubernetes cluster
 
-Running Preevy:
+<!--lint disable double-link-->
+Preevy deploys your app to one of the supported [deploy runtimes](https://preevy.dev/deploy-runtimes/).
+<!--lint enable double-link-->
 
-1. Install the CLI using npm:`npm install -g preevy` , or use it directly using: `npx preevy <command>`
-2. Set up a profile by using: `preevy init`
-3. Use the `preevy up` command to provision a new VM with your application.
-4. Access and share your new preview environment at the `*.livecycle.run` link provided in the command output.
-5. Code changed? Re-run `preevy up` to quickly sync the preview environment with your changes on the existing VM.
-6. Remove the environment by using: `preevy down`.
+Choose the cloud provider or Kubernetes cluster you're going to use and configure access credentials for it:
+
+- For AWS: use `aws configure`. See [AWS lightsail credentials configurations](https://preevy.dev/deploy-runtimes/aws-lightsail#credentials-configuration).
+- For GCP: use `gcloud auth application-default login`. See [GCP credentials configuration](https://preevy.dev/deploy-runtimes/gcp-gce#credentials-configuration)
+- For Azure: use `az login`. See [Azure credentials configuration](https://preevy.dev/deploy-runtimes/azure#credentials-configuration)
+- For Kubernetes: See [Kubernetes credentials configuration](https://preevy.dev/deploy-runtimes/kube-pod#requirements)
+
+***Note*** Preevy only uses your credentials when you run the Preevy CLI to set up and connect to your environments. Your credentials are not sent or stored anywhere outside of your computer.
+
+##### Local Kubernetes server using Docker Desktop
+
+If you don't have an existing cloud account or prefer to try Preevy first locally, you can use the [Docker Desktop Kubernetes server](https://docs.docker.com/desktop/kubernetes/). Go to: `Docker Settings` -> `Kubernetes` -> `Enable Kubernetes`.
+
+### Install the Preevy CLI
+
+```bash
+npm install -g preevy
+```
+
+Or use `npx` to run the CLI without installing it:
+
+```bash
+npx preevy <command>
+```
+
+### Set up a profile
+
+```bash
+preevy init
+```
+
+Preevy will ask you to select a deploy target and a storage location for your profile. You can start by storing the profile locally.
+
+### Deploy your first environment
+
+From the same directory where your `docker-compose.yml` or `compose.yml` file is located, run the command below:
+
+```bash
+preevy up
+```
+
+**Note:** Preevy uses the git repo at the current directory to calculate a stable environment ID for your project. Make sure a git repo is initialized (with at least one commit), or add the `--id` flag to explicitly specify the environment ID.
+
+Access and share your new preview environment at the `*.livecycle.run` links provided in the command output.
+
+### Update your environment
+
+Code changed? Re-run `preevy up` to quickly sync the preview environment with your changes on the existing VM or Kubernetes Pod.
+
+### List and remove your environment
+
+Run `preevy ls` to show all environments in your deploy target which are linked to your profile.
+
+Run `preevy down` to remove your environment. Preevy will delete the VM or Kubernetes Pod.
+
+## Service URLs
+
+Every Compose service is exposed individually with a generated URL in the following format:
+`https://{service}-{[port]}-{env-id}-{client-id}.{tunnel-server-domain}`. If the service exposes a single port, the `port` part is omitted. See [here](https://livecycle.io/blogs/preevy-proxy-service-1/) for a more detailed explanation.
+
+<!--lint disable awesome-list-item-->
+- `env-id` is automatically generated from the Compose project and Git branch, or can be explicitly specified using the `--id` flag of the `preevy up` command.
+- `client-id` is a random identifier based on the profile's public tunneling SSH key (generated in `preevy init`).
+- `tunnel-service-domain` is where the tunnel service is hosted. It can be specified using the `--tunnel-url` flag of the `preevy up` command, and defaults to Livecycle's hosted service at `*.livecycle.run`.
+<!--lint enable awesome-list-item-->
 
 ## Under the hood
 
 Preevy has two main components:
 
-### [CLI](packages/cli)
+### [CLI](https://github.com/livecycle/preevy/tree/main/packages/cli)
 
 The CLI is a Node.js program responsible for:
 
@@ -141,13 +207,13 @@ The CLI is a Node.js program responsible for:
 - Syncing Compose source code and local volumes.
 - Running the Compose app, augmented with a daemon for connecting to the tunneling service.
 
-### [Tunnel server](tunnel-server)
+### [Tunnel server](https://github.com/livecycle/preevy/tree/main/tunnel-server)
 
 The tunnel server is a Node.js base server responsible for exposing friendly HTTPS URLs for the Compose services.
 
-A free public instance is hosted on `livecycle.run`, and it can be self-hosted as well.
+A free public instance is hosted by Livecycle on `livecycle.run`, and it can be self-hosted as well.
 
-A Docker/OCI image is available on ghcr.io: ghcr.io/livecycle/preevy/tunnel-server
+A public Docker/OCI image is available: `ghcr.io/livecycle/preevy/tunnel-server`
 
 ## CI Integration
 
@@ -167,24 +233,21 @@ Check out our [documentation](https://preevy.dev/recipes/faster-build) to find o
 
 ## Security
 
-In case you find a security issue or have something you would like to discuss, refer to our [security policy](https://github.com/livecycle/preevy/blob/main/security.md).
+In case you find a security issue or have something you would like to discuss, refer to our [security policy](https://github.com/livecycle/preevy/blob/main/security.md#reporting-security-issues).
 
 ### Private environments
 
 Preevy can add an authentication layer to your provisioned environments. When you configure your service as [private](https://preevy.dev/recipes/private-services/) the Tunnel Server restricts access based on a pre-shared secret or a Livecycle login (SSO via Google/Microsoft/GitHub).
 
-### Notice on preview environments exposure
+### Exposure of preview environments
 
 Services on provisioned environments are not exposed directly, but rather via a [tunnel](https://livecycle.io/blogs/preevy-proxy-service-2/) created by the tunneling server.
 
-Every Compose service is exposed individually with a generated URL in the following format:
-`https://{service}-{[port]}-{env-id}-{client-id}.{tunnel-server-domain}`. If the service exposes a single port, the `port` part is omitted. See [here](https://livecycle.io/blogs/preevy-proxy-service-1/) for a more detailed explanation.
+### Livecycle access to data
 
-<!--lint disable awesome-list-item-->
-- `env-id` can be specified using the `--id` flag of the `preevy up` command, or automatically generated by git context.
-- `client-id` is a random identifier based on the profile's public tunneling SSH key (generated in `preevy init`).
-- `tunnel-service-domain` is where the tunnel service is hosted. It can be specified using the `--tunnel-url` flag of the `preevy up` command, and defaults to our free service at `*.livecycle.run`.
-<!--lint enable awesome-list-item-->
+When you use Preevy, Livecycle does not get access to your credentials or code. Preevy only uses your cloud provider or Kubernetes credentials to provision and connect to environments - it does not send or store the credentials.
+
+Encrypted traffic to and from your environments goes through Preevy's [Tunnel Server](https://preevy.dev/tunnel-server). Livecycle hosts the default Tunnel Server at livecycle.run which is available as part of Livecycle's SaaS offering. Like most SaaS providers, we keep logs for monitoring and troubleshooting purposes which include metadata of the requests. The Tunnel Server code is part of the Preevy OSS project; you can run it on your own infrastructure and specify the its address via the `--tunnel-url` flag.
 
 ### Network isolation
 

@@ -23,36 +23,6 @@ const extractSection = (nodes, section) => {
   return nodes.slice(startIndex + 1, endIndex !== -1 ? endIndex : undefined)
 }
 
-// const extractSection = (rawMd, section) => {
-//   const lines = rawMd.split(EOL);
-//   md = markdownIt()
-//   const p = md.parse(rawMd).map((t, i) => [t, i])
-//   const secs = p
-//     .filter(([t]) => t.type === 'heading_open')
-//     .map(([t, i]) => ({
-//       index: i,
-//       hNumber: numberFromTag(t.tag),
-//       title: p[i+1][0].content,
-//       start: t.map[0],
-//     }))
-
-//   const startSecIndex = secs.findIndex(
-//     typeof section === 'string' ? (s => s.title === section) : (s => s.title.test(section))
-//   )
-
-//   if (startSecIndex === -1) {
-//     throw new Error(`Cannot find section ${section} in: ${inspect(secs)}`)
-//   }
-
-//   const startSec = secs[startSecIndex]
-
-//   const endSec = secs.slice(startSecIndex + 1).find(({ hNumber }) => hNumber <= startSec.hNumber)
-
-//   const endLine = endSec ? endSec.start - 1 : lines.length
-//   const result = lines.slice(startSec.start, endLine).join(EOL)
-//   return result
-// }
-
 const parseImportSection = (s) => {
   const m = /^\/(.+)\//.exec(s)
   if (!m) {
