@@ -76,6 +76,9 @@
     "dirname": "preevy",
     "commands": "./dist/commands",
     "helpClass": "./dist/help.js",
+    "helpOptions": {
+      "flagSortOrder": "none"
+    },
     "hooks": {
       "init": [
         "./dist/hooks/init/sync-logging.js",
