@@ -1,6 +1,6 @@
 import fs from 'fs'
 import { Logger } from '@preevy/common'
-import { merge } from 'lodash'
+import { merge } from 'lodash-es'
 import { inspect } from 'util'
 
 const parseMetadataFileLis = (s?: string): string[] => {

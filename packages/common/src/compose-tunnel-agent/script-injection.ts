@@ -1,6 +1,6 @@
-import { groupBy, mapKeys, partition } from 'lodash'
+import { groupBy, mapKeys, partition } from 'lodash-es'
 import { inspect } from 'util'
-import { COMPOSE_TUNNEL_AGENT_SERVICE_LABELS } from './labels'
+import { COMPOSE_TUNNEL_AGENT_SERVICE_LABELS } from './labels.js'
 
 export type ScriptInjection = {
   pathRegex?: RegExp

@@ -18,7 +18,7 @@ jobs:
 
     - run: yarn
 
-    - run: yarn lint
+    - run: yarn lint --no-cache
 
-    - run: yarn && yarn lint
+    - run: yarn && yarn lint --no-cache
       working-directory: tunnel-server

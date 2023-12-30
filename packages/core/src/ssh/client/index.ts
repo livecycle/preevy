@@ -1,11 +1,11 @@
 import ssh2 from 'ssh2'
 import { ListenOptions } from 'net'
-import { sftpClient } from './sftp'
-import { forwardOutStreamLocal } from './forward-out'
-import { execCommand } from './exec'
-import { Logger } from '../../log'
+import { sftpClient } from './sftp.js'
+import { forwardOutStreamLocal } from './forward-out.js'
+import { execCommand } from './exec.js'
+import { Logger } from '../../log.js'
 
-export { FileToCopy } from './files'
+export { FileToCopy } from './files.js'
 
 export const connectSshClient = async (
   { log, debug, ...connectConfig }: Omit<ssh2.ConnectConfig, 'debug'> & { log: Logger; debug: boolean },
@@ -35,7 +35,7 @@ export const connectSshClient = async (
       listenAddress: string | number | ListenOptions,
       remoteSocket: string,
     ) => forwardOutStreamLocal({ ssh, log, listenAddress, remoteSocket }),
-    close: () => { ssh.end() },
+    [Symbol.dispose]: () => { ssh.end() },
   }
 
   return self

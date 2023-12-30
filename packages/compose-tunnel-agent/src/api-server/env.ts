@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import { FastifyPluginAsync } from 'fastify'
-import { SshState } from '../ssh'
+import { SshState } from '../ssh/index.js'
 
 export const env: FastifyPluginAsync<{
   currentSshState: () => Promise<SshState>

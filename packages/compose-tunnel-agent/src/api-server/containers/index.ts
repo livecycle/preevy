@@ -2,11 +2,11 @@ import Dockerode from 'dockerode'
 import { FastifyPluginAsync } from 'fastify'
 import z from 'zod'
 import fastifyWebsocket from '@fastify/websocket'
-import { DockerFilterClient } from '../../docker'
-import { containerIdSchema } from './schema'
-import exec from './exec'
-import logs from './logs'
-import { inspectFilteredContainer } from './filter'
+import { DockerFilterClient } from '../../docker/index.js'
+import { containerIdSchema } from './schema.js'
+import exec from './exec.js'
+import logs from './logs.js'
+import { inspectFilteredContainer } from './filter.js'
 
 const containerIdActionSchema = z.object({
   containerId: z.string(),

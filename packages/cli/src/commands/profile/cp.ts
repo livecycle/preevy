@@ -1,10 +1,10 @@
 import { Flags, ux } from '@oclif/core'
-import inquirer from 'inquirer'
+import * as inquirer from '@inquirer/prompts'
 import { BaseCommand, text } from '@preevy/cli-common'
 import { LocalProfilesConfig } from '@preevy/core'
-import { loadProfileConfig } from '../../profile-command'
-import { FsType, chooseFs, chooseFsType, fsTypes, isFsType } from '../../fs'
-import { machineDrivers } from '../../drivers'
+import { loadProfileConfig } from '../../profile-command.js'
+import { FsType, chooseFs, chooseFsType, fsTypes, isFsType } from '../../fs.js'
+import { machineDrivers } from '../../drivers.js'
 
 const validateFsType = (fsType: string) => {
   if (!isFsType(fsType)) {
@@ -13,16 +13,10 @@ const validateFsType = (fsType: string) => {
   return fsType
 }
 
-const chooseTargetAlias = async (defaultAlias: string) => (
-  await inquirer.prompt<{ targetAlias: string }>([
-    {
-      type: 'input',
-      name: 'targetAlias',
-      message: 'Target profile name',
-      default: defaultAlias,
-    },
-  ])
-).targetAlias
+const chooseTargetAlias = async (defaultAlias: string) => await inquirer.input({
+  message: 'Target profile name',
+  default: defaultAlias,
+})
 
 // eslint-disable-next-line no-use-before-define
 export default class CopyProfile extends BaseCommand<typeof CopyProfile> {
@@ -65,22 +59,19 @@ export default class CopyProfile extends BaseCommand<typeof CopyProfile> {
     }),
   }
 
-  async source(profileConfig: LocalProfilesConfig): Promise<{ alias: string; location: string }> {
-    if (this.flags.profile) {
-      const { location } = await profileConfig.get(this.flags.profile)
-      return { alias: this.flags.profile, location }
-    }
-    const result = await profileConfig.current()
-    if (!result) {
+  async source(profileConfig: LocalProfilesConfig): Promise<{ alias: string; location: string; driver?: string }> {
+    const localProfileEntry = await profileConfig.get(this.flags.profile, { throwOnNotFound: false })
+    if (!localProfileEntry) {
       throw new Error(`No current profile, specify the source alias with ${text.code(`--${CopyProfile.flags.profile.name}`)}`)
     }
-    ux.info(`Copying current profile ${text.code(result.alias)} from ${text.code(result.location)}`)
-    return result
+    const { alias, location, info: { driver } } = localProfileEntry
+    ux.info(`Copying current profile ${text.code(alias)} from ${text.code(location)}`)
+    return { alias, location, driver }
   }
 
-  async target(source: { alias: string }): Promise<{ location: string; alias: string }> {
+  async target(source: { alias: string; driver?: string }): Promise<{ location: string; alias: string }> {
     const { 'target-location': targetLocation, 'target-storage': targetStorage } = this.flags
-    const fsType = targetLocation?.fsType ?? targetStorage ?? await chooseFsType()
+    const fsType = targetLocation?.fsType ?? targetStorage ?? await chooseFsType({ driver: source.driver })
     const alias = this.flags['target-name'] ?? await chooseTargetAlias(`${source.alias}-${fsType}`)
     return { alias, location: targetLocation?.location ?? await chooseFs[fsType]({ profileAlias: alias }) }
   }
@@ -89,13 +80,9 @@ export default class CopyProfile extends BaseCommand<typeof CopyProfile> {
     const profileConfig = loadProfileConfig(this.config)
     const source = await this.source(profileConfig)
     const target = await this.target(source)
-    await profileConfig.copy(source, target, Object.keys(machineDrivers))
+    await profileConfig.copy(source, target, Object.keys(machineDrivers), this.flags.use)
 
     ux.info(text.success(`Profile ${text.code(source.alias)} copied to ${text.code(target.location)} as ${text.code(target.alias)}`))
-
-    if (this.flags.use) {
-      await profileConfig.setCurrent(target.alias)
-    }
 
     return { source, target }
   }

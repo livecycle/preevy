@@ -1,6 +1,6 @@
 import * as k8s from '@kubernetes/client-node'
 import { MachineBase, machineResourceType } from '@preevy/core'
-import { extractEnvId, extractInstance, extractName, extractNamespace } from './client'
+import { extractEnvId, extractInstance, extractName, extractNamespace } from './client/index.js'
 
 export type DeploymentMachine = MachineBase & {
   deployment: k8s.V1Deployment

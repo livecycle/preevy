@@ -1,25 +1,29 @@
 {
   "name": "@preevy/cli-common",
-  "version": "0.0.56",
+  "version": "0.0.58",
   "description": "Common library for the Preevy CLI and plugins",
+  "type": "module",
   "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "files": [
     "dist"
   ],
   "license": "Apache-2.0",
   "dependencies": {
-    "@oclif/core": "^2",
-    "@preevy/core": "0.0.56",
+    "@oclif/core": "^3.15.1",
+    "@preevy/core": "0.0.58",
     "chalk": "^4.1.2",
     "iter-tools-es": "^7.5.3",
-    "lodash": "^4.17.21"
+    "lodash-es": "^4.17.21"
   },
   "devDependencies": {
     "@jest/globals": "29.7.0",
-    "@types/lodash": "^4.14.192",
+    "@types/lodash-es": "^4.17.12",
     "@types/node": "18",
-    "@typescript-eslint/eslint-plugin": "6.7.4",
-    "@typescript-eslint/parser": "6.7.4",
+    "@typescript-eslint/eslint-plugin": "6.14.0",
+    "@typescript-eslint/parser": "6.14.0",
     "eslint": "^8.36.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-plugin-import": "^2.27.5",
@@ -27,13 +31,14 @@
     "eslint-plugin-jsx-a11y": "^6.7.1",
     "eslint-plugin-react": "^7.32.2",
     "jest": "29.7.0",
+    "lint-staged": "^15.2.0",
     "shx": "^0.3.3",
     "tslib": "^2.5.0",
-    "typescript": "^5.0.4"
+    "typescript": "^5.3.3"
   },
   "scripts": {
     "lint": "eslint . --ext .ts,.tsx --cache",
-    "test": "yarn jest",
+    "test": "node --no-warnings=ExperimentalWarning --experimental-vm-modules ../../node_modules/.bin/jest",
     "clean": "shx rm -rf dist tsconfig.tsbuildinfo",
     "build": "tsc -b",
     "prepack": "yarn clean && yarn build",

@@ -1,5 +1,5 @@
 ---
-title: "Private Services"
+title: "Private services"
 sidebar_position: 1
 ---
 
@@ -36,7 +36,7 @@ Future implementations will allow the use of bearer tokens, cookie-based session
 
 Because the current implementation relies on HTTP basic authentication via the `Authorization` HTTP header, it has a few limitations:
 
-- Backend services that depend on the `Authorization` header may break, because this header is already used for Preevy's authentication.
+- Backend services that depend on the `Authorization` header may break because this header is already used for Preevy's authentication.
 - WebSockets do not support the `Authorization` header, so they will not work.
 
 Both of these limitations will be addressed when the tunneling service begins to support cookie-based authentication/sessions.

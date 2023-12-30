@@ -1,5 +1,5 @@
-import { HookFunc, HookName, hookNames } from '../hooks'
-import { InitResults } from './model'
+import { HookFunc, HookName, hookNames } from '../hooks.js'
+import { InitResults } from './model.js'
 
 export const hooksFromPlugins = (
   initResults: InitResults[],

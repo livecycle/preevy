@@ -2,8 +2,8 @@ import { profileStore } from '@preevy/core'
 import { ux } from '@oclif/core'
 import { EOL } from 'os'
 import { text } from '@preevy/cli-common'
-import { DriverName } from '../../../drivers'
-import ProfileCommand from '../../../profile-command'
+import { DriverName } from '../../../drivers.js'
+import ProfileCommand from '../../../profile-command.js'
 
 // eslint-disable-next-line no-use-before-define
 export default class ViewProfileConfig extends ProfileCommand<typeof ViewProfileConfig> {
@@ -11,9 +11,9 @@ export default class ViewProfileConfig extends ProfileCommand<typeof ViewProfile
   static enableJsonFlag = true
 
   async run(): Promise<unknown> {
-    const pStore = profileStore(this.store)
+    const pStore = profileStore(this.store).ref
     const driver = this.profile.driver as DriverName
-    const config = await pStore.defaultFlags(driver)
+    const config = await pStore.defaultDriverFlags(driver)
     if (!driver) {
       ux.error([
         'Missing driver configuration in profile.',

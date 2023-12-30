@@ -2,8 +2,8 @@ import { baseSshClient, HelloResponse, ScriptInjection, SshClientOpts, TunnelNam
 import net from 'net'
 import plimit from 'p-limit'
 import { inspect } from 'util'
-import { RunningService } from '../docker'
-import { difference } from '../maps'
+import { RunningService } from '../docker/index.js'
+import { difference } from '../maps.js'
 
 type Forward = {
   service: RunningService

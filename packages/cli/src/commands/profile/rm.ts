@@ -1,10 +1,17 @@
-import { Args, ux } from '@oclif/core'
+import { Args, Flags, ux } from '@oclif/core'
 import { text } from '@preevy/cli-common'
-import ProfileCommand from '../../profile-command'
+import ProfileCommand from '../../profile-command.js'
 
 // eslint-disable-next-line no-use-before-define
 export default class RemoveProfile extends ProfileCommand<typeof RemoveProfile> {
   static description = 'Remove a profile'
+
+  static flags = {
+    force: Flags.boolean({
+      description: 'Do not error if the profile is not found',
+      default: false,
+    }),
+  }
 
   static args = {
     name: Args.string({
@@ -19,8 +26,9 @@ export default class RemoveProfile extends ProfileCommand<typeof RemoveProfile> 
 
   async run(): Promise<unknown> {
     const alias = this.args.name
-    await this.profileConfig.delete(alias)
-    ux.info(text.success(`Profile ${text.code(alias)} removed.`))
+    if (await this.profileConfig.delete(alias, { throwOnNotFound: !this.flags.force })) {
+      ux.info(text.success(`Profile ${text.code(alias)} removed.`))
+    }
     return undefined
   }
 }

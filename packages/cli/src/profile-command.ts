@@ -1,10 +1,13 @@
 import path from 'path'
 import { Command, Flags, Interfaces } from '@oclif/core'
-import { LocalProfilesConfig, Profile, Store, detectCiProvider, fsTypeFromUrl, localProfilesConfig, telemetryEmitter } from '@preevy/core'
+import {
+  tryParseUrl, LocalProfilesConfig, Profile, Store, detectCiProvider, fsTypeFromUrl,
+  localProfilesConfig, telemetryEmitter, LocalProfilesConfigGetResult,
+} from '@preevy/core'
 import { BaseCommand, text } from '@preevy/cli-common'
-import { fsFromUrl } from './fs'
+import { fsFromUrl } from './fs.js'
 
-export const onProfileChange = (profile: Profile, alias: string, location: string) => {
+export const onProfileChange = (profile: Profile, profileStoreType: string) => {
   const ciProvider = detectCiProvider()
   if (ciProvider) {
     telemetryEmitter().identify(`ci_${ciProvider.id ?? 'unknown'}_${profile.id}`, {
@@ -17,7 +20,7 @@ export const onProfileChange = (profile: Profile, alias: string, location: strin
       profile_driver: profile.driver,
       profile_id: profile.id,
       name: profile.id,
-      profile_store_type: fsTypeFromUrl(location),
+      profile_store_type: profileStoreType,
     }
   )
 }
@@ -31,11 +34,51 @@ export const loadProfileConfig = ({ dataDir }: { dataDir: string }): LocalProfil
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof ProfileCommand['baseFlags'] & T['flags']>
 export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>
 
+const findAvailableProfileAlias = (
+  { existing, prefix }: { existing: Set<string>; prefix: string },
+  index = 0,
+): string => {
+  const candidate = [prefix, index].filter(Boolean).join('-')
+  return existing.has(candidate) ? findAvailableProfileAlias({ existing, prefix }, index + 1) : candidate
+}
+
+const findProfile = async (
+  { profileConfig, flags: { profile: profileFlag } }: {
+    profileConfig: LocalProfilesConfig
+    flags: { profile?: string }
+  },
+): Promise<LocalProfilesConfigGetResult | undefined> => {
+  const profileUrl = tryParseUrl(profileFlag || '')
+  if (!profileUrl) {
+    // eslint false positive here on case-sensitive filesystems due to unknown type
+    // eslint-disable-next-line @typescript-eslint/return-await
+    return await profileConfig.get(profileFlag)
+  }
+
+  const { profiles } = await profileConfig.list()
+
+  const found = Object.values(profiles).find(p => p.location === profileFlag)
+  if (found) {
+    // eslint false positive here on case-sensitive filesystems due to unknown type
+    // eslint-disable-next-line @typescript-eslint/return-await
+    return await profileConfig.get(found.alias)
+  }
+
+  const newAlias = findAvailableProfileAlias({
+    existing: new Set(Object.keys(profiles)),
+    prefix: profileUrl.hostname,
+  })
+
+  // eslint false positive here on case-sensitive filesystems due to unknown type
+  // eslint-disable-next-line @typescript-eslint/return-await
+  return await profileConfig.importExisting(newAlias, profileUrl.toString())
+}
+
 abstract class ProfileCommand<T extends typeof Command> extends BaseCommand<T> {
   static baseFlags = {
     ...BaseCommand.baseFlags,
     profile: Flags.string({
-      description: 'Run in a specific profile context',
+      description: 'Run in a specific profile context (either an alias or a URL)',
       required: false,
     }),
   }
@@ -45,25 +88,14 @@ abstract class ProfileCommand<T extends typeof Command> extends BaseCommand<T> {
 
   public async init(): Promise<void> {
     await super.init()
-    const { profileConfig } = this
-    let profileAlias = this.flags.profile
-    if (!profileAlias) {
-      const currentProfile = await profileConfig.current()
-      if (currentProfile) {
-        profileAlias = currentProfile.alias
-      }
-    }
-    if (!profileAlias) {
+    const { profileConfig, flags } = this
+    const profile = await findProfile({ profileConfig, flags })
+    if (!profile) {
       return
     }
-    const currentProfileConfig = await profileConfig.get(profileAlias)
-    if (!currentProfileConfig) {
-      return
-    }
-
-    this.#profile = currentProfileConfig.info
-    this.#store = currentProfileConfig.store
-    onProfileChange(currentProfileConfig.info, profileAlias, currentProfileConfig.location)
+    this.#profile = profile.info
+    this.#store = profile.store
+    onProfileChange(profile.info, fsTypeFromUrl(profile.location))
   }
 
   #profileConfig: LocalProfilesConfig | undefined

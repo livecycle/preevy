@@ -1,37 +1,27 @@
-import { InputQuestion, ListQuestion, ConfirmQuestion, Separator } from 'inquirer'
-import { MachineCreationFlagTypes, flags } from './creation-driver'
-import { loadKubeConfig } from './client'
+import * as inquirer from '@inquirer/prompts'
+import { MachineCreationFlagTypes, flags } from './creation-driver.js'
+import { loadKubeConfig } from './client/index.js'
 
-export const questions = async (): Promise<(InputQuestion | ListQuestion | ConfirmQuestion)[]> => [
-  {
-    type: 'input',
-    name: 'namespace',
-    default: flags.namespace.default,
-    message: flags.namespace.description,
-  },
-  {
-    type: 'list',
-    name: 'context',
-    choices: () => {
-      const kc = loadKubeConfig() // will read from KUBECONFIG env var as well
-      return [
-        { name: 'Default: use default context at runtime', value: undefined },
-        new Separator(),
-        ...kc.getContexts().map(c => c.name),
-      ]
-    },
-    message: flags.context.description,
-  },
-]
+export const inquireFlags = async (): Promise<Partial<MachineCreationFlagTypes>> => {
+  const namespace = await inquirer.input({
+    default: flags.namespace.default as string,
+    message: flags.namespace.description as string,
+  })
 
-export const flagsFromAnswers = async (
-  answers: Record<string, unknown>,
-): Promise<Partial<MachineCreationFlagTypes>> => {
-  const result = {
-    ...(answers.namespace && answers.namespace !== flags.namespace.default)
-      ? { namespace: answers.namespace as string } : undefined,
-    ...(answers.context && answers.context !== flags.context.default)
-      ? { context: answers.context as string } : undefined,
+  const kc = loadKubeConfig() // will read from KUBECONFIG env var as well
+  const contextChoices = [
+    { name: 'Default: use default context at runtime', value: undefined },
+    new inquirer.Separator(),
+    ...kc.getContexts().map(c => ({ value: c.name })),
+  ] as const
+
+  const context = await inquirer.select({
+    choices: contextChoices,
+    message: flags.context.description as string,
+  })
+
+  return {
+    ...(namespace && namespace !== flags.namespace.default) ? { namespace } : undefined,
+    ...(context && context !== flags.context.default) ? { context } : undefined,
   }
-  return result
 }

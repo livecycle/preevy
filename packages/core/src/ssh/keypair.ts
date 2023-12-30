@@ -1,6 +1,8 @@
 import crypto from 'crypto'
 import { promisify } from 'util'
-import { parseKey, parsePrivateKey } from 'sshpk'
+import sshpkModule from 'sshpk'
+
+const { parseKey, parsePrivateKey } = sshpkModule
 
 export type SshKeyPair = {
   privateKey: Buffer | string

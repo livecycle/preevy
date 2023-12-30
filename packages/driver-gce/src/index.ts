@@ -1,5 +1,5 @@
-import gce from './driver'
+import gce from './driver/index.js'
 
 export default gce
-export { defaultProjectId } from './driver'
-export { googleCloudStorageFs, defaultBucketName } from './fs'
+export { defaultProjectId } from './driver/index.js'
+export { googleCloudStorageFs, defaultBucketName } from './fs/index.js'

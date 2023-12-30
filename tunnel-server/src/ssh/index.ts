@@ -1,11 +1,11 @@
 import { Logger } from 'pino'
 import { inspect } from 'util'
 import { Gauge } from 'prom-client'
-import lodash from 'lodash'
-import { BaseSshClient, baseSshServer } from './base-server'
-import { ActiveTunnelStore, activeTunnelStoreKey } from '../tunnel-store'
-import { KeyAlreadyExistsError } from '../memory-store'
-import { onceWithTimeout } from '../events'
+import { once } from 'lodash-es'
+import { BaseSshClient, baseSshServer } from './base-server.js'
+import { ActiveTunnelStore, activeTunnelStoreKey } from '../tunnel-store/index.js'
+import { KeyAlreadyExistsError } from '../memory-store.js'
+import { onceWithTimeout } from '../events.js'
 
 export const createSshServer = ({
   log: serverLog,
@@ -29,7 +29,7 @@ export const createSshServer = ({
   const onClient = (client: BaseSshClient) => {
     const { clientId, publicKey, envId, connectionId, publicKeyThumbprint, log } = client
     sshConnectionsGauge.inc({ envId })
-    const cleanupClient = lodash.once(() => { sshConnectionsGauge.dec({ envId }) })
+    const cleanupClient = once(() => { sshConnectionsGauge.dec({ envId }) })
     const tunnels = new Map<string, string>()
     client
       .on('forward', async (requestId, { path: tunnelPath, access, meta, inject }, localSocketPath, accept, reject) => {
@@ -82,7 +82,7 @@ export const createSshServer = ({
           return
         }
         tunnels.set(requestId, tunnelUrl(clientId, tunnelPath))
-        const cleanupTunnel = lodash.once(() => {
+        const cleanupTunnel = once(() => {
           tunnels.delete(requestId)
           void activeTunnelStore.delete(key, setTx)
           tunnelsGauge.dec({ clientId })

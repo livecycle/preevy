@@ -1,7 +1,7 @@
-import { detectCiProvider } from './ci-providers'
-import { gitContext } from './git'
-import { ComposeModel } from './compose'
-import { Logger } from './log'
+import { detectCiProvider } from './ci-providers/index.js'
+import { gitContext } from './git.js'
+import { ComposeModel } from './compose/model.js'
+import { Logger } from './log.js'
 
 export type EnvId = string & {
   __tag: 'EnvId'
@@ -16,7 +16,7 @@ const envIdFromBranch = (branch: string) => normalize(branch)
 
 export class AmbientEnvIdNotFoundError extends Error {
   constructor() {
-    super('Cannot find an ambient environment ID. Either specify an environment ID or have a git context')
+    super('Cannot find an ambient environment ID. Either specify an environment ID with the --id flag or run in a git repo with at least one commit')
   }
 }
 

@@ -6,9 +6,10 @@ export {
   Resource,
   MachineResource,
   machineResourceType,
-} from './machine'
-export { SshMachine, sshDriver, getStoredKey, getStoredKeyOrUndefined } from './ssh'
-export { machineStatusNodeExporterCommand } from './machine-status-node-exporter'
+} from './machine-model.js'
+export * from './machine-operations.js'
+export { SshMachine, sshDriver, getStoredKey, getStoredKeyOrUndefined } from './ssh.js'
+export { machineStatusNodeExporterCommand } from './machine-status-node-exporter.js'
 export {
   MachineDriver,
   MachineCreationResult,
@@ -17,4 +18,4 @@ export {
   MachineDriverFactory,
   MachineConnection,
   ForwardSocket,
-} from './driver'
+} from './driver.js'

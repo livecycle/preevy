@@ -1,5 +1,5 @@
 import { ComposeModel, FlatTunnel } from '@preevy/core'
-import { PluginContext } from './plugins/context'
+import { PluginContext } from './plugins/context.js'
 
 export type Hooks = {
   filterUrls: {

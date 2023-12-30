@@ -1,7 +1,7 @@
 import { Flags, Interfaces } from '@oclif/core'
 import { asyncMap } from 'iter-tools-es'
-import inquirer, { ListQuestion, Question } from 'inquirer'
-import inquirerAutoComplete from 'inquirer-autocomplete-prompt'
+import * as inquirer from '@inquirer/prompts'
+import inquirerAutoComplete from 'inquirer-autocomplete-standalone'
 import {
   MachineDriver,
   SshMachine, MachineCreationDriver, MachineCreationDriverFactory, MachineDriverFactory,
@@ -16,12 +16,10 @@ import {
   extractDefined,
   PartialMachine,
 } from '@preevy/core'
-import { memoize, pick } from 'lodash'
-import createClient, { Client, Instance, availableRegions, defaultProjectId, instanceError, shortResourceName } from './client'
-import { deserializeMetadata, metadataKey } from './metadata'
-import { LABELS } from './labels'
-
-inquirer.registerPrompt('autocomplete', inquirerAutoComplete)
+import { memoize, pick } from 'lodash-es'
+import createClient, { Client, Instance, availableRegions, defaultProjectId, instanceError, shortResourceName } from './client.js'
+import { deserializeMetadata, metadataKey } from './metadata.js'
+import { LABELS } from './labels.js'
 
 type DriverContext = {
   log: Logger
@@ -111,37 +109,33 @@ const contextFromFlags = ({
   zone,
 })
 
-const questions = async (): Promise<Question[]> => {
-  const memoizedAvailableRegions = memoize(availableRegions)
-  return [
-    {
-      type: 'input',
-      name: 'project',
-      default: defaultProjectId,
-      message: flags['project-id'].description,
-    },
-    {
-      type: 'autocomplete',
-      name: 'region',
-      source: async ({ project }, input) => (await memoizedAvailableRegions(project))
-        .filter(({ name }) => !input || name.includes(input.toLowerCase()))
-        .map(r => r.name),
-      filter: i => i.toLowerCase(),
-    } as inquirerAutoComplete.AutocompleteQuestionOptions,
-    {
-      type: 'list',
-      name: 'zone',
-      choices: memoize(
-        async ({ project, region }) => (await availableRegions(project)).find(r => r.name === region)?.zones ?? [],
-      ),
-    } as ListQuestion,
-  ]
-}
+const inquireFlags = async () => {
+  const project = await inquirer.input({
+    default: await defaultProjectId(),
+    message: flags['project-id'].description as string,
+  })
 
-const flagsFromAnswers = async (answers: Record<string, unknown>): Promise<FlagTypes> => ({
-  'project-id': answers.project as string,
-  zone: answers.zone as string,
-})
+  const regionsForProject = await availableRegions(project)
+  const region = await inquirerAutoComplete<string>({
+    source: async input => regionsForProject
+      .filter(({ name }) => !input || name.includes(input.toLowerCase()))
+      .map(({ name }) => ({ value: name })),
+    transformer: i => i.toLowerCase(),
+    message: 'Region',
+  })
+
+  const zones = regionsForProject.find(({ name }) => name === region)?.zones
+  if (!zones) {
+    throw new Error(`No zones for region "${region}" in project "${project}"`)
+  }
+
+  const zone = await inquirer.select<string>({
+    message: flags.zone.description as string,
+    choices: zones.map(value => ({ value })),
+  })
+
+  return { 'project-id': project, zone }
+}
 
 const machineCreationFlags = {
   ...flags,
@@ -249,8 +243,7 @@ export default {
   factory,
   machineCreationFlags,
   machineCreationFactory,
-  questions,
-  flagsFromAnswers,
+  inquireFlags,
 } as const
 
-export { defaultProjectId } from './client'
+export { defaultProjectId } from './client.js'

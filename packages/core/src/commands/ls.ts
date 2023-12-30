@@ -1,5 +1,5 @@
-import { Logger } from '../log'
-import { MachineDriver } from '../driver/driver'
+import { Logger } from '../log.js'
+import { MachineDriver } from '../driver/driver.js'
 
 const ls = async ({
   machineDriver,

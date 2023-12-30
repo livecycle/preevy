@@ -1,9 +1,9 @@
 import ssh2, { SFTPWrapper } from 'ssh2'
 import path from 'path'
 import { promisify } from 'util'
-import { pLimit } from '../../limit'
-import { DirToCopy, FileToCopy, isDirEnt, normalizeDirInfo, normalizeFileInfo, pathFromStringOrFileInfo } from './files'
-import { TransferOptions } from './transfer'
+import { pLimit } from '../../limit.js'
+import { DirToCopy, FileToCopy, isDirEnt, normalizeDirInfo, normalizeFileInfo, pathFromStringOrFileInfo } from './files.js'
+import { TransferOptions } from './transfer.js'
 
 type ErrorCodeHandler<T> = [number, () => T]
 const handleCodeError = <T>(...codes: ErrorCodeHandler<T>[]) => (err: unknown) => {
@@ -111,7 +111,7 @@ export const sftpClient = (
       files.map(f => self.putFile(f, options)),
     ).then(() => undefined),
 
-    close: () => sftp.end(),
+    [Symbol.dispose]: () => sftp.end(),
   }
 
   return self

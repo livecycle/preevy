@@ -2,11 +2,11 @@ import { Writable } from 'stream'
 import * as k8s from '@kubernetes/client-node'
 import { Logger } from '@preevy/core'
 import { ProcessOutputBuffers } from '@preevy/common'
-import { BaseExecOpts } from './common'
-import apiExec from './api'
-import kubectlExec from './kubectl'
+import { BaseExecOpts } from './common.js'
+import apiExec from './api.js'
+import kubectlExec from './kubectl.js'
 
-export { BaseExecOpts } from './common'
+export { BaseExecOpts } from './common.js'
 
 export default (
   { kubeconfigLocation, kubeConfig, namespace, log }: {

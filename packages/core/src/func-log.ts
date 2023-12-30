@@ -1,5 +1,5 @@
 import { isPromise } from 'util/types'
-import { LogFunc } from './log'
+import { LogFunc } from './log.js'
 
 export const logFunc = <Args extends unknown[], Return>(
   f: (...args: Args) => Return,

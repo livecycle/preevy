@@ -1,8 +1,11 @@
 {
   "name": "@preevy/driver-kube-pod",
-  "version": "0.0.56",
+  "version": "0.0.58",
   "description": "Kubernetes single Pod driver for Preevy",
-  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "type": "module",
   "types": "dist/index.d.ts",
   "files": [
     "dist",
@@ -11,25 +14,25 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@kubernetes/client-node": "^0.18.1",
-    "@oclif/core": "^2",
-    "@preevy/common": "0.0.56",
-    "@preevy/core": "0.0.56",
+    "@oclif/core": "^3.15.1",
+    "@preevy/common": "0.0.58",
+    "@preevy/core": "0.0.58",
     "fast-safe-stringify": "^2.1.1",
-    "inquirer": "^8.0.0",
+    "@inquirer/prompts": "^3.3.0",
     "is-stream": "^2.0.1",
     "iter-tools-es": "^7.5.3",
-    "lodash": "^4.17.21",
+    "lodash-es": "^4.17.21",
     "nunjucks": "^3.2.4",
     "p-retry": "^4.6.2",
     "yaml": "^2.3.2"
   },
   "devDependencies": {
     "@jest/globals": "29.7.0",
-    "@types/lodash": "^4.14.192",
+    "@types/lodash-es": "^4.17.12",
     "@types/node": "18",
     "@types/stream-buffers": "^3.0.4",
-    "@typescript-eslint/eslint-plugin": "6.7.4",
-    "@typescript-eslint/parser": "6.7.4",
+    "@typescript-eslint/eslint-plugin": "6.14.0",
+    "@typescript-eslint/parser": "6.14.0",
     "eslint": "^8.36.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-oclif": "^4",
@@ -39,16 +42,17 @@
     "eslint-plugin-jsx-a11y": "^6.7.1",
     "eslint-plugin-react": "^7.32.2",
     "jest": "29.7.0",
+    "lint-staged": "^15.2.0",
     "shx": "^0.3.3",
     "ts-node": "^10.9.1",
     "tslib": "^2.5.0",
-    "typescript": "^5.0.4"
+    "typescript": "^5.3.3"
   },
   "scripts": {
-    "test": "yarn jest",
+    "test": "node --no-warnings=ExperimentalWarning --experimental-vm-modules ../../node_modules/.bin/jest",
     "lint": "eslint . --ext .ts,.tsx --cache",
     "clean": "shx rm -rf dist tsconfig.tsbuildinfo",
-    "build": "tsc -b",
+    "build": "tsc -b && shx cp -r static dist",
     "prepack": "yarn clean && yarn build",
     "prepare": "cd ../.. && husky install"
   }

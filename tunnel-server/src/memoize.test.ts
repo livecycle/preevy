@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, it, expect, jest } from '@jest/globals'
-import { memoizeForDuration } from './memoize'
+import { memoizeForDuration } from './memoize.js'
 
 describe('memoizeForDuration', () => {
   beforeAll(() => {

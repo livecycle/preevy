@@ -3,10 +3,10 @@ import Dockerode from 'dockerode'
 import fastify from 'fastify'
 import cors from '@fastify/cors'
 import { validatorCompiler, serializerCompiler, ZodTypeProvider } from 'fastify-type-provider-zod'
-import { SshState } from '../ssh'
-import { DockerFilterClient } from '../docker'
-import { containers } from './containers'
-import { env } from './env'
+import { SshState } from '../ssh/index.js'
+import { DockerFilterClient } from '../docker/index.js'
+import { containers } from './containers/index.js'
+import { env } from './env.js'
 
 export const createApp = async ({
   log,

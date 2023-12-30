@@ -1,4 +1,4 @@
-import { truncateWithHash } from '../strings'
+import { truncateWithHash } from '../strings.js'
 
 const MAX_DNS_LABEL_LENGTH = 63
 

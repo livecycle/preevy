@@ -2,11 +2,11 @@ import yaml from 'yaml'
 import { Args, Flags, Interfaces } from '@oclif/core'
 import {
   addBaseComposeTunnelAgentService,
-  localComposeClient, wrapWithDockerSocket, findEnvId, MachineConnection, ComposeModel, remoteUserModel,
+  localComposeClient, findEnvId, MachineConnection, ComposeModel, remoteUserModel, dockerEnvContext,
 } from '@preevy/core'
 import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME } from '@preevy/common'
-import DriverCommand from '../driver-command'
-import { envIdFlags } from '../common-flags'
+import DriverCommand from '../driver-command.js'
+import { envIdFlags } from '../common-flags.js'
 
 const validateServices = (
   specifiedServices: string[],
@@ -79,8 +79,7 @@ export default class Logs extends DriverCommand<typeof Logs> {
 
   async run(): Promise<void> {
     const log = this.logger
-    const { flags, raw } = await this.parse(Logs)
-    const restArgs = raw.filter(arg => arg.type === 'arg').map(arg => arg.input)
+    const { flags, rawArgs: restArgs } = this
 
     let connection: MachineConnection
     let userModel: ComposeModel
@@ -98,23 +97,21 @@ export default class Logs extends DriverCommand<typeof Logs> {
       connection = await this.connect(envId)
     }
 
-    try {
-      const compose = localComposeClient({
-        composeFiles: Buffer.from(yaml.stringify(addBaseComposeTunnelAgentService(userModel))),
-        projectName: flags.project,
-      })
+    const compose = localComposeClient({
+      composeFiles: Buffer.from(yaml.stringify(addBaseComposeTunnelAgentService(userModel))),
+      projectName: flags.project,
+      projectDirectory: process.cwd(),
+    })
 
-      const withDockerSocket = wrapWithDockerSocket({ connection, log })
-      await withDockerSocket(() => compose.spawnPromise(
-        [
-          'logs',
-          ...serializeDockerComposeLogsFlags(flags),
-          ...validateServices(restArgs, userModel),
-        ],
-        { stdio: 'inherit' },
-      ))
-    } finally {
-      await connection.close()
-    }
+    await using dockerContext = await dockerEnvContext({ connection, log })
+
+    await compose.spawnPromise(
+      [
+        'logs',
+        ...serializeDockerComposeLogsFlags(flags),
+        ...validateServices(restArgs, userModel),
+      ],
+      { stdio: 'inherit', env: dockerContext.env },
+    )
   }
 }

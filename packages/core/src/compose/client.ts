@@ -2,8 +2,8 @@ import { ChildProcess, spawn, StdioOptions } from 'child_process'
 import yaml from 'yaml'
 import { WriteStream } from 'fs'
 import { RequiredProperties, hasPropertyDefined } from '@preevy/common'
-import { ComposeModel, ComposeService } from './model'
-import { childProcessPromise, childProcessStdoutPromise, ProcessError } from '../child-process'
+import { ComposeModel, ComposeService } from './model.js'
+import { childProcessPromise, childProcessStdoutPromise, ProcessError } from '../child-process.js'
 
 const DOCKER_COMPOSE_NO_CONFIGURATION_FILE_ERROR_CODE = 14
 
@@ -37,11 +37,13 @@ export const getExposedTcpServicePorts = (model: Pick<ComposeModel, 'services'>)
       .map(({ target }) => target),
   }))
 
-const composeFileArgs = (
-  composeFiles: string[] | Buffer,
-  projectName?: string,
-) => [
+const composeFileArgs = ({ composeFiles, projectName, projectDirectory }: {
+  composeFiles: string[] | Buffer
+  projectName?: string
+  projectDirectory?: string
+}) => [
   ...(projectName ? ['-p', projectName] : []),
+  ...(projectDirectory ? ['--project-directory', projectDirectory] : []),
   ...(Buffer.isBuffer(composeFiles) ? ['-f', '-'] : composeFiles.flatMap(file => ['-f', file])),
 ]
 
@@ -61,11 +63,11 @@ const composeClient = (
     throw e
   })
 
-  const getModel = async () => yaml.parse(await execComposeCommand(['convert'])) as ComposeModel
+  const getModel = async (services: string[] = []) => yaml.parse(await execComposeCommand(['convert', ...services])) as ComposeModel
 
   return {
     getModel,
-    getModelOrError: async () => await getModel().catch(e => {
+    getModelOrError: async (services: string[] = []) => await getModel(services).catch(e => {
       if (e instanceof DockerIsNotInstalled
           || (e instanceof ProcessError && (e.code === DOCKER_COMPOSE_NO_CONFIGURATION_FILE_ERROR_CODE))) {
         return new LoadComposeFileError(e)
@@ -85,10 +87,11 @@ export type ComposeClient = ReturnType<typeof composeClient>
 type ParametersExceptFirst<F> = F extends (arg0: any, ...rest: infer R) => any ? R : never;
 
 export const localComposeClient = (
-  { composeFiles, projectName, env }: {
+  { composeFiles, projectName, env, projectDirectory }: {
     composeFiles: string[] | Buffer
     projectName?: string
     env?: NodeJS.ProcessEnv
+    projectDirectory?: string
   },
 ) => {
   const insertStdin = (stdio: StdioOptions | undefined) => {
@@ -104,7 +107,7 @@ export const localComposeClient = (
     return [null, null, null]
   }
 
-  const fileArgs = composeFileArgs(composeFiles, projectName)
+  const fileArgs = composeFileArgs({ composeFiles, projectName, projectDirectory })
 
   const spawnComposeArgs = (...[args, opts]: ParametersExceptFirst<typeof spawn>): Parameters<typeof spawn> => [
     'docker',

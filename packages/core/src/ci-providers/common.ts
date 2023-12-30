@@ -1,16 +1,10 @@
+import { tryParseUrl } from '../url.js'
+
 export const nanToUndefined = (value: number) => (Number.isNaN(value) ? undefined : value)
 
 export const stringOrUndefinedToNumber = (
   value: string | undefined
 ): number | undefined => (value === undefined ? undefined : nanToUndefined(Number(value)))
-
-const tryParseUrl = (s: string) => {
-  try {
-    return new URL(s)
-  } catch (e) {
-    return undefined
-  }
-}
 
 export const extractPrNumberFromUrlPath = (s: string | undefined) => {
   if (!s) {

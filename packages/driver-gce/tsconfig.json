@@ -1,10 +1,10 @@
 {
   "compilerOptions": {
     "declaration": true,
-    "lib": ["ES2022"],
-    "module": "CommonJS",
-    "target": "ES2019",
-    "moduleResolution": "node",
+    "lib": ["es2022", "ESNext.Disposable"],
+    "module": "Node16",
+    "target": "ES2020",
+    "moduleResolution": "Node16",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -25,7 +25,11 @@
     "baseUrl": ".",
     "rootDir": "src",
   },
+  "ts-node": {
+    "esm": true
+  },
   "include": ["**/*"],
+  "exclude": ["jest.config.cjs", "dist", "lint-staged.config.cjs"],
   "references": [
     { "path": "../common" },
     { "path": "../core" },

@@ -1,5 +1,5 @@
-import { CiProvider } from './base'
-import { stringOrUndefinedToNumber } from './common'
+import { CiProvider } from './base.js'
+import { stringOrUndefinedToNumber } from './common.js'
 
 // https://learn.microsoft.com/en-us/azure/devops/pipelines/build/variables?view=azure-devops&tabs=yaml
 export const azurePipelinesCiProvider = (): CiProvider => ({

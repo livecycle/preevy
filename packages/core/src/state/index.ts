@@ -1,1 +1,1 @@
-export { sshKeysStore } from './ssh'
+export { sshKeysStore } from './ssh.js'

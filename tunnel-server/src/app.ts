@@ -3,11 +3,11 @@ import { fastifyRequestContext } from '@fastify/request-context'
 import http from 'http'
 import { Logger } from 'pino'
 import { KeyObject } from 'crypto'
-import { SessionStore } from './session'
-import { Claims, cliIdentityProvider, jwtAuthenticator, saasIdentityProvider } from './auth'
-import { ActiveTunnelStore } from './tunnel-store'
-import { editUrl } from './url'
-import { Proxy } from './proxy'
+import { SessionStore } from './session.js'
+import { Claims, cliIdentityProvider, jwtAuthenticator, saasIdentityProvider } from './auth.js'
+import { ActiveTunnelStore } from './tunnel-store/index.js'
+import { editUrl } from './url.js'
+import { Proxy } from './proxy/index.js'
 
 const { SAAS_BASE_URL } = process.env
 if (SAAS_BASE_URL === undefined) { throw new Error('Env var SAAS_BASE_URL is missing') }

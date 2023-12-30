@@ -1,2 +1,2 @@
-export { simpleEmitter, SimpleEmitter, EmitterConsumer } from './simple'
-export { stateEmitter, StateEmitter, StateEmitterConsumer } from './state'
+export { simpleEmitter, SimpleEmitter, EmitterConsumer } from './simple.js'
+export { stateEmitter, StateEmitter, StateEmitterConsumer } from './state.js'

@@ -1,8 +1,8 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
 import { MachineConnection, MachineDriver, isPartialMachine, profileStore } from '@preevy/core'
-import { pickBy } from 'lodash'
-import { DriverFlags, DriverName, FlagType, flagsForAllDrivers, machineDrivers, removeDriverPrefix } from './drivers'
-import ProfileCommand from './profile-command'
+import { pickBy } from 'lodash-es'
+import { DriverFlags, DriverName, FlagType, flagsForAllDrivers, machineDrivers, removeDriverPrefix } from './drivers.js'
+import ProfileCommand from './profile-command.js'
 
 // eslint-disable-next-line no-use-before-define
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof DriverCommand['baseFlags'] & T['flags']>
@@ -43,7 +43,7 @@ abstract class DriverCommand<T extends typeof Command> extends ProfileCommand<T>
     const driverFlagNames = Object.keys(machineDrivers[driver][type])
     const flagDefaults = pickBy(
       {
-        ...await profileStore(this.store).defaultFlags(driver),
+        ...await profileStore(this.store).ref.defaultDriverFlags(driver),
         ...this.preevyConfig?.drivers?.[driver] ?? {},
       },
       (_v, k) => driverFlagNames.includes(k),
@@ -78,7 +78,7 @@ abstract class DriverCommand<T extends typeof Command> extends ProfileCommand<T>
     try {
       return await f(connection)
     } finally {
-      await connection.close()
+      connection[Symbol.dispose]()
     }
   }
 

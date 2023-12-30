@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "lib": ["ES2022"],
-    "module": "ES2022",
+    "lib": ["ES2022", "ESNext.Disposable"],
+    "module": "Node16",
     "target": "ES2022",
-    "moduleResolution": "node",
+    "moduleResolution": "Node16",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

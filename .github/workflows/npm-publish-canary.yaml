@@ -18,6 +18,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
 
     - uses: actions/setup-node@v4
       with:
@@ -61,10 +63,10 @@ jobs:
         yarn -s lerna version $VERSION --no-git-tag-version --preid $GIT_ID --ignore-scripts --exact --yes
 
         # commit that goes nowhere
-        git commit -m "canary version $VERSION" lerna.json packages/*/package.json
+        git commit -m "canary version $VERSION" lerna.json packages/*/package.json yarn.lock
 
         # publish
-        yarn -s lerna publish from-package --pre-dist-tag $GIT_ID --yes
+        yarn -s lerna publish from-package --pre-dist-tag $GIT_ID --dist-tag $GIT_ID --yes
 
         # undo the commit
         git reset --hard HEAD^1

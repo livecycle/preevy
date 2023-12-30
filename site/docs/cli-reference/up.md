@@ -12,62 +12,89 @@ Bring up a preview environment
 ```
 USAGE
   $ preevy up [SERVICE] (--access-credentials-type api|browser --include-access-credentials) [-D] [-f
-    <value>] [--system-compose-file <value>] [-p <value>] [--profile <value>] [-d lightsail|gce|azure|kube-pod]
-    [--lightsail-region us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-1|ap-southeast-2|ap-northea
-    st-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|eu-west-3|eu-north-1] [--gce-project-id <value>] [--gce-zone
-    <value>] [--azure-region <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>]
+    <value>] [--system-compose-file <value>] [-p <value>] [--enable-plugin <value>] [--disable-plugin <value>]
+    [--profile <value>] [-d lightsail|gce|azure|kube-pod] [--lightsail-region <value>] [--gce-project-id <value>]
+    [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>]
     [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template <value>]
     [--lightsail-availability-zone <value>] [--lightsail-bundle-id
     nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0] [--gce-machine-type <value>]
-    [--azure-vm-size <value>] [--azure-resource-group-name <value>] [--kube-pod-server-side-apply] [--id <value>] [-t
-    <value>] [--tls-hostname <value>] [--insecure-skip-verify] [--skip-unchanged-files] [--show-preevy-service-urls]
-    [--columns <value> | -x] [--sort <value>] [--filter <value>] [--output csv|json|yaml |  | [--csv | --no-truncate]]
-    [--no-header | ]
+    [--azure-vm-size <value>] [--kube-pod-server-side-apply] [--id <value>] [-t <value>] [--tls-hostname <value>]
+    [--insecure-skip-verify] [--no-build] [--no-registry-single-name | [--registry-single-name <value> --registry
+    <value>]] [--no-registry-cache ] [--builder <value>] [--no-cache] [--skip-volume <value>] [--skip-unchanged-files]
+    [--show-preevy-service-urls] [--output-urls-to <value>] [--columns <value> | -x] [--filter <value>] [--no-header |
+    [--csv | --no-truncate]] [--output csv|json|yaml |  | ] [--sort <value>] [--github-token <value>] [--github-repo
+    <value>] [--github-pull-request <value>] [--github-pr-comment-template-file <value>] [--github-add-build-cache]
+    [--github-pr-comment-enabled auto|no|always]
 
 ARGUMENTS
   SERVICE  Service name(s). If not specified, will deploy all services
 
 FLAGS
-  -d, --driver=<option>               Machine driver to use
-                                      <options: lightsail|gce|azure|kube-pod>
-  -t, --tunnel-url=<value>            [default: ssh+tls://livecycle.run] Tunnel url, specify ssh://hostname[:port] or
-                                      ssh+tls://hostname[:port]
-  -x, --extended                      show extra columns
-  --access-credentials-type=<option>  (required) [default: browser]
-                                      <options: api|browser>
-  --columns=<value>                   only show provided columns (comma-separated)
-  --csv                               output is csv format [alias: --output=csv]
-  --filter=<value>                    filter property by partial string matching, ex: name=foo
-  --id=<value>                        Environment id - affects created URLs. If not specified, will try to detect
-                                      automatically
-  --include-access-credentials        Include access credentials for basic auth for each service URL
-  --insecure-skip-verify              Skip TLS or SSH certificate verification
-  --no-header                         hide table header from output
-  --no-truncate                       do not truncate output to fit screen
-  --output=<option>                   output in a more machine friendly format
-                                      <options: csv|json|yaml>
-  --profile=<value>                   Run in a specific profile context
-  --show-preevy-service-urls          Show URLs for internal Preevy services
-  --[no-]skip-unchanged-files         Detect and skip unchanged files when copying (default: true)
-  --sort=<value>                      property to sort by (prepend '-' for descending)
-  --tls-hostname=<value>              Override TLS server name when tunneling via HTTPS
+  -d, --driver=<option>                   Machine driver to use
+                                          <options: lightsail|gce|azure|kube-pod>
+  -t, --tunnel-url=<value>                [default: ssh+tls://livecycle.run] Tunnel url, specify ssh://hostname[:port]
+                                          or ssh+tls://hostname[:port]
+      --access-credentials-type=<option>  (required) [default: browser] Access credentials type
+                                          <options: api|browser>
+      --id=<value>                        Environment id
+      --include-access-credentials        Include access credentials for basic auth for each service URL
+      --insecure-skip-verify              Skip TLS or SSH certificate verification
+      --output-urls-to=<value>            Output URLs to file
+      --profile=<value>                   Run in a specific profile context (either an alias or a URL)
+      --show-preevy-service-urls          Show URLs for internal Preevy services
+      --[no-]skip-unchanged-files         Detect and skip unchanged files when copying (default: true)
+      --skip-volume=<value>...            [default: ] Additional volume glob patterns to skip copying
+      --tls-hostname=<value>              Override TLS server name when tunneling via HTTPS
 
 GLOBAL FLAGS
-  -D, --debug                       Enable debug logging
-  -f, --file=<value>...             [default: ] Compose configuration file
-  -p, --project=<value>             Project name. Defaults to the Compose project name
-  --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
+  -D, --debug                           Enable debug logging
+  -f, --file=<value>...                 [default: ] Compose configuration file
+  -p, --project=<value>                 Project name. Defaults to the Compose project name
+      --disable-plugin=<value>...       Disable plugin with specified package name
+      --enable-plugin=<value>...        [default: @preevy/plugin-github] Enable plugin with specified package name
+      --system-compose-file=<value>...  [default: ] Add extra Compose configuration file without overriding the defaults
+
+OUTPUT FLAGS
+  -x, --extended         show extra columns
+      --columns=<value>  only show provided columns (comma-separated)
+      --csv              output is csv format [alias: --output=csv]
+      --filter=<value>   filter property by partial string matching, ex: name=foo
+      --no-header        hide table header from output
+      --no-truncate      do not truncate output to fit screen
+      --output=<option>  output in a more machine friendly format
+                         <options: csv|json|yaml>
+      --sort=<value>     property to sort by (prepend '-' for descending)
 
 AZURE DRIVER FLAGS
-  --azure-region=<value>               Microsoft Azure region in which resources will be provisioned
-  --azure-resource-group-name=<value>  Microsoft Azure resource group name
-  --azure-subscription-id=<value>      Microsoft Azure subscription id
-  --azure-vm-size=<value>              [default: Standard_B2s] Machine type to be provisioned
+  --azure-region=<value>           Microsoft Azure region in which resources will be provisioned
+  --azure-subscription-id=<value>  Microsoft Azure subscription id
+  --azure-vm-size=<value>          [default: Standard_B2s] Machine type to be provisioned
+
+BUILD FLAGS
+  --builder=<value>               Builder to use
+  --no-build                      Do not build images
+  --no-cache                      Do not use cache when building the images
+  --no-registry-cache             Do not add the registry as a cache source and target
+  --no-registry-single-name       Disable auto-detection for ECR-style registry single name
+  --registry=<value>              Image registry. If this flag is specified, the "build-context" flag defaults to
+                                  "*local"
+  --registry-single-name=<value>  Use single name for image registry, ECR-style. Default: auto-detect from "registry"
+                                  flag
 
 GCE DRIVER FLAGS
   --gce-machine-type=<value>  Machine type to be provisioned
   --gce-project-id=<value>    Google Cloud project ID
   --gce-zone=<value>          Google Cloud zone in which resources will be provisioned
+
+GITHUB INTEGRATION FLAGS
+  --github-add-build-cache                   Add github cache to the build
+  --github-pr-comment-enabled=<option>       [default: auto] Whether to enable posting to the GitHub PR
+                                             <options: auto|no|always>
+  --github-pr-comment-template-file=<value>  Path to nunjucks template file
+  --github-pull-request=<value>              GitHub Pull Request number. Will auto-detect if not specified
+  --github-repo=<value>                      GitHub repo name in the format owner/repo. Will auto-detect if not
+                                             specified
+  --github-token=<value>                     GitHub token with write access to the repo
 
 KUBE-POD DRIVER FLAGS
   --kube-pod-context=<value>         kubeconfig context name (will load config from defaults if not specified)
@@ -82,13 +109,16 @@ LIGHTSAIL DRIVER FLAGS
   --lightsail-bundle-id=<option>         Lightsail bundle ID (size of instance) to provision. Default: medium_2_0
                                          <options:
                                          nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0>
-  --lightsail-region=<option>            AWS region in which resources will be provisioned
-                                         <options: us-east-2|us-east-1|us-west-2|ap-south-1|ap-northeast-2|ap-southeast-
-                                         1|ap-southeast-2|ap-northeast-1|ca-central-1|eu-central-1|eu-west-1|eu-west-2|e
-                                         u-west-3|eu-north-1>
+  --lightsail-region=<value>             AWS region in which resources will be provisioned
 
 DESCRIPTION
   Bring up a preview environment
+
+FLAG DESCRIPTIONS
+  --id=<value>  Environment id
+
+    Affects created URLs
+    If not specified, will detect from the current Git context
 ```
 
-_See code: [src/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/up.ts)_
+_See code: [src/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.58/src/commands/up.ts)_

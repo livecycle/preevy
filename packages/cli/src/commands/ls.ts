@@ -1,14 +1,15 @@
 import { ux } from '@oclif/core'
 import { asyncMap, asyncToArray } from 'iter-tools-es'
 import { commands } from '@preevy/core'
-import DriverCommand from '../driver-command'
+import { tableFlags } from '@preevy/cli-common'
+import DriverCommand from '../driver-command.js'
 
 // eslint-disable-next-line no-use-before-define
 export default class Ls extends DriverCommand<typeof Ls> {
   static description = 'List preview environments'
 
   static flags = {
-    ...ux.table.flags(),
+    ...tableFlags,
   }
 
   static args = {
@@ -17,7 +18,7 @@ export default class Ls extends DriverCommand<typeof Ls> {
   static enableJsonFlag = true
 
   async run(): Promise<unknown> {
-    const { flags } = await this.parse(Ls)
+    const { flags } = this
     const driver = await this.driver()
     const machines = await asyncToArray(
       asyncMap(

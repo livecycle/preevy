@@ -5,9 +5,9 @@ import { platform } from 'os'
 import { pack, Headers, Pack } from 'tar-stream'
 import { Writable, pipeline } from 'stream'
 import { EmitterConsumer } from '@preevy/common'
-import { TransferProgressEmitter, TransferProgressEvents, transferProgressEmitter } from './progress'
-import { FileInfo, FileToCopy } from './files'
-import { Visitor, fsWalker } from './walk'
+import { TransferProgressEmitter, TransferProgressEvents, transferProgressEmitter } from './progress.js'
+import { FileInfo, FileToCopy } from './files.js'
+import { Visitor, fsWalker } from './walk.js'
 
 const isWin = platform() === 'win32'
 

@@ -12,9 +12,9 @@ export const highlight = (s: string) => chalk.greenBright(s)
 
 export const success = (s: string) => chalk.greenBright(s)
 
-export const recommendation = (s: string) => chalk.cyan(s)
-
 const mag = chalk.rgb(255, 128, 197)
+
+export const recommendation = (s: string) => mag(s)
 
 export const logo = [
   '',

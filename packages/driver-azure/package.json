@@ -1,8 +1,11 @@
 {
   "name": "@preevy/driver-azure",
-  "version": "0.0.56",
+  "version": "0.0.58",
   "description": "Microsoft Azure Virtual Machine for Preevy",
-  "main": "dist/index.js",
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "types": "dist/index.d.ts",
   "files": [
     "dist",
@@ -17,21 +20,21 @@
     "@azure/arm-subscriptions": "^5.1.0",
     "@azure/identity": "^3.2.2",
     "@azure/logger": "^1.0.4",
-    "@oclif/core": "^2",
-    "@preevy/core": "0.0.56",
-    "inquirer": "^8.0.0",
-    "inquirer-autocomplete-prompt": "^2.0.0",
+    "@oclif/core": "^3.15.1",
+    "@preevy/core": "0.0.58",
+    "@inquirer/prompts": "^3.3.0",
+    "inquirer-autocomplete-standalone": "^0.8.1",
     "iter-tools-es": "^7.5.3",
-    "lodash": "^4.17.21"
+    "lodash-es": "^4.17.21"
   },
   "devDependencies": {
     "@types/azure": "^0.9.20",
     "@types/inquirer": "^8.0.0",
     "@types/inquirer-autocomplete-prompt": "^3.0.3",
-    "@types/lodash": "^4.14.192",
+    "@types/lodash-es": "^4.17.12",
     "@types/node": "18",
-    "@typescript-eslint/eslint-plugin": "6.7.4",
-    "@typescript-eslint/parser": "6.7.4",
+    "@typescript-eslint/eslint-plugin": "6.14.0",
+    "@typescript-eslint/parser": "6.14.0",
     "eslint": "^8.36.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-oclif": "^4",
@@ -41,15 +44,16 @@
     "eslint-plugin-jsx-a11y": "^6.7.1",
     "eslint-plugin-react": "^7.32.2",
     "jest": "29.7.0",
+    "lint-staged": "^15.2.0",
     "shx": "^0.3.3",
     "ts-node": "^10.9.1",
     "tslib": "^2.5.0",
-    "typescript": "^5.0.4"
+    "typescript": "^5.3.3"
   },
   "scripts": {
     "lint": "eslint . --ext .ts,.tsx --cache",
     "clean": "shx rm -rf dist tsconfig.tsbuildinfo",
-    "build": "tsc -b",
+    "build": "tsc -b && shx cp -r static dist",
     "prepack": "yarn clean && yarn build",
     "prepare": "cd ../.. && husky install"
   }

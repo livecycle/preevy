@@ -1,6 +1,6 @@
 import { Args } from '@oclif/core'
 import { commands } from '@preevy/core'
-import DriverCommand from '../driver-command'
+import DriverCommand from '../driver-command.js'
 
 // eslint-disable-next-line no-use-before-define
 export default class Shell extends DriverCommand<typeof Shell> {
@@ -20,14 +20,12 @@ export default class Shell extends DriverCommand<typeof Shell> {
   static enableJsonFlag = false
 
   async run(): Promise<unknown> {
-    const { args, raw } = await this.parse(Shell)
+    const { args, rawArgs } = this
     const driver = await this.driver()
-
-    const restArgs = raw.filter(arg => arg.type === 'arg').slice(1).map(arg => arg.input)
 
     const result = await commands.shell({
       envId: args.envId,
-      args: restArgs,
+      args: rawArgs.slice(1),
       machineDriver: driver,
       log: this.logger,
     })

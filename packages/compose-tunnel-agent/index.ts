@@ -2,8 +2,8 @@ import fs from 'fs'
 import path from 'path'
 import Docker from 'dockerode'
 import { rimraf } from 'rimraf'
-import pino from 'pino'
-import pinoPretty from 'pino-pretty'
+import { pino } from 'pino'
+import pinoPrettyModule from 'pino-pretty'
 import {
   requiredEnv,
   formatPublicKey,
@@ -14,12 +14,14 @@ import {
   COMPOSE_TUNNEL_AGENT_PORT,
 } from '@preevy/common'
 import { inspect } from 'util'
-import { createApp } from './src/api-server'
-import { sshClient as createSshClient } from './src/ssh'
-import { runMachineStatusCommand } from './src/machine-status'
-import { envMetadata } from './src/metadata'
-import { readAllFiles } from './src/files'
-import { eventsClient as dockerEventsClient, filteredClient as dockerFilteredClient } from './src/docker'
+import { createApp } from './src/api-server/index.js'
+import { sshClient as createSshClient } from './src/ssh/index.js'
+import { runMachineStatusCommand } from './src/machine-status.js'
+import { envMetadata } from './src/metadata.js'
+import { readAllFiles } from './src/files.js'
+import { eventsClient as dockerEventsClient, filteredClient as dockerFilteredClient } from './src/docker/index.js'
+
+const PinoPretty = pinoPrettyModule.default
 
 const homeDir = process.env.HOME || '/root'
 const dockerSocket = '/var/run/docker.sock'
@@ -67,7 +69,7 @@ const machineStatusCommand = process.env.MACHINE_STATUS_COMMAND
 
 const log = pino({
   level: process.env.DEBUG || process.env.DOCKER_PROXY_DEBUG ? 'debug' : 'info',
-}, pinoPretty({ destination: pino.destination(process.stderr) }))
+}, PinoPretty({ destination: pino.destination(process.stderr) }))
 
 const main = async () => {
   let endRequested = false

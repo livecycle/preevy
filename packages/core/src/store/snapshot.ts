@@ -1,41 +1,21 @@
-import { VirtualFS } from './fs'
+import { VirtualFS } from './fs/index.js'
 
-type Closable = {
-  close: () => Promise<void>
-}
-
-const isClosable = (
-  o: unknown
-): o is Closable => typeof o === 'object' && o !== null && typeof (o as Closable).close === 'function'
-
-const ensureClose = async <T, R>(o: T, f: (o: T) => PromiseLike<R> | R) => {
-  try {
-    return await f(o)
-  } finally {
-    if (isClosable(o)) {
-      await o.close()
-    }
-  }
-}
-
-export type Snapshot = VirtualFS & Partial<Closable> & {
+export type Snapshot = VirtualFS & AsyncDisposable & {
   save: () => Promise<void>
 }
 
 export const snapshotStore = (snapshotter: () => Promise<Snapshot>) => ({
   ref: (): Pick<Snapshot, 'read'> => ({
     read: async (file: string) => {
-      const snapshot = await snapshotter()
-      return await ensureClose(snapshot, s => s.read(file))
+      await using snapshot = await snapshotter()
+      return await snapshot.read(file)
     },
   }),
   transaction: async <T>(op: (s: Pick<Snapshot, 'write' | 'delete' | 'read'>) => Promise<T>) => {
-    const snapshot = await snapshotter()
-    return await ensureClose(snapshot, async s => {
-      const result = await op(s)
-      await s.save()
-      return result
-    })
+    await using snapshot = await snapshotter()
+    const result = await op(snapshot)
+    await snapshot.save()
+    return result
   },
 })
 

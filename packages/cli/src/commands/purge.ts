@@ -1,10 +1,10 @@
 import os from 'os'
 import { Flags, ux } from '@oclif/core'
 import { asyncFilter, asyncToArray } from 'iter-tools-es'
-import { groupBy, partition } from 'lodash'
+import { groupBy, partition } from 'lodash-es'
 import { MachineResource, isPartialMachine, machineResourceType } from '@preevy/core'
-import DriverCommand from '../driver-command'
-import { carefulBooleanPrompt } from '../prompt'
+import DriverCommand from '../driver-command.js'
+import { carefulBooleanPrompt } from '../prompt.js'
 
 const isMachineResource = (r: { type: string }): r is MachineResource => r.type === machineResourceType
 
@@ -36,7 +36,7 @@ const confirmPurge = async (
 
 // eslint-disable-next-line no-use-before-define
 export default class Purge extends DriverCommand<typeof Purge> {
-  static description = 'Delete all cloud provider machines, and potentially other resources'
+  static description = 'Delete all cloud provider machines and potentially other resources'
 
   static flags = {
     all: Flags.boolean({
@@ -47,6 +47,8 @@ export default class Purge extends DriverCommand<typeof Purge> {
       description: 'Resource type(s) to delete',
       default: [machineResourceType],
       multiple: true,
+      delimiter: ',',
+      multipleNonGreedy: true,
     }),
     force: Flags.boolean({
       description: 'Do not ask for confirmation',
@@ -63,7 +65,7 @@ export default class Purge extends DriverCommand<typeof Purge> {
   static strict = false
 
   async run(): Promise<unknown> {
-    const { flags } = await this.parse(Purge)
+    const { flags } = this
 
     const driver = await this.driver()
     const resourcePlurals: Record<string, string> = { [machineResourceType]: 'machines', ...driver.resourcePlurals }

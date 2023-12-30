@@ -1,5 +1,22 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 . "$(dirname -- "$0")/_/husky.sh"
 
-yarn lint --fix --max-warnings=0
-yarn check-mismatches
+diff=$(git diff --cached --name-only)
+
+if echo "${diff}" | grep -E --quiet '^site/'; then
+  (cd site; yarn build)
+fi
+
+if echo "${diff}" | grep -E --quiet '^(packages/)|(lerna)|(package.json)|(yarn.lock)'; then
+  yarn
+  yarn lint-staged
+  yarn check-mismatches
+fi
+
+if echo "${diff}" | grep -E --quiet '^tunnel-server/'; then
+  (cd tunnel-server; yarn lint && yarn build)
+fi
+
+if echo "${diff}" | grep -E --quiet '^README/'; then
+  npx awesome-lint
+fi

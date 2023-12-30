@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 4
 title: Under the hood
 ---
 
@@ -7,16 +7,24 @@ title: Under the hood
 
 When provisioning a new environment using the [`up`](/cli-reference#preevy-up-service) command, Preevy does the following:
 
-- Reads for [default configurations](#profile-configuration) and relevant keys from the current profile store.
-- Calculates environment name based on the current git branch (or uses the `--id` flag.)
-- Uses the local Cloud provider configuration to provision a new VM.
-- Reads SSH keypair from profile to access the VM, if necessary, generate a new one.
-- Connects to the VM using SSH and sets up Docker.
-- Reads the compose file and copies local volume mounts to the VM.
-- Augments the compose deployment with a helper service, `tunnel-agent`, responsible for connecting to the [tunnel server](/tunnel-server).
-- Runs the application using [docker-compose](https://docs.docker.com/compose/) with `--build` while using the local build context.
-- The `tunnel-agent` is inspecting the network configuration of all deployed services and create a tunnel for each service.
-- Fetch the urls from tunnel-agent and output them to the end user.
+- Load the configuration
+  - Read the specified Compose file(s)
+  - Read the tunneling key and default flags from the profile.
+  - Calculate the environment ID based on the current git branch (or use the `--id` flag.)
+  - Connect to the Tunnel Server using the tunneling key to pre-generate the public URLs in env vars
+- Make sure a machine is provisioned:
+  - Query the configured cloud provider for an existing machine
+  - If a machine doesn't exist yet, a new one is provisioned and a Docker server is set up in it
+- Set up an SSH tunnel to the Docker server on the provisioned machine
+- Build the Compose project
+  - Extract the build information from the specified Compose file(s) and combine it with the specified build options to generate an interim build Compose file.
+  - Run `docker buildx bake` with the generated build Compose file.
+    - The resulting images are either loaded to the provisioned machine or written to an image registry.
+- Deploy the Compose services to the machine's Docker server using the `docker compose up` command
+  - Local volume mounts are copied to the remote machine first
+  - The original Compose project is augmented with a helper service, `preevy_proxy`, responsible for connecting to the [Tunnel Server](/tunnel-server).
+- The `preevy_proxy` service creates a tunnel for each service.
+- Fetch the URLs from the Tunnel Server and output them.
 
 ## Profile configuration
 
@@ -27,6 +35,7 @@ Preevy includes built-in support for sharing profiles using [AWS S3](https://aws
 
 :::note
 The profile does not contain any cloud provider credentials.
+:::
 
 When using S3, the Preevy CLI uses the local AWS credential chain (e.g, from environment variables, AWS profile, or EC2 role)
 
@@ -43,7 +52,7 @@ Example AWS S3 URL:
 s3://preevy-config/profile1?region=us-east-1
 ```
 
-Refers to a profile stored on a S3 bucket named `preevy-config` in the region `us-east-1` under the base path `profile1`.
+Refers to a profile stored on an S3 bucket named `preevy-config` in the region `us-east-1` under the base path `profile1`.
 
 Example Google Cloud Storage URL:
 
@@ -59,7 +68,7 @@ To import a shared profile, specify its URL to the `preevy init` command:
 preevy init --from s3://preevy-config/profile1?region=us-east-1
 ```
 
-List profiles which were already imported using the command [`preevy profile ls`](/cli-reference#preevy-profile-ls).
+List profiles that were already imported using the command [`preevy profile ls`](/cli-reference#preevy-profile-ls).
 
 ## Components
 
@@ -72,13 +81,13 @@ The CLI is a node.js program responsible for:
 - Storing & accessing profile data. (settings, keys, etc...)
 - Setting up a VM with Docker tooling.
 - Syncing Compose source code and local volumes.
-- Running the application and installing daemon for connecting to the tunneling service.
+- Running the application and installing the daemon for connecting to the tunneling service.
 
 For usage examples, you can go over the [CLI reference](/cli-reference)
 
 #### [Tunnel server](https://github.com/livecycle/preevy/tree/main/packages/tunnel-server)
 
-The tunnel server is a node.js based server responsible for exposing friendly HTTPS URLs for the Compose services.
+The tunnel server is a Node.js-based server responsible for exposing friendly HTTPS URLs for the Compose services.
 A free public instance is hosted on `livecycle.run`, and it can be self-hosted as well.
 
 Read more about it: [Tunnel server](/tunnel-server)

@@ -1,2 +1,2 @@
-export * from './account-id'
-export * from './pagination'
+export * from './account-id.js'
+export * from './pagination.js'

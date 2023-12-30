@@ -2,9 +2,9 @@ import { InstancesClient, ImagesClient, ZoneOperationsClient, RegionsClient } fr
 import { GoogleError, Status, operationsProtos, CallOptions } from 'google-gax'
 import { asyncFirst, asyncToArray } from 'iter-tools-es'
 import { randomBytes } from 'crypto'
-import { LABELS, isValidLabel, normalizeLabel } from './labels'
-import { readCloudConfig } from '../static'
-import { metadataKey, serializeMetadata } from './metadata'
+import { LABELS, isValidLabel, normalizeLabel } from './labels.js'
+import { readCloudConfig } from '../static.js'
+import { metadataKey, serializeMetadata } from './metadata.js'
 
 type Operation = operationsProtos.google.longrunning.IOperation
 

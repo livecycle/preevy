@@ -23,4 +23,4 @@ DESCRIPTION
   Display help for preevy.
 ```
 
-_See code: [src/commands/help.ts](https://github.com/livecycle/preevy/blob/v0.0.55/src/commands/help.ts)_
+_See code: [src/commands/help.ts](https://github.com/livecycle/preevy/blob/v0.0.58/src/commands/help.ts)_

@@ -1,10 +1,4 @@
-import { asyncMap, asyncToArray } from 'iter-tools-es'
-import { mapValues } from 'lodash'
-import path from 'path'
-import { asyncMapValues } from '../async'
-import { lstatOrUndefined } from '../files'
-import { FileToCopy } from '../upload-files'
-import { PreevyConfig } from '../config'
+import { PreevyConfig } from '../config.js'
 
 export type ComposeSecretOrConfig = {
   name: string
@@ -27,11 +21,16 @@ export type ComposeBindVolume = {
 
 export type ComposeVolume = { type: 'volume' | 'tmpfs' | 'npipe' } | ComposeBindVolume
 
-type ComposeBuild = {
+export type ComposeBuild = {
   context: string
+  args?: Record<string, string> | string[]
   target?: string
-  dockerfile?: string
-}
+  tags?: string[]
+  cache_from?: string[]
+  cache_to?: string[]
+  platforms?: string[]
+  no_cache?: boolean
+} & ({ dockerfile: string } | { dockerfile_inline: string })
 
 type ComposePort = {
   mode: 'ingress'
@@ -52,6 +51,8 @@ export type ComposeService = {
   environment?: Record<string, string | undefined> | EnvString[]
   user?: string
   labels?: Record<string, string>
+  image?: string
+  platform?: string
 }
 
 export type ComposeModel = {
@@ -62,97 +63,6 @@ export type ComposeModel = {
   services?: Record<string, ComposeService>
   networks?: Record<string, ComposeNetwork>
   'x-preevy'?: PreevyConfig
-}
-
-const volumeSkipList = [
-  /^\/var\/log(\/|$)/,
-  /^\/$/,
-]
-
-const toPosix = (x:string) => x.split(path.sep).join(path.posix.sep)
-
-export const fixModelForRemote = async (
-  { skipServices = [], cwd, remoteBaseDir }: {
-    skipServices?: string[]
-    cwd: string
-    remoteBaseDir: string
-  },
-  model: ComposeModel,
-): Promise<{ model: Required<Omit<ComposeModel, 'x-preevy' | 'version'>>; filesToCopy: FileToCopy[] }> => {
-  const filesToCopy: FileToCopy[] = []
-
-  const remotePath = (absolutePath: string) => {
-    if (!path.isAbsolute(absolutePath)) {
-      throw new Error(`expected absolute path: "${absolutePath}"`)
-    }
-    const relativePath = toPosix(path.relative(cwd, absolutePath))
-
-    return relativePath.startsWith('..')
-      ? path.posix.join('absolute', absolutePath)
-      : path.posix.join('relative', relativePath)
-  }
-
-  const overrideSecretsOrConfigs = (
-    c?: Record<string, ComposeSecretOrConfig>,
-  ) => mapValues(c ?? {}, secretOrConfig => {
-    const remote = remotePath(secretOrConfig.file)
-    filesToCopy.push({ local: secretOrConfig.file, remote })
-    return { ...secretOrConfig, file: path.posix.join(remoteBaseDir, remote) }
-  })
-
-  const overrideSecrets = overrideSecretsOrConfigs(model.secrets)
-  const overrideConfigs = overrideSecretsOrConfigs(model.configs)
-
-  const services = model.services ?? {}
-
-  const overrideServices = await asyncMapValues(services, async (service, serviceName) => {
-    if (skipServices.includes(serviceName)) {
-      return service
-    }
-
-    return ({
-      ...service,
-
-      volumes: service.volumes && await asyncToArray(asyncMap(async volume => {
-        if (volume.type === 'volume') {
-          return volume
-        }
-
-        if (volume.type !== 'bind') {
-          throw new Error(`Unsupported volume type: ${volume.type} in service ${serviceName}`)
-        }
-        if (volumeSkipList.some(re => re.test(volume.source))) {
-          return volume
-        }
-
-        const remote = remotePath(volume.source)
-        const stats = await lstatOrUndefined(volume.source)
-
-        if (stats) {
-          if (!stats.isDirectory() && !stats.isFile() && !stats.isSymbolicLink()) {
-            return volume
-          }
-
-          // ignore non-existing files like docker and compose do,
-          //  they will be created as directories in the container
-          filesToCopy.push({ local: volume.source, remote })
-        }
-
-        return { ...volume, source: path.posix.join(remoteBaseDir, remote) }
-      }, service.volumes)),
-    })
-  })
-
-  return {
-    model: {
-      ...model,
-      secrets: overrideSecrets,
-      configs: overrideConfigs,
-      services: overrideServices,
-      networks: model.networks ?? {},
-    },
-    filesToCopy,
-  }
 }
 
 export const composeModelFilename = 'docker-compose.yaml'

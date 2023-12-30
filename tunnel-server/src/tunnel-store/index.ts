@@ -1,10 +1,10 @@
 import { KeyObject } from 'crypto'
 import { Logger } from 'pino'
-import { multimap } from '../multimap'
-import { Store, TransactionDescriptor, inMemoryStore } from '../memory-store'
-import { ScriptInjectionSpec } from '../proxy/injection'
+import { multimap } from '../multimap.js'
+import { Store, TransactionDescriptor, inMemoryStore } from '../memory-store.js'
+import { ScriptInjectionSpec } from '../proxy/injection/index.js'
 
-export { activeTunnelStoreKey } from './key'
+export { activeTunnelStoreKey } from './key.js'
 
 export type ActiveTunnel = {
   envId: string

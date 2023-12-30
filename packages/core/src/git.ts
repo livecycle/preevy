@@ -1,11 +1,13 @@
-import { execPromiseStdout } from './child-process'
+import { execPromiseStdout } from './child-process.js'
 
 export function gitContext(cwd: string = process.cwd()) {
   const execGit = async (command: string) => await execPromiseStdout(`git ${command}`, { cwd })
   const branchName = async () => await execGit('rev-parse --abbrev-ref HEAD')
     .catch(() => undefined)
 
-  const head = async () => await execGit('rev-parse HEAD')
+  const head = async (
+    { short }: { short?: boolean } = { short: false },
+  ) => await execGit(`rev-parse ${short ? '--short ' : ''}HEAD`)
     .catch(() => undefined)
 
   const author = async (commit?: string) => {
@@ -25,10 +27,15 @@ export function gitContext(cwd: string = process.cwd()) {
     return await execGit(`config remote.${trackingRemote}.url`)
   }
 
+  const localChanges = async () => await execGit('diff-index HEAD --').catch(() => '')
+
   return {
     branchName,
     commit: head,
     author,
     remoteTrackingBranchUrl,
+    localChanges,
   }
 }
+
+export type GitContext = ReturnType<typeof gitContext>

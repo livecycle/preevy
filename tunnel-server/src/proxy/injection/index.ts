@@ -4,13 +4,13 @@ import { parse as parseContentType } from 'content-type'
 import iconv from 'iconv-lite'
 import { inspect } from 'node:util'
 import { Logger } from 'pino'
-import { InjectHtmlScriptTransform } from './inject-transform'
-import { addOutgoingEtagSuffix, removeIncomingEtagSuffix } from './etag'
-import { streamsForContentEncoding } from './content-encoding'
-import { InjectedContent, injectedContentFromSpec } from './injected-content'
-import { ScriptInjectionSpec } from './model'
+import { InjectHtmlScriptTransform } from './inject-transform.js'
+import { addOutgoingEtagSuffix, removeIncomingEtagSuffix } from './etag.js'
+import { streamsForContentEncoding } from './content-encoding.js'
+import { InjectedContent, injectedContentFromSpec } from './injected-content.js'
+import { ScriptInjectionSpec } from './model.js'
 
-export { ScriptInjectionSpec, ScriptInjectionSpecBase } from './model'
+export { ScriptInjectionSpec, ScriptInjectionSpecBase } from './model.js'
 
 const proxyWithInjection = (
   proxyRes: stream.Readable & Pick<IncomingMessage, 'headers' | 'statusCode'>,

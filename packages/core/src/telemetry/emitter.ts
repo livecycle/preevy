@@ -1,13 +1,15 @@
 import os from 'os'
+import fs from 'fs'
 import crypto from 'crypto'
-import stringify from 'fast-safe-stringify'
-import fetch from 'node-fetch'
-import { debounce } from 'lodash'
+import stringifyModule from 'fast-safe-stringify'
+import { debounce } from 'lodash-es'
 import pLimit from 'p-limit'
 import { inspect } from 'util'
-import { memoizedMachineId } from './machine-id'
-import { TelemetryEvent, TelemetryProperties, serializableEvent } from './events'
-import { detectCiProvider } from '../ci-providers'
+import { memoizedMachineId } from './machine-id.js'
+import { TelemetryEvent, TelemetryProperties, serializableEvent } from './events.js'
+import { detectCiProvider } from '../ci-providers/index.js'
+
+const stringify = stringifyModule.default
 
 const newRunId = () => `ses_${crypto.randomBytes(16).toString('base64url').replace(/[^a-zA-Z0-9]/g, '').substring(0, 10)}`
 
@@ -20,30 +22,34 @@ type IdentifyFunction = {
   (id: string, person?: TelemetryProperties): void
 }
 
-export const telemetryEmitter = async ({ dataDir, version, debug }: {
+export const telemetryEmitter = async ({ dataDir, version, debug, filename }: {
   dataDir: string
   version: string
   debug: number
+  filename?: string
 }) => {
   const machineId = await memoizedMachineId(dataDir)
   let distinctId = machineId
   const groupIdentities = {} as Record<GroupIdentityType, string>
   const pendingEvents: TelemetryEvent[] = []
   const runId = newRunId()
+  const file = filename ? fs.createWriteStream(filename, 'utf-8') : undefined // await fs.promises.open(filename, 'a') : undefined
   let debounceDisabled = false
   const flushLimit = pLimit(1)
   const flush = async () => await flushLimit(async () => {
     if (!pendingEvents.length) {
       return
     }
-    const body = stringify({ batch: pendingEvents.map(serializableEvent) })
+    const batch = pendingEvents.map(serializableEvent)
+    const body = stringify({ batch })
+    file?.write(batch.map(event => `${stringify(event)}${os.EOL}`).join(''))
     pendingEvents.length = 0
     const response = await fetch(TELEMETRY_URL, {
       headers: { 'Content-Type': 'application/json' },
       method: 'POST',
       redirect: 'follow',
       body,
-      timeout: 1500,
+      signal: AbortSignal.timeout(1500),
     }).catch(err => {
       if (debug) {
         process.stderr.write(`Error sending telemetry: ${inspect(err)}${os.EOL}`)

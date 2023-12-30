@@ -1,7 +1,7 @@
 import * as k8s from '@kubernetes/client-node'
 import { extractDefined, randomString, truncatePrefix } from '@preevy/core'
-import { sanitizeLabel, sanitizeLabels } from './labels'
-import { HasMetadata, Package } from './common'
+import { sanitizeLabel, sanitizeLabels } from './labels.js'
+import { HasMetadata, Package } from './common.js'
 
 export const MAX_LABEL_LENGTH = 63
 

@@ -1,11 +1,24 @@
+import fs from 'fs'
+import yaml from 'yaml'
 import { Args, ux, Interfaces } from '@oclif/core'
-import { FlatTunnel, ProfileStore, TunnelOpts, addBaseComposeTunnelAgentService, commands, findComposeTunnelAgentUrl, findEnvId, getTunnelNamesToServicePorts, profileStore } from '@preevy/core'
-import { HooksListeners, PluginContext, tunnelServerFlags } from '@preevy/cli-common'
+import { FlatTunnel, Logger, TunnelOpts, addBaseComposeTunnelAgentService, commands, findComposeTunnelAgentUrl, findEnvId, getTunnelNamesToServicePorts, profileStore } from '@preevy/core'
+import { HooksListeners, PluginContext, tableFlags, text, tunnelServerFlags } from '@preevy/cli-common'
 import { asyncReduce } from 'iter-tools-es'
 import { tunnelNameResolver } from '@preevy/common'
-import { connectToTunnelServerSsh } from '../tunnel-server-client'
-import ProfileCommand from '../profile-command'
-import { envIdFlags, urlFlags } from '../common-flags'
+import { connectToTunnelServerSsh } from '../tunnel-server-client.js'
+import ProfileCommand from '../profile-command.js'
+import { envIdFlags, urlFlags } from '../common-flags.js'
+
+export const writeUrlsToFile = async (
+  { log }: { log: Logger },
+  { 'output-urls-to': outputUrlsTo }: Interfaces.InferredFlags<Pick<typeof urlFlags, 'output-urls-to'>>,
+  urls: FlatTunnel[],
+) => {
+  if (!outputUrlsTo) return
+  const contents = /\.ya?ml$/.test(outputUrlsTo) ? yaml.stringify(urls) : JSON.stringify(urls)
+  log.info(`Writing URLs to file ${text.code(outputUrlsTo)}`)
+  await fs.promises.writeFile(outputUrlsTo, contents, { encoding: 'utf8' })
+}
 
 export const printUrls = (
   flatTunnels: FlatTunnel[],
@@ -43,7 +56,7 @@ export default class Urls extends ProfileCommand<typeof Urls> {
   static flags = {
     ...envIdFlags,
     ...tunnelServerFlags,
-    ...ux.table.flags(),
+    ...tableFlags,
     ...urlFlags,
   }
 
@@ -64,11 +77,10 @@ export default class Urls extends ProfileCommand<typeof Urls> {
     envId: string,
     tunnelOpts: TunnelOpts,
     tunnelingKey: string | Buffer,
-    knownServerPublicKeys: ProfileStore['knownServerPublicKeys']
   ) {
     const { client: tunnelServerSshClient } = await connectToTunnelServerSsh({
       tunnelOpts,
-      knownServerPublicKeys,
+      profileStore: profileStore(this.store),
       tunnelingKey,
       log: this.logger,
     })
@@ -89,7 +101,7 @@ export default class Urls extends ProfileCommand<typeof Urls> {
 
   async run(): Promise<unknown> {
     const log = this.logger
-    const { flags, args } = await this.parse(Urls)
+    const { flags, args } = this
 
     const envId = await findEnvId({
       userSpecifiedEnvId: flags.id,
@@ -104,15 +116,14 @@ export default class Urls extends ProfileCommand<typeof Urls> {
       insecureSkipVerify: flags['insecure-skip-verify'],
     }
 
-    const pStore = profileStore(this.store)
+    const pStore = profileStore(this.store).ref
 
-    const tunnelingKey = await pStore.getTunnelingKey()
+    const tunnelingKey = await pStore.tunnelingKey()
 
     const composeTunnelServiceUrl = await this.getComposeTunnelAgentUrl(
       envId,
       tunnelOpts,
       tunnelingKey,
-      pStore.knownServerPublicKeys,
     )
 
     const flatTunnels = await commands.urls({
@@ -132,6 +143,8 @@ export default class Urls extends ProfileCommand<typeof Urls> {
       },
       filters: this.config.preevyHooks.filterUrls,
     })
+
+    await writeUrlsToFile({ log: this.logger }, flags, urls)
 
     if (flags.json) {
       return urls

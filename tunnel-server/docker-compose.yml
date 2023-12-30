@@ -8,7 +8,6 @@ services:
   proxy:
     build:
       context: .
-      target: development
 
     restart: always
     #image: preview-proxy
@@ -16,6 +15,7 @@ services:
       BASE_URL: ${BASE_URL:-http://local.livecycle.run:8030}
       SAAS_BASE_URL: ${SAAS_BASE_URL:-https://local.livecycle.run:3001}
       SAAS_JWT_ISSUER: ${SAAS_JWT_ISSUER:-app.livecycle.run}
+      DEBUG: '1'
 
     ports:
       - '8030:3000'

@@ -1,12 +1,12 @@
-import { ux, Args, Flags } from '@oclif/core'
+import { Args, Flags } from '@oclif/core'
 import { jwkThumbprint, commands, profileStore, withSpinner, SshConnection, machineId, validateEnvId, normalizeEnvId, EnvId } from '@preevy/core'
-import { tunnelServerFlags, urlFlags } from '@preevy/cli-common'
+import { tableFlags, text, tunnelServerFlags, urlFlags } from '@preevy/cli-common'
 import { inspect } from 'util'
 import { formatPublicKey } from '@preevy/common'
 import { spawn } from 'child_process'
-import { connectToTunnelServerSsh } from '../../tunnel-server-client'
-import ProfileCommand from '../../profile-command'
-import { filterUrls, printUrls } from '../urls'
+import { connectToTunnelServerSsh } from '../../tunnel-server-client.js'
+import ProfileCommand from '../../profile-command.js'
+import { filterUrls, printUrls, writeUrlsToFile } from '../urls.js'
 
 // eslint-disable-next-line no-use-before-define
 export default class Connect extends ProfileCommand<typeof Connect> {
@@ -15,7 +15,7 @@ export default class Connect extends ProfileCommand<typeof Connect> {
   static flags = {
     ...tunnelServerFlags,
     ...urlFlags,
-    ...ux.table.flags(),
+    ...tableFlags,
     id: Flags.string({
       aliases: ['env-id'],
       description: 'specify the environment ID for this app',
@@ -55,8 +55,9 @@ export default class Connect extends ProfileCommand<typeof Connect> {
     const { flags, args, store } = this
 
     const pStore = profileStore(store)
+    const pStoreRef = pStore.ref
 
-    const tunnelingKey = await pStore.getTunnelingKey()
+    const tunnelingKey = await pStoreRef.tunnelingKey()
     const tunnelOpts = {
       url: flags['tunnel-url'],
       tlsServerName: flags['tls-hostname'],
@@ -69,7 +70,7 @@ export default class Connect extends ProfileCommand<typeof Connect> {
     } else {
       const deviceId = (await machineId(this.config.dataDir)).substring(0, 2)
       envId = normalizeEnvId(`${composeProject}-dev-${deviceId}`)
-      this.logger.info(`Using environment ID ${envId}, based on Docker Compose and local device`)
+      this.logger.info(`Using environment ID ${text.code(envId)}, based on Docker Compose and local device`)
     }
     let client: SshConnection['client'] | undefined
     let hostKey: Buffer
@@ -77,7 +78,7 @@ export default class Connect extends ProfileCommand<typeof Connect> {
     try {
       const connnection = await connectToTunnelServerSsh({
         tunnelOpts,
-        knownServerPublicKeys: pStore.knownServerPublicKeys,
+        profileStore: pStore,
         tunnelingKey,
         log: this.logger,
       })
@@ -140,6 +141,8 @@ export default class Connect extends ProfileCommand<typeof Connect> {
       },
       filters: this.config.preevyHooks.filterUrls,
     })
+
+    await writeUrlsToFile({ log: this.logger }, flags, urls)
 
     if (flags.json) {
       return urls

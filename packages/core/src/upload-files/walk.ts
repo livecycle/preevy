@@ -1,7 +1,8 @@
 import fs from 'fs'
-import PQueue from 'p-queue'
-import { DirInfo, FileInfo } from './files'
+import PQueueModule from 'p-queue'
+import { DirInfo, FileInfo } from './files.js'
 
+const PQueue = PQueueModule.default
 const readDir = async (filename: string) => await fs.promises.readdir(filename)
 
 const normalizeFile = async (local: string | FileInfo | DirInfo) => {

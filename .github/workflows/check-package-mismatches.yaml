@@ -14,4 +14,4 @@ jobs:
         with:
           node-version: 18
       - name: Check mismatched dependencies in workspace
-        run: npx --yes syncpack check-mismatches
+        run: npx --yes syncpack@11.2.1 check-mismatches

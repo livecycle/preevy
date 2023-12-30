@@ -1,7 +1,7 @@
 import { Flags } from '@oclif/core'
 import { findEnvId, machineResourceType, withSpinner } from '@preevy/core'
-import DriverCommand from '../driver-command'
-import { envIdFlags } from '../common-flags'
+import DriverCommand from '../driver-command.js'
+import { envIdFlags } from '../common-flags.js'
 
 // eslint-disable-next-line no-use-before-define
 export default class Down extends DriverCommand<typeof Down> {
@@ -26,7 +26,7 @@ export default class Down extends DriverCommand<typeof Down> {
 
   async run(): Promise<unknown> {
     const log = this.logger
-    const { flags } = await this.parse(Down)
+    const { flags } = this
     const driver = await this.driver()
 
     const envId = await findEnvId({

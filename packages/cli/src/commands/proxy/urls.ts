@@ -1,9 +1,9 @@
-import { ux, Args } from '@oclif/core'
-import { tunnelServerFlags, urlFlags, formatFlagsToArgs } from '@preevy/cli-common'
+import { Args } from '@oclif/core'
+import { tunnelServerFlags, urlFlags, formatFlagsToArgs, tableFlags } from '@preevy/cli-common'
 import { commands } from '@preevy/core'
-import { pick } from 'lodash'
-import PreevyUrlsCmd from '../urls'
-import ProfileCommand from '../../profile-command'
+import { pick } from 'lodash-es'
+import PreevyUrlsCmd from '../urls.js'
+import ProfileCommand from '../../profile-command.js'
 
 // eslint-disable-next-line no-use-before-define
 export default class Urls extends ProfileCommand<typeof Urls> {
@@ -12,7 +12,7 @@ export default class Urls extends ProfileCommand<typeof Urls> {
   static flags = {
     ...tunnelServerFlags,
     ...urlFlags,
-    ...ux.table.flags(),
+    ...tableFlags,
   }
 
   static strict = false
