@@ -9,10 +9,10 @@ import waitForExpectModule from 'wait-for-expect'
 import WebSocket from 'ws'
 import stripAnsi from 'strip-ansi'
 import { createApp } from './index.js'
-import { filteredClient } from '../docker/index.js'
+import { filteredClient } from '../plugins/docker/forwards-emitter/index.js'
 import { SshState } from '../ssh/index.js'
-import { COMPOSE_PROJECT_LABEL } from '../docker/labels.js'
-import { composeProjectFilters } from '../docker/filters.js'
+import { COMPOSE_PROJECT_LABEL } from '../plugins/docker/forwards-emitter/labels.js'
+import { composeProjectFilters } from '../plugins/docker/filters.js'
 
 const PinoPretty = pinoPrettyModule.default
 

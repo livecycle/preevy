@@ -1,39 +1,33 @@
 import { Duplex } from 'stream'
 import Docker from 'dockerode'
 import { EventEmitter } from 'tseep'
-import { tryParseJson, Logger, TunnelNameResolver, ScriptInjection } from '@preevy/common'
+import { tryParseJson, Logger, TunnelNameResolver } from '@preevy/common'
 import { throttle } from 'lodash-es'
 import { inspect } from 'util'
-import { DockerFilters } from './filters.js'
+import { DockerApiFilter } from '../filters.js'
 import { composeContainerToForwards } from './services.js'
-import { Forward, ForwardsEvents, ForwardsEmitter } from '../forwards.js'
-import { ensureClosed } from '../socket.js'
+import { Forward, ForwardsEvents, ForwardsEmitter } from '../../../forwards.js'
+import { ensureClosed } from '../../../socket.js'
 
 export const forwardsEmitter = async ({
   log,
   docker,
   debounceWait,
-  filters: { apiFilter },
+  filters,
   tunnelNameResolver,
-  globalInjects,
-  defaultAccess,
 }: {
   log: Logger
   docker: Pick<Docker, 'getEvents' | 'listContainers' | 'getContainer'>
   debounceWait: number
-  filters: Pick<DockerFilters, 'apiFilter'>
+  filters: DockerApiFilter
   tunnelNameResolver: TunnelNameResolver
-  globalInjects: ScriptInjection[]
-  defaultAccess: 'private' | 'public'
 }): Promise<ForwardsEmitter> => {
   const getForwards = async (): Promise<Forward[]> => (
-    await docker.listContainers({ all: true, filters: { ...apiFilter } })
+    await docker.listContainers({ all: true, filters })
   ).flatMap(container => {
     const { errors, forwards } = composeContainerToForwards({
       container,
-      defaultAccess,
       tunnelNameResolver,
-      globalInjects,
     })
     if (errors.length) {
       log.warn('error parsing docker container "%s" info, some information may be missing: %j', container.Names?.[0], inspect(errors))
@@ -50,7 +44,7 @@ export const forwardsEmitter = async ({
 
   const stream = await docker.getEvents({
     filters: {
-      ...apiFilter,
+      ...filters,
       event: ['start', 'stop', 'pause', 'unpause', 'create', 'destroy', 'rename', 'update'],
       type: ['container'],
     },

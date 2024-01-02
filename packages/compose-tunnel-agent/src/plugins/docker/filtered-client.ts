@@ -1,13 +1,14 @@
 import Docker from 'dockerode'
-import { DockerFilters } from './filters.js'
+import { DockerApiFilter, createAdhocFilter } from './filters.js'
 
 export const filteredClient = ({
   docker,
-  filters: { apiFilter, adhocFilter },
+  filters,
 }: {
   docker: Pick<Docker, 'getEvents' | 'listContainers' | 'getContainer'>
-  filters: DockerFilters
+  filters: DockerApiFilter
 }) => {
+  const adhocFilter = createAdhocFilter(filters)
   const getContainerFiltered = async (id: string) => {
     const container = docker.getContainer(id)
     const inspect = await container.inspect()
@@ -15,7 +16,7 @@ export const filteredClient = ({
   }
 
   return ({
-    listContainers: () => docker.listContainers({ all: true, filters: { ...apiFilter } }),
+    listContainers: () => docker.listContainers({ all: true, filters }),
     inspectContainer: async (id: string) => (await getContainerFiltered(id))?.inspect,
     getContainer: async (id: string) => (await getContainerFiltered(id))?.container,
   })

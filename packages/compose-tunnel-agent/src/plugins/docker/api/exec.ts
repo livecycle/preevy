@@ -3,9 +3,9 @@ import { createWebSocketStream } from 'ws'
 import z from 'zod'
 import { FastifyPluginAsync } from 'fastify'
 import Dockerode from 'dockerode'
-import { DockerFilterClient } from '../../docker/index.js'
 import { containerIdSchema, execQueryString } from './schema.js'
 import { ContainerNotFoundError } from './errors.js'
+import { DockerFilterClient } from '../filtered-client.js'
 
 const handler: FastifyPluginAsync<{
   dockerModem: Pick<Dockerode['modem'], 'demuxStream'>

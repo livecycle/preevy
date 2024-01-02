@@ -1,4 +1,4 @@
-import { NotFoundError } from '../http-errors.js'
+import { NotFoundError } from '../../../api-server/http-errors.js'
 
 export class ContainerNotFoundError extends NotFoundError {
   constructor(containerId: string) {

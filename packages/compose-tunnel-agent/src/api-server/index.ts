@@ -4,8 +4,8 @@ import fastify from 'fastify'
 import cors from '@fastify/cors'
 import { validatorCompiler, serializerCompiler, ZodTypeProvider } from 'fastify-type-provider-zod'
 import { SshState } from '../ssh/index.js'
-import { DockerFilterClient } from '../docker/index.js'
-import { containers } from './containers/index.js'
+import { DockerFilterClient } from '../plugins/docker/forwards-emitter/index.js'
+import { containersApi } from '../plugins/docker/api/index.js'
 import { env } from './env.js'
 
 export const createApp = async ({
@@ -40,7 +40,7 @@ export const createApp = async ({
   app.get('/healthz', { logLevel: 'warn' }, async () => 'OK')
 
   await app.register(env, { composeModelPath, currentSshState, envMetadata, machineStatus })
-  await app.register(containers, { dockerModem, dockerFilter, prefix: '/containers' })
+  await app.register(containersApi, { dockerModem, dockerFilter, prefix: '/containers' })
 
   return app
 }

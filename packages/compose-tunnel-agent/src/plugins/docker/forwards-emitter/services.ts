@@ -1,8 +1,8 @@
 import { ScriptInjection, COMPOSE_TUNNEL_AGENT_SERVICE_LABELS as PREEVY_LABELS, parseScriptInjectionLabels, TunnelNameResolver } from '@preevy/common'
 import Docker from 'dockerode'
-import { portFilter } from './filters.js'
+import { portFilter } from '../filters.js'
 import { COMPOSE_PROJECT_LABEL, COMPOSE_SERVICE_LABEL } from './labels.js'
-import { Forward } from '../forwards.js'
+import { Forward } from '../../../forwards.js'
 
 type ContainerInfo = Pick<Docker.ContainerInfo, 'Ports' | 'Labels'>
 
@@ -13,7 +13,7 @@ const containerPorts = (
   ...new Set(container.Ports.filter(p => p.Type === 'tcp').filter(portFilter(container)).map(p => p.PrivatePort)),
 ]
 
-type ResolvedPort<Meta> = Omit<Forward<Meta>, 'injects' | 'access'>
+type ResolvedPort<Meta extends {}> = Omit<Forward<Meta>, 'injects' | 'access'>
 
 export type ComposeServiceMeta = {
   service: string
@@ -21,16 +21,14 @@ export type ComposeServiceMeta = {
   port: number
 }
 
-const containerToForwards = <Meta>({
+const containerToForwards = <Meta extends {}>({
   globalInjects,
   resolvedPorts,
   container,
-  defaultAccess,
 }: {
   globalInjects: ScriptInjection[]
   resolvedPorts: ResolvedPort<Meta>[]
   container: ContainerInfo
-  defaultAccess: 'private' | 'public'
 }): { errors: Error[]; forwards: Forward<Meta>[] } => {
   const [inject, errors] = parseScriptInjectionLabels(container.Labels)
   const access = container.Labels[PREEVY_LABELS.ACCESS] as undefined | 'private' | 'public'
@@ -42,7 +40,7 @@ const containerToForwards = <Meta>({
       host,
       port,
       externalName,
-      access: access ?? defaultAccess,
+      access,
       injects: [...inject.filter(i => i.port === undefined || i.port === port), ...globalInjects],
     }
   })
@@ -52,12 +50,10 @@ const containerToForwards = <Meta>({
 export const composeContainerToForwards = ({
   globalInjects = [],
   tunnelNameResolver,
-  defaultAccess,
   container,
 }: {
   globalInjects?: ScriptInjection[]
   tunnelNameResolver: TunnelNameResolver
-  defaultAccess: 'private' | 'public'
   container: ContainerInfo
 }): { errors: Error[]; forwards: Forward<ComposeServiceMeta>[] } => {
   const project = container.Labels[COMPOSE_PROJECT_LABEL]
@@ -75,6 +71,5 @@ export const composeContainerToForwards = ({
       port,
     })),
     container,
-    defaultAccess,
   })
 }

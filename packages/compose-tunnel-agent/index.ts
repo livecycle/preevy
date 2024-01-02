@@ -23,8 +23,8 @@ import { readAllFiles } from './src/files.js'
 import {
   forwardsEmitter as createDockerForwardsEmitter,
   filteredClient as createDockerFilteredClient,
-} from './src/docker/index.js'
-import { anyComposeProjectFilters, composeProjectFilters } from './src/docker/filters.js'
+} from './src/plugins/docker/forwards-emitter/index.js'
+import { anyComposeProjectFilters, composeProjectFilters } from './src/plugins/docker/filters.js'
 
 const PinoPretty = pinoPrettyModule.default
 
@@ -101,14 +101,17 @@ const main = async () => {
     log: log.child({ name: 'docker' }),
     docker,
     debounceWait: 500,
-    defaultAccess,
     filters: dockerFilters,
     tunnelNameResolver: tunnelNameResolver({ envId }),
-    globalInjects,
   })
 
   const sshLog = log.child({ name: 'ssh' })
-  const sshClient = await createSshClient({ connectionConfig, log: sshLog })
+  const sshClient = await createSshClient({
+    log: sshLog,
+    connectionConfig,
+    defaultAccess,
+    globalInjects,
+  })
 
   sshClient.ssh.on('close', () => {
     if (!endRequested) {

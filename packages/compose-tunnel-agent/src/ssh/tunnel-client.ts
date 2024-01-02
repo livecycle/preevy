@@ -2,9 +2,9 @@ import { baseSshClient, HelloResponse, ScriptInjection, SshClientOpts, stateEmit
 import net from 'net'
 import plimit from 'p-limit'
 import { inspect } from 'util'
+import { EventEmitter } from 'tseep'
 import { difference } from '../maps.js'
 import { Forward } from '../forwards.js'
-import { EventEmitter } from 'tseep'
 
 type InternalForward = Forward & {
   sockets: Set<net.Socket>
@@ -15,7 +15,7 @@ export type SshState = {
   forwards: { forward: Forward; url: string }[]
 }
 
-const stringifiableInject = (inject: ScriptInjection) => ({
+const stringifyScriptInjection = (inject: ScriptInjection) => ({
   ...inject,
   ...(inject.pathRegex && { pathRegex: inject.pathRegex.source }),
 })
@@ -25,7 +25,12 @@ const encodedJson = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('bas
 export const sshClient = async ({
   log,
   connectionConfig,
-}: Pick<SshClientOpts, 'connectionConfig' | 'log'>) => {
+  defaultAccess,
+  globalInjects,
+}: Pick<SshClientOpts, 'connectionConfig' | 'log'> & {
+  defaultAccess: 'private' | 'public'
+  globalInjects: ScriptInjection[]
+}) => {
   const { ssh, execHello, end } = await baseSshClient({
     log,
     connectionConfig,
@@ -113,12 +118,13 @@ export const sshClient = async ({
   })
 
   const stringifyForwardRequest = (
-    { access, meta, injects, externalName }: Pick<Forward, 'access' | 'meta' | 'injects' | 'externalName'>,
+    { access = defaultAccess, meta, injects, externalName }: Pick<Forward, 'access' | 'meta' | 'injects' | 'externalName'>,
   ) => {
+    const allInjects = [...globalInjects, ...(injects ?? [])]
     const args: Record<string, string> = {
       ...(access === 'private' ? { access: 'private' } : {}),
       meta: encodedJson(meta),
-      ...injects?.length ? { inject: encodedJson(injects.map(stringifiableInject)) } : {},
+      ...allInjects.length ? { inject: encodedJson(allInjects.map(stringifyScriptInjection)) } : {},
     }
     const argsStr = Object.entries(args).map(([k, v]) => `${k}=${v}`).join(';')
     return `/${externalName}#${argsStr}`

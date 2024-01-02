@@ -1,8 +1,6 @@
 export { COMPOSE_TUNNEL_AGENT_SERVICE_LABELS } from './labels.js'
 export {
   ScriptInjection,
-  ContainerScriptInjection,
-  containerScriptInjectionSchema,
   scriptInjectionSchema,
   parseScriptInjection,
   parseScriptInjectionLabels,

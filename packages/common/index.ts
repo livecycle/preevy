@@ -29,11 +29,9 @@ export { tunnelNameResolver, TunnelNameResolver } from './src/tunnel-name.js'
 export { editUrl } from './src/url.js'
 export {
   ScriptInjection,
-  ContainerScriptInjection,
   parseScriptInjection,
   parseScriptInjectionLabels,
   scriptInjectionsToLabels,
-  containerScriptInjectionSchema,
   scriptInjectionSchema,
   COMPOSE_TUNNEL_AGENT_PORT,
   COMPOSE_TUNNEL_AGENT_SERVICE_LABELS,
@@ -46,3 +44,4 @@ export {
   machineStatusCommandSchema,
 } from './src/machine-status-command.js'
 export { ProcessOutputBuffers, orderedOutput, OrderedOutput } from './src/process-output-buffers.js'
+export { generateSchemaErrorMessage } from './src/schema.js'
