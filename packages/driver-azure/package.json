@@ -1,6 +1,6 @@
 {
   "name": "@preevy/driver-azure",
-  "version": "0.0.58",
+  "version": "0.0.59",
   "description": "Microsoft Azure Virtual Machine for Preevy",
   "type": "module",
   "exports": {
@@ -20,9 +20,9 @@
     "@azure/arm-subscriptions": "^5.1.0",
     "@azure/identity": "^3.2.2",
     "@azure/logger": "^1.0.4",
-    "@oclif/core": "^3.15.1",
-    "@preevy/core": "0.0.58",
     "@inquirer/prompts": "^3.3.0",
+    "@oclif/core": "^3.15.1",
+    "@preevy/core": "0.0.59",
     "inquirer-autocomplete-standalone": "^0.8.1",
     "iter-tools-es": "^7.5.3",
     "lodash-es": "^4.17.21"
