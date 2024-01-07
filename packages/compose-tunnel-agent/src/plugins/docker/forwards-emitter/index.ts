@@ -1,34 +1,35 @@
 import { Duplex } from 'stream'
 import Docker from 'dockerode'
 import { EventEmitter } from 'tseep'
-import { tryParseJson, Logger, TunnelNameResolver } from '@preevy/common'
+import { tryParseJson, Logger } from '@preevy/common'
 import { throttle } from 'lodash-es'
 import { inspect } from 'util'
 import { DockerApiFilter } from '../filters.js'
-import { composeContainerToForwards } from './services.js'
 import { Forward, ForwardsEvents, ForwardsEmitter } from '../../../forwards.js'
 import { ensureClosed } from '../../../socket.js'
+
+export type ContainerToForwards = (container: Docker.ContainerInfo) => {
+  errors: Error[]
+  forwards: Forward[]
+}
 
 export const forwardsEmitter = async ({
   log,
   docker,
   debounceWait,
   filters,
-  tunnelNameResolver,
+  containerToForwards,
 }: {
   log: Logger
   docker: Pick<Docker, 'getEvents' | 'listContainers' | 'getContainer'>
   debounceWait: number
-  filters: DockerApiFilter
-  tunnelNameResolver: TunnelNameResolver
+  filters?: DockerApiFilter
+  containerToForwards: ContainerToForwards
 }): Promise<ForwardsEmitter> => {
   const getForwards = async (): Promise<Forward[]> => (
     await docker.listContainers({ all: true, filters })
   ).flatMap(container => {
-    const { errors, forwards } = composeContainerToForwards({
-      container,
-      tunnelNameResolver,
-    })
+    const { errors, forwards } = containerToForwards(container)
     if (errors.length) {
       log.warn('error parsing docker container "%s" info, some information may be missing: %j', container.Names?.[0], inspect(errors))
     }

@@ -43,5 +43,6 @@ export {
   dockerMachineStatusCommandRecipeSchema,
   machineStatusCommandSchema,
 } from './src/machine-status-command.js'
+export * from './src/async.js'
 export { ProcessOutputBuffers, orderedOutput, OrderedOutput } from './src/process-output-buffers.js'
 export { generateSchemaErrorMessage } from './src/schema.js'

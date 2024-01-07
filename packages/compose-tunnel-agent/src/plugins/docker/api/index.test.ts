@@ -8,11 +8,11 @@ import { inspect, promisify } from 'node:util'
 import waitForExpectModule from 'wait-for-expect'
 import WebSocket from 'ws'
 import stripAnsi from 'strip-ansi'
-import { createApp } from './index.js'
-import { filteredClient } from '../plugins/docker/forwards-emitter/index.js'
-import { SshState } from '../ssh/index.js'
-import { COMPOSE_PROJECT_LABEL } from '../plugins/docker/forwards-emitter/labels.js'
-import { composeProjectFilters } from '../plugins/docker/filters.js'
+import { baseApp, createApp } from '../../../api-server/index.js'
+import { COMPOSE_PROJECT_LABEL } from '../../docker-compose/forwards-emitter/labels.js'
+import { containersApi } from './index.js'
+import { dockerComposeFilters } from '../../docker-compose/index.js'
+import { filteredClient } from '../filtered-client.js'
 
 const PinoPretty = pinoPrettyModule.default
 
@@ -59,7 +59,7 @@ const setupDockerContainer = () => {
 
 const setupApiServer = () => {
   const log = pino({
-    level: 'debug',
+    level: 'warn',
   }, PinoPretty({ destination: pino.destination(process.stderr) }))
 
   let app: Awaited<ReturnType<typeof createApp>>
@@ -67,15 +67,11 @@ const setupApiServer = () => {
 
   beforeAll(async () => {
     const docker = new Dockerode()
-    app = await createApp({
-      log,
+    app = await baseApp({ log })
+    await app.register(containersApi, {
+      dockerFilter: filteredClient({ docker, filters: dockerComposeFilters(TEST_COMPOSE_PROJECT) }),
       dockerModem: docker.modem,
-      dockerFilter: filteredClient({
-        docker,
-        filters: composeProjectFilters({ composeProject: TEST_COMPOSE_PROJECT })
-      }),
-      composeModelPath: '',
-      currentSshState: () => Promise.resolve({} as unknown as SshState),
+      prefix: '/containers',
     })
     await app.listen({ port: 0 })
     const { port } = app.server.address() as AddressInfo

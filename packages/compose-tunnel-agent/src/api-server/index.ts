@@ -1,35 +1,32 @@
 import { Logger } from 'pino'
-import Dockerode from 'dockerode'
 import fastify from 'fastify'
 import cors from '@fastify/cors'
 import { validatorCompiler, serializerCompiler, ZodTypeProvider } from 'fastify-type-provider-zod'
 import { SshState } from '../ssh/index.js'
-import { DockerFilterClient } from '../plugins/docker/forwards-emitter/index.js'
-import { containersApi } from '../plugins/docker/api/index.js'
 import { env } from './env.js'
+
+export const baseApp = async ({ log }: { log: Logger }) => {
+  const app = await fastify({ logger: log })
+  app.setValidatorCompiler(validatorCompiler)
+  app.setSerializerCompiler(serializerCompiler)
+
+  app.withTypeProvider<ZodTypeProvider>()
+
+  return Object.assign(app, { [Symbol.asyncDispose]: () => app.close() })
+}
 
 export const createApp = async ({
   log,
   currentSshState,
   machineStatus,
   envMetadata,
-  composeModelPath,
-  dockerFilter,
-  dockerModem,
 }: {
   log: Logger
   currentSshState: () => Promise<SshState>
   machineStatus?: () => Promise<{ data: Buffer; contentType: string }>
   envMetadata?: Record<string, unknown>
-  composeModelPath?: string
-  dockerFilter: DockerFilterClient
-  dockerModem: Pick<Dockerode['modem'], 'demuxStream'>
 }) => {
-  const app = await fastify({ logger: log })
-  app.setValidatorCompiler(validatorCompiler)
-  app.setSerializerCompiler(serializerCompiler)
-
-  app.withTypeProvider<ZodTypeProvider>()
+  const app = await baseApp({ log })
 
   await app.register(cors, {
     allowedHeaders: ['Authorization', 'Content-Type', 'Accept'],
@@ -39,8 +36,7 @@ export const createApp = async ({
 
   app.get('/healthz', { logLevel: 'warn' }, async () => 'OK')
 
-  await app.register(env, { composeModelPath, currentSshState, envMetadata, machineStatus })
-  await app.register(containersApi, { dockerModem, dockerFilter, prefix: '/containers' })
+  await app.register(env, { currentSshState, envMetadata, machineStatus })
 
   return app
 }

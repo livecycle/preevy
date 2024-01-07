@@ -6,9 +6,9 @@ export const filteredClient = ({
   filters,
 }: {
   docker: Pick<Docker, 'getEvents' | 'listContainers' | 'getContainer'>
-  filters: DockerApiFilter
+  filters?: DockerApiFilter
 }) => {
-  const adhocFilter = createAdhocFilter(filters)
+  const adhocFilter = createAdhocFilter(filters ?? {})
   const getContainerFiltered = async (id: string) => {
     const container = docker.getContainer(id)
     const inspect = await container.inspect()

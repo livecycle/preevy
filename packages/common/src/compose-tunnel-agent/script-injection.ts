@@ -1,5 +1,5 @@
 import z from 'zod'
-import { camelCase, mapKeys, partition, snakeCase, chain } from 'lodash-es'
+import { camelCase, mapKeys, partition, snakeCase, map, groupBy } from 'lodash-es'
 import { inspect } from 'util'
 import { COMPOSE_TUNNEL_AGENT_SERVICE_LABELS } from './labels.js'
 
@@ -70,15 +70,19 @@ const parseGroupedLabelKey = (
 const parseLabelsWithPrefixAndId = (
   labels: Record<string, string>,
   prefix: string,
-): Record<string, string>[] => chain(labels)
-  .entries()
-  .map(([k, v]) => [parseGroupedLabelKey(k), v])
-  .filter(
-    (kvp): kvp is [ParsedGroupedLabelKey, string] => (kvp[0] as ParsedGroupedLabelKey | undefined)?.prefix === prefix
+): Record<string, string>[] => {
+  const filtered = map(Object.entries(labels), ([k, v]) => [parseGroupedLabelKey(k), v])
+    .filter(
+      (kvp): kvp is [ParsedGroupedLabelKey, string] => (
+        kvp[0] as ParsedGroupedLabelKey | undefined
+      )?.prefix === prefix
+    )
+  const grouped = groupBy(
+    filtered,
+    ([{ id }]) => id,
   )
-  .groupBy(([{ id }]) => id)
-  .map(group => Object.fromEntries(group.map(([{ key }, value]) => [key, value])))
-  .value()
+  return Object.values(grouped).map(group => Object.fromEntries(group.map(([{ key }, value]) => [key, value])))
+}
 
 const notAnError = <T>(val: T | Error): val is T => !(val instanceof Error)
 

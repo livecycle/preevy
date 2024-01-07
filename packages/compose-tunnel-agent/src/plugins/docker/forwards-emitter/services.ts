@@ -1,75 +1,63 @@
-import { ScriptInjection, COMPOSE_TUNNEL_AGENT_SERVICE_LABELS as PREEVY_LABELS, parseScriptInjectionLabels, TunnelNameResolver } from '@preevy/common'
+import { COMPOSE_TUNNEL_AGENT_SERVICE_LABELS as PREEVY_LABELS, parseScriptInjectionLabels, TunnelNameResolver, generateSchemaErrorMessage } from '@preevy/common'
 import Docker from 'dockerode'
 import { portFilter } from '../filters.js'
-import { COMPOSE_PROJECT_LABEL, COMPOSE_SERVICE_LABEL } from './labels.js'
-import { Forward } from '../../../forwards.js'
+import { ContainerToForwards } from './index.js'
+import { Access, accessSchema } from '../../../configuration/opts.js'
 
 type ContainerInfo = Pick<Docker.ContainerInfo, 'Ports' | 'Labels'>
 
-const containerPorts = (
+export const containerPorts = (
   container: ContainerInfo,
 ) => [
   // ports may have both IPv6 and IPv4 addresses, ignoring
   ...new Set(container.Ports.filter(p => p.Type === 'tcp').filter(portFilter(container)).map(p => p.PrivatePort)),
 ]
 
-type ResolvedPort<Meta extends {}> = Omit<Forward<Meta>, 'injects' | 'access'>
+export const containerToForwardsBase = (
+  { tunnelNameResolver }: { tunnelNameResolver: TunnelNameResolver },
+) => (container: Docker.ContainerInfo) => {
+  const ports = containerPorts(container)
+  const name = container.Names[0]
+  const portExternalNames = new Map(
+    tunnelNameResolver({ name, ports }).map(({ port, tunnel }) => [port, tunnel]),
+  )
 
-export type ComposeServiceMeta = {
-  service: string
-  project: string
-  port: number
-}
-
-const containerToForwards = <Meta extends {}>({
-  globalInjects,
-  resolvedPorts,
-  container,
-}: {
-  globalInjects: ScriptInjection[]
-  resolvedPorts: ResolvedPort<Meta>[]
-  container: ContainerInfo
-}): { errors: Error[]; forwards: Forward<Meta>[] } => {
   const [inject, errors] = parseScriptInjectionLabels(container.Labels)
-  const access = container.Labels[PREEVY_LABELS.ACCESS] as undefined | 'private' | 'public'
+  const parsedAccess = accessSchema.optional().safeParse(container.Labels[PREEVY_LABELS.ACCESS])
+  let access: Access | undefined
+  if (!parsedAccess.success) {
+    errors.push(new Error(`Error parsing access label "${PREEVY_LABELS.ACCESS}" on container "${name}": ${generateSchemaErrorMessage(parsedAccess.error)}`))
+  } else {
+    access = parsedAccess.data
+  }
 
-  const forwards = resolvedPorts.map(x => {
-    const { meta, externalName, host, port } = x
-    return {
-      meta,
-      host,
-      port,
-      externalName,
-      access,
-      injects: [...inject.filter(i => i.port === undefined || i.port === port), ...globalInjects],
-    }
-  })
+  const forwards = ports.map(port => ({
+    externalName: portExternalNames.get(port) as string,
+    port,
+    access,
+    injects: inject.filter(i => i.port === undefined || i.port === port),
+  }))
+
   return { errors, forwards }
 }
 
-export const composeContainerToForwards = ({
-  globalInjects = [],
-  tunnelNameResolver,
-  container,
-}: {
-  globalInjects?: ScriptInjection[]
-  tunnelNameResolver: TunnelNameResolver
-  container: ContainerInfo
-}): { errors: Error[]; forwards: Forward<ComposeServiceMeta>[] } => {
-  const project = container.Labels[COMPOSE_PROJECT_LABEL]
-  const service = container.Labels[COMPOSE_SERVICE_LABEL]
-  const ports = containerPorts(container)
-  const portExternalNames = new Map(
-    tunnelNameResolver({ name: service, ports }).map(({ port, tunnel }) => [port, tunnel]),
-  )
-  return containerToForwards({
-    globalInjects,
-    resolvedPorts: ports.map(port => ({
-      meta: { project, service, port },
-      externalName: portExternalNames.get(port) as string,
-      host: service,
-      port,
-    })),
-    container,
-  })
+export const containerToForwards = (
+  { tunnelNameResolver }: { tunnelNameResolver: TunnelNameResolver },
+): ContainerToForwards => {
+  const getBase = containerToForwardsBase({ tunnelNameResolver })
+  return container => {
+    const { errors, forwards } = getBase(container)
+    const name = container.Names[0]
+    const host = Object.values(container.NetworkSettings.Networks)[0]?.IPAddress
+
+    if (!host) {
+      errors.push(new Error(`Could not find an accessible hostname/IP for container "${name}"`))
+      return { errors, forwards: [] }
+    }
+
+    return {
+      errors,
+      forwards: forwards.map(f => ({ ...f, host, meta: { service: name, port: f.port } })),
+    }
+  }
 }

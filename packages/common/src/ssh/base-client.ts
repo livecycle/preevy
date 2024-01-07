@@ -74,14 +74,17 @@ export const baseSshClient = async (
     return await tryParseJsonChunks<T>(channel)
   }
 
+  const end = async () => {
+    if (!ended) {
+      ssh.end()
+      await events.once(ssh, 'end')
+    }
+  }
+
   const result = {
     ssh,
-    end: async () => {
-      if (!ended) {
-        ssh.end()
-        await events.once(ssh, 'end')
-      }
-    },
+    end,
+    [Symbol.asyncDispose]: end,
     execHello: () => exec<HelloResponse>('hello'),
     execTunnelUrl: <T extends string>(tunnels: T[]) => exec<Record<T, string>>(`tunnel-url ${tunnels.join(' ')}`),
   }

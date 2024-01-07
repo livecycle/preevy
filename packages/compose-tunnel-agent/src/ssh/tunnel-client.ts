@@ -31,10 +31,12 @@ export const sshClient = async ({
   defaultAccess: 'private' | 'public'
   globalInjects: ScriptInjection[]
 }) => {
-  const { ssh, execHello, end } = await baseSshClient({
+  const baseClient = await baseSshClient({
     log,
     connectionConfig,
   })
+
+  const { ssh, execHello } = baseClient
 
   ssh.on('error', err => {
     log.error('ssh client error: %j', inspect(err))
@@ -166,7 +168,7 @@ export const sshClient = async ({
         state.emit(stateValue)
       }
     }),
-    end,
     ssh,
+    [Symbol.asyncDispose]: () => baseClient[Symbol.asyncDispose](),
   }
 }

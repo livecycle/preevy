@@ -1,21 +1,9 @@
 import fs from 'fs'
-import path from 'path'
+import yaml from 'yaml'
 
-const readDir = async (dir: string) => {
-  try {
-    return ((await fs.promises.readdir(dir, { withFileTypes: true })) ?? [])
-      .filter(d => d.isFile()).map(f => f.name)
-  } catch (e) {
-    if ((e as { code: string }).code === 'ENOENT') {
-      return []
-    }
-    throw e
-  }
-}
+const isYaml = (filename: string) => /\.ya?ml$/.test(filename)
 
-export const readAllFiles = async (dir: string) => {
-  const files = await readDir(dir)
-  return await Promise.all(
-    files.map(file => fs.promises.readFile(path.join(dir, file), { encoding: 'utf8' }))
-  )
+export const readJsonOrYaml = async (filename: string) => {
+  const s = await fs.promises.readFile(filename, 'utf-8')
+  return isYaml(filename) ? yaml.parse(s) : JSON.parse(s)
 }

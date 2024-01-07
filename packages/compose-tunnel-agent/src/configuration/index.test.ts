@@ -1,15 +1,16 @@
 import fs from 'fs'
 import yaml from 'yaml'
-import { describe, it, expect, beforeEach, afterEach, test, jest, beforeAll, afterAll } from '@jest/globals'
+import { describe, it, expect, beforeEach, afterEach, test, beforeAll, afterAll } from '@jest/globals'
 import path from 'path'
 import { rimraf } from 'rimraf'
-import { PartialConfig } from './schema.js'
-import { ParseResult, mergedConfig } from './static.js'
+import { Config, ConfigParseResult, mergedConfig } from './index.js'
 
-const setupEnv = (env: Record<string, string | undefined>) => {
+type Env = Record<string, string | undefined>
+const setupEnv = (envOrEnvFactory: Env | (() => Env | Promise<Env>)) => {
   const varsToDelete: string[] = []
   const oldEnv: Record<string, string | undefined> = {}
-  beforeEach(() => {
+  beforeEach(async () => {
+    const env = typeof envOrEnvFactory === 'function' ? await envOrEnvFactory() : envOrEnvFactory
     Object.entries(env).forEach(([key, value]) => {
       if (key in process.env) {
         oldEnv[key] = process.env[key]
@@ -48,7 +49,7 @@ describe('static configuration', () => {
   test('no args', async () => {
     const result = await mergedConfig('')
     expect(result).toHaveProperty('error')
-    expect((result as { output: string }).output).toContain('Missing required arguments')
+    expect((result as { output: string }).output).toContain('Missing required argument')
   })
 
   test('--help', async () => {
@@ -64,56 +65,47 @@ describe('static configuration', () => {
   })
 
   test('bare essentials', async () => {
-    const result = await mergedConfig('--ssh-url ssh://host --env-id my-env-id --ssh-private-key "BEGIN "')
+    const result = await mergedConfig('--env-id my-env-id')
     expect(result).not.toHaveProperty('error')
     expect(result).toHaveProperty('result')
-    expect((result as { result: PartialConfig }).result).toMatchObject({
-      sshUrl: {
-        hostname: 'host',
-        isTls: false,
-        port: 22,
-      },
+    expect((result as { result: Config }).result).toMatchObject({
+      server: 'ssh+tls://livecycle.run',
       envId: 'my-env-id',
-      sshPrivateKey: 'BEGIN ',
     })
   })
 
   describe('bare essentials from env', () => {
     setupEnv({
-      CTA_SSH_URL: 'ssh://host-from-env',
+      CTA_SERVER: 'ssh://host-from-env',
       CTA_ENV_ID: 'my-env-id',
-      CTA_SSH_PRIVATE_KEY: 'BEGIN ',
+      CTA_PRIVATE_KEY: 'BEGIN ',
     })
     test('from env', async () => {
-      const result = await mergedConfig('--ssh-url ssh://host')
+      const result = await mergedConfig('')
       expect(result).not.toHaveProperty('error')
       expect(result).toHaveProperty('result')
-      expect((result as { result: PartialConfig }).result).toMatchObject({
-        sshUrl: {
-          hostname: 'host',
-          isTls: false,
-          port: 22,
-        },
+      expect((result as { result: Config }).result).toMatchObject({
+        server: 'ssh://host-from-env',
         envId: 'my-env-id',
-        sshPrivateKey: 'BEGIN ',
+        privateKey: 'BEGIN ',
       })
     })
   })
 
   test('not enough arguments', async () => {
-    const result = await mergedConfig('--env-id my-env-id --ssh-private-key "BEGIN "')
+    const result = await mergedConfig('')
     expect(result).toHaveProperty('error')
     expect((result as { error: Error }).error).toBeDefined()
-    expect((result as { output: string }).output).toContain('Missing required argument: ssh-url')
+    expect((result as { output: string }).output).toContain('Missing required argument: env-id')
     expect((result as { output: string }).output).toContain('--version')
   })
 
   describe('global injects arg', () => {
     test('single', async () => {
-      const config = await mergedConfig('--ssh-url ssh://host --env-id my-env-id --ssh-private-key "BEGIN " --global-injects.widget.src http://my-widget/widget')
-      expect(config).not.toHaveProperty('error')
-      expect(config).toHaveProperty('result')
-      expect((config as { result: PartialConfig }).result).toMatchObject({
+      const pr = await mergedConfig('--env-id my-env-id --global-injects.widget.src http://my-widget/widget')
+      expect(pr).not.toHaveProperty('error')
+      expect(pr).toHaveProperty('result')
+      expect((pr as { result: Config }).result).toMatchObject({
         globalInjects: [
           {
             src: 'http://my-widget/widget',
@@ -123,10 +115,10 @@ describe('static configuration', () => {
     })
 
     test('multiple', async () => {
-      const result = await mergedConfig('--ssh-url ssh://host --env-id my-env-id --ssh-private-key "BEGIN " --global-injects.widget.src http://my-widget/widget --global-injects.2.src http://my-widget/widget-2 --global-injects.2.async true')
-      expect(result).not.toHaveProperty('error')
-      expect(result).toHaveProperty('result')
-      expect((result as { result: PartialConfig }).result).toMatchObject({
+      const pr = await mergedConfig('--env-id my-env-id --global-injects.widget.src http://my-widget/widget --global-injects.2.src http://my-widget/widget-2 --global-injects.2.async true')
+      expect(pr).not.toHaveProperty('error')
+      expect(pr).toHaveProperty('result')
+      expect((pr as { result: Config }).result).toMatchObject({
         globalInjects: expect.arrayContaining([
           {
             src: 'http://my-widget/widget',
@@ -146,17 +138,17 @@ describe('static configuration', () => {
         CTA_GLOBAL_INJECTS__WIDGET2__PORT: '3000',
       })
 
-      let config: ParseResult<PartialConfig>
+      let pr: ConfigParseResult
       beforeEach(async () => {
-        config = await mergedConfig('--ssh-url ssh://host --env-id my-env-id --ssh-private-key "BEGIN " --global-injects.widget.src http://my-widget/widget')
+        pr = await mergedConfig('--env-id my-env-id --global-injects.widget.src http://my-widget/widget')
       })
 
       it('should succeed', () => {
-        expect(config).not.toHaveProperty('error')
+        expect(pr).not.toHaveProperty('error')
       })
 
       it('should parse correctly', () => {
-        expect((config as { result: PartialConfig }).result).toMatchObject({
+        expect((pr as { result: Config }).result).toMatchObject({
           globalInjects: expect.arrayContaining([
             {
               src: 'http://my-widget/widget',
@@ -172,9 +164,9 @@ describe('static configuration', () => {
     })
 
     describe('from config file', () => {
-      let config: ParseResult<PartialConfig>
+      let pr: ConfigParseResult
       beforeEach(async () => {
-        const configFile = tempFile(JSON.stringify({
+        const configFile = await tempFile(JSON.stringify({
           globalInjects: {
             widget2: {
               src: 'http://my-widget/widget-2',
@@ -184,15 +176,15 @@ describe('static configuration', () => {
           },
         }))
 
-        config = await mergedConfig(`--ssh-url ssh://host --env-id my-env-id --ssh-private-key "BEGIN " --global-injects.widget.src http://my-widget/widget --config ${configFile}`)
+        pr = await mergedConfig(`--env-id my-env-id --global-injects.widget.src http://my-widget/widget --config ${configFile}`)
       })
 
       it('should succeed', () => {
-        expect(config).not.toHaveProperty('error')
+        expect(pr).not.toHaveProperty('error')
       })
 
       it('should parse correctly', () => {
-        expect((config as { result: PartialConfig }).result).toMatchObject({
+        expect((pr as { result: Config }).result).toMatchObject({
           globalInjects: expect.arrayContaining([
             {
               src: 'http://my-widget/widget',
@@ -214,9 +206,9 @@ describe('static configuration', () => {
         CTA_GLOBAL_INJECTS__WIDGET3__PORT: '3000',
       })
 
-      let config: ParseResult<PartialConfig>
+      let pr: ConfigParseResult
       beforeEach(async () => {
-        const configFile = tempFile(JSON.stringify({
+        const configFile = await tempFile(JSON.stringify({
           globalInjects: {
             widget2: {
               src: 'http://my-widget/widget-2',
@@ -224,15 +216,15 @@ describe('static configuration', () => {
           },
         }))
 
-        config = await mergedConfig(`--ssh-url ssh://host --env-id my-env-id --ssh-private-key "BEGIN " --global-injects.widget.src http://my-widget/widget --config ${configFile}`)
+        pr = await mergedConfig(`--env-id my-env-id --global-injects.widget.src http://my-widget/widget --config ${configFile}`)
       })
 
       it('should succeed', () => {
-        expect(config).not.toHaveProperty('error')
+        expect(pr).not.toHaveProperty('error')
       })
 
       it('should parse correctly', () => {
-        expect((config as { result: PartialConfig }).result).toMatchObject({
+        expect((pr as { result: Config }).result).toMatchObject({
           globalInjects: expect.arrayContaining([
             {
               src: 'http://my-widget/widget',
@@ -259,9 +251,9 @@ describe('static configuration', () => {
             CTA_GLOBAL_INJECTS__WIDGET3__PORT: '3000',
           })
 
-          let config: ParseResult<PartialConfig>
+          let pr: ConfigParseResult
           beforeEach(async () => {
-            const configFile = tempFile(JSON.stringify({
+            const configFile = await tempFile(JSON.stringify({
               globalInjects: {
                 widget2: {
                   src: 'http://my-widget/widget-2',
@@ -269,20 +261,20 @@ describe('static configuration', () => {
               },
             }))
 
-            let argv = `--ssh-url ssh://host --env-id my-env-id --ssh-private-key "BEGIN " --global-injects.widget.src http://my-widget/widget --config ${configFile} --printConfig`
+            let argv = `--env-id my-env-id --global-injects.widget.src http://my-widget/widget --config ${configFile} --printConfig`
             if (printConfigVal) {
               argv += ` ${printConfigVal}`
             }
-            config = await mergedConfig(argv)
+            pr = await mergedConfig(argv)
           })
 
           it('should succeed', () => {
-            expect(config).not.toHaveProperty('error')
+            expect(pr).not.toHaveProperty('error')
           })
 
           it('should output json', () => {
             const parser: typeof JSON.parse = printConfigVal === 'yaml' ? yaml.parse : JSON.parse
-            const actual = parser((config as { output: string }).output)
+            const actual = parser((pr as { output: string }).output)
             expect(actual).toMatchObject({
               globalInjects: expect.arrayContaining([
                 {
@@ -305,6 +297,55 @@ describe('static configuration', () => {
       testWith()
       testWith('json')
       testWith('yaml')
+    })
+
+    describe('plugins', () => {
+      let pr: ConfigParseResult
+      beforeEach(async () => {
+        pr = await mergedConfig('--env-id my-env-id --plugin docker-compose')
+      })
+
+      it('should check required flags', () => {
+        expect(pr).toHaveProperty('error')
+        expect((pr as { output: string }).output).toContain('Missing required argument')
+      })
+    })
+
+    describe('multiple config files in a single option', () => {
+      const config1 = {
+        envId: 'my-env-id',
+        envMetadata: {
+          key3: 'value3',
+        },
+      }
+      const config2 = {
+        server: 'ssh://my-server',
+        envMetadata: {
+          ar: ['value2'],
+          key2: 'override-value',
+        },
+      }
+      setupEnv(async () => ({
+        CTA_CONFIG: `${await tempFile(JSON.stringify(config1))},${await tempFile(yaml.stringify(config2), 'yaml')}`,
+        CTA_ENV_METADATA: '{"ar": ["value1"], "key2": "value2"}',
+      }))
+      let pr: ConfigParseResult
+      beforeEach(async () => {
+        pr = await mergedConfig('')
+      })
+
+      it('should read from both config files', () => {
+        expect(pr).not.toHaveProperty('error')
+        expect((pr as { result: Config }).result).toMatchObject({
+          server: 'ssh://my-server',
+          envId: 'my-env-id',
+          envMetadata: {
+            ar: expect.arrayContaining(['value1', 'value2']),
+            key2: 'override-value',
+            key3: 'value3',
+          },
+        })
+      })
     })
   })
 })

@@ -1,6 +1,7 @@
 import * as esbuild from 'esbuild'
 
 const ESM_REQUIRE_SHIM = `
+await import('disposablestack/auto')
 await (async () => {
   const { dirname } = await import("path");
   const { fileURLToPath } = await import("url");
