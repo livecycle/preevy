@@ -1,6 +1,6 @@
 {
   "name": "@preevy/driver-kube-pod",
-  "version": "0.0.58",
+  "version": "0.0.59",
   "description": "Kubernetes single Pod driver for Preevy",
   "exports": {
     ".": "./dist/index.js"
@@ -13,12 +13,12 @@
   ],
   "license": "Apache-2.0",
   "dependencies": {
+    "@inquirer/prompts": "^3.3.0",
     "@kubernetes/client-node": "^0.18.1",
     "@oclif/core": "^3.15.1",
-    "@preevy/common": "0.0.58",
-    "@preevy/core": "0.0.58",
+    "@preevy/common": "0.0.59",
+    "@preevy/core": "0.0.59",
     "fast-safe-stringify": "^2.1.1",
-    "@inquirer/prompts": "^3.3.0",
     "is-stream": "^2.0.1",
     "iter-tools-es": "^7.5.3",
     "lodash-es": "^4.17.21",
