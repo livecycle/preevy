@@ -63,8 +63,7 @@
     "eslint-plugin-react": "^7.32.2",
     "jest": "29.7.0",
     "lint-staged": "^15.2.0",
-    "oclif": "^4.1.0",
-    "pkg": "^5.8.1",
+    "oclif": "^4.2.0",
     "shx": "^0.3.3",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
@@ -92,20 +91,19 @@
         "./dist/hooks/postrun/telemetry.js"
       ]
     },
-    "topicSeparator": " "
-  },
-  "pkg": {
-    "assets": [
-      "../*/static/**/*",
-      "../compose-tunnel-agent/out/**/*",
-      "../compose-tunnel-agent/package.json",
-      "../compose-tunnel-agent/Dockerfile",
-      "../compose-tunnel-agent/.dockerignore"
-    ],
-    "scripts": [
-      "dist/commands/**/*.js",
-      "dist/hooks/**/*.js"
-    ]
+    "topicSeparator": " ",
+    "update": {
+      "node": {
+        "version": "18.19.0",
+        "options": [
+          "--no-warnings=ExperimentalWarning",
+          "--enable-source-maps"
+        ]
+      },
+      "s3": {
+        "bucket": "releases.preevy.dev"
+      }
+    }
   },
   "scripts": {
     "build": "yarn clean && tsc -b",
