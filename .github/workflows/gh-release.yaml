@@ -7,23 +7,16 @@ on:
     tags:
       - "v*.*.*"
 
-jobs:
-  build-binaries:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      id-token: write
-    env:
-      TARBALL_TARGETS: linux-x64,linux-arm64,darwin-x64,darwin-arm64,win32-x64
+env:
+  TARBALL_TARGETS: linux-x64,linux-arm64,darwin-x64,darwin-arm64,win32-x64
 
+
+jobs:
+  build-tarballs:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE }}
-          aws-region: us-west-2
 
       - uses: actions/setup-node@v4
         with:
@@ -51,9 +44,114 @@ jobs:
         working-directory: packages/cli
         run: yarn oclif pack tarballs --parallel --no-xz --targets $TARBALL_TARGETS
 
+      - name: Upload tarballs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: preevy-tarballs
+          path: ./packages/cli/dist/preevy-v*
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+
+  sign-mac-binaries:
+    runs-on: macos-latest
+    needs: build-tarballs
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: preevy-tarballs
+          path: packages/cli/dist/
+
+      - uses: apple-actions/import-codesign-certs@v2
+        with:
+          p12-file-base64: ${{ secrets.APPLE_CERT_DATA }}
+          p12-password: ${{ secrets.APPLE_CERT_PASS }}
+
+      - name: Sign mac binaries
+        working-directory: packages/cli/dist
+        env:
+          CERT_CN: ${{ vars.APPLE_CERT_CN }}
+        run: |
+          work_dir="${RUNNER_TEMP}/preevy-package"
+
+          security find-identity -v
+
+          for tarball in $(find . -name 'preevy-v*-darwin-*.tar.gz' -type f -maxdepth 1); do
+            rm -rf "${work_dir}"
+            mkdir -p "${work_dir}"
+            echo "Extracting $tarball to ${work_dir}"
+            tar -xf "$tarball" -C "${work_dir}"
+            for binfile in "${work_dir}/preevy/bin/preevy" "${work_dir}/preevy/bin/node"; do
+              codesign --remove-signature "$binfile"
+              codesign --verbose=4 --sign "$CERT_CN" --options runtime "$binfile"
+              codesign -dvv "$binfile"
+            done
+            rm "$tarball"
+            tar -czf "$tarball" -C "${work_dir}" .
+          done
+
+      - name: Upload signed tarballs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: preevy-tarballs-signed
+          path: ./packages/cli/dist/preevy-v*
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+
+  upload-tarballs-to-s3:
+    runs-on: ubuntu-latest
+    needs: sign-mac-binaries
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          aws-region: us-west-2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: yarn
+
+      - run: yarn
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: preevy-tarballs-signed
+          path: packages/cli/dist/
+
       - name: Upload tarballs
         working-directory: packages/cli
         run: yarn oclif upload tarballs --no-xz --targets $TARBALL_TARGETS
+
+  create-gh-release:
+    runs-on: ubuntu-latest
+    needs: sign-mac-binaries
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: preevy-tarballs-signed
+          path: packages/cli/dist/
 
       - name: Rename tarballs
         # if: startsWith(github.ref, 'refs/tags/')
