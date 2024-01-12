@@ -9,70 +9,69 @@ on:
 
 jobs:
   build-binaries:
-    runs-on: macos-latest
-    permissions:
-      contents: read
-      id-token: write
-    strategy:
-      matrix:
-        arch: [x64,arm64]
-        platform: [linux,macos,win]
-        exclude:
-          - platform: win
-            arch: arm64
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - uses: depot/setup-action@v1
-        with:
-          oidc: true
-
-      - name: Build using Docker (with depot)
-        run: mkdir preevy-bin && depot build --project ${{ vars.DEPOT_PROJECT_ID }} --build-arg CLI_TARGET=${{ matrix.platform }}-${{ matrix.arch }}  -f Dockerfile.cli --target=cli --output=type=tar,dest=./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar --progress=plain  --platform=linux/${{ matrix.arch == 'x64' && 'amd64' || matrix.arch }} .
-
-      - uses: apple-actions/import-codesign-certs@v2
-        if: ${{ matrix.platform == 'macos' }}
-        with:
-          p12-file-base64: ${{ secrets.APPLE_CERT_DATA }}
-          p12-password: ${{ secrets.APPLE_CERT_PASS }}
-
-      - name: Sign mac binaries
-        if: ${{ matrix.platform == 'macos' }}
-        env:
-          CERT_CN: ${{ vars.APPLE_CERT_CN }}
-        run: |
-          tar -xf ./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar
-          codesign --remove-signature ./preevy
-          security find-identity -v
-          codesign --verbose=4 --sign "$CERT_CN" ./preevy
-          tar -cf ./preevy-bin/preevy-${{ matrix.platform }}-${{ matrix.arch }}.tar ./preevy
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: preevy-bin-${{ matrix.platform }}-${{ matrix.arch }}
-          path: ./preevy-bin/**
-
-  release:
     runs-on: ubuntu-latest
-    needs: build-binaries
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      TARBALL_TARGETS: linux-x64,linux-arm64,darwin-x64,darwin-arm64,win32-x64
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - uses: depot/setup-action@v1
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
-          pattern: preevy-bin-*
-          path: ./preevy-bin
-          merge-multiple: true
+          role-to-assume: ${{ secrets.AWS_ROLE }}
+          aws-region: us-west-2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          cache: yarn
+
+      - run: yarn
+
+      - run: yarn build
+
+      - name: Find packaged node version
+        id: find_packaged_node_version
+        working-directory: packages/cli
+        run: |
+          echo "NODE_VERSION=$(jq -r .oclif.update.node.version package.json)" >> "${GITHUB_OUTPUT}"
+
+      - uses: actions/cache@v3
+        id: cache-oclif-pack
+        name: Setup cache for oclif pack
+        with:
+          path: packages/cli/tmp/cache
+          key: preevy-oclif-pack-node-v${{ steps.find_packaged_node_version.outputs.NODE_VERSION }}
+
+      - name: Pack tarballs
+        working-directory: packages/cli
+        run: yarn oclif pack tarballs --parallel --no-xz --targets $TARBALL_TARGETS
+
+      - name: Upload tarballs
+        working-directory: packages/cli
+        run: yarn oclif upload tarballs --no-xz --targets $TARBALL_TARGETS
+
+      - name: Rename tarballs to remove git sha
+        if: startsWith(github.ref, 'refs/tags/')
+        working-directory: packages/cli/dist
+        run: |
+          git_sha="$(git rev-parse --short HEAD)"
+          for f in $(find . -maxdepth 1 -type f -name 'preevy-v*'); do
+            new_name="$(echo ${f} | sed 's/-'"${git_sha}"'//')"
+            echo "Renaming ${f} to ${new_name}"
+            mv "${f}" "${new_name}"
+          done
 
       - name: Release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
           generate_release_notes: true
           draft: ${{ !startsWith(github.ref, 'refs/tags/') }}
           prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
           files: |
-            ./preevy-bin/**
+            packages/cli/dist/preevy-v*.tar.gz
