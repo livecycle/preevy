@@ -31,23 +31,25 @@ The Livecycle Docker extension embeds a standalone version of the Preevy CLI, wh
 
    Navigate to this [link](https://open.docker.com/extensions/marketplace?extensionId=livecycle/docker-extension) or search for "Livecycle" in the Docker Desktop Extensions Marketplace. Click the "Install" button to install the extension.
 
-   ![Livecycle Docker Extension](docker-ext-1.png)
+   ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/e1960b89-0a9a-4641-8748-3e775555aa65)
 
 2. **Setting up a Livecycle account**
 
    Once you have installed the extension and opened it, you will be greeted with a login screen. You can choose to log in with your GitHub account or Google account. If you previously used Livecycle and created an organization, you can log in with your Livecycle account.
 
-   ![Livecycle Docker Extension](docker-ext-2.png)
+   ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/8f996b07-797f-4633-b11e-bfcf902b17ab)
 
 3. **Getting shareable URLs**
    
    As soon as you log in, you will be able to see a list of running docker compose applications and all the services that are running in them. To get a public shareable URL for every service, turn on the toggle next to the compose application name. After that, you will be prompted to choose the access level. 
 
-   ![Livecycle Docker Extension](docker-ext-3.png)
+   ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/54044c48-d204-4320-9f9d-b885e8294df2)
 
-   You can choose between public and private access. If you choose public access, you will get a public URL that you can share with anyone. If you choose private access, you will get a private URL that requires authentication and can only be used by your organization members. Then click on the "Share" button to get the shareable URL.
+   You can choose to between Local and Cloud. The local option will create a tunnel to your local machine, and the cloud option will deploy your application to the cloud and create a tunnel to it. You can choose depending on your use case. For example, if you want the environment to stay for few amount of time, you can choose the local option. If you want the environment to stay for a longer time, and team can access it over few days, you can choose the cloud option.
 
-   ![Livecycle Docker Extension](docker-ext-4.png)
+   In this flow we will choose the local option, click [here](/) to learn more about the cloud option. After that, you will be prompted to choose the access level. You can choose between public and private access. If you choose public access, you will get a public URL that you can share with anyone. If you choose private access, you will get a private URL that requires authentication and can only be used by your organization members. Then click on the "Share" button to get the shareable URL.
+
+   ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/0cd6bd7a-2608-4253-b1b0-e0e6eca496dd)
 
 4. **Accessing the shared URL**
 
@@ -55,20 +57,20 @@ The Livecycle Docker extension embeds a standalone version of the Preevy CLI, wh
    Using these URLs, your team members will be able to see and interact with your local version of the app as long as the tunnel is open and your workstation is running.  
    Private environments require adding team members to your organization, and upon access, your team members will be prompted to authenticate.
    
-   ![Livecycle Docker Extension](docker-ext-5.png)
+   ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/cc2d9c8f-35cd-4d71-a61b-0a4041786bec)
 
 5. **Accessing Livecycle dashboard**
 
    You can also access the Livecycle dashboard to see the logs and debug your application. Click on the "Open Link" button to open the Livecycle dashboard. On the dashboard, you can see all the running applications and services.
    The Livecycle dashboard requires authentication and organization membership, similar to private environments/services 
 
-   ![Livecycle Docker Extension](docker-ext-6.png)
+   ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/c94b28d6-debc-471b-9621-82c73dbc79fe)
 
 6. **Debugging, inspecting, and logging**
 
    Once you have opened the Livecycle dashboard, you can see all the environments/apps that are running. Click on the name of the environment for which you want to see the logs, terminal, etc. You can view the logs, terminal, and container inspection for each service.
 
-   ![Livecycle Docker Extension](docker-ext-7.png)
+   ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/04e00790-beaf-4f22-bd6e-ca7f497f5aaa)
 
 That's it! You have successfully installed the Livecycle Docker Extension and shared your local development environment with your team.
 
