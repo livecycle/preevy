@@ -78,6 +78,12 @@ That's it! You have successfully installed the Livecycle Docker Extension and sh
 
 With the Livecycle Docker Extension, you can we can make your local environment accessible to your team members even when your machine is offline. This is done by putting your application to the cloud and creating a tunnel to it. This is useful when you want to share your environment with your team members for a longer period of time.
 
+### Convert to cloud
+
+1. Click on 3 dots next to the you locally running application and click on "Deploy".
+
+   ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/f1fbbb89-f424-473a-a956-cb90daaeca4e)
+
 
 ## FAQ
 
