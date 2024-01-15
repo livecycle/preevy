@@ -45,9 +45,9 @@ The Livecycle Docker extension embeds a standalone version of the Preevy CLI, wh
 
    ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/54044c48-d204-4320-9f9d-b885e8294df2)
 
-   You can choose to between Local and Cloud. The local option will create a tunnel to your local machine, and the cloud option will deploy your application to the cloud and create a tunnel to it. You can choose depending on your use case. For example, if you want the environment to stay for few amount of time, you can choose the local option. If you want the environment to stay for a longer time, and team can access it over few days, you can choose the cloud option.
+   You can choose to between Local and Cloud. The local option will create a tunnel to your local machine, and the cloud option will put your application to the cloud and create a tunnel to it. You can choose depending on your use case. For example, if you want the environment to stay for few amount of time, you can choose the local option. If you want the environment to stay for a longer time, and team can access it over few days, you can choose the cloud option.
 
-   In this flow we will choose the local option, click [here](/) to learn more about the cloud option. After that, you will be prompted to choose the access level. You can choose between public and private access. If you choose public access, you will get a public URL that you can share with anyone. If you choose private access, you will get a private URL that requires authentication and can only be used by your organization members. Then click on the "Share" button to get the shareable URL.
+   In this flow we will choose the local option, click [here](#Share-to-the-cloud) to learn more about the cloud option. After that, you will be prompted to choose the access level. You can choose between public and private access. If you choose public access, you will get a public URL that you can share with anyone. If you choose private access, you will get a private URL that requires authentication and can only be used by your organization members. Then click on the "Share" button to get the shareable URL.
 
    ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/0cd6bd7a-2608-4253-b1b0-e0e6eca496dd)
 
@@ -73,6 +73,11 @@ The Livecycle Docker extension embeds a standalone version of the Preevy CLI, wh
    ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/04e00790-beaf-4f22-bd6e-ca7f497f5aaa)
 
 That's it! You have successfully installed the Livecycle Docker Extension and shared your local development environment with your team.
+
+## Share to the cloud
+
+With the Livecycle Docker Extension, you can we can make your local environment accessible to your team members even when your machine is offline. This is done by putting your application to the cloud and creating a tunnel to it. This is useful when you want to share your environment with your team members for a longer period of time.
+
 
 ## FAQ
 
