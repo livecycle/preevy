@@ -78,15 +78,21 @@ That's it! You have successfully installed the Livecycle Docker Extension and sh
 
 With the Livecycle Docker Extension, you can we can make your local environment accessible to your team members even when your machine is offline. This is done by putting your application to the cloud and creating a tunnel to it. This is useful when you want to share your environment with your team members for a longer period of time.
 
-### Sharing your existing application to the cloud
+### Share a new environment to the cloud
+   
+   After you follow the steps in the [Getting Started](#Getting-Started) section to set up the Livecycle Docker Extension, instead of choosing the local option, choose the cloud option. After that, you will be prompted to choose to cloud provider. You can choose between AWS, GCP, and Azure. Or use Kubernetes if you have a Kubernetes cluster. Make sure you have the credentials for the cloud provider you choose and for Kubernetes you have the kubeconfig file. 
 
-1. **Convert to cloud**
+  ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/e44b5071-4014-4a6e-b59a-23cefee77908)
 
-  Click on 3 dots next to the you locally running application and click on "Deploy".
+   I will choose AWS as my cloud provider. As you can see it ask for region, Bundle id, etc. You can leave the region as default or choose the region you want. Also, some columns are optional, you can leave them blank. After that, click on the "Share" button to get the shareable URL.
 
-   ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/f1fbbb89-f424-473a-a956-cb90daaeca4e)
+   ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/2ed52d3d-87ce-48eb-b4c8-1a0b1013144d)
 
-### Sharing a new application to the cloud
+### Convert an existing local environment to the cloud
+
+    You can also convert an existing local environment to the cloud. To do that, simply click on the 3 dots next to the environment name and click on the "Deploy" option. After that, you will be prompted to choose the cloud provider. Choose the cloud provider you want and follow the steps in the [Share a new environment to the cloud](#Share-a-new-environment-to-the-cloud) section. Or it will deploy the provider you choose previously for the environment.
+
+    
 
 
 
