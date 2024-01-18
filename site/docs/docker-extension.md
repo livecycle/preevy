@@ -84,15 +84,19 @@ With the Livecycle Docker Extension, you can we can make your local environment 
 
   ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/e44b5071-4014-4a6e-b59a-23cefee77908)
 
-   I will choose AWS as my cloud provider. As you can see it ask for region, Bundle id, etc. You can leave the region as default or choose the region you want. Also, some columns are optional, you can leave them blank. After that, click on the "Share" button to get the shareable URL.
+  I will choose AWS as my cloud provider. As you can see it ask for region, Bundle id, etc. You can leave the region as default or choose the region you want. Also, some columns are optional, you can leave them blank. After that, click on the "Share" button to get the shareable URL.
 
    ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/2ed52d3d-87ce-48eb-b4c8-1a0b1013144d)
 
+  Now you can see the environment is deployed to AWS and you can access it using the shareable URL. You can also see the environment in the Livecycle dashboard just like the local environment and access terminal, logs, etc.
+
 ### Convert an existing locally shared environment to the cloud
 
-    You can also convert an existing local environment to the cloud. To do that, simply click on the 3 dots next to the environment name and click on the "Deploy" option. After that, you will be prompted to choose the cloud provider. Choose the cloud provider you want and follow the steps in the [Share a new environment to the cloud](#Share-a-new-environment-to-the-cloud) section. Or it will deploy the provider you choose previously for the environment. Like in my case, I choose AWS previously, so it will deploy to AWS.
+  You can also convert an existing local environment to the cloud. To do that, simply click on the 3 dots next to the environment name and click on the "Deploy" option. After that, you will be prompted to choose the cloud provider. Choose the cloud provider you want and follow the steps in the [Share a new environment to the cloud](#Share-a-new-environment-to-the-cloud) section. Or it will deploy the provider you choose previously for the environment. Like in my case, I choose AWS previously, so it will deploy to AWS.
 
   ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/2d9f380c-2674-4602-a7e5-7388be9a7e5d)
+
+  After that, you can see the environment is deployed to AWS and you can access it using the shareable URL. You can also see the environment in the Livecycle dashboard just like the local environment and access terminal, logs, etc.
 
 ## FAQ
 
