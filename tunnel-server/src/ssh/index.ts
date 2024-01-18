@@ -28,8 +28,8 @@ export const createSshServer = ({
 }) => {
   const onClient = (client: BaseSshClient) => {
     const { clientId, publicKey, envId, connectionId, publicKeyThumbprint, log } = client
-    sshConnectionsGauge.inc({ envId })
-    const cleanupClient = once(() => { sshConnectionsGauge.dec({ envId }) })
+    sshConnectionsGauge.inc({ clientId })
+    const cleanupClient = once(() => { sshConnectionsGauge.dec({ clientId }) })
     const tunnels = new Map<string, string>()
     client
       .on('forward', async (requestId, { path: tunnelPath, access, meta, inject }, localSocketPath, accept, reject) => {
