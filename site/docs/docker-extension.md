@@ -92,7 +92,7 @@ With the Livecycle Docker Extension, you can we can make your local environment 
 
     You can also convert an existing local environment to the cloud. To do that, simply click on the 3 dots next to the environment name and click on the "Deploy" option. After that, you will be prompted to choose the cloud provider. Choose the cloud provider you want and follow the steps in the [Share a new environment to the cloud](#Share-a-new-environment-to-the-cloud) section. Or it will deploy the provider you choose previously for the environment. Like in my case, I choose AWS previously, so it will deploy to AWS.
 
-    ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/2d9f380c-2674-4602-a7e5-7388be9a7e5d)
+  ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/2d9f380c-2674-4602-a7e5-7388be9a7e5d)
 
 ## FAQ
 
