@@ -70,6 +70,10 @@ const ensureSingleDockerHostStatefulSet = (
   }
 }
 
+const noForever: k8s.Interceptor = (opts => { opts.forever = false })
+type HasAddInterceptor = { addInterceptor(interceptor: k8s.Interceptor): void }
+const addNoForeverInterceptor = <T extends HasAddInterceptor>(o: T) => { o.addInterceptor(noForever); return o }
+
 export const kubeClient = ({
   log,
   namespace,
@@ -84,8 +88,8 @@ export const kubeClient = ({
   profileId: string
 }) => {
   const wrap = logError(log)
-  const k8sApi = kc.makeApiClient(k8s.CoreV1Api)
-  const k8sAppsApi = kc.makeApiClient(k8s.AppsV1Api)
+  const k8sApi = addNoForeverInterceptor(kc.makeApiClient(k8s.CoreV1Api))
+  const k8sAppsApi = addNoForeverInterceptor(kc.makeApiClient(k8s.AppsV1Api))
 
   const podHelpers = createPodHelpers({ k8sApi, k8sAppsApi, wrap })
   const appsV1ApiHelpers = createAppsV1ApiHelpers(k8sAppsApi, { wrap })
@@ -187,8 +191,8 @@ export const kubeCreationClient = ({
   storageSize: number
 }) => {
   const wrap = logError(log)
-  const k8sAppsApi = kc.makeApiClient(k8s.AppsV1Api)
-  const k8sObjApi = kc.makeApiClient(k8s.KubernetesObjectApi)
+  const k8sAppsApi = addNoForeverInterceptor(kc.makeApiClient(k8s.AppsV1Api))
+  const k8sObjApi = addNoForeverInterceptor(kc.makeApiClient(k8s.KubernetesObjectApi))
   const watcher = new k8s.Watch(kc)
 
   const appsV1ApiHelpers = createAppsV1ApiHelpers(k8sAppsApi, { wrap })
