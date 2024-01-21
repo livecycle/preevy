@@ -12,3 +12,16 @@ export const asyncMapValues = async <T extends object, TResult>(
     Object.entries(obj).map(async ([key, value]) => [key, await callback(value, key, obj)])
   )
 )
+
+export function timeoutPromise(ms: number): Promise<void>
+export function timeoutPromise<T>(ms: number, value: T): Promise<T>
+export function timeoutPromise<T>(ms: number, value?: T) {
+  return new Promise(resolve => { setTimeout(() => resolve(value), ms) })
+}
+
+export function withTimeout<Val, TimeoutVal = Val>(p: PromiseLike<Val>, ms: number, timeoutValue?: TimeoutVal) {
+  return Promise.race([
+    p,
+    timeoutPromise(ms, timeoutValue),
+  ])
+}

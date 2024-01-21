@@ -1,4 +1,4 @@
-import { mapValues, omit } from 'lodash-es'
+import { camelCase, mapValues, omit, omitBy } from 'lodash-es'
 import yargs, { Argv, InferredOptionTypes, Options } from 'yargs'
 import { CamelCasedProperties } from 'type-fest'
 import { mergeDeep } from '../merge.js'
@@ -18,11 +18,15 @@ export const splitCommaSeparatedStringArrays = (
 
 const parserConfiguration = { 'greedy-arrays': false } as const
 
-export const parser = <T extends OptionsObject>(options: T, config: Partial<InferredOptionTypes<T>> = {}) => yargs()
-  .parserConfiguration(parserConfiguration)
-  .strict(true)
-  .config(config)
-  .options(options)
+const parser = <T extends OptionsObject>(
+  options: T,
+  strict: boolean,
+  config: Partial<InferredOptionTypes<T>> = {},
+) => yargs()
+    .parserConfiguration(parserConfiguration)
+    .strict(strict)
+    .config(config)
+    .options(options)
 
 export type ParseResult<T> = { output: string; error: Error }
   | { output: string }
@@ -49,14 +53,16 @@ export const parse = <T>(y: Argv<T>, argv: string[] | string = []) => new Promis
 type Iot<T extends OptionsObject> = InferredOptionTypes<T>
 
 export const mergeParse = async <Opts extends OptionsObject, ExtraOpts extends OptionsObject>(
-  options: Opts,
-  envPrefix: string,
-  extractConfigFiles: (config: Partial<Iot<Opts>>) => string[],
-  extractExtraOptions: (config: Partial<Iot<Opts>>) => Partial<ExtraOpts>,
+  { options, envPrefix, extractConfigFiles, extractExtraOptions }: {
+    options: Opts
+    envPrefix: string
+    extractConfigFiles: (config: Partial<Iot<Opts>>) => string[]
+    extractExtraOptions: (config: Partial<Iot<Opts>>) => Partial<ExtraOpts>
+  },
   argv: string[] | string
 ): Promise<ParseResult<Iot<Opts & ExtraOpts>>> => {
   const partialOpts = makePartialOptionsObject(options)
-  const partialParser = (config: Partial<Iot<Opts>> = {}) => parser(partialOpts, config)
+  const partialParser = (config: Partial<Iot<Opts>> = {}) => parser(partialOpts, false, config).help(false)
 
   const parsedEnv = await parse(partialParser().env(envPrefix))
   if (!('result' in parsedEnv)) {
@@ -82,5 +88,13 @@ export const mergeParse = async <Opts extends OptionsObject, ExtraOpts extends O
   }
 
   const extra = extractExtraOptions(merged)
-  return await parse(parser({ ...options, ...extra } as Opts & ExtraOpts, merged))
+  const allOpts = { ...options, ...extra } as Opts & ExtraOpts
+  const parseResult = await parse(parser(allOpts, true, merged))
+  if (!('result' in parseResult)) {
+    return parseResult
+  }
+
+  const aliases = new Set(Object.values(allOpts).flatMap(o => o.alias ?? []).map(a => camelCase(a)))
+  const resultWithoutAliases = omitBy(parseResult.result, (_, k) => aliases.has(k)) as typeof parseResult.result
+  return { result: resultWithoutAliases }
 }

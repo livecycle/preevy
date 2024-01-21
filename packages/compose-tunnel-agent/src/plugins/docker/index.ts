@@ -2,7 +2,7 @@ import z from 'zod'
 import Dockerode from 'dockerode'
 import { inspect } from 'util'
 import { generateSchemaErrorMessage } from '@preevy/common'
-import { PluginFactory } from '../../configuration/plugins.js'
+import { Plugin, PluginFactory } from '../../plugin-definition.js'
 import { forwardsEmitter } from './forwards-emitter/index.js'
 import { containersApi } from './api/index.js'
 import { filteredClient } from './filtered-client.js'
@@ -19,18 +19,18 @@ const dockerFiltersSchema = z.object({
 const group = 'Docker plugin'
 
 export const yargsOpts = {
-  dockerSocketPath: {
+  'docker-socket-path': {
     group,
     string: true,
     default: defaultSocketPath,
     description: 'Docker socket path',
   },
-  dockerDebounceWait: {
+  'docker-debounce-wait': {
     group,
     number: true,
     default: defaultDebounceWait,
   },
-  dockerFilters: {
+  'docker-filters': {
     group,
     coerce: (o: unknown) => {
       if (typeof o !== 'object') {
@@ -44,21 +44,30 @@ export const yargsOpts = {
       return result.data
     },
   },
+  'docker-auto-forward': {
+    group,
+    description: 'Automatically forward containers based on the specified filters',
+    boolean: true,
+    default: false,
+  },
 } as const
 
-export const dockerPlugin: PluginFactory<typeof yargsOpts> = {
+export const dockerPlugin: PluginFactory<typeof yargsOpts, Plugin & { docker: Dockerode }> = {
   yargsOpts,
-  init: async ({ dockerSocketPath: socketPath, dockerDebounceWait: debounceWait, dockerFilters: filters }, { log }) => {
+  init: async (
+    { dockerSocketPath: socketPath, dockerDebounceWait: debounceWait, dockerFilters: filters, dockerAutoForward },
+    { log },
+  ) => {
     const docker = new Dockerode({ socketPath })
 
     return {
-      forwardsEmitter: ({ tunnelNameResolver }) => forwardsEmitter({
+      forwardsEmitter: dockerAutoForward ? ({ tunnelNameResolver }) => forwardsEmitter({
         log,
         docker,
         debounceWait,
         filters,
         containerToForwards: containerToForwards({ tunnelNameResolver }),
-      }),
+      }) : undefined,
 
       fastifyPlugin: async app => await app.register(containersApi, {
         dockerModem: docker.modem,
@@ -69,6 +78,9 @@ export const dockerPlugin: PluginFactory<typeof yargsOpts> = {
       machineStatusCommands: {
         docker: runDockerMachineStatusCommand({ docker, log }),
       },
+
+      docker,
+      [Symbol.asyncDispose]: async () => undefined,
     }
   },
 }

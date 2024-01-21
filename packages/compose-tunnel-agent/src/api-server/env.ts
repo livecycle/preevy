@@ -7,7 +7,7 @@ export const env: FastifyPluginAsync<{
   machineStatus?: () => Promise<{ data: Buffer; contentType: string }>
   envMetadata?: Record<string, unknown>
 }> = async (app, { currentSshState, machineStatus, envMetadata }) => {
-  app.get('/forwards', async () => await currentSshState())
+  app.get('/state', async () => await currentSshState())
 
   if (machineStatus) {
     const limit = plimit(1)

@@ -1,8 +1,9 @@
 import { baseSshClient, HelloResponse, ScriptInjection, SshClientOpts, stateEmitter } from '@preevy/common'
 import net from 'net'
 import plimit from 'p-limit'
-import { inspect } from 'util'
+import { inspect, promisify } from 'util'
 import { EventEmitter } from 'tseep'
+import { omit } from 'lodash-es'
 import { difference } from '../maps.js'
 import { Forward } from '../forwards.js'
 
@@ -12,7 +13,7 @@ type InternalForward = Forward & {
 
 export type SshState = {
   clientId: string
-  forwards: { forward: Forward; url: string }[]
+  forwards: (Forward & { url: string })[]
 }
 
 const stringifyScriptInjection = (inject: ScriptInjection) => ({
@@ -31,10 +32,13 @@ export const sshClient = async ({
   defaultAccess: 'private' | 'public'
   globalInjects: ScriptInjection[]
 }) => {
+  const url = `${connectionConfig.isTls ? 'ssh+tls' : 'ssh'}://${connectionConfig.hostname}:${connectionConfig.port}`
+  log.info('ssh client connecting to %s', url)
   const baseClient = await baseSshClient({
     log,
     connectionConfig,
   })
+  log.info('ssh client connected to %j', url)
 
   const { ssh, execHello } = baseClient
 
@@ -82,6 +86,7 @@ export const sshClient = async ({
       if (err) {
         log.error('error creating forward %s: %j', forwardRequest, inspect(err))
         reject(err)
+        return
       }
       log.debug('created forward %j', forwardRequest)
       currentForwards.set(forwardRequest, { ...forward, sockets: new Set() })
@@ -114,19 +119,18 @@ export const sshClient = async ({
   ): SshState => ({
     clientId,
     forwards: Object.entries(tunnels).map(([forwardRequestId, url]) => ({
-      forward: currentForwards.get(forwardRequestId) as Forward,
+      ...omit<InternalForward, 'sockets'>(currentForwards.get(forwardRequestId) as InternalForward, 'sockets'),
       url,
     })),
   })
 
   const stringifyForwardRequest = (
-    { access = defaultAccess, meta, injects, externalName }: Pick<Forward, 'access' | 'meta' | 'injects' | 'externalName'>,
+    { access, meta, injects, externalName }: Pick<Forward, 'access' | 'meta' | 'injects' | 'externalName'>,
   ) => {
-    const allInjects = [...globalInjects, ...(injects ?? [])]
     const args: Record<string, string> = {
       ...(access === 'private' ? { access: 'private' } : {}),
       meta: encodedJson(meta),
-      ...allInjects.length ? { inject: encodedJson(allInjects.map(stringifyScriptInjection)) } : {},
+      ...injects?.length ? { inject: encodedJson(injects.map(stringifyScriptInjection)) } : {},
     }
     const argsStr = Object.entries(args).map(([k, v]) => `${k}=${v}`).join(';')
     return `/${externalName}#${argsStr}`
@@ -137,9 +141,16 @@ export const sshClient = async ({
   state.addOneTimeListener(() => { hasState = true })
   const limit = plimit(1)
 
+  const applyForwardDefaults = (forward: Forward) => ({
+    ...forward,
+    access: forward.access ?? (defaultAccess === 'private' ? defaultAccess : undefined),
+    injects: globalInjects.length || forward.injects?.length ? [...globalInjects, ...forward.injects ?? []] : undefined,
+  })
+
   return {
     state: () => state.current(),
-    updateForwards: async (forwards: Forward[]): Promise<void> => await limit(async () => {
+    updateForwards: async (inputForwards: Forward[]): Promise<void> => await limit(async () => {
+      const forwards = inputForwards.map(applyForwardDefaults)
       const newForwardRequests = new Map<string, Forward>(
         forwards.map(f => [stringifyForwardRequest(f), f])
       )

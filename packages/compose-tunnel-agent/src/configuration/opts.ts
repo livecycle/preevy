@@ -1,13 +1,10 @@
 import fs from 'fs'
-import { InferredOptionTypes } from 'yargs'
-import { CamelCasedProperties } from 'type-fest'
 import z from 'zod'
 import { ScriptInjection, generateSchemaErrorMessage, machineStatusCommandSchema, parseScriptInjection } from '@preevy/common'
 import { inspect } from 'util'
 import { Forward, forwardSchema } from '../forwards.js'
-import { PluginOpts, Plugins, plugins } from '../plugins.js'
 import { mergeDeep } from '../merge.js'
-import { OptionsObject, ParseResult, splitCommaSeparatedStringArrays } from './yargs-helpers.js'
+import { splitCommaSeparatedStringArrays } from './yargs-helpers.js'
 
 export const accessSchema = z.union([z.literal('private'), z.literal('public')])
 export type Access = z.infer<typeof accessSchema>
@@ -16,14 +13,14 @@ export const logLevelSchema = z.union([z.literal('debug'), z.literal('info'), z.
 const tunnelServerGroup = 'Tunnel server connection'
 const logGroup = 'Logging'
 
-export const opts = {
+export const opts = <PluginNames extends string[] = string[]>(pluginNames: PluginNames) => ({
   config: {
     array: true,
     string: true,
     description: 'Load config from specified YAML/JSON file',
     coerce: splitCommaSeparatedStringArrays,
   },
-  printConfig: {
+  'print-config': {
     description: 'Print config in specified format (default: JSON) and exit',
     choices: [true, 'json', 'yaml'],
   },
@@ -57,7 +54,7 @@ export const opts = {
     default: process.stderr.isTTY,
     defaultDescription: 'if stderr is a TTY',
   },
-  defaultAccess: {
+  'default-access': {
     choices: accessSchema.options.map(o => o.value),
     coerce: (v: string) => v as Access,
     default: 'public',
@@ -155,13 +152,10 @@ export const opts = {
   },
   plugin: {
     array: true,
-    choices: Object.keys(plugins),
-    coerce: (o: string[]) => splitCommaSeparatedStringArrays(o) as (keyof Plugins)[],
+    choices: pluginNames,
+    coerce: (o: string[]) => splitCommaSeparatedStringArrays(o) as PluginNames,
     default: [],
   },
-} as const
+} as const)
 
-export type Opts = typeof opts
-
-export type Config<O extends OptionsObject = PluginOpts> = CamelCasedProperties<InferredOptionTypes<Opts & O>>
-export type ConfigParseResult = ParseResult<Config>
+export type Opts = ReturnType<typeof opts>

@@ -3,7 +3,15 @@ import yaml from 'yaml'
 import { describe, it, expect, beforeEach, afterEach, test, beforeAll, afterAll } from '@jest/globals'
 import path from 'path'
 import { rimraf } from 'rimraf'
-import { Config, ConfigParseResult, mergedConfig } from './index.js'
+import { Config, ConfigParseResult, mergedConfig as mc } from './index.js'
+import { PluginOpts, pluginFactories } from '../plugins/index.js'
+import { Opts } from './opts.js'
+import { PluginFactory } from '../plugin-definition.js'
+
+const mergedConfig = (argv: string[] | string) => mc(
+  pluginFactories as unknown as Record<string, PluginFactory<Opts & PluginOpts>>,
+  argv,
+) as Promise<ConfigParseResult<PluginOpts>>
 
 type Env = Record<string, string | undefined>
 const setupEnv = (envOrEnvFactory: Env | (() => Env | Promise<Env>)) => {

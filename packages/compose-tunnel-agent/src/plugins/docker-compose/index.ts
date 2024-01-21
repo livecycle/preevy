@@ -1,6 +1,6 @@
 import fs from 'fs'
 import { omit } from 'lodash-es'
-import { PluginFactory } from '../../configuration/plugins.js'
+import { PluginFactory } from '../../plugin-definition.js'
 import { dockerPlugin as dockerPluginFactory } from '../docker/index.js'
 import { COMPOSE_PROJECT_LABEL } from './forwards-emitter/labels.js'
 import { DockerApiFilter } from '../docker/filters.js'
@@ -10,18 +10,18 @@ import { composeContainerToForwards } from './forwards-emitter/index.js'
 const group = 'Docker Compose plugin'
 
 const yargsOpts = {
-  dockerComposeProject: {
+  'docker-compose-project': {
     group,
     string: true,
     description: 'Docker Compose project name',
     demandOption: true,
   },
-  composeFile: {
+  'docker-compose-file': {
     group,
     string: true,
     description: 'Path to compose file',
   },
-  ...omit<typeof dockerPluginFactory.yargsOpts, 'dockerFilters'>(dockerPluginFactory.yargsOpts, 'dockerFilters'),
+  ...omit<typeof dockerPluginFactory.yargsOpts, 'docker-filters' | 'docker-auto-forward'>(dockerPluginFactory.yargsOpts, 'docker-filters', 'docker-auto-forward'),
 } as const
 
 export const dockerComposeFilters = (composeProject: string): DockerApiFilter => ({
@@ -30,11 +30,12 @@ export const dockerComposeFilters = (composeProject: string): DockerApiFilter =>
 
 export const dockerComposePlugin: PluginFactory<typeof yargsOpts> = {
   yargsOpts,
-  init: async ({ dockerComposeProject, composeFile, ...rest }, ctx) => {
+  init: async ({ dockerComposeProject, dockerComposeFile: composeFile, ...rest }, ctx) => {
     const filters = dockerComposeFilters(dockerComposeProject)
     const dockerPlugin = await dockerPluginFactory.init({
       ...rest,
       dockerFilters: filters,
+      dockerAutoForward: true,
     }, ctx)
 
     return {
@@ -54,10 +55,11 @@ export const dockerComposePlugin: PluginFactory<typeof yargsOpts> = {
       forwardsEmitter: ({ tunnelNameResolver }) => forwardsEmitter({
         log: ctx.log,
         debounceWait: rest.dockerDebounceWait,
-        docker: ,
+        docker: dockerPlugin.docker,
         filters,
         containerToForwards: composeContainerToForwards({ tunnelNameResolver }),
       }),
+      [Symbol.asyncDispose]: async () => undefined,
     }
   },
 }

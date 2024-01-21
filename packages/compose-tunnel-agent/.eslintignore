@@ -1,3 +1,4 @@
 /.eslintrc.cjs
 /dist
+/out
 /build.mjs

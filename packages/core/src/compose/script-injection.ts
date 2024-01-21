@@ -1,10 +1,10 @@
-import { ContainerScriptInjection, scriptInjectionsToLabels } from '@preevy/common'
+import { ScriptInjection, scriptInjectionsToLabels } from '@preevy/common'
 import { mapValues } from 'lodash-es'
 import { ComposeModel, ComposeService } from './model.js'
 
 const addScriptInjectionsToService = (
   service: ComposeService,
-  injections: Record<string, ContainerScriptInjection>,
+  injections: Record<string, ScriptInjection>,
 ): ComposeService => ({
   ...service,
   labels: {
@@ -15,5 +15,5 @@ const addScriptInjectionsToService = (
 
 export const addScriptInjectionsToServices = (
   services: ComposeModel['services'],
-  factory: (serviceName: string, serviceDef: ComposeService) => Record<string, ContainerScriptInjection> | undefined,
+  factory: (serviceName: string, serviceDef: ComposeService) => Record<string, ScriptInjection> | undefined,
 ): ComposeModel['services'] => mapValues(services, (def, name) => addScriptInjectionsToService(def, factory(name, def) ?? {}))

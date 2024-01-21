@@ -5,7 +5,7 @@ export const sshBaseConnectionConfigSchema = z.object({
   hostname: z.string(),
   port: z.number(),
   username: z.string(),
-  clientPrivateKey: z.string(),
+  clientPrivateKey: z.union([z.string(), z.instanceof(Buffer)]),
   insecureSkipVerify: z.boolean().default(false),
   knownServerPublicKeys: z.array(z.union([z.string(), z.instanceof(Buffer)])).default([]),
 })

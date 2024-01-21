@@ -1,5 +1,5 @@
-export const aggregator = <T extends {}>(extractKey: (o: T) => PropertyKey) => {
-  const sourcesToObjects = new Map<PropertyKey | symbol, T[]>()
+export const sourceAggregator = <T extends {}>(extractKey: (o: T) => PropertyKey) => {
+  const sourcesToObjects = new Map<PropertyKey, T[]>()
   return (source: PropertyKey, objects: T[]): T[] => {
     sourcesToObjects.set(source, objects)
     const allObjects = [...sourcesToObjects.values()]
