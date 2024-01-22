@@ -87,48 +87,32 @@ const machineFromVm = (
   }
 }
 
+const listMachines = ({ client: cl }: { client: Client }) => asyncMap(
+  rg => cl.getInstanceByRg(rg.name as string).then(vm => {
+    if (vm) {
+      return machineFromVm(vm)
+    }
+    return {
+      type: machineResourceType,
+      providerId: rg.name as string,
+      envId: rg.tags?.[AzureCustomTags.ENV_ID] as string,
+      error: 'VM creation is incomplete',
+    }
+  }),
+  cl.listResourceGroups()
+)
+
 const machineDriver = (
   { store, client: cl }: DriverContext,
-): MachineDriver<SshMachine, ResourceType> => {
-  const listMachines = () => asyncMap(
-    rg => cl.getInstanceByRg(rg.name as string).then(vm => {
-      if (vm) {
-        return machineFromVm(vm)
-      }
-      return {
-        type: machineResourceType,
-        providerId: rg.name as string,
-        envId: rg.tags?.[AzureCustomTags.ENV_ID] as string,
-        error: 'VM creation is incomplete',
-      }
-    }),
-    cl.listResourceGroups()
-  )
-
-  return ({
-    customizationScripts: CUSTOMIZE_BARE_MACHINE,
-    friendlyName: 'Microsoft Azure',
-    getMachine: async ({ envId }) => await cl.getInstance(envId).then(vm => machineFromVm(vm)),
-
-    listMachines,
-    listDeletableResources: listMachines,
-
-    deleteResources: async (wait, ...resources) => {
-      await Promise.all(resources.map(({ type, providerId }) => {
-        if (type === machineResourceType) {
-          return cl.deleteResourcesResourceGroup(providerId, wait)
-        }
-        throw new Error(`Unknown resource type "${type}"`)
-      }))
-    },
-
-    resourcePlurals: {},
-
-    ...sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) }),
-
-    machineStatusCommand: async () => machineStatusNodeExporterCommand,
-  })
-}
+): MachineDriver<SshMachine> => ({
+  customizationScripts: CUSTOMIZE_BARE_MACHINE,
+  friendlyName: 'Microsoft Azure',
+  getMachine: async ({ envId }) => await cl.getInstance(envId).then(vm => machineFromVm(vm)),
+  listMachines: () => listMachines({ client: cl }),
+  resourcePlurals: {},
+  ...sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) }),
+  machineStatusCommand: async () => machineStatusNodeExporterCommand,
+})
 
 const flags = {
   region: Flags.string({
@@ -143,7 +127,7 @@ const flags = {
 
 type FlagTypes = Omit<Interfaces.InferredFlags<typeof flags>, 'json'>
 
-const inquireFlags = async () => {
+const inquireFlags = async ({ log: _log }: { log: Logger }) => {
   const region = await inquirerAutoComplete<string>({
     message: flags.region.description as string,
     source: async input => REGIONS.filter(r => !input || r.includes(input.toLowerCase())).map(value => ({ value })),
@@ -191,7 +175,7 @@ type MachineCreationContext = DriverContext & {
 
 const machineCreationDriver = (
   { client: cl, vmSize, store, log, debug, metadata }: MachineCreationContext,
-): MachineCreationDriver<SshMachine> => {
+): MachineCreationDriver<SshMachine, ResourceType> => {
   const ssh = sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) })
 
   return {
@@ -241,13 +225,21 @@ const machineCreationDriver = (
           : [],
       })
     },
+    listDeletableResources: () => listMachines({ client: cl }),
+    deleteResources: async (wait, ...resources) => {
+      await Promise.all(resources.map(({ type, providerId }) => {
+        if (type === machineResourceType) {
+          return cl.deleteResourcesResourceGroup(providerId, wait)
+        }
+        throw new Error(`Unknown resource type "${type}"`)
+      }))
+    },
   }
 }
 
 const factory: MachineDriverFactory<
   Interfaces.InferredFlags<typeof flags>,
-  SshMachine,
-  ResourceType
+  SshMachine
 > = ({ flags: f, profile: { id: profileId }, store, log, debug }) => machineDriver({
   client: createClient({
     ...contextFromFlags(f),
@@ -267,7 +259,8 @@ const machineCreationContextFromFlags = (
 
 const machineCreationFactory: MachineCreationDriverFactory<
   MachineCreationFlagTypes,
-  SshMachine
+  SshMachine,
+  ResourceType
 > = ({ flags: f, profile: { id: profileId }, store, log, debug }) => {
   const c = machineCreationContextFromFlags(f)
   return machineCreationDriver({

@@ -1,10 +1,10 @@
 import { Flags } from '@oclif/core'
 import { findEnvId, machineResourceType, withSpinner } from '@preevy/core'
-import DriverCommand from '../driver-command.js'
+import MachineCreationDriverCommand from '../machine-creation-driver-command.js'
 import { envIdFlags } from '../common-flags.js'
 
 // eslint-disable-next-line no-use-before-define
-export default class Down extends DriverCommand<typeof Down> {
+export default class Down extends MachineCreationDriverCommand<typeof Down> {
   static description = 'Delete preview environments'
 
   static flags = {
@@ -28,6 +28,7 @@ export default class Down extends DriverCommand<typeof Down> {
     const log = this.logger
     const { flags } = this
     const driver = await this.driver()
+    const machineCreationDriver = await this.machineCreationDriver()
 
     const envId = await findEnvId({
       log,
@@ -45,7 +46,10 @@ export default class Down extends DriverCommand<typeof Down> {
     }
 
     await withSpinner(async () => {
-      await driver.deleteResources(flags.wait, { type: machineResourceType, providerId: machine.providerId })
+      await machineCreationDriver.deleteResources(
+        flags.wait,
+        { type: machineResourceType, providerId: machine.providerId },
+      )
     }, { opPrefix: `Deleting ${driver.friendlyName} machine ${machine.providerId} for environment ${envId}` })
 
     await Promise.all(

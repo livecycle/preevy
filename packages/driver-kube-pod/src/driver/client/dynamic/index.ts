@@ -1,5 +1,5 @@
 import * as k8s from '@kubernetes/client-node'
-import { HasRequired, ensureDefined } from '@preevy/core'
+import { ensureDefined } from '@preevy/core'
 import { asyncConcat, asyncMap } from 'iter-tools-es'
 import { defaults } from 'lodash-es'
 import { paginationIterator } from '../pagination.js'
@@ -7,11 +7,17 @@ import apply from './apply.js'
 import waiter from './wait.js'
 import { FuncWrapper } from '../log-error.js'
 
+export type KubernetesType = {
+  apiVersion: string
+  kind: string
+  namespace?: string
+}
+
 const dynamicApi = (
   { client, wrap }: { client: k8s.KubernetesObjectApi; wrap: FuncWrapper },
 ) => {
   const list = (
-    types: { apiVersion: string; kind: string; namespace?: string }[],
+    types: KubernetesType[],
     { fieldSelector, labelSelector }: {
       fieldSelector?: string
       labelSelector?: string
@@ -36,21 +42,19 @@ const dynamicApi = (
     ),
   )))
 
-  const gatherTypes = (...specs: k8s.KubernetesObject[]) => {
+  const uniqueTypes = (types: KubernetesType[]): KubernetesType[] => [
+    ...new Map(types.map(t => [[t.apiVersion, t.kind, t.namespace].join(':'), t])).values(),
+  ]
+
+  const gatherTypes = (...specs: k8s.KubernetesObject[]): KubernetesType[] => {
     const docs = specs.map(s => ensureDefined(s, 'apiVersion', 'kind', 'metadata'))
-    type Doc = HasRequired<k8s.KubernetesObject, 'apiVersion' | 'kind' | 'metadata'>
-    const key = ({ apiVersion, kind, metadata: { namespace } }: Doc) => [apiVersion, kind, namespace].join(':')
-    const uniques = new Map(docs.map(d => [key(d), {
-      apiVersion: d.apiVersion,
-      kind: d.kind,
-      namespace: d.metadata.namespace,
-    }])).values()
-    return [...uniques]
+    return uniqueTypes(docs.map(({ apiVersion, kind, metadata: { namespace } }) => ({ apiVersion, kind, namespace })))
   }
 
   return {
     list,
     gatherTypes,
+    uniqueTypes,
     apply: apply({ client, wrap }),
     waiter: (watcher: k8s.Watch) => waiter({ watcher, client }),
   }
