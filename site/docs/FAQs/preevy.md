@@ -4,7 +4,7 @@ sidebar_label: Preevy CLI
 sidebar_position: 15
 ---
 
-## Common questions about using the Preevy CLI
+## General questions about using the Preevy CLI
 
 <details>
   <summary>Is the Preevy CLI free to use?</summary>
@@ -43,3 +43,23 @@ sidebar_position: 15
 
   Join the <a href="https://community.livecycle.io" target="_blank">Livecycle Community</a> on Slack to get support for Preevy CLI.
 </details>
+
+## Technical questions
+
+<details>
+  <summary>Can I expose only specific ports for a service?</summary>
+
+  By default, Preevy exposes all the public TCP ports of a service defined in the Compose file.
+
+  You can explicitly specify the ports to be exposed by defining a `preevy.expose` label on the service with the comma-separated list of port numbers to be exposed.
+
+  Labels can defined in the Compose file (`compose.yaml` or `docker-compose.yaml`) as follows:
+  ```yaml
+services:
+  my-service:
+    build: ...
+    labels:
+      preevy.expose: 8000,8001
+  ```
+</details>
+
