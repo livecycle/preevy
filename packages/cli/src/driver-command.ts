@@ -1,7 +1,8 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
 import { MachineConnection, MachineDriver, isPartialMachine, profileStore } from '@preevy/core'
-import { pickBy } from 'lodash-es'
-import { DriverFlags, DriverName, FlagType, flagsForAllDrivers, machineDrivers, removeDriverPrefix } from './drivers.js'
+import { mapValues, pickBy } from 'lodash-es'
+import { Flag } from '@oclif/core/lib/interfaces'
+import { DriverFlags, DriverName, FlagType, addDriverPrefix, flagsForAllDrivers, machineDrivers, removeDriverPrefix } from './drivers.js'
 import ProfileCommand from './profile-command.js'
 
 // eslint-disable-next-line no-use-before-define
@@ -40,18 +41,25 @@ abstract class DriverCommand<T extends typeof Command> extends ProfileCommand<T>
     driver: Name,
     type: Type
   ): Promise<DriverFlags<DriverName, Type>> {
-    const driverFlagNames = Object.keys(machineDrivers[driver][type])
-    const flagDefaults = pickBy(
-      {
-        ...await profileStore(this.store).ref.defaultDriverFlags(driver),
-        ...this.preevyConfig?.drivers?.[driver] ?? {},
-      },
-      (_v, k) => driverFlagNames.includes(k),
-    ) as DriverFlags<DriverName, Type>
-    return {
-      ...flagDefaults,
-      ...removeDriverPrefix<DriverFlags<DriverName, Type>>(driver, this.flags),
+    const driverFlags = machineDrivers[driver][type]
+    const flagDefaults = {
+      ...await profileStore(this.store).ref.defaultDriverFlags(driver),
+      ...this.preevyConfig?.drivers?.[driver] ?? {},
     }
+
+    const flagDefsWithDefaults = addDriverPrefix(driver, mapValues(
+      driverFlags,
+      (v: Flag<unknown>, k) => Object.assign(v, { default: flagDefaults[k] ?? v.default }),
+    )) as Record<string, Flag<unknown>>
+
+    const { flags: parsedFlags } = await this.reparse({ flags: flagDefsWithDefaults })
+
+    const driverFlagNamesWithPrefix = new Set(Object.keys(driverFlags).map(k => `${driver}-${k}`))
+
+    const parsedDriverFlags = pickBy(parsedFlags, (_v, k) => driverFlagNamesWithPrefix.has(k))
+
+    const result = removeDriverPrefix(driver, parsedDriverFlags) as DriverFlags<DriverName, Type>
+    return result
   }
 
   #driver: MachineDriver | undefined

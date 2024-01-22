@@ -10,33 +10,29 @@ import { Tunnel } from './tunneling/index.js'
 import { withBasicAuthCredentials } from './credentials/index.js'
 import { EnvMetadata, driverMetadataFilename } from './env-metadata.js'
 import { REMOTE_DIR_BASE } from './remote-files.js'
-import { isPacked, pkgSnapshotDir } from './pkg.js'
 import { EnvId } from './env-id.js'
 import { addScriptInjectionsToServices } from './compose/script-injection.js'
 
 const require = createRequire(import.meta.url)
 const COMPOSE_TUNNEL_AGENT_DIR = path.join(path.dirname(require.resolve('@preevy/compose-tunnel-agent')), '..')
 
-const baseDockerProxyService = () => {
-  const contextDir = isPacked() ? pkgSnapshotDir(path.join(import.meta.url, '../../compose-tunnel-agent')) : COMPOSE_TUNNEL_AGENT_DIR
-  return {
-    build: {
-      context: contextDir,
-      dockerfile: path.join(contextDir, 'Dockerfile'),
+const baseDockerProxyService = () => ({
+  build: {
+    context: COMPOSE_TUNNEL_AGENT_DIR,
+    dockerfile: path.join(COMPOSE_TUNNEL_AGENT_DIR, 'Dockerfile'),
+  },
+  ports: [
+    {
+      mode: 'ingress',
+      target: COMPOSE_TUNNEL_AGENT_PORT,
+      published: '0',
+      protocol: 'tcp',
     },
-    ports: [
-      {
-        mode: 'ingress',
-        target: COMPOSE_TUNNEL_AGENT_PORT,
-        published: '0',
-        protocol: 'tcp',
-      },
-    ],
-    labels: {
-      [COMPOSE_TUNNEL_AGENT_SERVICE_LABELS.ACCESS]: 'private',
-    },
-  } as ComposeService
-}
+  ],
+  labels: {
+    [COMPOSE_TUNNEL_AGENT_SERVICE_LABELS.ACCESS]: 'private',
+  },
+} as ComposeService)
 
 export const addBaseComposeTunnelAgentService = (
   model: ComposeModel,

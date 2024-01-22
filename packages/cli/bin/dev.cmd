@@ -1,3 +1,3 @@
 @echo off
 
-node "%~dp0\dev.js" %*
+node --enable-source-maps --no-warnings=ExperimentalWarning "%~dp0\dev.js" %*

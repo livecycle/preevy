@@ -17,7 +17,6 @@ export type MachineConnection = Disposable & {
 
 export type MachineDriver<
   Machine extends MachineBase = MachineBase,
-  ResourceType extends string = string
 > = {
   customizationScripts?: string[]
   friendlyName: string
@@ -33,8 +32,6 @@ export type MachineDriver<
   ) => Promise<{ code: number } | { signal: string }>
 
   listMachines: () => AsyncIterableIterator<Machine | PartialMachine>
-  listDeletableResources: () => AsyncIterableIterator<Resource<ResourceType>>
-  deleteResources: (wait: boolean, ...resource: Resource<string>[]) => Promise<void>
   machineStatusCommand: (machine: MachineBase) => Promise<MachineStatusCommand | undefined>
 }
 
@@ -43,7 +40,10 @@ export type MachineCreationResult<Machine extends MachineBase = MachineBase> = {
   result: Promise<{ machine: Machine; connection: MachineConnection }>
 }
 
-export type MachineCreationDriver<Machine extends MachineBase = MachineBase> = {
+export type MachineCreationDriver<
+  Machine extends MachineBase = MachineBase,
+  ResourceType extends string = string,
+> = {
   metadata: Record<string, unknown>
 
   createMachine: (args: {
@@ -54,24 +54,30 @@ export type MachineCreationDriver<Machine extends MachineBase = MachineBase> = {
   getMachineAndSpecDiff: (
     args: { envId: string },
   ) => Promise<(Machine & { specDiff: SpecDiffItem[] }) | PartialMachine | undefined>
+
+  listDeletableResources: () => AsyncIterableIterator<Resource<ResourceType>>
+  deleteResources: (wait: boolean, ...resource: Resource<string>[]) => Promise<void>
 }
 
 export type MachineDriverFactory<
   Flags,
   Machine extends MachineBase = MachineBase,
-  ResourceType extends string = string
 > = ({ flags, profile, store, log, debug }: {
   flags: Flags
   profile: Profile
   store: Store
   log: Logger
   debug: boolean
-}) => MachineDriver<Machine, ResourceType>
+}) => MachineDriver<Machine>
 
-export type MachineCreationDriverFactory<Flags, Machine extends MachineBase> = ({ flags, profile, store, log, debug }: {
+export type MachineCreationDriverFactory<
+  Flags,
+  Machine extends MachineBase,
+  ResourceType extends string = string,
+> = ({ flags, profile, store, log, debug }: {
   flags: Flags
   profile: Profile
   store: Store
   log: Logger
   debug: boolean
-}) => MachineCreationDriver<Machine>
+}) => MachineCreationDriver<Machine, ResourceType>

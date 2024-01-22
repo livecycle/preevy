@@ -14,26 +14,30 @@ metadata:
 data:
   daemon.json: |
     {
-      "tls": false
+      "tls": false,
+      "data-root": "/data/docker"
     }
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ id }}
   namespace: {{ namespace }}
   labels:
-    app: preevy-{{ id }}
     app.kubernetes.io/component: docker-host
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: preevy-{{ id }}
+      {% for k, v in labels %}
+      {{ k }}: {{ v }}
+      {% endfor %}
   template:
     metadata:
       labels:
-        app: preevy-{{ id }}
+        {% for k, v in labels %}
+        {{ k }}: {{ v }}
+        {% endfor %}
     spec:
       serviceAccountName: {{ id }}-sa
       containers:
@@ -43,15 +47,29 @@ spec:
           privileged: true
         command: ["dockerd", "--host=tcp://0.0.0.0:2375", "--host=unix:///var/run/docker.sock"]
         volumeMounts:
-        - mountPath: /etc/docker
-          name: docker-config
-
-
+        - name: docker-config
+          mountPath: /etc/docker
+        - name: data
+          mountPath: /data
       volumes:
       - name: docker-config
         configMap:
           name: {{ id }}-dc
-
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+      labels:
+        {% for k, v in labels %}
+        {{ k }}: {{ v }}
+        {% endfor %}
+    spec:
+      accessModes: ["ReadWriteOnce"]
+{% if storageClass %}
+      storageClassName: "{{ storageClass }}"
+{% endif %}
+      resources:
+        requests:
+          storage: {{ storageSize }}Gi
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role

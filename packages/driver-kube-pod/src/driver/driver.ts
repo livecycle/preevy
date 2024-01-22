@@ -1,4 +1,4 @@
-import fs from 'fs'
+import * as k8s from '@kubernetes/client-node'
 import { Flags, Interfaces } from '@oclif/core'
 import {
   MachineDriver,
@@ -10,13 +10,12 @@ import {
   Logger,
   MachineConnection,
 } from '@preevy/core'
-import { asyncMap } from 'iter-tools-es'
+import { asyncConcat, asyncMap } from 'iter-tools-es'
 import { AddressInfo } from 'net'
 import { Readable, Writable } from 'stream'
 import { orderedOutput } from '@preevy/common'
-import { DeploymentMachine, ResourceType, machineFromDeployment } from './common.js'
-import createClient, { Client, extractName, loadKubeConfig } from './client/index.js'
-import { DEFAULT_TEMPLATE, packageJson } from '../static.js'
+import { StatefulSetMachine, k8sObjectToMachine, DeploymentMachine } from './common.js'
+import { Client, extractName, loadKubeConfig, kubeClient as createClient } from './client/index.js'
 
 export type DriverContext = {
   log: Logger
@@ -28,12 +27,12 @@ const isTTY = (s: Readable | Writable) => (s as unknown as { isTTY: boolean }).i
 
 export const machineConnection = async (
   client: Client,
-  machine: DeploymentMachine,
+  machine: StatefulSetMachine,
   log: Logger,
 ): Promise<MachineConnection> => {
-  const { deployment } = machine as DeploymentMachine
-  log.debug(`Connecting to deployment "${deployment.metadata?.namespace}/${deployment.metadata?.name}"`)
-  const pod = await client.findReadyPodForDeployment(deployment)
+  const { kubernetesObject: statefulSet } = machine as StatefulSetMachine
+  log.debug(`Connecting to statefulset "${statefulSet.metadata?.namespace}/${statefulSet.metadata?.name}"`)
+  const pod = await client.findReadyPod(statefulSet)
   log.debug(`Found pod "${pod.metadata?.name}"`)
 
   return ({
@@ -59,7 +58,7 @@ export const machineConnection = async (
       const {
         localSocket,
         [Symbol.asyncDispose]: dispose,
-      } = await client.portForward(deployment, 2375, { host, port: 0 })
+      } = await client.portForward(statefulSet, 2375, { host, port: 0 })
 
       return {
         address: { host, port: (localSocket as AddressInfo).port },
@@ -69,79 +68,74 @@ export const machineConnection = async (
   })
 }
 
+export const listMachines = (
+  { client }: { client: Client },
+): AsyncIterableIterator<StatefulSetMachine | DeploymentMachine> => asyncMap(
+  k8sObjectToMachine,
+  asyncConcat<k8s.V1StatefulSet | k8s.V1Deployment>(
+    client.listProfileStatefulSets(),
+    client.listProfileDeployments(),
+  ),
+)
+
 const machineDriver = (
   { client, log }: DriverContext,
-): MachineDriver<DeploymentMachine, ResourceType> => {
-  const listMachines = () => asyncMap(machineFromDeployment, client.listProfileDeployments())
+): MachineDriver<StatefulSetMachine | DeploymentMachine> => ({
+  friendlyName: 'Kubernetes single Pod',
 
-  return ({
-    friendlyName: 'Kubernetes single Pod',
+  getMachine: async ({ envId }) => {
+    const obj = await client.findEnvObject({ envId, deleted: false })
+    return obj && k8sObjectToMachine(obj)
+  },
 
-    getMachine: async ({ envId }) => {
-      const deployment = await client.findMostRecentDeployment({ envId, deleted: false })
-      return deployment && machineFromDeployment(deployment)
-    },
+  listMachines: () => listMachines({ client }),
+  resourcePlurals: {},
 
-    listMachines,
-    listDeletableResources: listMachines,
+  spawnRemoteCommand: async (machine, command, stdio) => {
+    const pod = await client.findReadyPod((machine as StatefulSetMachine | DeploymentMachine).kubernetesObject)
+    const { stdin, stdout, stderr } = expandStdioOptions(stdio)
+    const opts = {
+      pod: extractName(pod),
+      container: pod.spec?.containers[0]?.name as string,
+      command: command.length > 0 ? command : ['sh'],
+      tty: [stdin, stdout, stderr].every(isTTY),
+      stdin,
+      stdout,
+      stderr,
+    }
+    return await client.exec(opts)
+  },
 
-    deleteResources: async (wait, ...resources) => {
-      await Promise.all(resources.map(({ type, providerId }) => {
-        if (type === 'machine') {
-          return client.deleteEnv(providerId, { wait })
-        }
-        throw new Error(`Unknown resource type: "${type}"`)
-      }))
-    },
+  connect: machine => machineConnection(client, machine as StatefulSetMachine, log),
 
-    resourcePlurals: {},
+  machineStatusCommand: async machine => {
+    const pod = await client.findReadyPod((machine as StatefulSetMachine | DeploymentMachine).kubernetesObject)
+    const apiServiceAddress = await client.apiServiceClusterAddress()
+    if (!apiServiceAddress) {
+      log.warn('API service not found for cluster')
+      return undefined
+    }
+    const [apiServiceHost, apiServicePort] = apiServiceAddress
 
-    spawnRemoteCommand: async (machine, command, stdio) => {
-      const pod = await client.findReadyPodForDeployment((machine as DeploymentMachine).deployment)
-      const { stdin, stdout, stderr } = expandStdioOptions(stdio)
-      const opts = {
-        pod: extractName(pod),
-        container: pod.spec?.containers[0]?.name as string,
-        command: command.length > 0 ? command : ['sh'],
-        tty: [stdin, stdout, stderr].every(isTTY),
-        stdin,
-        stdout,
-        stderr,
-      }
-      return await client.exec(opts)
-    },
-
-    connect: machine => machineConnection(client, machine as DeploymentMachine, log),
-
-    machineStatusCommand: async machine => {
-      const pod = await client.findReadyPodForDeployment((machine as DeploymentMachine).deployment)
-      const apiServiceAddress = await client.apiServiceClusterAddress()
-      if (!apiServiceAddress) {
-        log.warn('API service not found for cluster')
-        return undefined
-      }
-      const [apiServiceHost, apiServicePort] = apiServiceAddress
-
-      return ({
-        contentType: 'application/vnd.kubectl-top-pod-containers',
-        recipe: {
-          type: 'docker',
-          command: ['top', 'pod', '--containers', '--no-headers', extractName(pod)],
-          image: 'rancher/kubectl:v1.26.7',
-          network: 'host',
-          tty: false,
-          env: {
-            KUBERNETES_SERVICE_HOST: apiServiceHost,
-            KUBERNETES_SERVICE_PORT: apiServicePort.toString(),
-          },
-          bindMounts: [
-            '/var/run/secrets/kubernetes.io/serviceaccount:/var/run/secrets/kubernetes.io/serviceaccount',
-          ],
+    return ({
+      contentType: 'application/vnd.kubectl-top-pod-containers',
+      recipe: {
+        type: 'docker',
+        command: ['top', 'pod', '--containers', '--no-headers', extractName(pod)],
+        image: 'rancher/kubectl:v1.26.7',
+        network: 'host',
+        tty: false,
+        env: {
+          KUBERNETES_SERVICE_HOST: apiServiceHost,
+          KUBERNETES_SERVICE_PORT: apiServicePort.toString(),
         },
-      })
-    },
-  })
-}
+        bindMounts: [
+          '/var/run/secrets/kubernetes.io/serviceaccount:/var/run/secrets/kubernetes.io/serviceaccount',
+        ],
+      },
+    })
+  },
+})
 
 export const flags = {
   namespace: Flags.string({
@@ -159,34 +153,28 @@ export const flags = {
     required: false,
     env: 'KUBE_CONTEXT',
   }),
-  template: Flags.string({
-    description: 'Path to custom resources template file (will use default template if not specified)',
-    required: false,
-  }),
 } as const
 
 type FlagTypes = Omit<Interfaces.InferredFlags<typeof flags>, 'json'>
 
-export const clientFromConfiguration = ({ flags: f, profileId, log }: {
-  flags: Pick<FlagTypes, 'namespace' | 'kubeconfig' | 'template' | 'context'>
+export const clientFromConfiguration = ({ flags: f, profileId, log, kc }: {
+  flags: Pick<FlagTypes, 'namespace' | 'kubeconfig' | 'context'>
   profileId: string
   log: Logger
+  kc: k8s.KubeConfig
 }) => createClient({
   log,
   namespace: f.namespace,
-  kc: loadKubeConfig(f.kubeconfig, f.context),
+  kc,
   kubeconfig: f.kubeconfig,
   profileId,
-  package: packageJson,
-  template: fs.readFileSync(f.template || DEFAULT_TEMPLATE, 'utf-8'),
 })
 
 export const factory: MachineDriverFactory<
   FlagTypes,
-  DeploymentMachine,
-  ResourceType
+  StatefulSetMachine | DeploymentMachine
 > = ({ flags: f, profile: { id: profileId }, log, debug }) => machineDriver({
   log,
   debug,
-  client: clientFromConfiguration({ log, flags: f, profileId }),
+  client: clientFromConfiguration({ log, flags: f, profileId, kc: loadKubeConfig(f) }),
 })

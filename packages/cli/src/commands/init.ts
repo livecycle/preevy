@@ -55,7 +55,7 @@ export default class Init extends BaseCommand {
 
     const driver = await chooseDriver()
     const driverStatic = machineDrivers[driver]
-    const driverFlags = await driverStatic.inquireFlags()
+    const driverFlags = await driverStatic.inquireFlags({ log: this.logger })
 
     ux.info(text.recommendation('To use Preevy in a CI flow, select a remote storage for your profile.'))
     const locationType = await chooseFsType(({ driver }))

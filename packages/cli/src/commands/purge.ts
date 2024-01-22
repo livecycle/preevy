@@ -3,7 +3,7 @@ import { Flags, ux } from '@oclif/core'
 import { asyncFilter, asyncToArray } from 'iter-tools-es'
 import { groupBy, partition } from 'lodash-es'
 import { MachineResource, isPartialMachine, machineResourceType } from '@preevy/core'
-import DriverCommand from '../driver-command.js'
+import MachineCreationDriverCommand from '../machine-creation-driver-command.js'
 import { carefulBooleanPrompt } from '../prompt.js'
 
 const isMachineResource = (r: { type: string }): r is MachineResource => r.type === machineResourceType
@@ -35,7 +35,7 @@ const confirmPurge = async (
 }
 
 // eslint-disable-next-line no-use-before-define
-export default class Purge extends DriverCommand<typeof Purge> {
+export default class Purge extends MachineCreationDriverCommand<typeof Purge> {
   static description = 'Delete all cloud provider machines and potentially other resources'
 
   static flags = {
@@ -68,6 +68,7 @@ export default class Purge extends DriverCommand<typeof Purge> {
     const { flags } = this
 
     const driver = await this.driver()
+    const creationDriver = await this.machineCreationDriver()
     const resourcePlurals: Record<string, string> = { [machineResourceType]: 'machines', ...driver.resourcePlurals }
     const driverResourceTypes = new Set(Object.keys(resourcePlurals))
 
@@ -83,7 +84,7 @@ export default class Purge extends DriverCommand<typeof Purge> {
     const allResources = await asyncToArray(
       asyncFilter(
         ({ type }) => flags.all || flags.type.includes(type),
-        driver.listDeletableResources(),
+        creationDriver.listDeletableResources(),
       ),
     )
 
@@ -106,7 +107,7 @@ export default class Purge extends DriverCommand<typeof Purge> {
       return undefined
     }
 
-    await driver.deleteResources(flags.wait, ...allResources)
+    await creationDriver.deleteResources(flags.wait, ...allResources)
 
     if (flags.json) {
       return allResources
