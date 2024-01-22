@@ -1,7 +1,10 @@
 import * as k8s from '@kubernetes/client-node'
-import { extractDefined, randomString, truncatePrefix } from '@preevy/core'
+import { ensureDefined, extractDefined, randomString, truncatePrefix } from '@preevy/core'
+import { pick } from 'lodash-es'
+import { tryParseJson } from '@preevy/common'
 import { sanitizeLabel, sanitizeLabels } from './labels.js'
 import { HasMetadata, Package } from './common.js'
+import { KubernetesType } from './dynamic/index.js'
 
 export const MAX_LABEL_LENGTH = 63
 
@@ -27,6 +30,7 @@ export const ANNOTATIONS = {
   KUBERNETES_KIND: `${PREEVY_PREFIX}/kubernetes-kind`,
   KUERBETES_API_VERSION: `${PREEVY_PREFIX}/kubernetes-api-version`,
   DEPLOYMENT_REVISION: 'deployment.kubernetes.io/revision',
+  ALL_TYPES: `${PREEVY_PREFIX}/all-types`,
 }
 
 export const markObjectAsDeleted = (
@@ -43,6 +47,27 @@ export const markObjectAsDeleted = (
     },
   },
 })
+
+export type StoredType = Pick<KubernetesType, 'apiVersion' | 'kind'>
+
+export const readAllTypesAnnotation = (
+  o: k8s.KubernetesObject,
+) => {
+  const an = o?.metadata?.annotations?.[ANNOTATIONS.ALL_TYPES]
+  return an ? tryParseJson(an) as StoredType[] : undefined
+}
+
+export const addAllTypesAnnotation = (
+  o: k8s.KubernetesObject,
+  types: StoredType[]
+): k8s.KubernetesObject => {
+  o.metadata ??= {}
+  o.metadata.annotations ??= {}
+  o.metadata.annotations[ANNOTATIONS.ALL_TYPES] = JSON.stringify(
+    types.map(t => pick<StoredType>(t, 'apiVersion', 'kind'))
+  )
+  return o
+}
 
 export const addEnvMetadata = (
   { profileId, envId, createdAt, instance, package: { name, version }, templateHash }: {
@@ -96,6 +121,7 @@ export const extractInstance = (o: HasMetadata) => extractLabel(o, 'INSTANCE')
 export const extractEnvId = (o: HasMetadata) => extractAnnotation(o, 'ENV_ID')
 export const extractName = (o: HasMetadata) => extractDefined(extractDefined(o, 'metadata'), 'name')
 export const extractNamespace = (o: HasMetadata) => extractDefined(extractDefined(o, 'metadata'), 'namespace')
+export const extractNameAndNamespace = (o: HasMetadata) => ensureDefined(extractDefined(o, 'metadata'), 'namespace', 'name')
 export const extractTemplateHash = (o: HasMetadata) => extractAnnotation(o, 'TEMPLATE_HASH')
 export const extractCreatedAt = (o: HasMetadata) => extractAnnotation(o, 'CREATED_AT')
 
@@ -126,7 +152,7 @@ export const profileSelector = ({ profileId }: { profileId: string }) => ({
   labelSelector: eqSelector(LABELS.PROFILE_ID, sanitizeLabel(profileId)),
 })
 
-export const isDockerHostDeployment = (s: k8s.KubernetesObject) => s.kind === 'Deployment'
+export const isDockerHostStatefulSet = (s: k8s.KubernetesObject) => s.kind === 'StatefulSet'
     && s.metadata?.labels?.[LABELS.COMPONENT] === DOCKER_HOST_VALUE
 
 // https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
@@ -136,7 +162,7 @@ const sanitizeName = (s: string) => s
   .replace(/^[^a-z]/, firstChar => `a${firstChar}`) // prefix with alphabetic if first char is not alphabetic
   .replace(/[^a-z0-9]$/, lastChar => `${lastChar}z`) // suffix with alphanumeric if last char is not alphanumeric
 
-const RANDOM_ID_SPARE_LENGTH = 10
+const RANDOM_ID_SPARE_LENGTH = 15 // give room for StatefulSet pod name suffix
 const MAX_NAME_LENGTH = 63
 
 export const envRandomName = (

@@ -10,11 +10,11 @@ const waiter = ({ watcher, client }: { watcher: k8s.Watch; client: k8s.Kubernete
     eventPredicate: (phase: string, apiObj: T) => boolean = () => true,
   ) => {
     const path = new URL(await urlGetter(o)).pathname
-    const { name, namespace } = ensureDefined(extractDefined(o, 'metadata'), 'name', 'namespace')
+    const { name, namespace } = ensureDefined(extractDefined(o, 'metadata'), 'name') // namespace can be undefined
     let abort: () => void
     return await new Promise<T>(resolve => {
       void watcher.watch(path, {}, (phase, apiObj: T) => {
-        const metadata = ensureDefined(extractDefined(apiObj, 'metadata'), 'name')
+        const metadata = ensureDefined(extractDefined(apiObj, 'metadata'), 'name') // namespace can be undefined
         if (
           metadata.name === name
           && metadata.namespace === namespace
