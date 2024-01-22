@@ -13,4 +13,5 @@ export const bodyOrUndefined = async <T, Response extends { body: T } = { body: 
 }
 
 export type HasMetadata = { metadata?: k8s.V1ObjectMeta }
+export type HasKind = { kind?: string }
 export type Package = { version: string; name: string }

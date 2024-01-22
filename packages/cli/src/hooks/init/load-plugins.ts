@@ -7,7 +7,7 @@ const wrappedHook: OclifHook<'init'> = async function wrappedHook(...args) {
     await initHook.call(this, ...args)
   } catch (e) {
     // eslint-disable-next-line no-console
-    console.warn(`warning: failed to init context: ${e}`)
+    console.warn(`warning: failed to init context: ${(e as Error).stack || e}`)
     telemetryEmitter().capture('plugin-init-error', { error: e })
     await telemetryEmitter().flush()
     process.exit(1)

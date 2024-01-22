@@ -19,7 +19,7 @@ $ npm install -g preevy
 $ preevy COMMAND
 running command...
 $ preevy (--version)
-preevy/0.0.59 darwin-arm64 node-v18.12.1
+preevy/0.0.60 darwin-arm64 node-v18.19.0
 $ preevy --help [COMMAND]
 USAGE
   $ preevy COMMAND
@@ -121,7 +121,7 @@ FLAG DESCRIPTIONS
     If not specified, will detect from the current Git context
 ```
 
-_See code: [src/commands/down.ts](https://github.com/livecycle/preevy/blob/v0.0.59/src/commands/down.ts)_
+_See code: [src/commands/down.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/down.ts)_
 
 ## `preevy help [COMMANDS]`
 
@@ -141,7 +141,7 @@ DESCRIPTION
   Display help for preevy.
 ```
 
-_See code: [src/commands/help.ts](https://github.com/livecycle/preevy/blob/v0.0.59/src/commands/help.ts)_
+_See code: [src/commands/help.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/help.ts)_
 
 ## `preevy init [PROFILE-ALIAS]`
 
@@ -170,7 +170,7 @@ DESCRIPTION
   Initialize or import a new profile
 ```
 
-_See code: [src/commands/init.ts](https://github.com/livecycle/preevy/blob/v0.0.59/src/commands/init.ts)_
+_See code: [src/commands/init.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/init.ts)_
 
 ## `preevy login`
 
@@ -198,7 +198,7 @@ DESCRIPTION
   Login to the Livecycle SaaS
 ```
 
-_See code: [src/commands/login.ts](https://github.com/livecycle/preevy/blob/v0.0.59/src/commands/login.ts)_
+_See code: [src/commands/login.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/login.ts)_
 
 ## `preevy logs [SERVICES]`
 
@@ -264,7 +264,7 @@ FLAG DESCRIPTIONS
     If not specified, will detect from the current Git context
 ```
 
-_See code: [src/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.59/src/commands/logs.ts)_
+_See code: [src/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/logs.ts)_
 
 ## `preevy ls`
 
@@ -326,7 +326,7 @@ DESCRIPTION
   List preview environments
 ```
 
-_See code: [src/commands/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.59/src/commands/ls.ts)_
+_See code: [src/commands/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/ls.ts)_
 
 ## `preevy profile config update`
 
@@ -391,7 +391,7 @@ DESCRIPTION
   View and update profile configuration
 ```
 
-_See code: [src/commands/profile/config/update.ts](https://github.com/livecycle/preevy/blob/v0.0.59/src/commands/profile/config/update.ts)_
+_See code: [src/commands/profile/config/update.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/profile/config/update.ts)_
 
 ## `preevy profile config view`
 
@@ -418,7 +418,7 @@ DESCRIPTION
   View profile configuration
 ```
 
-_See code: [src/commands/profile/config/view.ts](https://github.com/livecycle/preevy/blob/v0.0.59/src/commands/profile/config/view.ts)_
+_See code: [src/commands/profile/config/view.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/profile/config/view.ts)_
 
 ## `preevy profile cp`
 
@@ -451,7 +451,7 @@ DESCRIPTION
   Copy a profile
 ```
 
-_See code: [src/commands/profile/cp.ts](https://github.com/livecycle/preevy/blob/v0.0.59/src/commands/profile/cp.ts)_
+_See code: [src/commands/profile/cp.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/profile/cp.ts)_
 
 ## `preevy profile create NAME URL`
 
@@ -515,7 +515,7 @@ DESCRIPTION
   Create a new profile
 ```
 
-_See code: [src/commands/profile/create.ts](https://github.com/livecycle/preevy/blob/v0.0.59/src/commands/profile/create.ts)_
+_See code: [src/commands/profile/create.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/profile/create.ts)_
 
 ## `preevy profile current`
 
@@ -542,7 +542,7 @@ DESCRIPTION
   Display current profile in use
 ```
 
-_See code: [src/commands/profile/current.ts](https://github.com/livecycle/preevy/blob/v0.0.59/src/commands/profile/current.ts)_
+_See code: [src/commands/profile/current.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/profile/current.ts)_
 
 ## `preevy profile import LOCATION`
 
@@ -572,7 +572,7 @@ DESCRIPTION
   Import an existing profile
 ```
 
-_See code: [src/commands/profile/import.ts](https://github.com/livecycle/preevy/blob/v0.0.59/src/commands/profile/import.ts)_
+_See code: [src/commands/profile/import.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/profile/import.ts)_
 
 ## `preevy profile key [TYPE]`
 
@@ -602,7 +602,7 @@ DESCRIPTION
   Show profile key
 ```
 
-_See code: [src/commands/profile/key.ts](https://github.com/livecycle/preevy/blob/v0.0.59/src/commands/profile/key.ts)_
+_See code: [src/commands/profile/key.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/profile/key.ts)_
 
 ## `preevy profile link`
 
@@ -631,7 +631,7 @@ DESCRIPTION
   Link the profile to the logged in user's organization
 ```
 
-_See code: [src/commands/profile/link.ts](https://github.com/livecycle/preevy/blob/v0.0.59/src/commands/profile/link.ts)_
+_See code: [src/commands/profile/link.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/profile/link.ts)_
 
 ## `preevy profile ls`
 
@@ -670,7 +670,7 @@ DESCRIPTION
   Lists profiles
 ```
 
-_See code: [src/commands/profile/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.59/src/commands/profile/ls.ts)_
+_See code: [src/commands/profile/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/profile/ls.ts)_
 
 ## `preevy profile rm NAME`
 
@@ -701,7 +701,7 @@ DESCRIPTION
   Remove a profile
 ```
 
-_See code: [src/commands/profile/rm.ts](https://github.com/livecycle/preevy/blob/v0.0.59/src/commands/profile/rm.ts)_
+_See code: [src/commands/profile/rm.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/profile/rm.ts)_
 
 ## `preevy profile use NAME`
 
@@ -727,7 +727,7 @@ DESCRIPTION
   Set current profile
 ```
 
-_See code: [src/commands/profile/use.ts](https://github.com/livecycle/preevy/blob/v0.0.59/src/commands/profile/use.ts)_
+_See code: [src/commands/profile/use.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/profile/use.ts)_
 
 ## `preevy purge`
 
@@ -782,7 +782,7 @@ DESCRIPTION
   Delete all cloud provider machines and potentially other resources
 ```
 
-_See code: [src/commands/purge.ts](https://github.com/livecycle/preevy/blob/v0.0.59/src/commands/purge.ts)_
+_See code: [src/commands/purge.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/purge.ts)_
 
 ## `preevy ssh ENVID`
 
@@ -953,7 +953,7 @@ FLAG DESCRIPTIONS
     If not specified, will detect from the current Git context
 ```
 
-_See code: [src/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.59/src/commands/up.ts)_
+_See code: [src/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/up.ts)_
 
 ## `preevy urls [SERVICE] [PORT]`
 
@@ -1014,7 +1014,7 @@ FLAG DESCRIPTIONS
     If not specified, will detect from the current Git context
 ```
 
-_See code: [src/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.59/src/commands/urls.ts)_
+_See code: [src/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/urls.ts)_
 
 ## `preevy version`
 
@@ -1038,5 +1038,5 @@ DESCRIPTION
   Show Preevy version
 ```
 
-_See code: [src/commands/version.ts](https://github.com/livecycle/preevy/blob/v0.0.59/src/commands/version.ts)_
+_See code: [src/commands/version.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/version.ts)_
 <!-- commandsstop -->

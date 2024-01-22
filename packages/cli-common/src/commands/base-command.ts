@@ -3,7 +3,8 @@ import {
   LogLevel, Logger, logLevels, ComposeModel, ProcessError, telemetryEmitter,
 } from '@preevy/core'
 import { asyncReduce } from 'iter-tools-es'
-import { ParsingToken } from '@oclif/core/lib/interfaces/parser.js'
+import { ArgOutput, FlagOutput, Input, ParserOutput, ParsingToken } from '@oclif/core/lib/interfaces/parser.js'
+import { mergeWith } from 'lodash-es'
 import { commandLogger } from '../lib/log.js'
 import { composeFlags, pluginFlags } from '../lib/common-flags/index.js'
 import { PreevyConfig } from '../../../core/src/config.js'
@@ -90,9 +91,14 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
     return result
   }
 
-  public async init(): Promise<void> {
-    await super.init()
-    const { args, flags, raw } = await this.parse({
+  protected async reparse<
+    F extends FlagOutput,
+    B extends FlagOutput,
+    A extends ArgOutput>(
+    options?: Input<F, B, A>,
+    argv?: string[],
+  ): Promise<ParserOutput<F, B, A>> {
+    return await this.parse(mergeWith({
       flags: this.ctor.flags,
       baseFlags: {
         ...this.ctor.baseFlags,
@@ -100,7 +106,12 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
       },
       args: this.ctor.args,
       strict: false,
-    })
+    }, options, argv))
+  }
+
+  public async init(): Promise<void> {
+    await super.init()
+    const { args, flags, raw } = await this.reparse()
     this.args = args as Args<T>
     this.flags = flags as Flags<T>
     if (this.flags.debug) {
