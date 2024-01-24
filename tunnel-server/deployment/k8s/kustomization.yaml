@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- tunnel-server-stunnel.yaml
+- tunnel-server.yaml
+secretGenerator:
+- files:
+  - tls.crt
+  - tls.key
+  name: tunnel-server-tls
+  type: kubernetes.io/tls
+- files:
+  - ssh_host_key
+  name: tunnel-server-ssh
+  type: Opaque
+- files: [cookie_secret]
+  name: tunnel-server-cookies
+  type: Opaque
+configMapGenerator:
+- name: tunnel-server-config
+  envs: [config.env]
+- name: tunnel-server-sslh-config
+  files: [sslh.conf]
+images:
+- name: ghcr.io/livecycle/preevy/tunnel-server
+  newTag: main-5f80bc0

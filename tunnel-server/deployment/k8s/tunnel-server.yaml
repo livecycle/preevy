@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tunnel-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tunnel-server
+  template:
+    metadata:
+      labels:
+        app: tunnel-server
+    spec:
+      volumes:
+      - name: ssh
+        secret:
+          defaultMode: 400
+          secretName: tunnel-server-ssh
+      - name: sslh-config
+        configMap:
+          defaultMode: 420
+          name: tunnel-server-sslh-config
+      containers:
+      - env:
+        - name: COOKIE_SECRETS
+          valueFrom:
+            secretKeyRef:
+              name: tunnel-server-cookies
+              key: cookie_secret
+        - name: SSH_HOST_KEY_PATH
+          value: /etc/livecycle-ssh/ssh_host_key
+        - name: BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: tunnel-server-config
+              key: BASE_URL
+        - name: DEBUG
+          value: "1"
+        - name: NODE_ENV
+          value: production
+        image: ghcr.io/livecycle/preevy/tunnel-server:main
+        imagePullPolicy: IfNotPresent
+        name: tunnel-server
+        ports:
+        - containerPort: 8888
+          name: metrics
+          protocol: TCP
+        - containerPort: 2222
+          name: ssh
+          protocol: TCP
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "1"
+            ephemeral-storage: 1Gi
+            memory: 2Gi
+          requests:
+            cpu: "1"
+            ephemeral-storage: 1Gi
+            memory: 2Gi
+        securityContext:
+          capabilities:
+            drop:
+            - NET_RAW
+        volumeMounts:
+        - mountPath: /etc/livecycle-ssh
+          name: ssh
+          readOnly: true
+      - image: oorabona/sslh:v2.0-rc1
+        imagePullPolicy: IfNotPresent
+        name: sslh
+        command: [sslh-ev, --config=/etc/sslh/sslh.conf]
+        volumeMounts:
+        - mountPath: /etc/sslh
+          name: sslh-config
+          readOnly: true
+        ports:
+        - containerPort: 2443
+          name: sslh
+          protocol: TCP
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tunnel-server
+spec:
+  ports:
+  - name: sslh
+    port: 443
+    protocol: TCP
+    targetPort: 2443
+  - name: metrics
+    port: 8888
+    protocol: TCP
+    targetPort: 8888
+  selector:
+    app: tunnel-server
+  type: ClusterIP

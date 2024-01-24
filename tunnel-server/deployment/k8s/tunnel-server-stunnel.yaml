@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tunnel-server-stunnel
+  namespace: default
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: tunnel-server-stunnel
+  template:
+    metadata:
+      labels:
+        app: tunnel-server-stunnel
+    spec:
+      containers:
+      - env:
+        - name: STUNNEL_ACCEPT
+          value: 0.0.0.0:443
+        - name: STUNNEL_SERVICE
+          value: tunnel-server
+        - name: STUNNEL_CONNECT
+          value: tunnel-server:443
+        - name: STUNNEL_KEY
+          value: /etc/livecycle-ssl/tls.key
+        - name: STUNNEL_CRT
+          value: /etc/livecycle-ssl/tls.crt
+        - name: STUNNEL_DEBUG
+          value: err
+        image: dweomer/stunnel
+        imagePullPolicy: IfNotPresent
+        name: stunnel
+        ports:
+        - containerPort: 443
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            ephemeral-storage: 1Gi
+            memory: 2Gi
+          requests:
+            cpu: 500m
+            ephemeral-storage: 1Gi
+            memory: 2Gi
+        securityContext:
+          capabilities:
+            drop:
+            - NET_RAW
+        volumeMounts:
+        - mountPath: /etc/livecycle-ssl
+          name: tls-cert
+          readOnly: true
+      restartPolicy: Always
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: tls-cert
+        secret:
+          defaultMode: 420
+          secretName: tunnel-server-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tunnel-server-tls
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 443
+  selector:
+    app: tunnel-server-stunnel
+  type: LoadBalancer
