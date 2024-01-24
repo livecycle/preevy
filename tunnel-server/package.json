@@ -55,6 +55,6 @@
     "clean": "rm -rf dist tsconfig.tsbuildinfo",
     "build": "tsc --noEmit && node build.mjs",
     "dev": "DEBUG=1 yarn nodemon ./index.ts",
-    "lint": "eslint -c .eslintrc.cjs --no-eslintrc --ext .ts --cache ."
+    "lint": "eslint -c .eslintrc.cjs --no-eslintrc --ext .ts --cache . --max-warnings=0"
   }
 }
