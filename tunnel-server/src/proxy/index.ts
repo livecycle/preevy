@@ -7,13 +7,13 @@ import { KeyObject } from 'crypto'
 import stream from 'stream'
 import { ActiveTunnel, ActiveTunnelStore } from '../tunnel-store/index.js'
 import { requestsCounter } from '../metrics.js'
-import { Claims, jwtAuthenticator, AuthenticationResult, AuthError, saasIdentityProvider, cliIdentityProvider } from '../auth.js'
+import { Claims, AuthenticationResult, AuthError, Authenticator } from '../auth.js'
 import { SessionStore } from '../session.js'
 import { BadGatewayError, BadRequestError, BasicAuthUnauthorizedError, RedirectError, UnauthorizedError, errorHandler, errorUpgradeHandler, tryHandler, tryUpgradeHandler } from '../http-server-helpers.js'
 import { TunnelFinder, proxyRouter } from './router.js'
 import { proxyInjectionHandlers } from './injection/index.js'
 
-const loginRedirectUrl = (loginUrl: string) => ({ env, returnPath }: { env: string; returnPath?: string }) => {
+const loginRedirectUrl = ({ loginUrl, env, returnPath }: { loginUrl: string; env: string; returnPath?: string }) => {
   const url = new URL(loginUrl)
   url.searchParams.set('env', env)
   if (returnPath) {
@@ -27,28 +27,25 @@ const hasBasicAuthQueryParamHint = (url: string) =>
 
 export const proxy = ({
   activeTunnelStore,
-  loginUrl,
   baseHostname,
   sessionStore,
   log,
-  saasPublicKey,
-  jwtSaasIssuer,
+  authFactory,
+  loginConfig,
 }: {
   sessionStore: SessionStore<Claims>
   activeTunnelStore: ActiveTunnelStore
-  loginUrl: string
   baseHostname: string
   log: Logger
-  saasPublicKey: KeyObject
-  jwtSaasIssuer: string
+  authFactory: (client: { publicKey: KeyObject; publicKeyThumbprint: string }) => Authenticator
+  loginConfig?: {
+    loginUrl: string
+  }
 }) => {
   const theProxy = httpProxy.createProxyServer({ xfwd: true })
   const injectionHandlers = proxyInjectionHandlers({ log })
   theProxy.on('proxyRes', injectionHandlers.proxyResHandler)
   theProxy.on('proxyReq', injectionHandlers.proxyReqHandler)
-
-  const loginRedirectUrlForRequest = loginRedirectUrl(loginUrl)
-  const saasIdp = saasIdentityProvider(jwtSaasIssuer, saasPublicKey)
 
   const validatePrivateTunnelRequest = async (
     req: IncomingMessage,
@@ -56,15 +53,12 @@ export const proxy = ({
     session: ReturnType<typeof sessionStore>,
   ) => {
     if (!session.user) {
-      const redirectToLoginError = () => new RedirectError(
+      const redirectToLoginError = ({ loginUrl }: { loginUrl: string }) => new RedirectError(
         307,
-        loginRedirectUrlForRequest({ env: tunnel.hostname, returnPath: req.url }),
+        loginRedirectUrl({ loginUrl, env: tunnel.hostname, returnPath: req.url }),
       )
 
-      const authenticate = jwtAuthenticator(
-        tunnel.publicKeyThumbprint,
-        [saasIdp, cliIdentityProvider(tunnel.publicKey, tunnel.publicKeyThumbprint)]
-      )
+      const authenticate = authFactory(tunnel)
 
       let authResult: AuthenticationResult
       try {
@@ -78,15 +72,21 @@ export const proxy = ({
       }
 
       if (!authResult.isAuthenticated) {
-        throw req.url !== undefined && hasBasicAuthQueryParamHint(req.url)
-          ? new BasicAuthUnauthorizedError()
-          : redirectToLoginError()
+        if (req.url !== undefined && hasBasicAuthQueryParamHint(req.url)) {
+          throw new BasicAuthUnauthorizedError()
+        }
+
+        throw loginConfig ? redirectToLoginError(loginConfig) : new UnauthorizedError()
       }
 
       session.set(authResult.claims)
       if (authResult.login && req.method === 'GET' && !req.headers.upgrade) {
+        if (!loginConfig) {
+          log.error('Login requested for %j, but login is not configured', authResult.claims)
+          throw new UnauthorizedError()
+        }
         session.save()
-        throw redirectToLoginError()
+        throw redirectToLoginError(loginConfig)
       }
 
       if (authResult.method.type === 'header') {

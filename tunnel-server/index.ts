@@ -1,8 +1,7 @@
 import { promisify } from 'util'
-import path from 'path'
 import pino from 'pino'
 import fs from 'fs'
-import { createPublicKey } from 'crypto'
+import { KeyObject, createPublicKey } from 'crypto'
 import { app as createApp } from './src/app.js'
 import { activeTunnelStoreKey, inMemoryActiveTunnelStore } from './src/tunnel-store/index.js'
 import { getSSHKeys } from './src/ssh-keys.js'
@@ -12,7 +11,7 @@ import { tunnelsGauge, runMetricsServer, sshConnectionsGauge } from './src/metri
 import { numberFromEnv, requiredEnv } from './src/env.js'
 import { editUrl } from './src/url.js'
 import { cookieSessionStore } from './src/session.js'
-import { claimsSchema } from './src/auth.js'
+import { IdentityProvider, claimsSchema, cliIdentityProvider, jwtAuthenticator, saasIdentityProvider } from './src/auth.js'
 import { createSshServer } from './src/ssh/index.js'
 
 const log = pino.default(appLoggerFromEnv())
@@ -33,17 +32,56 @@ const BASE_URL = (() => {
   return result
 })()
 
-const SAAS_PUBLIC_KEY = process.env.SAAS_PUBLIC_KEY || fs.readFileSync(
-  path.join('/', 'etc', 'certs', 'preview-proxy', 'saas.key.pub'),
-  { encoding: 'utf8' },
-)
+log.info('base URL: %s', BASE_URL)
 
-const saasPublicKey = createPublicKey(SAAS_PUBLIC_KEY)
-const SAAS_JWT_ISSUER = process.env.SAAS_JWT_ISSUER ?? 'app.livecycle.run'
+const isNotFoundError = (e: unknown) => (e as { code?: unknown })?.code === 'ENOENT'
+const readFileSyncOrUndefined = (filename: string) => {
+  try {
+    return fs.readFileSync(filename, { encoding: 'utf8' })
+  } catch (e) {
+    if (isNotFoundError(e)) {
+      return undefined
+    }
+    throw e
+  }
+}
+
+const saasIdp = (() => {
+  const saasPublicKeyStr = process.env.SAAS_PUBLIC_KEY || readFileSyncOrUndefined('/etc/certs/preview-proxy/saas.key.pub')
+  if (!saasPublicKeyStr) {
+    return undefined
+  }
+  const publicKey = createPublicKey(saasPublicKeyStr)
+  const issuer = process.env.SAAS_JWT_ISSUER ?? 'app.livecycle.run'
+  return saasIdentityProvider(issuer, publicKey)
+})()
+
+if (saasIdp) {
+  log.info('SAAS auth will be enabled')
+} else {
+  log.info('No SAAS public key found, SAAS auth will be disabled')
+}
+
+const baseIdentityProviders: readonly IdentityProvider[] = Object.freeze(saasIdp ? [saasIdp] : [])
+
+const loginConfig = saasIdp
+  ? {
+    loginUrl: new URL('/login', editUrl(BASE_URL, { hostname: `auth.${BASE_URL.hostname}` })).toString(),
+    saasBaseUrl: requiredEnv('SAAS_BASE_URL'),
+  }
+  : undefined
+
+const authFactory = (
+  { publicKey, publicKeyThumbprint }: { publicKey: KeyObject; publicKeyThumbprint: string },
+) => jwtAuthenticator(
+  publicKeyThumbprint,
+  baseIdentityProviders.concat(cliIdentityProvider(publicKey, publicKeyThumbprint)),
+  loginConfig !== undefined,
+)
 
 const activeTunnelStore = inMemoryActiveTunnelStore({ log })
 const sessionStore = cookieSessionStore({ domain: BASE_URL.hostname, schema: claimsSchema, keys: process.env.COOKIE_SECRETS?.split(' ') })
-const loginUrl = new URL('/login', editUrl(BASE_URL, { hostname: `auth.${BASE_URL.hostname}` })).toString()
+
 const app = createApp({
   sessionStore,
   activeTunnelStore,
@@ -51,16 +89,14 @@ const app = createApp({
   proxy: proxy({
     activeTunnelStore,
     log,
-    loginUrl,
     sessionStore,
-    saasPublicKey,
-    jwtSaasIssuer: SAAS_JWT_ISSUER,
     baseHostname: BASE_URL.hostname,
+    authFactory,
+    loginConfig,
   }),
   log,
-  loginUrl,
-  jwtSaasIssuer: SAAS_JWT_ISSUER,
-  saasPublicKey,
+  authFactory,
+  loginConfig,
 })
 
 const tunnelUrl = (

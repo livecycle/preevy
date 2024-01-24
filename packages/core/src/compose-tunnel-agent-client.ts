@@ -174,7 +174,7 @@ export const queryTunnels = async ({
     const r = await fetch(
       `${composeTunnelServiceUrl}/tunnels`,
       { signal: AbortSignal.timeout(2500), headers: { Authorization: `Bearer ${credentials.password}` } }
-    )
+    ).catch(e => { throw new Error(`Failed to connect to docker proxy at ${composeTunnelServiceUrl}: ${e}`, { cause: e }) })
     if (!r.ok) {
       throw new Error(`Failed to connect to docker proxy at ${composeTunnelServiceUrl}: ${r.status}: ${r.statusText}`)
     }
