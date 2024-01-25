@@ -85,7 +85,7 @@ After following the steps in the [Getting Started](#Getting-Started) section to 
 
   ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/e44b5071-4014-4a6e-b59a-23cefee77908)
 
-  I will choose AWS as my cloud provider. As you can see it ask for region, Bundle id, etc. You can leave the region as default or choose the region you want. Also, some columns are optional, you can leave them blank. After that, click on the "Share" button to get the shareable URL.
+For this example, I will choose AWS as my cloud provider. As shown, it will ask for the region, Bundle ID, etc. You can leave the region as default or choose the region you prefer. Some fields are optional, so you can leave them blank. After that, click on the "Share" button to obtain the shareable URL.
 
    ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/2ed52d3d-87ce-48eb-b4c8-1a0b1013144d)
 
