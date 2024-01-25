@@ -91,9 +91,9 @@ With the Livecycle Docker Extension, you can we can make your local environment 
 
   Now you can see the environment is deployed to AWS and you can access it using the shareable URL. You can also see the environment in the Livecycle dashboard just like the local environment and access terminal, logs, etc.
 
-### Deploying an existing locally shared environment to the cloud
+### Deploy an existing locally shared environment to the cloud
 
-  You can also deploy an existing local environment to the cloud. To do that, simply click on the 3 dots next to the environment name and click on the "Deploy" option. After that, you will be prompted to choose the cloud provider. Choose the cloud provider you want and follow the steps in the [Share a new environment to the cloud](#Share-a-new-environment-to-the-cloud) section. Or it will deploy the provider you choose previously for the environment. Like in my case, I choose AWS previously, so it will deploy to AWS.
+  You can also deploy an existing local environment to the cloud. To do that, simply click on the 3 dots next to the environment name and click on the "Deploy" option. After that, you will be prompted to choose the cloud provider. Choose the cloud provider you want and follow the steps in the [Deploy a new shareable environment to the cloud section](#Deploy-a-new-shareable-environment-to-the-cloud) or if you don't get the prompt to choose the cloud provider, it will deploy the provider you choose previously for the environment. Like in my case, I choose AWS previously, so it will deploy to AWS.
 
   ![Livecycle Docker Extension](https://github.com/Pradumnasaraf/candy/assets/51878265/b350d3a9-4e8c-4236-a28b-88cf4a7a95c5)
 
