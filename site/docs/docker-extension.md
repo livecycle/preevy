@@ -77,7 +77,7 @@ That's it! You have successfully installed the Livecycle Docker Extension and sh
 
 ## Share to the cloud
 
-With the Livecycle Docker Extension, you can we can make your local environment accessible to your team members even when your machine is offline. This is done by putting your application to the cloud and creating a tunnel to it. This is useful when you want to share your environment with your team members for a longer period of time.
+With the Livecycle Docker Extension, you can make your local environment accessible to your team members even when your machine is offline. This is achieved by deploying your application to the cloud and creating a tunnel to it. This functionality is particularly useful when you want to share your environment with your team members for an extended period.
 
 ### Deploy a new shareable environment to the cloud
    
