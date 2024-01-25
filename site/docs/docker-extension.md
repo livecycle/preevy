@@ -81,7 +81,7 @@ With the Livecycle Docker Extension, you can make your local environment accessi
 
 ### Deploy a new shareable environment to the cloud
    
-   After you follow the steps in the [Getting Started](#Getting-Started) section to set up the Livecycle Docker Extension, instead of choosing the local option, choose the cloud option. After that, you will be prompted to choose to cloud provider. You can choose between AWS, GCP, and Azure. Or use Kubernetes if you have a Kubernetes cluster. Make sure you have the credentials for the cloud provider you choose and for Kubernetes you have the kubeconfig file. 
+After following the steps in the [Getting Started](#Getting-Started) section to set up the Livecycle Docker Extension, instead of selecting the local option, choose the cloud option. Subsequently, you will be prompted to select a cloud provider. You can choose between AWS, GCP, and Azure. Alternatively, use Kubernetes if you have a Kubernetes cluster. Ensure you have the necessary credentials for the chosen cloud provider, and for Kubernetes, make sure you have the kubeconfig file.
 
   ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/e44b5071-4014-4a6e-b59a-23cefee77908)
 
