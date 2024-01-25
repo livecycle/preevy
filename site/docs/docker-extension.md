@@ -89,7 +89,7 @@ After following the steps in the [Getting Started](#Getting-Started) section to 
 
    ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/2ed52d3d-87ce-48eb-b4c8-1a0b1013144d)
 
-  Now you can see the environment is deployed to AWS and you can access it using the shareable URL. You can also see the environment in the Livecycle dashboard just like the local environment and access terminal, logs, etc.
+Now, you can observe that the environment is successfully deployed to AWS, and you can access it using the shareable URL. Additionally, you can view the environment in the Livecycle dashboard, similar to the local environment, and access features such as the terminal, logs, etc..
 
 ### Deploy a local environment to the cloud
 
