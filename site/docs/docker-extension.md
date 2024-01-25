@@ -16,6 +16,7 @@ The Livecycle Docker extension embeds a standalone version of the Preevy CLI, wh
 - Instant sharing of running applications/services:
   - Share HTTPS links so teammates can quickly access and review your web UI and backend services at runtime.
   - Instant, secure tunneling to frontend and backend services with [public or private access](https://preevy.dev/recipes/private-services). Access to private services can be restricted to your teammates' Google or GitHub accounts.
+- Share to the cloud -  deploy your local environment to the cloud for longer-term feedback and collaboration.
 - Tools to debug your environment - log inspection, shell, and container inspection.
 - Provision remote ephemeral environments using the Preevy CLI.
 
