@@ -81,7 +81,7 @@ With the Livecycle Docker Extension, you can make your local environment accessi
 
 ### Deploy a new shareable environment to the cloud
    
-After following the steps in the [Getting Started](#Getting-Started) section to set up the Livecycle Docker Extension, instead of selecting the local option, choose the cloud option. Subsequently, you will be prompted to select a cloud provider. You can choose between AWS, GCP, and Azure. Alternatively, use Kubernetes if you have a Kubernetes cluster. Ensure you have the necessary credentials for the chosen cloud provider, and for Kubernetes, make sure you have the kubeconfig file.
+After following the steps in the [Getting Started](#getting-started) section to set up the Livecycle Docker Extension, instead of selecting the local option, choose the cloud option. Subsequently, you will be prompted to select a cloud provider. You can choose between AWS, GCP, and Azure. Alternatively, use Kubernetes if you have a Kubernetes cluster. Ensure you have the necessary credentials for the chosen cloud provider, and for Kubernetes, make sure you have the kubeconfig file.
 
   ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/e44b5071-4014-4a6e-b59a-23cefee77908)
 
@@ -93,7 +93,7 @@ Now, you can observe that the environment is successfully deployed to AWS, and y
 
 ### Deploy a local environment to the cloud
 
-  You can also deploy an existing local environment to the cloud. To do that, simply click on the 3 dots next to the environment name and click on the "Deploy" option. After that, you will be prompted to choose the cloud provider. Choose the cloud provider you want and follow the steps in the [Deploy a new shareable environment to the cloud section](#Deploy-a-new-shareable-environment-to-the-cloud) or if you don't get the prompt to choose the cloud provider, it will deploy the provider you choose previously for the environment. Like in my case, I choose AWS previously, so it will deploy to AWS.
+  You can also deploy an existing local environment to the cloud. To do that, simply click on the 3 dots next to the environment name and click on the "Deploy" option. After that, you will be prompted to choose the cloud provider. Choose the cloud provider you want and follow the steps in the [Deploy a new shareable environment to the cloud section](#deploy-a-new-shareable-environment-to-the-cloud) or if you don't get the prompt to choose the cloud provider, it will deploy the provider you choose previously for the environment. Like in my case, I choose AWS previously, so it will deploy to AWS.
 
   ![Livecycle Docker Extension](https://github.com/Pradumnasaraf/candy/assets/51878265/b350d3a9-4e8c-4236-a28b-88cf4a7a95c5)
 
