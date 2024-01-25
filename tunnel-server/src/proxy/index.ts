@@ -13,15 +13,6 @@ import { BadGatewayError, BadRequestError, BasicAuthUnauthorizedError, RedirectE
 import { TunnelFinder, proxyRouter } from './router.js'
 import { proxyInjectionHandlers } from './injection/index.js'
 
-const loginRedirectUrl = ({ loginUrl, env, returnPath }: { loginUrl: string; env: string; returnPath?: string }) => {
-  const url = new URL(loginUrl)
-  url.searchParams.set('env', env)
-  if (returnPath) {
-    url.searchParams.set('returnPath', returnPath)
-  }
-  return url.toString()
-}
-
 const hasBasicAuthQueryParamHint = (url: string) =>
   new URL(url, 'http://a').searchParams.get('_preevy_auth_hint') === 'basic'
 
@@ -31,16 +22,14 @@ export const proxy = ({
   sessionStore,
   log,
   authFactory,
-  loginConfig,
+  loginUrl,
 }: {
   sessionStore: SessionStore<Claims>
   activeTunnelStore: ActiveTunnelStore
   baseHostname: string
   log: Logger
   authFactory: (client: { publicKey: KeyObject; publicKeyThumbprint: string }) => Authenticator
-  loginConfig?: {
-    loginUrl: string
-  }
+  loginUrl: ({ env, returnPath }: { env: string; returnPath?: string }) => string
 }) => {
   const theProxy = httpProxy.createProxyServer({ xfwd: true })
   const injectionHandlers = proxyInjectionHandlers({ log })
@@ -53,9 +42,9 @@ export const proxy = ({
     session: ReturnType<typeof sessionStore>,
   ) => {
     if (!session.user) {
-      const redirectToLoginError = ({ loginUrl }: { loginUrl: string }) => new RedirectError(
+      const redirectToLoginError = () => new RedirectError(
         307,
-        loginRedirectUrl({ loginUrl, env: tunnel.hostname, returnPath: req.url }),
+        loginUrl({ env: tunnel.hostname, returnPath: req.url }),
       )
 
       const authenticate = authFactory(tunnel)
@@ -72,21 +61,15 @@ export const proxy = ({
       }
 
       if (!authResult.isAuthenticated) {
-        if (req.url !== undefined && hasBasicAuthQueryParamHint(req.url)) {
-          throw new BasicAuthUnauthorizedError()
-        }
-
-        throw loginConfig ? redirectToLoginError(loginConfig) : new UnauthorizedError()
+        throw req.url !== undefined && hasBasicAuthQueryParamHint(req.url)
+          ? new BasicAuthUnauthorizedError()
+          : redirectToLoginError()
       }
 
       session.set(authResult.claims)
       if (authResult.login && req.method === 'GET' && !req.headers.upgrade) {
-        if (!loginConfig) {
-          log.error('Login requested for %j, but login is not configured', authResult.claims)
-          throw new UnauthorizedError()
-        }
         session.save()
-        throw redirectToLoginError(loginConfig)
+        throw redirectToLoginError()
       }
 
       if (authResult.method.type === 'header') {
