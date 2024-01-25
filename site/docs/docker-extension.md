@@ -101,6 +101,8 @@ With the Livecycle Docker Extension, you can we can make your local environment 
 
   ![Livecycle Docker Extension](https://github.com/Pradumnasaraf/candy/assets/51878265/a624018b-0261-46f6-94eb-b32fe1e019f7)
 
+  If are having any issues or want to give feedback, you can join the [Livecycle Community](https://community.livecycle.io) on Slack.
+
 ## FAQ
 
 <details>
