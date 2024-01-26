@@ -16,7 +16,7 @@ import {
   extractDefined,
   PartialMachine,
 } from '@preevy/core'
-import { memoize, pick } from 'lodash-es'
+import { pick } from 'lodash-es'
 import createClient, { Client, Instance, availableRegions, defaultProjectId, instanceError, shortResourceName } from './client.js'
 import { deserializeMetadata, metadataKey } from './metadata.js'
 import { LABELS } from './labels.js'
@@ -59,34 +59,22 @@ const machineFromInstance = (
   }
 }
 
-const machineDriver = ({ store, client }: DriverContext): MachineDriver<SshMachine, ResourceType> => {
-  const listMachines = () => asyncMap(machineFromInstance, client.listInstances())
+const listMachines = ({ client }: { client: Client }) => asyncMap(machineFromInstance, client.listInstances())
 
-  return ({
-    friendlyName: 'Google Cloud',
+const machineDriver = ({ store, client }: DriverContext): MachineDriver<SshMachine> => ({
+  friendlyName: 'Google Cloud',
 
-    getMachine: async ({ envId }) => {
-      const instance = await client.findBestEnvInstance(envId)
-      return instance && machineFromInstance(instance)
-    },
+  getMachine: async ({ envId }) => {
+    const instance = await client.findBestEnvInstance(envId)
+    return instance && machineFromInstance(instance)
+  },
 
-    listMachines,
-    listDeletableResources: listMachines,
+  listMachines: () => listMachines({ client }),
 
-    deleteResources: async (wait, ...resources) => {
-      await Promise.all(resources.map(({ type, providerId }) => {
-        if (type === 'machine') {
-          return client.deleteInstance(providerId, wait)
-        }
-        throw new Error(`Unknown resource type: "${type}"`)
-      }))
-    },
-
-    resourcePlurals: {},
-    ...sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) }),
-    machineStatusCommand: async () => machineStatusNodeExporterCommand,
-  })
-}
+  resourcePlurals: {},
+  ...sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) }),
+  machineStatusCommand: async () => machineStatusNodeExporterCommand,
+})
 
 const flags = {
   'project-id': Flags.string({
@@ -109,7 +97,7 @@ const contextFromFlags = ({
   zone,
 })
 
-const inquireFlags = async () => {
+const inquireFlags = async ({ log: _log }: { log: Logger }) => {
   const project = await inquirer.input({
     default: await defaultProjectId(),
     message: flags['project-id'].description as string,
@@ -161,7 +149,7 @@ type MachineCreationDriverContext = DriverContext & {
 
 const machineCreationDriver = (
   { machineType: specifiedMachineType, store, client, log, debug, metadata }: MachineCreationDriverContext,
-): MachineCreationDriver<SshMachine> => {
+): MachineCreationDriver<SshMachine, ResourceType> => {
   const machineType = specifiedMachineType || DEFAULT_MACHINE_TYPE
   const ssh = sshDriver({ getSshKey: () => getStoredSshKey(store, SSH_KEYPAIR_ALIAS) })
 
@@ -211,13 +199,23 @@ const machineCreationDriver = (
           : [],
       }
     },
+
+    listDeletableResources: () => listMachines({ client }),
+
+    deleteResources: async (wait, ...resources) => {
+      await Promise.all(resources.map(({ type, providerId }) => {
+        if (type === 'machine') {
+          return client.deleteInstance(providerId, wait)
+        }
+        throw new Error(`Unknown resource type: "${type}"`)
+      }))
+    },
   })
 }
 
 const factory: MachineDriverFactory<
   Interfaces.InferredFlags<typeof flags>,
-  SshMachine,
-  ResourceType
+  SshMachine
 > = ({ flags: f, profile: { id: profileId }, store, log, debug }) => machineDriver({
   log,
   debug,
@@ -228,7 +226,8 @@ machineDriver.factory = factory
 
 const machineCreationFactory: MachineCreationDriverFactory<
   Interfaces.InferredFlags<typeof machineCreationFlags>,
-  SshMachine
+  SshMachine,
+  ResourceType
 > = ({ flags: f, profile: { id: profileId }, store, log, debug }) => machineCreationDriver({
   metadata: pick(f, Object.keys(machineCreationFlags)) as MachineCreationFlagTypes, // filter out non-driver flags
   log,

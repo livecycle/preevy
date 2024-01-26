@@ -53,7 +53,10 @@ const ensureBareMachine = async ({
   return await withSpinner(async spinner => {
     if (existingMachine && recreating) {
       spinner.text = 'Deleting machine'
-      await machineDriver.deleteResources(false, { type: machineResourceType, providerId: existingMachine.providerId })
+      await machineCreationDriver.deleteResources(
+        false,
+        { type: machineResourceType, providerId: existingMachine.providerId },
+      )
     }
     spinner.text = 'Checking for existing snapshot'
     const machineCreation = await machineCreationDriver.createMachine({ envId })

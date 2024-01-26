@@ -42,14 +42,14 @@ type DriverContext = {
   store: Store
 }
 
+const listMachines = ({ client }: { client: Client }) => asyncMap(machineFromInstance, client.listInstances())
+
 const machineDriver = ({
   client,
   region,
   store,
-}: DriverContext): MachineDriver<SshMachine, ResourceType> => {
+}: DriverContext): MachineDriver<SshMachine> => {
   const keyAlias = region
-
-  const listMachines = () => asyncMap(machineFromInstance, client.listInstances())
 
   return {
     friendlyName: 'AWS Lightsail',
@@ -60,39 +60,7 @@ const machineDriver = ({
       return instance && machineFromInstance(instance)
     },
 
-    listMachines,
-    listDeletableResources: () => {
-      const machines = listMachines()
-
-      const snapshots = asyncMap(
-        ({ name }) => ({ type: 'snapshot' as ResourceType, providerId: name as string }),
-        client.listInstanceSnapshots(),
-      )
-      const keyPairs = asyncMap(
-        ({ name }) => ({ type: 'keypair' as ResourceType, providerId: name as string }),
-        client.listKeyPairsByAlias(keyAlias),
-      )
-
-      return asyncConcat(machines, snapshots, keyPairs)
-    },
-
-    deleteResources: async (wait, ...resources) => {
-      await Promise.all(resources.map(({ type, providerId }) => {
-        if (type === 'snapshot') {
-          return client.deleteInstanceSnapshot({ instanceSnapshotName: providerId, wait })
-        }
-        if (type === 'keypair') {
-          return Promise.all([
-            client.deleteKeyPair(providerId, wait),
-            sshKeysStore(store).deleteKey(keyAlias),
-          ])
-        }
-        if (type === 'machine') {
-          return client.deleteInstance(providerId, wait)
-        }
-        throw new Error(`Unknown resource type "${type}"`)
-      }))
-    },
+    listMachines: () => listMachines({ client }),
 
     resourcePlurals: {
       snapshot: 'snapshots',
@@ -119,7 +87,7 @@ const contextFromFlags = ({ region }: FlagTypes): { region: string } => ({
   region: region as string,
 })
 
-const inquireFlags = async () => {
+const inquireFlags = async ({ log: _log }: { log: Logger }) => {
   const region = await inquirerAutoComplete<string>({
     default: process.env.AWS_REGION ?? 'us-east-1',
     message: flags.region.description as string,
@@ -130,7 +98,7 @@ const inquireFlags = async () => {
   return { region }
 }
 
-const factory: MachineDriverFactory<FlagTypes, SshMachine, ResourceType> = ({
+const factory: MachineDriverFactory<FlagTypes, SshMachine> = ({
   flags: f,
   profile: { id: profileId },
   store,
@@ -173,7 +141,7 @@ type MachineCreationContext = DriverContext & {
 
 const machineCreationDriver = (
   { region, client, availabilityZone, bundleId: specifiedBundleId, store, log, debug, metadata }: MachineCreationContext
-): MachineCreationDriver<SshMachine> => {
+): MachineCreationDriver<SshMachine, ResourceType> => {
   const bundleId = specifiedBundleId ?? DEFAULT_BUNDLE_ID
   const keyAlias = region
 
@@ -251,6 +219,39 @@ const machineCreationDriver = (
         wait,
       })
       return undefined
+    },
+
+    listDeletableResources: () => {
+      const machines = listMachines({ client })
+
+      const snapshots = asyncMap(
+        ({ name }) => ({ type: 'snapshot' as ResourceType, providerId: name as string }),
+        client.listInstanceSnapshots(),
+      )
+      const keyPairs = asyncMap(
+        ({ name }) => ({ type: 'keypair' as ResourceType, providerId: name as string }),
+        client.listKeyPairsByAlias(keyAlias),
+      )
+
+      return asyncConcat(machines, snapshots, keyPairs)
+    },
+
+    deleteResources: async (wait, ...resources) => {
+      await Promise.all(resources.map(({ type, providerId }) => {
+        if (type === 'snapshot') {
+          return client.deleteInstanceSnapshot({ instanceSnapshotName: providerId, wait })
+        }
+        if (type === 'keypair') {
+          return Promise.all([
+            client.deleteKeyPair(providerId, wait),
+            sshKeysStore(store).deleteKey(keyAlias),
+          ])
+        }
+        if (type === 'machine') {
+          return client.deleteInstance(providerId, wait)
+        }
+        throw new Error(`Unknown resource type "${type}"`)
+      }))
     },
   })
 }

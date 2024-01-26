@@ -28,7 +28,7 @@ export type AuthenticationResult = {
   }
   exp?: number
   claims: Claims
-} | { isAuthenticated: false }
+} | { isAuthenticated: false; reason?: string | Error }
 
 export type Authenticator = (req: IncomingMessage)=> Promise<AuthenticationResult>
 
@@ -86,7 +86,8 @@ const extractAuthorizationHeader = (req: IncomingMessage): AuthorizationHeader |
 
 export const jwtAuthenticator = (
   publicKeyThumbprint: string,
-  identityProviders: IdentityProvider[]
+  identityProviders: IdentityProvider[],
+  loginEnabled: boolean,
 ) : Authenticator => async req => {
   const authHeader = extractAuthorizationHeader(req)
   const jwt = match(authHeader)
@@ -95,7 +96,7 @@ export const jwtAuthenticator = (
     .otherwise(() => new Cookies(req, undefined as unknown as ServerResponse<IncomingMessage>).get(cookieName))
 
   if (!jwt) {
-    return { isAuthenticated: false }
+    return { isAuthenticated: false, reason: 'no jwt in request' }
   }
 
   const parsedJwt = decodeJwt(jwt)
@@ -103,7 +104,7 @@ export const jwtAuthenticator = (
 
   const idp = identityProviders.find(x => x.issuer === parsedJwt.iss)
   if (!idp) {
-    return { isAuthenticated: false }
+    return { isAuthenticated: false, reason: `Could not find identity provider for issuer "${parsedJwt.iss}"` }
   }
 
   const { publicKey, mapClaims } = idp
@@ -119,7 +120,7 @@ export const jwtAuthenticator = (
   return {
     method: { type: 'header', header: 'authorization' },
     isAuthenticated: true,
-    login: isBrowser(req) && authHeader?.scheme !== 'Bearer',
+    login: loginEnabled && isBrowser(req) && authHeader?.scheme !== 'Bearer',
     claims: mapClaims(token.payload, { pkThumbprint: publicKeyThumbprint }),
   }
 }

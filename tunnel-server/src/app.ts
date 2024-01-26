@@ -4,26 +4,26 @@ import http from 'http'
 import { Logger } from 'pino'
 import { KeyObject } from 'crypto'
 import { SessionStore } from './session.js'
-import { Claims, cliIdentityProvider, jwtAuthenticator, saasIdentityProvider } from './auth.js'
+import { Authenticator, Claims } from './auth.js'
 import { ActiveTunnelStore } from './tunnel-store/index.js'
 import { editUrl } from './url.js'
 import { Proxy } from './proxy/index.js'
 
-const { SAAS_BASE_URL } = process.env
-if (SAAS_BASE_URL === undefined) { throw new Error('Env var SAAS_BASE_URL is missing') }
-
-export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, loginUrl, saasPublicKey, jwtSaasIssuer }: {
-  log: Logger
-  baseUrl: URL
-  loginUrl: string
-  sessionStore: SessionStore<Claims>
-  activeTunnelStore: ActiveTunnelStore
-  proxy: Proxy
-  saasPublicKey: KeyObject
-  jwtSaasIssuer: string
-}) => {
-  const saasIdp = saasIdentityProvider(jwtSaasIssuer, saasPublicKey)
-  return Fastify({
+export const app = (
+  { proxy, sessionStore, baseUrl, activeTunnelStore, log, loginConfig, authFactory }: {
+    log: Logger
+    baseUrl: URL
+    loginConfig?: {
+      loginUrl: string
+      saasBaseUrl: string
+    }
+    sessionStore: SessionStore<Claims>
+    activeTunnelStore: ActiveTunnelStore
+    proxy: Proxy
+    authFactory: (client: { publicKey: KeyObject; publicKeyThumbprint: string }) => Authenticator
+  },
+) => {
+  const a = Fastify({
     serverFactory: handler => {
       const baseHostname = baseUrl.hostname
       const authHostname = `auth.${baseHostname}`
@@ -57,7 +57,39 @@ export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, logi
     logger: log,
   })
     .register(fastifyRequestContext)
-    .get<{Querystring: {env: string; returnPath?: string}}>('/login', {
+    .get<{Params: { profileId: string } }>('/profiles/:profileId/tunnels', { schema: {
+      params: { type: 'object',
+        properties: {
+          profileId: { type: 'string' },
+        },
+        required: ['profileId'] },
+    } }, async (req, res) => {
+      const { profileId } = req.params
+      const tunnels = (await activeTunnelStore.getByPkThumbprint(profileId))
+      if (!tunnels?.length) return []
+
+      const auth = authFactory(tunnels[0])
+
+      const result = await auth(req.raw)
+
+      if (!result.isAuthenticated) {
+        res.statusCode = 401
+        return await res.send('Unauthenticated')
+      }
+
+      return await res.send(tunnels.map(t => ({
+        envId: t.envId,
+        hostname: t.hostname,
+        access: t.access,
+        meta: t.meta,
+      })))
+    })
+
+    .get('/healthz', { logLevel: 'warn' }, async () => 'OK')
+
+  if (loginConfig) {
+    const { loginUrl, saasBaseUrl } = loginConfig
+    a.get<{Querystring: {env: string; returnPath?: string}}>('/login', {
       schema: {
         querystring: {
           type: 'object',
@@ -82,50 +114,18 @@ export const app = ({ proxy, sessionStore, baseUrl, activeTunnelStore, log, logi
       const { value: activeTunnel } = activeTunnelEntry
       const session = sessionStore(req.raw, res.raw, activeTunnel.publicKeyThumbprint)
       if (!session.user) {
-        const auth = jwtAuthenticator(
-          activeTunnel.publicKeyThumbprint,
-          [saasIdp, cliIdentityProvider(activeTunnel.publicKey, activeTunnel.publicKeyThumbprint)]
-        )
+        const auth = authFactory(activeTunnel)
         const result = await auth(req.raw)
         if (!result.isAuthenticated) {
-          return await res.header('Access-Control-Allow-Origin', SAAS_BASE_URL)
-            .redirect(`${SAAS_BASE_URL}/api/auth/login?redirectTo=${encodeURIComponent(`${loginUrl}?env=${envId}&returnPath=${returnPath}`)}`)
+          return await res.header('Access-Control-Allow-Origin', saasBaseUrl)
+            .redirect(`${saasBaseUrl}/api/auth/login?redirectTo=${encodeURIComponent(`${loginUrl}?env=${envId}&returnPath=${returnPath}`)}`)
         }
         session.set(result.claims)
         session.save()
       }
       return await res.redirect(new URL(returnPath, editUrl(baseUrl, { hostname: `${envId}.${baseUrl.hostname}` })).toString())
     })
-    .get<{Params: { profileId: string } }>('/profiles/:profileId/tunnels', { schema: {
-      params: { type: 'object',
-        properties: {
-          profileId: { type: 'string' },
-        },
-        required: ['profileId'] },
-    } }, async (req, res) => {
-      const { profileId } = req.params
-      const tunnels = (await activeTunnelStore.getByPkThumbprint(profileId))
-      if (!tunnels?.length) return []
+  }
 
-      const auth = jwtAuthenticator(
-        profileId,
-        [saasIdp, cliIdentityProvider(tunnels[0].publicKey, tunnels[0].publicKeyThumbprint)]
-      )
-
-      const result = await auth(req.raw)
-
-      if (!result.isAuthenticated) {
-        res.statusCode = 401
-        return await res.send('Unauthenticated')
-      }
-
-      return await res.send(tunnels.map(t => ({
-        envId: t.envId,
-        hostname: t.hostname,
-        access: t.access,
-        meta: t.meta,
-      })))
-    })
-
-    .get('/healthz', { logLevel: 'warn' }, async () => 'OK')
+  return a
 }

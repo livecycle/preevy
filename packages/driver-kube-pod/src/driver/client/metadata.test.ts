@@ -32,7 +32,7 @@ describe('metadata', () => {
       const createName = () => envRandomName({ envId: repeat('a', 100), profileId: '1myprofile' })
       it('should truncate it to the correct length', () => {
         const name = createName()
-        expect(name).toHaveLength(53) // max name length with 10 chars spare
+        expect(name).toHaveLength(48) // max name length with 15 chars spare
         expect(name).toMatch(/^a1myprofile-a+-[a-z0-9]{5}$/)
       })
 

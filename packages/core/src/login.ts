@@ -3,6 +3,7 @@ import * as jose from 'jose'
 import { z } from 'zod'
 import open from 'open'
 import * as inquirer from '@inquirer/prompts'
+import { inspect } from 'util'
 import { VirtualFS, localFs } from './store/index.js'
 import { Logger } from './log.js'
 import { withSpinner } from './spinner.js'
@@ -92,7 +93,12 @@ const deviceFlow = async (loginUrl: string, logger: Logger, clientId: string) =>
     }),
   })
 
-  const responseData = deviceCodeSchema.parse(await deviceCodeResponse.json())
+  const responseJson = await deviceCodeResponse.json()
+  const response = await deviceCodeSchema.safeParseAsync(responseJson)
+  if (!response.success) {
+    throw new Error(`Error parsing device code response: ${response.error}:\n${inspect(responseJson, { depth: null })}`)
+  }
+  const responseData = response.data
   logger.info('Opening browser for authentication')
   try {
     await open(responseData.verification_uri_complete)
