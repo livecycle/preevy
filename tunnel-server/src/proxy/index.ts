@@ -25,7 +25,7 @@ export const proxy = ({
   loginUrl,
 }: {
   sessionStore: SessionStore<Claims>
-  activeTunnelStore: ActiveTunnelStore
+  activeTunnelStore: Pick<ActiveTunnelStore, 'get'>
   baseHostname: string
   log: Logger
   authFactory: (client: { publicKey: KeyObject; publicKeyThumbprint: string }) => Authenticator
@@ -61,6 +61,7 @@ export const proxy = ({
       }
 
       if (!authResult.isAuthenticated) {
+        log.debug('not authenticated: %j', authResult.reason)
         throw req.url !== undefined && hasBasicAuthQueryParamHint(req.url)
           ? new BasicAuthUnauthorizedError()
           : redirectToLoginError()

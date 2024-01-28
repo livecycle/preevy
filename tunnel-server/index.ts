@@ -2,7 +2,7 @@ import { promisify } from 'util'
 import pino from 'pino'
 import fs from 'fs'
 import { KeyObject, createPublicKey } from 'crypto'
-import { buildLoginUrl, app as createApp } from './src/app.js'
+import { createApp } from './src/app/index.js'
 import { activeTunnelStoreKey, inMemoryActiveTunnelStore } from './src/tunnel-store/index.js'
 import { getSSHKeys } from './src/ssh-keys.js'
 import { proxy } from './src/proxy/index.js'
@@ -13,6 +13,7 @@ import { editUrl } from './src/url.js'
 import { cookieSessionStore } from './src/session.js'
 import { IdentityProvider, claimsSchema, cliIdentityProvider, jwtAuthenticator, saasIdentityProvider } from './src/auth.js'
 import { createSshServer } from './src/ssh/index.js'
+import { calcLoginUrl } from './src/app/urls.js'
 
 const log = pino.default(appLoggerFromEnv())
 
@@ -73,8 +74,7 @@ const authFactory = (
 
 const activeTunnelStore = inMemoryActiveTunnelStore({ log })
 const sessionStore = cookieSessionStore({ domain: BASE_URL.hostname, schema: claimsSchema, keys: process.env.COOKIE_SECRETS?.split(' ') })
-
-const app = createApp({
+const app = await createApp({
   sessionStore,
   activeTunnelStore,
   baseUrl: BASE_URL,
@@ -84,11 +84,11 @@ const app = createApp({
     sessionStore,
     baseHostname: BASE_URL.hostname,
     authFactory,
-    loginUrl: ({ env, returnPath }) => buildLoginUrl({ baseUrl: BASE_URL, env, returnPath }),
+    loginUrl: ({ env, returnPath }) => calcLoginUrl({ baseUrl: BASE_URL, env, returnPath }),
   }),
   log,
   authFactory,
-  saasBaseUrl: saasIdp ? requiredEnv('SAAS_BASE_URL') : undefined,
+  saasBaseUrl: saasIdp ? new URL(requiredEnv('SAAS_BASE_URL')) : undefined,
 })
 
 const tunnelUrl = (

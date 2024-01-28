@@ -15,8 +15,8 @@ type StoreEvents = {
   delete: () => void
 }
 
-export type EntryWatcher = {
-  once: (event: 'delete', listener: () => void) => void
+export interface EntryWatcher {
+  once: (event: 'delete', listener: () => void) => this
 }
 
 export const inMemoryStore = <V extends {}>({ log }: { log: Logger }) => {
@@ -26,7 +26,7 @@ export const inMemoryStore = <V extends {}>({ log }: { log: Logger }) => {
   return {
     get: async (key: string) => {
       const entry = map.get(key)
-      return entry === undefined ? undefined : { value: entry.value, watcher: entry.watcher }
+      return entry === undefined ? undefined : { value: entry.value, watcher: entry.watcher as EntryWatcher }
     },
     set: async (key: string, value: V) => {
       const existing = map.get(key)
