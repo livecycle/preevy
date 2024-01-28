@@ -100,7 +100,7 @@ export default class Logs extends DriverCommand<typeof Logs> {
     const compose = localComposeClient({
       composeFiles: Buffer.from(yaml.stringify(addBaseComposeTunnelAgentService(userModel))),
       projectName: flags.project,
-      projectDirectory: process.cwd(),
+      projectDirectory: this.config.composeFiles.projectDirectory,
     })
 
     await using dockerContext = await dockerEnvContext({ connection, log })

@@ -83,7 +83,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
     ...tunnelServerFlags,
     ...buildFlags,
     'skip-volume': Flags.string({
-      description: 'Additional volume glob patterns to skip copying',
+      description: 'Additional volume glob patterns to skip copying (relative to project directory)',
       multiple: true,
       multipleNonGreedy: true,
       default: [],
@@ -199,7 +199,6 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       dataDir: this.config.dataDir,
       sshTunnelPrivateKey: tunnelingKey,
       allowedSshHostKeys: hostKey,
-      cwd: process.cwd(),
       skipUnchangedFiles: flags['skip-unchanged-files'],
       version: this.config.version,
       buildSpec,

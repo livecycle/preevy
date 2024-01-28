@@ -66,3 +66,8 @@ export type ComposeModel = {
 }
 
 export const composeModelFilename = 'docker-compose.yaml'
+
+export type ComposeFiles = {
+  files: string[]
+  projectDirectory: string
+}

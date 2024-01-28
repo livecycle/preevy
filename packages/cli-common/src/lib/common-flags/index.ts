@@ -35,6 +35,10 @@ export const composeFlags = {
     default: [],
     helpGroup: 'GLOBAL',
   }),
+  'project-directory': Flags.string({
+    required: false,
+    summary: 'Alternate working directory (default: the path of the first specified Compose file)',
+  }),
   ...projectFlag,
 } as const
 

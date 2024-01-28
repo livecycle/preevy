@@ -14,7 +14,6 @@ const buildCommand = async ({
   log,
   composeModel,
   projectLocalDataDir,
-  cwd,
   buildSpec,
   machineDockerPlatform,
   env,
@@ -23,7 +22,6 @@ const buildCommand = async ({
   log: Logger
   composeModel: ComposeModel
   projectLocalDataDir: string
-  cwd: string
   buildSpec: BuildSpec
   machineDockerPlatform: string
   env?: Record<string, string>
@@ -47,7 +45,7 @@ const buildCommand = async ({
   ]
 
   log.info(`Running: docker ${dockerArgs.join(' ')}`)
-  const { elapsedTimeSec } = await measureTime(() => childProcessPromise(spawn('docker', dockerArgs, { stdio: 'inherit', cwd, env })))
+  const { elapsedTimeSec } = await measureTime(() => childProcessPromise(spawn('docker', dockerArgs, { stdio: 'inherit', env })))
   telemetryEmitter().capture('build success', {
     elapsed_sec: elapsedTimeSec,
     has_registry: Boolean(buildSpec.registry),
