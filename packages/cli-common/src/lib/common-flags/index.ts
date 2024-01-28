@@ -101,4 +101,8 @@ export const urlFlags = {
     description: 'Output URLs to file',
     required: false,
   }),
+  'fetch-urls-timeout': Flags.integer({
+    summary: 'Timeout for fetching URLs request in milliseconds',
+    default: 2500,
+  }),
 } as const
