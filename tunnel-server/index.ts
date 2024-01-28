@@ -2,7 +2,7 @@ import { promisify } from 'util'
 import pino from 'pino'
 import fs from 'fs'
 import { KeyObject, createPublicKey } from 'crypto'
-import { app as createApp } from './src/app.js'
+import { buildLoginUrl, app as createApp } from './src/app.js'
 import { activeTunnelStoreKey, inMemoryActiveTunnelStore } from './src/tunnel-store/index.js'
 import { getSSHKeys } from './src/ssh-keys.js'
 import { proxy } from './src/proxy/index.js'
@@ -64,19 +64,11 @@ if (saasIdp) {
 
 const baseIdentityProviders: readonly IdentityProvider[] = Object.freeze(saasIdp ? [saasIdp] : [])
 
-const loginConfig = saasIdp
-  ? {
-    loginUrl: new URL('/login', editUrl(BASE_URL, { hostname: `auth.${BASE_URL.hostname}` })).toString(),
-    saasBaseUrl: requiredEnv('SAAS_BASE_URL'),
-  }
-  : undefined
-
 const authFactory = (
   { publicKey, publicKeyThumbprint }: { publicKey: KeyObject; publicKeyThumbprint: string },
 ) => jwtAuthenticator(
   publicKeyThumbprint,
   baseIdentityProviders.concat(cliIdentityProvider(publicKey, publicKeyThumbprint)),
-  loginConfig !== undefined,
 )
 
 const activeTunnelStore = inMemoryActiveTunnelStore({ log })
@@ -92,11 +84,11 @@ const app = createApp({
     sessionStore,
     baseHostname: BASE_URL.hostname,
     authFactory,
-    loginConfig,
+    loginUrl: ({ env, returnPath }) => buildLoginUrl({ baseUrl: BASE_URL, env, returnPath }),
   }),
   log,
   authFactory,
-  loginConfig,
+  saasBaseUrl: saasIdp ? requiredEnv('SAAS_BASE_URL') : undefined,
 })
 
 const tunnelUrl = (

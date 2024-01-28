@@ -9,14 +9,24 @@ import { ActiveTunnelStore } from './tunnel-store/index.js'
 import { editUrl } from './url.js'
 import { Proxy } from './proxy/index.js'
 
+export const buildLoginUrl = ({ baseUrl, env, returnPath }: {
+  baseUrl: URL
+  env: string
+  returnPath?: string
+}) => editUrl(baseUrl, {
+  hostname: `auth.${baseUrl.hostname}`,
+  queryParams: {
+    env,
+    ...returnPath ? { returnPath } : {},
+  },
+  path: '/login',
+}).toString()
+
 export const app = (
-  { proxy, sessionStore, baseUrl, activeTunnelStore, log, loginConfig, authFactory }: {
+  { proxy, sessionStore, baseUrl, activeTunnelStore, log, saasBaseUrl, authFactory }: {
     log: Logger
     baseUrl: URL
-    loginConfig?: {
-      loginUrl: string
-      saasBaseUrl: string
-    }
+    saasBaseUrl?: string
     sessionStore: SessionStore<Claims>
     activeTunnelStore: ActiveTunnelStore
     proxy: Proxy
@@ -87,9 +97,7 @@ export const app = (
 
     .get('/healthz', { logLevel: 'warn' }, async () => 'OK')
 
-  if (loginConfig) {
-    const { loginUrl, saasBaseUrl } = loginConfig
-    a.get<{Querystring: {env: string; returnPath?: string}}>('/login', {
+    .get<{Querystring: {env: string; returnPath?: string}}>('/login', {
       schema: {
         querystring: {
           type: 'object',
@@ -117,15 +125,18 @@ export const app = (
         const auth = authFactory(activeTunnel)
         const result = await auth(req.raw)
         if (!result.isAuthenticated) {
-          return await res.header('Access-Control-Allow-Origin', saasBaseUrl)
-            .redirect(`${saasBaseUrl}/api/auth/login?redirectTo=${encodeURIComponent(`${loginUrl}?env=${envId}&returnPath=${returnPath}`)}`)
+          if (saasBaseUrl) {
+            return await res.header('Access-Control-Allow-Origin', saasBaseUrl)
+              .redirect(`${saasBaseUrl}/api/auth/login?redirectTo=${encodeURIComponent(buildLoginUrl({ baseUrl, env: envId, returnPath }))}`)
+          }
+          res.statusCode = 401
+          return { error: 'Unauthorized' }
         }
         session.set(result.claims)
         session.save()
       }
       return await res.redirect(new URL(returnPath, editUrl(baseUrl, { hostname: `${envId}.${baseUrl.hostname}` })).toString())
     })
-  }
 
   return a
 }
