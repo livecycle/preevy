@@ -31,6 +31,7 @@ export {
   localComposeClient, ComposeModel, resolveComposeFiles, getExposedTcpServicePorts,
   fetchRemoteUserModel as remoteUserModel, NoComposeFilesError,
   addScriptInjectionsToServices as addScriptInjectionsToModel,
+  ComposeFiles,
   defaultVolumeSkipList,
 } from './compose/index.js'
 export { withSpinner } from './spinner.js'

@@ -1,4 +1,6 @@
 import fs from 'fs'
+import path from 'path'
+import { ComposeFiles } from './model.js'
 
 const DEFAULT_BASE_FILES = ['compose', 'docker-compose']
 const DEFAULT_OVERRIDE_FILES = DEFAULT_BASE_FILES.map(f => `${f}.override`)
@@ -46,11 +48,18 @@ const findDefaultFiles = async () => (await oneYamlFileArray(DEFAULT_BASE_FILES,
 const findDefaultSystemFiles = async () => (await oneYamlFileArray(DEFAULT_SYSTEM_FILES, 'default system Compose')) ?? []
 
 export const resolveComposeFiles = async (
-  { userSpecifiedFiles, userSpecifiedSystemFiles }: {
+  { userSpecifiedFiles, userSpecifiedSystemFiles, userSpecifiedProjectDirectory, cwd }: {
     userSpecifiedFiles: string[]
     userSpecifiedSystemFiles: string[]
+    userSpecifiedProjectDirectory: string
+    cwd: string
   },
-): Promise<string[]> => [
-  ...(userSpecifiedSystemFiles.length ? userSpecifiedSystemFiles : await findDefaultSystemFiles()),
-  ...(userSpecifiedFiles.length ? userSpecifiedFiles : await findDefaultFiles()),
-]
+): Promise<ComposeFiles> => {
+  const files = (userSpecifiedFiles.length ? userSpecifiedFiles : await findDefaultFiles())
+  const systemFiles = (userSpecifiedSystemFiles.length ? userSpecifiedSystemFiles : await findDefaultSystemFiles())
+
+  return {
+    files: [...systemFiles, ...files],
+    projectDirectory: path.resolve(userSpecifiedProjectDirectory ?? files.length ? path.dirname(files[0]) : cwd),
+  }
+}

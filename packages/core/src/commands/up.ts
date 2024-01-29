@@ -1,7 +1,7 @@
 import { MachineStatusCommand, ScriptInjection } from '@preevy/common'
 import yaml from 'yaml'
 import { TunnelOpts } from '../ssh/index.js'
-import { ComposeModel, composeModelFilename, localComposeClient } from '../compose/index.js'
+import { ComposeFiles, ComposeModel, composeModelFilename, localComposeClient } from '../compose/index.js'
 import { dockerEnvContext } from '../docker.js'
 import { MachineConnection } from '../driver/index.js'
 import { remoteProjectDir } from '../remote-files.js'
@@ -54,7 +54,6 @@ const up = async ({
   dataDir,
   allowedSshHostKeys,
   sshTunnelPrivateKey,
-  cwd,
   skipUnchangedFiles,
   version,
   envId,
@@ -72,13 +71,12 @@ const up = async ({
   userSpecifiedProjectName: string | undefined
   userSpecifiedServices: string[]
   volumeSkipList: string[]
-  composeFiles: string[]
+  composeFiles: ComposeFiles
   log: Logger
   dataDir: string
   scriptInjections?: Record<string, ScriptInjection>
   sshTunnelPrivateKey: string | Buffer
   allowedSshHostKeys: Buffer
-  cwd: string
   skipUnchangedFiles: boolean
   version: string
   envId: EnvId
@@ -100,7 +98,6 @@ const up = async ({
     log,
     machineStatusCommand,
     userAndGroup,
-    cwd,
     tunnelOpts,
     userSpecifiedProjectName,
     userSpecifiedServices,
@@ -126,7 +123,6 @@ const up = async ({
     composeModel = (await buildCommand({
       log,
       buildSpec,
-      cwd,
       composeModel,
       projectLocalDataDir,
       machineDockerPlatform: dockerPlatform,
@@ -151,7 +147,6 @@ const up = async ({
 
   const compose = localComposeClient({
     composeFiles: [composeFilePath.local],
-    projectDirectory: cwd,
   })
 
   const composeArgs = [
