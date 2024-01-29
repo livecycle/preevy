@@ -219,6 +219,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
         retries: 10,
         onFailedAttempt: e => { this.logger.debug(`Failed to query tunnels: ${inspect(e)}`) },
       },
+      fetchTimeout: flags['fetch-urls-timeout'],
     }), { text: 'Getting tunnel URLs...' })
 
     const urls = await filterUrls({

@@ -133,6 +133,7 @@ export default class Urls extends ProfileCommand<typeof Urls> {
       includeAccessCredentials: flags['include-access-credentials'] && (flags['access-credentials-type'] as 'api' | 'browser'),
       showPreevyService: flags['show-preevy-service-urls'],
       retryOpts: { retries: 2 },
+      fetchTimeout: flags['fetch-urls-timeout'],
     })
 
     const urls = await filterUrls({
