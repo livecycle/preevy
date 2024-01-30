@@ -4,7 +4,7 @@ import { Gauge, Counter, register } from 'prom-client'
 export const sshConnectionsGauge = new Gauge({
   name: 'sshConnections',
   help: 'Current number of open SSH connections',
-  labelNames: ['envId'],
+  labelNames: ['clientId'],
 })
 
 export const tunnelsGauge = new Gauge({
