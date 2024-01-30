@@ -13,3 +13,5 @@ export const sanitizeLabel = (s: string) => truncateWithHash(
 )
 
 export const sanitizeLabels = <T extends Record<string, string>>(labels: T) => mapValues(labels, sanitizeLabel) as T
+
+export const isValidRfc1123LabelName = (s: string) => s.length <= MAX_LABEL_LENGTH && /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/.test(s)
