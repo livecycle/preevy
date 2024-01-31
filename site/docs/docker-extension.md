@@ -75,6 +75,10 @@ The Livecycle Docker extension embeds a standalone version of the Preevy CLI, wh
 
 That's it! You have successfully installed the Livecycle Docker Extension and shared your local development environment with your team.
 
+Also, you can check out the video below for a step-by-step guide how to get started with the Livecycle Docker Extension and use Local Share feature.
+
+<p align="center"><iframe width="816" height="480" src="https://www.youtube.com/watch?v=SxDn889s5zg" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></p>
+
 ## Deploy to cloud
 
 With the Livecycle Docker Extension, you can make your local environment accessible to your team members even when your machine is offline. This is achieved by deploying your application to the cloud and creating a tunnel to it. This functionality is particularly useful when you want to share your environment with your team members for an extended period.
