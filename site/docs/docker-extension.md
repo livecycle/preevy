@@ -77,7 +77,7 @@ That's it! You have successfully installed the Livecycle Docker Extension and sh
 
 Also, you can check out the video below for a step-by-step guide how to get started with the Livecycle Docker Extension and use Local Share feature.
 
-<p align="center"><iframe width="816" height="480" src="https://www.youtube.com/watch?v=SxDn889s5zg" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></p>
+<p align="center"><iframe width="816" height="480" src="https://www.youtube.com/embed/SxDn889s5zg?si=6PiAXzPMmLPpF0Bb" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></p>
 
 ## Deploy to cloud
 
