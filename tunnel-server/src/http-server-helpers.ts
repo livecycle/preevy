@@ -25,7 +25,7 @@ export const respondAccordingToAccept = (
 
 export class HttpError extends Error {
   constructor(
-    readonly status: number,
+    readonly statusCode: number,
     readonly clientMessage: string,
     readonly cause?: unknown,
     readonly responseHeaders?: Record<string, string>
@@ -68,7 +68,7 @@ export class BadRequestError extends HttpError {
 export class UnauthorizedError extends HttpError {
   static status = 401
   static defaultMessage = 'Unauthorized'
-  constructor(readonly responseHeaders?: Record<string, string>) {
+  constructor(responseHeaders?: Record<string, string>) {
     super(UnauthorizedError.status, UnauthorizedError.defaultMessage, undefined, responseHeaders)
   }
 }
@@ -80,8 +80,12 @@ export class BasicAuthUnauthorizedError extends UnauthorizedError {
 }
 
 export class RedirectError extends HttpError {
-  constructor(readonly status: 302 | 307, readonly location: string) {
-    super(status, 'Redirected', undefined, { location })
+  constructor(
+    statusCode: 302 | 307,
+    readonly location: string,
+    responseHeaders?: Record<string, string>,
+  ) {
+    super(statusCode, 'Redirected', undefined, { ...responseHeaders, location })
   }
 }
 
@@ -95,7 +99,7 @@ export const errorHandler = (
   res: http.ServerResponse,
 ) => {
   const [clientMessage, status, responseHeaders] = err instanceof HttpError
-    ? [err.clientMessage, err.status, err.responseHeaders]
+    ? [err.clientMessage, err.statusCode, err.responseHeaders]
     : [InternalError.defaultMessage, InternalError.status, undefined]
 
   Object.entries(responseHeaders || {}).forEach(([k, v]) => res.setHeader(k, v))

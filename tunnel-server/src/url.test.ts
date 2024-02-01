@@ -31,5 +31,12 @@ describe('url', () => {
         expect(editUrl(baseUrl, { path: 'otherpath' }).toJSON()).toEqual(new URL('http://example.com/otherpath?x=12&y=13').toJSON())
       })
     })
+
+    describe('when given removeQueryParams', () => {
+      it('should remove them', () => {
+        expect(editUrl(baseUrl, { removeQueryParams: ['y'] }).toJSON()).toEqual(new URL('http://example.com/mypath?x=12').toJSON())
+        expect(editUrl(baseUrl, { queryParams: { y: '14' }, removeQueryParams: ['y'] }).toJSON()).toEqual(new URL('http://example.com/mypath?x=12').toJSON())
+      })
+    })
   })
 })
