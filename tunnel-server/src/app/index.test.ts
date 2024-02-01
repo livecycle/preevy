@@ -14,7 +14,7 @@ import { SessionStore } from '../session.js'
 import { Claims, cliIdentityProvider, jwtAuthenticator, saasIdentityProvider } from '../auth.js'
 import { ActiveTunnel, ActiveTunnelStore } from '../tunnel-store/index.js'
 import { EntryWatcher } from '../memory-store.js'
-import { proxy } from '../proxy/index.js'
+import { authHintQueryParam, proxy } from '../proxy/index.js'
 import { calcLoginUrl } from './urls.js'
 
 const pinoPretty = pinoPrettyModule.default
@@ -198,13 +198,13 @@ describe('app', () => {
           watcher: undefined as unknown as EntryWatcher,
         }))
         user = { } as Claims
-        response = await request(`${baseAppUrl}/login?env=myenv&returnPath=/bla`, { headers: { host: 'api.base.livecycle.example' } })
+        response = await request(`${baseAppUrl}/login?env=myenv&returnPath=${encodeURIComponent(`/bla?foo=bar&${authHintQueryParam}=basic`)}`, { headers: { host: 'api.base.livecycle.example' } })
       })
 
       it('should return a redirect to the env page', async () => {
         expect(response.statusCode).toBe(302)
         const locationHeader = response.headers.location
-        expect(locationHeader).toBe('http://myenv.base.livecycle.example/bla')
+        expect(locationHeader).toBe(`http://myenv.base.livecycle.example/bla?foo=bar&${authHintQueryParam}=basic`)
       })
     })
   })
@@ -274,7 +274,7 @@ describe('app', () => {
 
         describe('with basic auth hint', () => {
           beforeEach(async () => {
-            response = await request(`${baseAppUrl}/bla?_preevy_auth_hint=basic`, { headers: { host: 'my-tunnel.base.livecycle.example' } })
+            response = await request(`${baseAppUrl}/bla?${authHintQueryParam}=basic`, { headers: { host: 'my-tunnel.base.livecycle.example' } })
           })
 
           it('should return an unauthorized status with basic auth header', async () => {
@@ -285,21 +285,45 @@ describe('app', () => {
 
         describe('with basic auth', () => {
           const originServer = setupOriginServer()
+          let jwt: string
           beforeEach(async () => {
             activeTunnel.target = originServer.listenPath
             sessionStoreStore.set.mockImplementation(u => { user = u })
-            const jwt = await jwtGenerator(envKey)
-            response = await request(`${baseAppUrl}/bla`, {
-              headers: {
-                host: 'my-tunnel.base.livecycle.example',
-                authorization: `Basic ${Buffer.from(`x-preevy-profile-key:${jwt}`).toString('base64')}`,
-              },
+            jwt = await jwtGenerator(envKey)
+          })
+
+          describe('from a non-browser', () => {
+            beforeEach(async () => {
+              response = await request(`${baseAppUrl}/bla`, {
+                headers: {
+                  host: 'my-tunnel.base.livecycle.example',
+                  authorization: `Basic ${Buffer.from(`x-preevy-profile-key:${jwt}`).toString('base64')}`,
+                },
+              })
+            })
+
+            it('should return the origin response', async () => {
+              expect(response.statusCode).toBe(200)
+              expect(await response.body.text()).toBe('hello')
             })
           })
 
-          it('should return the origin response', async () => {
-            expect(response.statusCode).toBe(200)
-            expect(await response.body.text()).toBe('hello')
+          describe('from a browser', () => {
+            beforeEach(async () => {
+              response = await request(`${baseAppUrl}/bla?${authHintQueryParam}=basic`, {
+                headers: {
+                  host: 'my-tunnel.base.livecycle.example',
+                  'user-agent': 'chrome',
+                  authorization: `Basic ${Buffer.from(`x-preevy-profile-key:${jwt}`).toString('base64')}`,
+                },
+              })
+            })
+
+            it('should return a redirect to the login page', async () => {
+              expect(response.statusCode).toBe(307)
+              const locationHeader = response.headers.location
+              expect(locationHeader).toBe('http://auth.base.livecycle.example/login?env=my-tunnel&returnPath=%2Fbla')
+            })
           })
         })
 

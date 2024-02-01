@@ -52,10 +52,8 @@ export const login: FastifyPluginAsync<{
       session.set(result.claims)
       session.save()
     }
-    const redirectTo = editUrl(baseUrl, {
-      hostname: `${envId}.${baseUrl.hostname}`,
-      path: returnPath ?? '/',
-    })
+    const envBaseUrl = editUrl(baseUrl, { hostname: `${envId}.${baseUrl.hostname}` })
+    const redirectTo = new URL(returnPath ?? '/', envBaseUrl)
     return await res.redirect(redirectTo.toString())
   })
 }
