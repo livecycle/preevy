@@ -40,7 +40,7 @@ jobs:
         run: |
           echo "NODE_VERSION=$(jq -r .oclif.update.node.version package.json)" >> "${GITHUB_OUTPUT}"
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: cache-oclif-pack
         name: Setup cache for oclif pack
         with:
