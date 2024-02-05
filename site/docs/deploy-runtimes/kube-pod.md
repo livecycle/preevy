@@ -32,6 +32,8 @@ Your services are still exposed using the Preevy Tunnel Service - there's no nee
 - By default, the driver runs a Pod with [`privileged: true` security context](https://kubernetes.io/docs/concepts/security/pod-security-standards/#privileged). In some cases, this requirement may be lifted by customizing the deployment template, see [below](#configuring-rootless-unprivileged-docker-in-docker).
 - A StorageClass must be defined in the cluster to enable [dynamic volume provisioning](https://kubernetes.io/docs/concepts/storage/dynamic-provisioning/#enabling-dynamic-provisioning). This is usually pre-defined in your Kubernetes cluster.
 
+Don't have a Kubernetes cluster yet? Check out our [example repo](https://github.com/livecycle/preevy-terraform-eks-example) for setting up an affordable [EKS](https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html) on AWS using [Terraform](https://developer.hashicorp.com/terraform/intro), featuring [Karpenter](https://karpenter.sh/) for fast auto-scaling.
+
 ## Supported options
 
 | option | flag | default | env var | description |

@@ -69,6 +69,7 @@ Visit The full documentation here: https://preevy.dev/
   - [Tunnel server](#tunnel-server)
 - [CI Integration](#ci-integration)
   - [Faster builds in CI](#faster-builds-in-ci)
+  - [Example repos](#example-repos)
 - [Security](#security)
   - [Private environments](#private-environments)
   - [Exposure of preview environments](#exposure-of-preview-environments)
@@ -230,6 +231,18 @@ Once the profile is created, it can be imported to the CI runtime using `preevy 
 ### Faster builds in CI
 
 Check out our [documentation](https://preevy.dev/recipes/faster-build) to find out how to speed up your builds and reduce the costs of your preview environments by running Preevy with BuildKit Builders in CI.
+
+### Example repos
+
+#### GitHub Actions
+
+- [Preevy on Kubernetes using Google Cloud GKE and GAR](https://github.com/livecycle/preevy-gha-gke-demo)
+- [Preevy on Google Cloud VMs](https://github.com/livecycle/preevy-gha-gce-demo)
+
+#### Shortcut for setting up a cost-efficient Kubernetes cluster on AWS EKS
+
+Don't have a Kubernetes cluster? See an [example repo](https://github.com/livecycle/preevy-terraform-eks-example) for setting up [AWS EKS](https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html) using Terraform. The example includes [Karpenter](https://karpenter.sh/) which can reduce the cost of running Preview Environments by automatically expanding and shrinking your cluster using [EC2 Spot Instances](https://aws.amazon.com/ec2/spot/pricing/)
+
 
 ## Security
 
