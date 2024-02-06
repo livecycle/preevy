@@ -8,3 +8,4 @@ export {
 export { formatFlagsToArgs, parseFlags, ParsedFlags } from './lib/flags.js'
 export { initHook } from './hooks/init/load-plugins.js'
 export { default as BaseCommand } from './commands/base-command.js'
+export * as prompts from './prompts.js'

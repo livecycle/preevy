@@ -1,8 +1,11 @@
 import { fsTypeFromUrl, localFsFromUrl } from '@preevy/core'
+import { prompts } from '@preevy/cli-common'
 import { googleCloudStorageFs, defaultBucketName as gsDefaultBucketName, defaultProjectId as defaultGceProjectId } from '@preevy/driver-gce'
 import { s3fs, defaultBucketName as s3DefaultBucketName, awsUtils, S3_REGIONS } from '@preevy/driver-lightsail'
 import * as inquirer from '@inquirer/prompts'
+import * as azure from '@preevy/driver-azure'
 import inquirerAutoComplete from 'inquirer-autocomplete-standalone'
+import { asyncFind, asyncTake, asyncToArray } from 'iter-tools-es'
 import { DriverName } from './drivers.js'
 import ambientAwsAccountId = awsUtils.ambientAccountId
 
@@ -21,10 +24,15 @@ export const fsFromUrl = async (url: string, localBaseDir: string) => {
     // eslint-disable-next-line @typescript-eslint/return-await
     return await googleCloudStorageFs(url)
   }
+  if (fsType === 'azblob') {
+    // eslint false positive here on case-sensitive filesystems due to unknown type
+    // eslint-disable-next-line @typescript-eslint/return-await
+    return await azure.fs.azureBlobStorageFs(url)
+  }
   throw new Error(`Unsupported URL type: ${fsType}`)
 }
 
-export const fsTypes = ['local', 's3', 'gs'] as const
+export const fsTypes = ['local', 's3', 'gs', 'azblob'] as const
 export type FsType = typeof fsTypes[number]
 export const isFsType = (s: string): s is FsType => fsTypes.includes(s as FsType)
 
@@ -34,6 +42,9 @@ const defaultFsType = (driver?: string): FsType => {
   }
   if (driver as DriverName === 'gce') {
     return 'gs'
+  }
+  if (driver as DriverName === 'azure') {
+    return 'azblob'
   }
   return 'local'
 }
@@ -45,6 +56,7 @@ export const chooseFsType = async ({ driver }: { driver?: string }) => await inq
     { value: 'local', name: 'local file' },
     { value: 's3', name: 'AWS S3' },
     { value: 'gs', name: 'Google Cloud Storage' },
+    { value: 'azblob', name: 'Microsoft Azure Blob Storage' },
   ],
 }) as FsType
 
@@ -99,5 +111,51 @@ export const chooseFs: Record<FsType, FsChooser> = {
     })
 
     return `gs://${bucket}?project=${project}`
+  },
+  azblob: async ({ profileAlias, driver }: {
+    profileAlias: string
+    driver?: { name: DriverName; flags: Record<string, unknown> }
+  }) => {
+    const subscriptionId = driver?.name === 'azure'
+      ? driver.flags['subscription-id'] as string
+      : await azure.inquireSubscriptionId().catch(() => undefined)
+
+    const pageSize = 7
+
+    const accounts = subscriptionId
+      ? await asyncToArray(asyncTake(pageSize - 2, azure.fs.listStorageAccounts({ subscriptionId }))).catch(() => [])
+      : []
+
+    const account = await prompts.selectOrSpecify({
+      message: 'Storage account name',
+      choices: accounts.map(({ name }) => ({ value: name, name })),
+      specifyItemLocation: 'bottom',
+    })
+
+    const inquireDomain = () => prompts.selectOrSpecify({
+      message: 'Storage domain',
+      choices: [{ value: azure.fs.DEFAULT_DOMAIN, name: `(default): ${azure.fs.DEFAULT_DOMAIN}` }],
+      specifyItem: '(custom)',
+      specifyItemLocation: 'bottom',
+    })
+
+    const domain = (subscriptionId && accounts.length)
+      ? await (async () => {
+        const foundAccount = accounts.find(a => a.name === account)
+          ?? await asyncFind(({ name }) => name === account, azure.fs.listStorageAccounts({ subscriptionId }))
+        return foundAccount?.blobDomain ?? inquireDomain()
+      })()
+      : await inquireDomain()
+
+    const container = await inquirer.input({
+      message: 'Container name',
+      default: azure.fs.defaultContainerName({ profileAlias }),
+    })
+
+    return azure.fs.toUrl({
+      container,
+      account,
+      domain: domain === azure.fs.DEFAULT_DOMAIN ? undefined : domain,
+    })
   },
 }
