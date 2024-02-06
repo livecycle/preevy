@@ -13,6 +13,8 @@ export default class ListProfile extends ProfileCommand<typeof ListProfile> {
     json: Flags.boolean({}),
   }
 
+  protected throwOnProfileNotFound = false
+
   async run(): Promise<unknown> {
     const { profiles, current } = await this.profileConfig.list()
 

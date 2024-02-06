@@ -2,7 +2,7 @@ import path from 'path'
 import { Command, Flags, Interfaces } from '@oclif/core'
 import {
   tryParseUrl, LocalProfilesConfig, Profile, Store, detectCiProvider, fsTypeFromUrl,
-  localProfilesConfig, telemetryEmitter, LocalProfilesConfigGetResult,
+  localProfilesConfig, telemetryEmitter, LocalProfilesConfigGetResult, ProfileLoadError,
 } from '@preevy/core'
 import { BaseCommand, text } from '@preevy/cli-common'
 import { fsFromUrl } from './fs.js'
@@ -86,10 +86,18 @@ abstract class ProfileCommand<T extends typeof Command> extends BaseCommand<T> {
   protected flags!: Flags<T>
   protected args!: Args<T>
 
+  protected throwOnProfileNotFound = true
+
   public async init(): Promise<void> {
     await super.init()
     const { profileConfig, flags } = this
-    const profile = await findProfile({ profileConfig, flags })
+    const profile = await findProfile({ profileConfig, flags }).catch(e => {
+      if (!(e instanceof ProfileLoadError) || this.throwOnProfileNotFound) {
+        throw e
+      }
+      this.logger.warn(`Profile load error: ${e.message}`)
+      return undefined
+    })
     if (!profile) {
       return
     }
