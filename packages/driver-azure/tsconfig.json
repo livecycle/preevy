@@ -33,5 +33,6 @@
   "references": [
     { "path": "../common" },
     { "path": "../core" },
+    { "path": "../cli-common" },
   ]
 }
