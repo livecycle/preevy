@@ -1,6 +1,6 @@
 {
   "name": "@preevy/plugin-github",
-  "version": "0.0.60",
+  "version": "0.0.61",
   "description": "Preevy plugin for GitHub",
   "exports": {
     ".": "./dist/index.js"
@@ -12,8 +12,8 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@oclif/core": "^3.15.1",
-    "@preevy/cli-common": "0.0.60",
-    "@preevy/core": "0.0.60",
+    "@preevy/cli-common": "0.0.61",
+    "@preevy/core": "0.0.61",
     "lodash-es": "^4.17.21",
     "nunjucks": "^3.2.4",
     "octokit": "^3.1.1"

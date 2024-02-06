@@ -1,6 +1,6 @@
 {
   "name": "@preevy/driver-lightsail",
-  "version": "0.0.60",
+  "version": "0.0.61",
   "description": "AWS Lightsail driver for Preevy",
   "exports": {
     ".": "./dist/index.js"
@@ -18,7 +18,7 @@
     "@aws-sdk/client-sts": "^3.289.0",
     "@aws-sdk/util-waiter": "^3.271.0",
     "@oclif/core": "^3.15.1",
-    "@preevy/core": "0.0.60",
+    "@preevy/core": "0.0.61",
     "inquirer-autocomplete-standalone": "^0.8.1",
     "iter-tools-es": "^7.5.3",
     "lodash-es": "^4.17.21"
