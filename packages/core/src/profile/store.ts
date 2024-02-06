@@ -27,7 +27,14 @@ const readLines = (buffer: Buffer | undefined) => {
 
 const profileReader = (reader: FsReader) => {
   const { readJsonOrThrow, readJSON } = jsonReader(reader)
-  const info = async () => await readJsonOrThrow<Profile>(filenames.info)
+  async function info(opts: { throwOnNotFound: false }): Promise<Profile | undefined>
+  async function info(opts: { throwOnNotFound: true }): Promise<Profile>
+  async function info(): Promise<Profile>
+  async function info(
+    { throwOnNotFound = true }: { throwOnNotFound?: boolean } = { throwOnNotFound: true },
+  ): Promise<Profile | undefined> {
+    return await (throwOnNotFound ? readJsonOrThrow<Profile> : readJSON<Profile>)(filenames.info)
+  }
   return {
     info,
     driver: async () => (await info()).driver,
