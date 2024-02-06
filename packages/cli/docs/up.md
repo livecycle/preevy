@@ -12,19 +12,20 @@ Bring up a preview environment
 ```
 USAGE
   $ preevy up [SERVICE] (--access-credentials-type api|browser --include-access-credentials) [-D] [-f
-    <value>] [--system-compose-file <value>] [-p <value>] [--enable-plugin <value>] [--disable-plugin <value>]
-    [--profile <value>] [-d lightsail|gce|azure|kube-pod] [--lightsail-region <value>] [--gce-project-id <value>]
-    [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>]
-    [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template <value>]
+    <value>] [--system-compose-file <value>] [--project-directory <value>] [-p <value>] [--enable-plugin <value>]
+    [--disable-plugin <value>] [--profile <value>] [-d lightsail|gce|azure|kube-pod] [--lightsail-region <value>]
+    [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
+    [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>]
     [--lightsail-availability-zone <value>] [--lightsail-bundle-id
     nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0] [--gce-machine-type <value>]
-    [--azure-vm-size <value>] [--kube-pod-server-side-apply] [--id <value>] [-t <value>] [--tls-hostname <value>]
+    [--azure-vm-size <value>] [--kube-pod-template <value>] [--kube-pod-server-side-apply] [--kube-pod-storage-class
+    <value>] [--kube-pod-storage-size <value>] [--id <value>] [-t <value>] [--tls-hostname <value>]
     [--insecure-skip-verify] [--no-build] [--no-registry-single-name | [--registry-single-name <value> --registry
     <value>]] [--no-registry-cache ] [--builder <value>] [--no-cache] [--skip-volume <value>] [--skip-unchanged-files]
-    [--show-preevy-service-urls] [--output-urls-to <value>] [--columns <value> | -x] [--filter <value>] [--no-header |
-    [--csv | --no-truncate]] [--output csv|json|yaml |  | ] [--sort <value>] [--github-token <value>] [--github-repo
-    <value>] [--github-pull-request <value>] [--github-pr-comment-template-file <value>] [--github-add-build-cache]
-    [--github-pr-comment-enabled auto|no|always]
+    [--show-preevy-service-urls] [--output-urls-to <value>] [--fetch-urls-timeout <value>] [--columns <value> | -x]
+    [--filter <value>] [--no-header | [--csv | --no-truncate]] [--output csv|json|yaml |  | ] [--sort <value>]
+    [--github-token <value>] [--github-repo <value>] [--github-pull-request <value>] [--github-pr-comment-template-file
+    <value>] [--github-add-build-cache] [--github-pr-comment-enabled auto|no|always]
 
 ARGUMENTS
   SERVICE  Service name(s). If not specified, will deploy all services
@@ -36,14 +37,18 @@ FLAGS
                                           or ssh+tls://hostname[:port]
       --access-credentials-type=<option>  (required) [default: browser] Access credentials type
                                           <options: api|browser>
+      --fetch-urls-timeout=<value>        [default: 2500] Timeout for fetching URLs request in milliseconds
       --id=<value>                        Environment id
       --include-access-credentials        Include access credentials for basic auth for each service URL
       --insecure-skip-verify              Skip TLS or SSH certificate verification
       --output-urls-to=<value>            Output URLs to file
       --profile=<value>                   Run in a specific profile context (either an alias or a URL)
+      --project-directory=<value>         Alternate working directory (default: the path of the first specified Compose
+                                          file)
       --show-preevy-service-urls          Show URLs for internal Preevy services
       --[no-]skip-unchanged-files         Detect and skip unchanged files when copying (default: true)
-      --skip-volume=<value>...            [default: ] Additional volume glob patterns to skip copying
+      --skip-volume=<value>...            [default: ] Additional volume glob patterns to skip copying (relative to
+                                          project directory)
       --tls-hostname=<value>              Override TLS server name when tunneling via HTTPS
 
 GLOBAL FLAGS
@@ -67,7 +72,7 @@ OUTPUT FLAGS
 
 AZURE DRIVER FLAGS
   --azure-region=<value>           Microsoft Azure region in which resources will be provisioned
-  --azure-subscription-id=<value>  Microsoft Azure subscription id
+  --azure-subscription-id=<value>  Microsoft Azure Subscription ID
   --azure-vm-size=<value>          [default: Standard_B2s] Machine type to be provisioned
 
 BUILD FLAGS
@@ -102,6 +107,8 @@ KUBE-POD DRIVER FLAGS
   --kube-pod-namespace=<value>       [default: default] Kubernetes namespace in which resources will be provisioned
                                      (needs to exist)
   --[no-]kube-pod-server-side-apply  Use server side apply to create Kubernetes resources
+  --kube-pod-storage-class=<value>   Storage class to use for Pod data volume
+  --kube-pod-storage-size=<value>    [default: 5] Size of Pod data volume in GiB
   --kube-pod-template=<value>        Path to custom resources template file (will use default template if not specified)
 
 LIGHTSAIL DRIVER FLAGS
@@ -121,4 +128,4 @@ FLAG DESCRIPTIONS
     If not specified, will detect from the current Git context
 ```
 
-_See code: [src/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.58/src/commands/up.ts)_
+_See code: [src/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/up.ts)_

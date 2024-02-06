@@ -11,22 +11,26 @@ Delete preview environments
 
 ```
 USAGE
-  $ preevy down [--json] [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--enable-plugin
-    <value>] [--disable-plugin <value>] [--profile <value>] [-d lightsail|gce|azure|kube-pod] [--lightsail-region
-    <value>] [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
-    [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>] [--kube-pod-template
-    <value>] [--id <value>] [--force] [--wait] [--github-token <value>] [--github-repo <value>] [--github-pull-request
-    <value>] [--github-pr-comment-template-file <value>] [--github-add-build-cache] [--github-pr-comment-enabled
-    auto|no|always]
+  $ preevy down [--json] [-D] [-f <value>] [--system-compose-file <value>] [--project-directory <value>]
+    [-p <value>] [--enable-plugin <value>] [--disable-plugin <value>] [--profile <value>] [-d
+    lightsail|gce|azure|kube-pod] [--lightsail-region <value>] [--gce-project-id <value>] [--gce-zone <value>]
+    [--azure-region <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>] [--kube-pod-kubeconfig
+    <value>] [--kube-pod-context <value>] [--lightsail-availability-zone <value>] [--lightsail-bundle-id
+    nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0] [--gce-machine-type <value>]
+    [--azure-vm-size <value>] [--kube-pod-template <value>] [--kube-pod-server-side-apply] [--kube-pod-storage-class
+    <value>] [--kube-pod-storage-size <value>] [--id <value>] [--force] [--wait] [--github-token <value>] [--github-repo
+    <value>] [--github-pull-request <value>] [--github-pr-comment-template-file <value>] [--github-add-build-cache]
+    [--github-pr-comment-enabled auto|no|always]
 
 FLAGS
-  -d, --driver=<option>  Machine driver to use
-                         <options: lightsail|gce|azure|kube-pod>
-      --force            Do not error if the environment is not found
-      --id=<value>       Environment id
-      --profile=<value>  Run in a specific profile context (either an alias or a URL)
-      --wait             Wait for resource deletion to complete. If false (the default), the deletion will be started
-                         but not waited for
+  -d, --driver=<option>            Machine driver to use
+                                   <options: lightsail|gce|azure|kube-pod>
+      --force                      Do not error if the environment is not found
+      --id=<value>                 Environment id
+      --profile=<value>            Run in a specific profile context (either an alias or a URL)
+      --project-directory=<value>  Alternate working directory (default: the path of the first specified Compose file)
+      --wait                       Wait for resource deletion to complete. If false (the default), the deletion will be
+                                   started but not waited for
 
 GLOBAL FLAGS
   -D, --debug                           Enable debug logging
@@ -39,11 +43,13 @@ GLOBAL FLAGS
 
 AZURE DRIVER FLAGS
   --azure-region=<value>           Microsoft Azure region in which resources will be provisioned
-  --azure-subscription-id=<value>  Microsoft Azure subscription id
+  --azure-subscription-id=<value>  Microsoft Azure Subscription ID
+  --azure-vm-size=<value>          [default: Standard_B2s] Machine type to be provisioned
 
 GCE DRIVER FLAGS
-  --gce-project-id=<value>  Google Cloud project ID
-  --gce-zone=<value>        Google Cloud zone in which resources will be provisioned
+  --gce-machine-type=<value>  Machine type to be provisioned
+  --gce-project-id=<value>    Google Cloud project ID
+  --gce-zone=<value>          Google Cloud zone in which resources will be provisioned
 
 GITHUB INTEGRATION FLAGS
   --github-add-build-cache                   Add github cache to the build
@@ -56,14 +62,21 @@ GITHUB INTEGRATION FLAGS
   --github-token=<value>                     GitHub token with write access to the repo
 
 KUBE-POD DRIVER FLAGS
-  --kube-pod-context=<value>     kubeconfig context name (will load config from defaults if not specified)
-  --kube-pod-kubeconfig=<value>  Path to kubeconfig file (will load config from defaults if not specified)
-  --kube-pod-namespace=<value>   [default: default] Kubernetes namespace in which resources will be provisioned (needs
-                                 to exist)
-  --kube-pod-template=<value>    Path to custom resources template file (will use default template if not specified)
+  --kube-pod-context=<value>         kubeconfig context name (will load config from defaults if not specified)
+  --kube-pod-kubeconfig=<value>      Path to kubeconfig file (will load config from defaults if not specified)
+  --kube-pod-namespace=<value>       [default: default] Kubernetes namespace in which resources will be provisioned
+                                     (needs to exist)
+  --[no-]kube-pod-server-side-apply  Use server side apply to create Kubernetes resources
+  --kube-pod-storage-class=<value>   Storage class to use for Pod data volume
+  --kube-pod-storage-size=<value>    [default: 5] Size of Pod data volume in GiB
+  --kube-pod-template=<value>        Path to custom resources template file (will use default template if not specified)
 
 LIGHTSAIL DRIVER FLAGS
-  --lightsail-region=<value>  AWS region in which resources will be provisioned
+  --lightsail-availability-zone=<value>  AWS availability zone to provision resources in region
+  --lightsail-bundle-id=<option>         Lightsail bundle ID (size of instance) to provision. Default: medium_2_0
+                                         <options:
+                                         nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0>
+  --lightsail-region=<value>             AWS region in which resources will be provisioned
 
 DESCRIPTION
   Delete preview environments
@@ -75,4 +88,4 @@ FLAG DESCRIPTIONS
     If not specified, will detect from the current Git context
 ```
 
-_See code: [src/commands/down.ts](https://github.com/livecycle/preevy/blob/v0.0.58/src/commands/down.ts)_
+_See code: [src/commands/down.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/down.ts)_

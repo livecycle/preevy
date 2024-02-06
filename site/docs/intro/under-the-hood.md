@@ -31,7 +31,7 @@ When provisioning a new environment using the [`up`](/cli-reference#preevy-up-se
 The Preevy profile provides a mechanism for storing and sharing configuration and state between different machines. This allows sharing of environments between different CI jobs, or different developers.
 Using a shared profile ensures consistent configuration and stable URLs between different CI runs.
 
-Preevy includes built-in support for sharing profiles using [AWS S3](https://aws.amazon.com/s3/) and [Google Cloud Storage](https://cloud.google.com/storage/). You can also store the profile on the local filesystem and copy it manually.
+Preevy includes built-in support for sharing profiles using[AWS S3](https://aws.amazon.com/s3/) [Google Cloud Storage](https://cloud.google.com/storage/) and [Azure Blob Storage](https://azure.microsoft.com/en-us/products/storage/blobs/). You can also store the profile on the local filesystem and copy it manually.
 
 :::note
 The profile does not contain any cloud provider credentials.
@@ -39,9 +39,9 @@ The profile does not contain any cloud provider credentials.
 
 When using S3, the Preevy CLI uses the local AWS credential chain (e.g, from environment variables, AWS profile, or EC2 role)
 
-Similarly, when using Google Cloud Storage, the Preevy CLI uses the locally stored Google Cloud credentials.
+Similarly, when using Google Cloud Storage or Azure Blob Storage, the Preevy CLI uses the locally stored credentials.
 
-For both providers, Preevy needs specific permissions to create the bucket (if it doesn't already exist) and read/write objects on the bucket.
+For all storage providers, Preevy needs specific permissions to create the bucket (if it doesn't already exist) and read/write objects on the bucket.
 
 ### Profile URLs
 
@@ -60,7 +60,13 @@ Example Google Cloud Storage URL:
 gs://preevy-config/profile1?project=my-project
 ```
 
-Refers to a profile stored on a GCS bucket named `preevy-config` in the project `my-project` under the base path `profile1`.
+Example Azure Blob Storage Storage URL:
+
+```
+azblob://preevy-config/profile1?storage_account=myaccount
+```
+
+Refers to a profile stored on a AZBlob [container](https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blobs-introduction#containers) named `preevy-config` in the [storage account](https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blobs-introduction#storage-accounts) `my-project` under the base path `profile1`.
 
 To import a shared profile, specify its URL to the `preevy init` command:
 

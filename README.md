@@ -218,9 +218,9 @@ A public Docker/OCI image is available: `ghcr.io/livecycle/preevy/tunnel-server`
 
 ## CI Integration
 
-Preevy is designed to work seamlessly with your CI, allowing you to easily import a shared preview profile in AWS S3 and Google Cloud Storage (GCS).
+Preevy is designed to work seamlessly with your CI, by importing a shared preview profile from [AWS S3](https://aws.amazon.com/s3/) [Google Cloud Storage (GCS)](https://cloud.google.com/storage/) and [Azure Blob Storage (AZBlob)](https://azure.microsoft.com/en-us/products/storage/blobs/).
 
-Profiles are created using `preevy init`. Choose a S3/GCS URL for storing the profile - Preevy will create a bucket if one doesn't exist.
+Profiles are created using `preevy init`. Choose a S3/GCS/AZBlob URL for storing the profile - Preevy will create a bucket if one doesn't exist.
 
 If you already have a locally stored Preevy Profile, it can be migrated to remote storage using [`preevy profile cp`](https://github.com/livecycle/preevy/blob/main/packages/cli/docs/profile.md#preevy-profile-cp)
 
