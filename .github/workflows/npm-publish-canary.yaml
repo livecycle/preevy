@@ -53,7 +53,7 @@ jobs:
         # this will be the NPM dist-tag
         GIT_ID=$(echo "${REF}" | sed 's/[^a-zA-Z0-9_-]/-/g')
 
-        # run 'lerna version' to get get next prerelease
+        # run 'lerna version' to get next prerelease
         yarn -s lerna version prerelease --no-git-tag-version --preid $GIT_ID --ignore-scripts --exact --yes
 
         # modify the prerelease to include the git commit hash

@@ -34,6 +34,29 @@ jobs:
 
       - run: yarn build
 
+      - name: Set canary version
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          set -eou pipefail
+          set -x
+
+          REF="${{ github.head_ref }}"
+          if [[ -z "$REF" ]]; then
+            REF="${{ github.ref_name }}"
+          fi
+
+          # this will be the NPM dist-tag
+          GIT_ID=$(echo "${REF}" | sed 's/[^a-zA-Z0-9_-]/-/g')
+
+          # run 'lerna version' to get next prerelease
+          yarn -s lerna version prerelease --no-git-tag-version --preid $GIT_ID --ignore-scripts --exact --yes
+
+          # modify the prerelease to include the git commit hash
+          VERSION=$(jq -r .version lerna.json | sed -E "s/[^.]+$/$(git rev-parse --short HEAD)/")
+
+          # run 'lerna version' again to actually set the version with the commit hash
+          yarn -s lerna version $VERSION --no-git-tag-version --preid $GIT_ID --ignore-scripts --exact --yes
+
       - name: Find packaged node version
         id: find_packaged_node_version
         working-directory: packages/cli
