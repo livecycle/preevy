@@ -57,6 +57,19 @@ jobs:
           # run 'lerna version' again to actually set the version with the commit hash
           yarn -s lerna version $VERSION --no-git-tag-version --preid $GIT_ID --ignore-scripts --exact --yes
 
+      - run: npm install -g @jsdevtools/npm-publish
+
+      - name: npm publish
+        run: |
+          set -eou pipefail
+          set -x
+
+          yarn lerna run prepack
+
+          for packageDir in $(ls packages); do
+            npm-publish --token ${{ secrets.NPM_TOKEN }} --access public packages/${packageDir}/package.json
+          done
+
       - name: Find packaged node version
         id: find_packaged_node_version
         working-directory: packages/cli
