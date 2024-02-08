@@ -47,6 +47,17 @@ const readFileSyncOrUndefined = (filename: string) => {
   }
 }
 
+const tlsConfig = (() => {
+  const cert = readFileSyncOrUndefined('./tls/cert.pem')
+  const key = readFileSyncOrUndefined('./tls/key.pem')
+  if (!cert || !key) {
+    log.info('No TLS cert or key found, TLS will be disabled')
+    return undefined
+  }
+  log.info('TLS will be enabled')
+  return { cert, key }
+})()
+
 const saasIdp = (() => {
   const saasPublicKeyStr = process.env.SAAS_PUBLIC_KEY || readFileSyncOrUndefined('/etc/certs/preview-proxy/saas.key.pub')
   if (!saasPublicKeyStr) {
@@ -75,6 +86,7 @@ const authFactory = (
 const activeTunnelStore = inMemoryActiveTunnelStore({ log })
 const sessionStore = cookieSessionStore({ domain: BASE_URL.hostname, schema: claimsSchema, keys: process.env.COOKIE_SECRETS?.split(' ') })
 const app = await createApp({
+  tlsConfig,
   sessionStore,
   activeTunnelStore,
   baseUrl: BASE_URL,

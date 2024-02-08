@@ -1,5 +1,4 @@
 version: '3.7'
-## NEED TO ADD TLS CONFIGURATION for traefik and stunnel
 
 secrets:
   tls-key:
@@ -14,27 +13,19 @@ services:
   proxy:
     environment:
       BASE_URL: ${BASE_URL:-https://local.livecycle.run:8044}
+    secrets:
+      - source: tls-key
+        target: /app/tls/key.pem
+    configs:
+      - source: tls-cert
+        target: /app/tls/cert.pem
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider https://localhost:3000/healthz || exit 1
   sslh:
     image: oorabona/sslh:v2.0-rc1
     command: [sslh-ev, --config=/etc/sslh/config]
     configs:
       - source: sslh-config
         target: /etc/sslh/config
-
-  stunnel:
-    image: dweomer/stunnel
-    environment:
-      - STUNNEL_SERVICE=proxy
-      - STUNNEL_ACCEPT=0.0.0.0:443
-      - STUNNEL_CONNECT=sslh:2443
-      - STUNNEL_KEY=/etc/certs/preview-proxy/key.pem
-      - STUNNEL_CRT=/etc/certs/preview-proxy/cert.pem
-      - STUNNEL_DEBUG=err
     ports:
-      - '8044:443'
-    secrets:
-      - source: tls-key
-        target: /etc/certs/preview-proxy/key.pem
-    configs:
-      - source: tls-cert
-        target: /etc/certs/preview-proxy/cert.pem
+      - '8044:2443'
