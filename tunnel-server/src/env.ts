@@ -8,5 +8,12 @@ export const requiredEnv = (key: string): string => {
 
 export const numberFromEnv = (key: string) => {
   const s = process.env[key]
-  return s === undefined ? undefined : Number(s)
+  if (!s) {
+    return undefined
+  }
+  const result = Number(s)
+  if (Number.isNaN(result)) {
+    throw new Error(`env var ${key} is not a number: "${s}"`)
+  }
+  return result
 }

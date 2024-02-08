@@ -6,26 +6,18 @@ secrets:
 configs:
   tls-cert:
     file: ./tls/cert.pem
-  sslh-config:
-    file: ./tls/sslh.conf
 
 services:
   proxy:
     environment:
-      BASE_URL: ${BASE_URL:-https://local.livecycle.run:8044}
+      BASE_URL: ${BASE_URL:-https://local.livecycle.run:8443}
     secrets:
       - source: tls-key
         target: /app/tls/key.pem
     configs:
       - source: tls-cert
         target: /app/tls/cert.pem
-    healthcheck:
-      test: wget --no-verbose --tries=1 --spider https://localhost:3000/healthz || exit 1
-  sslh:
-    image: oorabona/sslh:v2.0-rc1
-    command: [sslh-ev, --config=/etc/sslh/config]
-    configs:
-      - source: sslh-config
-        target: /etc/sslh/config
     ports:
-      - '8044:2443'
+      - '8030:3000'
+      - '8443:8443'
+      - '2223:2222'

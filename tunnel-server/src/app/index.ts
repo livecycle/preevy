@@ -1,7 +1,6 @@
 import fastify, { FastifyServerFactory, RawServerDefault } from 'fastify'
 import { fastifyRequestContext } from '@fastify/request-context'
 import http from 'http'
-import https from 'https'
 import { Logger } from 'pino'
 import { KeyObject } from 'crypto'
 import { validatorCompiler, serializerCompiler, ZodTypeProvider } from 'fastify-type-provider-zod'
@@ -17,12 +16,10 @@ const HEALTZ_URL = '/healthz'
 
 const serverFactory = ({
   log,
-  tlsConfig,
   baseUrl,
   proxy,
 }: {
   log: Logger
-  tlsConfig?: https.ServerOptions
   baseUrl: URL
   proxy: Proxy
 }): FastifyServerFactory<RawServerDefault> => handler => {
@@ -58,12 +55,10 @@ const serverFactory = ({
     return undefined
   }
 
-  return (tlsConfig ? https.createServer(tlsConfig, serverHandler) : http.createServer(serverHandler))
-    .on('upgrade', serverUpgradeHandler)
+  return http.createServer(serverHandler).on('upgrade', serverUpgradeHandler)
 }
 
 export const createApp = async ({
-  tlsConfig,
   proxy,
   sessionStore,
   baseUrl,
@@ -73,7 +68,6 @@ export const createApp = async ({
   authFactory,
 }: {
   log: Logger
-  tlsConfig?: https.ServerOptions
   baseUrl: URL
   saasBaseUrl?: URL
   sessionStore: SessionStore<Claims>
@@ -81,7 +75,7 @@ export const createApp = async ({
   authFactory: (client: { publicKey: KeyObject; publicKeyThumbprint: string }) => Authenticator
   proxy: Proxy
 }) => {
-  const app = await fastify({ logger: log, serverFactory: serverFactory({ log, baseUrl, tlsConfig, proxy }) })
+  const app = await fastify({ logger: log, serverFactory: serverFactory({ log, baseUrl, proxy }) })
   app.setValidatorCompiler(validatorCompiler)
   app.setSerializerCompiler(serializerCompiler)
   app.withTypeProvider<ZodTypeProvider>()
