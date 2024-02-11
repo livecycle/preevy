@@ -1,0 +1,5 @@
+/tls.crt
+/tls.key
+/ssh_host_key
+/cookie_secret
+/config.env
