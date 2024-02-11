@@ -1,13 +1,13 @@
 import { promisify } from 'util'
 import pino from 'pino'
-import fs from 'fs'
 import { KeyObject, createPublicKey } from 'crypto'
+import { ListenOptions } from 'net'
 import { createApp } from './src/app/index.js'
 import { activeTunnelStoreKey, inMemoryActiveTunnelStore } from './src/tunnel-store/index.js'
 import { getSSHKeys } from './src/ssh-keys.js'
 import { proxy } from './src/proxy/index.js'
 import { appLoggerFromEnv } from './src/logging.js'
-import { tunnelsGauge, runMetricsServer, sshConnectionsGauge } from './src/metrics.js'
+import { tunnelsGauge, metricsServer as createMetricsServer, sshConnectionsGauge } from './src/metrics.js'
 import { numberFromEnv, requiredEnv } from './src/env.js'
 import { editUrl } from './src/url.js'
 import { cookieSessionStore } from './src/session.js'
@@ -15,6 +15,27 @@ import { IdentityProvider, claimsSchema, cliIdentityProvider, jwtAuthenticator, 
 import { createSshServer } from './src/ssh/index.js'
 import { calcLoginUrl } from './src/app/urls.js'
 import { createTlsServer } from './src/tls-server.js'
+import { readFileSyncOrUndefined } from './src/files.js'
+
+type HasListen = {
+  listen: (opts: ListenOptions, callback: (err?: unknown) => void) => void
+}
+
+const LISTEN_HOST = '0.0.0.0'
+const listen = async <T extends HasListen>({ log, server, port }: {
+  server: T
+  log: pino.Logger
+  port: number
+}) => {
+  try {
+    await promisify(server.listen).call(server, { port, host: LISTEN_HOST })
+    log.info('Listening on port %d', port)
+  } catch (e) {
+    log.error(new Error(`Error listening on port ${port}`, { cause: e }))
+    process.exit(1)
+  }
+  return server
+}
 
 const log = pino.default(appLoggerFromEnv())
 
@@ -25,7 +46,6 @@ const { sshPrivateKey } = await getSSHKeys({
 
 const PORT = numberFromEnv('PORT') || 3000
 const SSH_PORT = numberFromEnv('SSH_PORT') || 2222
-const LISTEN_HOST = '0.0.0.0'
 const BASE_URL = (() => {
   const result = new URL(requiredEnv('BASE_URL'))
   if (result.pathname !== '/' || result.search || result.username || result.password || result.hash) {
@@ -36,23 +56,11 @@ const BASE_URL = (() => {
 
 log.info('base URL: %s', BASE_URL)
 
-const isNotFoundError = (e: unknown) => (e as { code?: unknown })?.code === 'ENOENT'
-const readFileSyncOrUndefined = (filename: string) => {
-  try {
-    return fs.readFileSync(filename, { encoding: 'utf8' })
-  } catch (e) {
-    if (isNotFoundError(e)) {
-      return undefined
-    }
-    throw e
-  }
-}
-
 const tlsConfig = (() => {
-  const cert = readFileSyncOrUndefined('./tls/cert.pem')
-  const key = readFileSyncOrUndefined('./tls/key.pem')
+  const cert = process.env.TLS_CERT || readFileSyncOrUndefined(process.env.TLS_CERT_FILE || './tls/cert.pem')
+  const key = process.env.TLS_KEY || readFileSyncOrUndefined(process.env.TLS_KEY_FILE || './tls/key.pem')
   if (!cert || !key) {
-    log.info('No TLS cert or key found, TLS will be disabled')
+    log.warn('No TLS cert or key found, TLS will be disabled')
     return undefined
   }
   log.info('TLS will be enabled')
@@ -84,23 +92,29 @@ const authFactory = (
   baseIdentityProviders.concat(cliIdentityProvider(publicKey, publicKeyThumbprint)),
 )
 
-const activeTunnelStore = inMemoryActiveTunnelStore({ log })
+const activeTunnelStore = inMemoryActiveTunnelStore({ log: log.child({ name: 'tunnel_store' }) })
 const sessionStore = cookieSessionStore({ domain: BASE_URL.hostname, schema: claimsSchema, keys: process.env.COOKIE_SECRETS?.split(' ') })
-const app = await createApp({
-  sessionStore,
-  activeTunnelStore,
-  baseUrl: BASE_URL,
-  proxy: proxy({
-    activeTunnelStore,
-    log,
+
+const appLog = log.child({ name: 'app' })
+const app = await listen({
+  server: await createApp({
     sessionStore,
-    baseHostname: BASE_URL.hostname,
+    activeTunnelStore,
+    baseUrl: BASE_URL,
+    proxy: proxy({
+      activeTunnelStore,
+      log,
+      sessionStore,
+      baseHostname: BASE_URL.hostname,
+      authFactory,
+      loginUrl: ({ env, returnPath }) => calcLoginUrl({ baseUrl: BASE_URL, env, returnPath }),
+    }),
+    log: appLog,
     authFactory,
-    loginUrl: ({ env, returnPath }) => calcLoginUrl({ baseUrl: BASE_URL, env, returnPath }),
+    saasBaseUrl: saasIdp ? new URL(requiredEnv('SAAS_BASE_URL')) : undefined,
   }),
-  log,
-  authFactory,
-  saasBaseUrl: saasIdp ? new URL(requiredEnv('SAAS_BASE_URL')) : undefined,
+  log: appLog,
+  port: PORT,
 })
 
 const tunnelUrl = (
@@ -109,62 +123,59 @@ const tunnelUrl = (
   tunnel: string,
 ) => editUrl(rootUrl, { hostname: `${activeTunnelStoreKey(clientId, tunnel)}.${rootUrl.hostname}` }).toString()
 
-const sshServer = createSshServer({
-  log: log.child({ name: 'ssh_server' }),
-  sshPrivateKey,
-  socketDir: '/tmp', // TODO
-  activeTunnelStore,
-  helloBaseResponse: {
-    // TODO: backwards compat, remove when we drop support for CLI v0.0.35
-    baseUrl: { hostname: BASE_URL.hostname, port: BASE_URL.port, protocol: BASE_URL.protocol },
-    rootUrl: BASE_URL.toString(),
-  },
-  tunnelsGauge,
-  sshConnectionsGauge,
-  tunnelUrl: (clientId, remotePath) => tunnelUrl(BASE_URL, clientId, remotePath),
-})
-  .listen(SSH_PORT, LISTEN_HOST, () => {
-    app.log.debug('ssh server listening on port %j', SSH_PORT)
-  })
-
-app.listen({ host: LISTEN_HOST, port: PORT }).catch(err => {
-  app.log.error(err)
-  process.exit(1)
+const sshServerLog = log.child({ name: 'ssh_server' })
+const sshServer = await listen({
+  server: createSshServer({
+    log: sshServerLog,
+    sshPrivateKey,
+    socketDir: '/tmp', // TODO
+    activeTunnelStore,
+    helloBaseResponse: {
+      // TODO: backwards compat, remove when we drop support for CLI v0.0.35
+      baseUrl: { hostname: BASE_URL.hostname, port: BASE_URL.port, protocol: BASE_URL.protocol },
+      rootUrl: BASE_URL.toString(),
+    },
+    tunnelsGauge,
+    sshConnectionsGauge,
+    tunnelUrl: (clientId, remotePath) => tunnelUrl(BASE_URL, clientId, remotePath),
+  }),
+  log: sshServerLog,
+  port: SSH_PORT,
 })
 
 const TLS_PORT = numberFromEnv('TLS_PORT') ?? 8443
 const tlsLog = log.child({ name: 'tls_server' })
 const tlsServer = tlsConfig
-  ? createTlsServer({
+  ? await listen({
+    server: createTlsServer({
+      log: tlsLog,
+      tlsConfig,
+      sshServer,
+      httpServer:
+      app.server,
+      sshHostnames: process.env.SSH_HOSTNAMES ? process.env.SSH_HOSTNAMES.split(',') : [BASE_URL.hostname],
+    }),
+    port: TLS_PORT,
     log: tlsLog,
-    tlsConfig,
-    sshServer,
-    httpServer:
-    app.server,
-    sshHostnames: new Set([BASE_URL.hostname]),
-  })
-  : undefined
+  }) : undefined
 
-tlsServer?.listen({ host: LISTEN_HOST, port: TLS_PORT }, () => { tlsLog.info('TLS server listening on port %j', TLS_PORT) })
+const metricsLerverLog = log.child({ name: 'metrics_server' })
+const metricsServer = await listen({
+  server: createMetricsServer({ log: metricsLerverLog }),
+  port: 8888,
+  log: metricsLerverLog,
+})
 
-runMetricsServer(8888).catch(err => {
-  app.log.error(err)
-});
+const exitSignals = ['SIGTERM', 'SIGINT'] as const
+const servers = [app, sshServer, metricsServer, ...tlsServer ? [tlsServer] : []] as const
 
-['SIGTERM', 'SIGINT'].forEach(signal => {
-  process.once(signal, () => {
-    app.log.info(`shutting down on ${signal}`)
-    Promise.all([
-      promisify(sshServer.close).call(sshServer),
-      app.close(),
-      tlsServer ? promisify(tlsServer.close).call(tlsServer) : undefined,
-    ])
-      .catch(err => {
-        app.log.error(err)
-        process.exit(1)
-      })
-      .finally(() => {
-        process.exit(0)
-      })
+exitSignals.forEach(signal => {
+  process.once(signal, async () => {
+    log.info(`Shutting down on ${signal}`)
+    await Promise.all(servers.map(server => promisify(server.close).call(server))).catch(err => {
+      log.error(err)
+      process.exit(1)
+    })
+    process.exit(0)
   })
 })

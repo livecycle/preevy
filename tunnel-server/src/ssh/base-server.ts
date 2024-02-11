@@ -69,10 +69,7 @@ type BaseSshServerEvents = {
   error: (err: Error) => void
 }
 
-export interface BaseSshServer extends IEventEmitter<BaseSshServerEvents> {
-  close: ssh2.Server['close']
-  listen: ssh2.Server['listen']
-}
+export type BaseSshServer = IEventEmitter<BaseSshServerEvents> & Pick<ssh2.Server, 'close' | 'listen' | 'injectSocket'>
 
 export const baseSshServer = (
   {
@@ -304,5 +301,6 @@ export const baseSshServer = (
   return Object.assign(serverEmitter, {
     close: server.close.bind(server),
     listen: server.listen.bind(server),
+    injectSocket: server.injectSocket.bind(server),
   })
 }
