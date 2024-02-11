@@ -17,10 +17,10 @@ spec:
         secret:
           defaultMode: 400
           secretName: tunnel-server-ssh
-      - name: sslh-config
-        configMap:
-          defaultMode: 420
-          name: tunnel-server-sslh-config
+      - name: tls-cert
+        secret:
+          defaultMode: 400
+          secretName: tunnel-server-tls
       containers:
       - env:
         - name: COOKIE_SECRETS
@@ -52,6 +52,9 @@ spec:
         - containerPort: 3000
           name: http
           protocol: TCP
+        - containerPort: 8443
+          name: tls
+          protocol: TCP
         resources:
           limits:
             cpu: "1"
@@ -69,35 +72,29 @@ spec:
         - mountPath: /etc/livecycle-ssh
           name: ssh
           readOnly: true
-      - image: oorabona/sslh:v2.0-rc1
-        imagePullPolicy: IfNotPresent
-        name: sslh
-        command: [sslh-ev, --config=/etc/sslh/sslh.conf]
-        volumeMounts:
-        - mountPath: /etc/sslh
-          name: sslh-config
+        - mountPath: /app/tls/cert.pem
+          name: tls-cert
           readOnly: true
-        ports:
-        - containerPort: 2443
-          name: sslh
-          protocol: TCP
-      restartPolicy: Always
-      terminationGracePeriodSeconds: 30
+          subPath: tls.crt
+        - mountPath: /app/tls/key.pem
+          name: tls-cert
+          readOnly: true
+          subPath: tls.key
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: tunnel-server
 spec:
+  type: LoadBalancer
   ports:
-  - name: sslh
+  - name: tls
     port: 443
     protocol: TCP
-    targetPort: 2443
+    targetPort: 8443
   - name: metrics
     port: 8888
     protocol: TCP
     targetPort: 8888
   selector:
     app: tunnel-server
-  type: ClusterIP

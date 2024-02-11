@@ -15,25 +15,25 @@ Deploying a private instance of the Tunnel Server allows for fine-grained contro
 ## Requirements
 
 - A Kubernetes cluster
-- An ingress solution to make K8S Services accesible from your network (e.g, Traefik). In this example, we'll use your cloud provider's load balancer.
 - A TLS certificate for your domain
 - `kubectl` and `kustomize`
 
 ## Overview
 
-The Tunnel Server natively listens on two ports:
+The Tunnel Server natively listens on three ports:
 - A SSH port which accepts tunneling SSH connections from environments
 - A HTTP port which accepts requests from clients (browsers, etc)
+- A TLS port which directs incoming connections to either the SSH server or the HTTP server according to the [SNI server name](https://en.wikipedia.org/wiki/Server_Name_Indication).
 
-In this deployment scheme, both ports are wrapped with TLS using [`stunnel`](https://www.stunnel.org/). Both HTTP and SSH connections are accepted on a [single port](https://vadosware.io/post/stuffing-both-ssh-and-https-on-port-443-with-stunnel-ssh-and-traefik/) and routed using [`sslh`](https://github.com/yrutschle/sslh/) to the tunnel server ports.
+The `SSH_HOSTNAMES` env var determines which hostnames are directed to the SSH server and the rest are directed to the HTTP server. If the env var is not specified, the hostname of the `BASE_URL` is used.
 
-The `stunnel` port is then exposed using a [`LoadBalancer-type K8S Service`](https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer).
+In this deployment scheme, the TLS port is exposed using a [`LoadBalancer-type K8S Service`](https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer). The base hostname `yourdomain.example` is used for tunneling SSH connections and any hostname on the subdomain `*.yourdomain.example` will be used for client requests.
 
 ## Instructions
 
 ### 1. Setup the domain and the TLS certificate
 
-Make sure the certificate is for a wildcard subdomain, e.g, `*.yourdomain.example`
+Make sure the certificate is for both the base domain and the wildcard subdomain, e.g, `yourdomain.example` and `*.yourdomain.example`.
 
 Put the cert and key (in PEM format) in the files `tls.crt` and `tls.key`
 
@@ -78,12 +78,13 @@ To test the SSH endpoint (replace `$MY_DOMAIN` with your domain):
 ```bash
 MY_DOMAIN=yourdomain.example
 
-EXTERNAL_IP=$(kubectl get service tunnel-server-tls -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+# NOTE: for EKS, replace .ip with .hostname below
+EXTERNAL_IP=$(kubectl get service tunnel-server -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 
 ssh -nT -o "ProxyCommand openssl s_client -quiet -verify_quiet -servername $MY_DOMAIN -connect %h:%p" -p 443 foo@$EXTERNAL_IP hello
 ```
 
-### 6. Create DNS records for the `tunnel-server` Service external IP
+### 6. Create DNS records for the `tunnel-server` Service external IP or hostname
 
 Create two DNS records: `*.yourdomain.example` and `yourdomain.example`, both pointing to the external IP of the `tunnel-server` service.
 
@@ -93,8 +94,14 @@ The address is not guaranteed to be static. According to your Kubernetes provide
 - Google Cloud: [GKE](https://cloud.google.com/kubernetes-engine/docs/concepts/service-load-balancer)
 - Azure: [AKS](https://learn.microsoft.com/en-us/azure/aks/load-balancer-standard)
 
-Another approach would be to use a 3rd-party ingress solution like [Traefik](https://doc.traefik.io/traefik/user-guides/crd-acme/).
-
-## Using your Tunnel Server instance with the Preevy CLI
+### 7. Use your Tunnel Server instance with the Preevy CLI
 
 The `up` and `urls` commands accept a `-t` flag which can be used to set the Tunnel Server URL. Specify `ssh+tls://yourdomain.example` to use your instance.
+
+### 8. Cleanup: Delete the deployed objects
+
+To delete the deployed Tunnel Server and associated Kubernetes objects, run:
+
+```bash
+kustomize build . | kubectl delete -f -
+```
