@@ -4,6 +4,7 @@ import http from 'http'
 import { Logger } from 'pino'
 import { KeyObject } from 'crypto'
 import { validatorCompiler, serializerCompiler, ZodTypeProvider } from 'fastify-type-provider-zod'
+import { Duplex } from 'stream'
 import { SessionStore } from '../session.js'
 import { Authenticator, Claims } from '../auth.js'
 import { ActiveTunnelStore } from '../tunnel-store/index.js'
@@ -30,30 +31,31 @@ const serverFactory = ({
   log.debug('authHostname %j', authHostname)
 
   const isNonProxyRequest = ({ headers }: http.IncomingMessage) => {
-    log.debug('isNonProxyRequest %j', headers)
     const host = headers.host?.split(':')?.[0]
     return (host === authHostname) || (host === apiHostname)
   }
 
-  const server = http.createServer((req, res) => {
+  const serverHandler = (req: http.IncomingMessage, res: http.ServerResponse) => {
     if (req.url !== HEALTZ_URL) {
       log.debug('request %j', { method: req.method, url: req.url, headers: req.headers })
     }
     const proxyHandler = !isNonProxyRequest(req) && proxy.routeRequest(req)
     return proxyHandler ? proxyHandler(req, res) : handler(req, res)
-  })
-    .on('upgrade', (req, socket, head) => {
-      log.debug('upgrade %j', { method: req.method, url: req.url, headers: req.headers })
-      const proxyHandler = !isNonProxyRequest(req) && proxy.routeUpgrade(req)
-      if (proxyHandler) {
-        return proxyHandler(req, socket, head)
-      }
+  }
 
-      log.warn('upgrade request %j not found', { method: req.method, url: req.url, host: req.headers.host })
-      socket.end('Not found')
-      return undefined
-    })
-  return server
+  const serverUpgradeHandler = (req: http.IncomingMessage, socket: Duplex, head: Buffer) => {
+    log.debug('upgrade %j', { method: req.method, url: req.url, headers: req.headers })
+    const proxyHandler = !isNonProxyRequest(req) && proxy.routeUpgrade(req)
+    if (proxyHandler) {
+      return proxyHandler(req, socket, head)
+    }
+
+    log.warn('upgrade request %j not found', { method: req.method, url: req.url, host: req.headers.host })
+    socket.end('Not found')
+    return undefined
+  }
+
+  return http.createServer(serverHandler).on('upgrade', serverUpgradeHandler)
 }
 
 export const createApp = async ({

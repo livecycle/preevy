@@ -14,6 +14,7 @@ import { cookieSessionStore } from './src/session.js'
 import { IdentityProvider, claimsSchema, cliIdentityProvider, jwtAuthenticator, saasIdentityProvider } from './src/auth.js'
 import { createSshServer } from './src/ssh/index.js'
 import { calcLoginUrl } from './src/app/urls.js'
+import { createTlsServer } from './src/tls-server.js'
 
 const log = pino.default(appLoggerFromEnv())
 
@@ -46,6 +47,17 @@ const readFileSyncOrUndefined = (filename: string) => {
     throw e
   }
 }
+
+const tlsConfig = (() => {
+  const cert = readFileSyncOrUndefined('./tls/cert.pem')
+  const key = readFileSyncOrUndefined('./tls/key.pem')
+  if (!cert || !key) {
+    log.info('No TLS cert or key found, TLS will be disabled')
+    return undefined
+  }
+  log.info('TLS will be enabled')
+  return { cert, key }
+})()
 
 const saasIdp = (() => {
   const saasPublicKeyStr = process.env.SAAS_PUBLIC_KEY || readFileSyncOrUndefined('/etc/certs/preview-proxy/saas.key.pub')
@@ -120,6 +132,21 @@ app.listen({ host: LISTEN_HOST, port: PORT }).catch(err => {
   process.exit(1)
 })
 
+const TLS_PORT = numberFromEnv('TLS_PORT') ?? 8443
+const tlsLog = log.child({ name: 'tls_server' })
+const tlsServer = tlsConfig
+  ? createTlsServer({
+    log: tlsLog,
+    tlsConfig,
+    sshServer,
+    httpServer:
+    app.server,
+    sshHostnames: new Set([BASE_URL.hostname]),
+  })
+  : undefined
+
+tlsServer?.listen({ host: LISTEN_HOST, port: TLS_PORT }, () => { tlsLog.info('TLS server listening on port %j', TLS_PORT) })
+
 runMetricsServer(8888).catch(err => {
   app.log.error(err)
 });
@@ -127,7 +154,11 @@ runMetricsServer(8888).catch(err => {
 ['SIGTERM', 'SIGINT'].forEach(signal => {
   process.once(signal, () => {
     app.log.info(`shutting down on ${signal}`)
-    Promise.all([promisify(sshServer.close).call(sshServer), app.close()])
+    Promise.all([
+      promisify(sshServer.close).call(sshServer),
+      app.close(),
+      tlsServer ? promisify(tlsServer.close).call(tlsServer) : undefined,
+    ])
       .catch(err => {
         app.log.error(err)
         process.exit(1)
