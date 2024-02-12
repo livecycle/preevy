@@ -9,25 +9,35 @@ Note that this is an advanced task which requires some networking and Kubernetes
 Deploying a private instance of the Tunnel Server allows for fine-grained control of:
 
 - The URLs created for preview environments: e.g, use a custom domain.
-- Geolocation of the server: reduced distance to environments can result better network performance.
+- Geolocation of the server: Deploying the server on a network close to environments' can result better network performance.
 - Security and privacy: deploy everything in your VPC, no traffic to 3rd parties.
 
 ## Requirements
 
 - A Kubernetes cluster
 - A TLS certificate for your domain
-- `kubectl` and `kustomize`
+- [`kubectl`](https://kubernetes.io/docs/tasks/tools/#kubectl), [`kustomize`](https://kubectl.docs.kubernetes.io/installation/kustomize/) and `ssh-keygen` (usually installed with the OpenSSH client).
 
 ## Overview
 
 The Tunnel Server natively listens on three ports:
 - A SSH port which accepts tunneling SSH connections from environments
 - A HTTP port which accepts requests from clients (browsers, etc)
-- A TLS port which directs incoming connections to either the SSH server or the HTTP server according to the [SNI server name](https://en.wikipedia.org/wiki/Server_Name_Indication).
+- A TLS port which directs incoming connections to either the SSH server or the HTTP server according to the [SNI server name](https://en.wikipedia.org/wiki/Server_Name_Indication) and [ALPN](https://en.wikipedia.org/wiki/Application-Layer_Protocol_Negotiation) in the TLS handshake.
 
-The `SSH_HOSTNAMES` env var determines which hostnames are directed to the SSH server and the rest are directed to the HTTP server. If the env var is not specified, the hostname of the `BASE_URL` is used.
+The connection is directed according to the following:
+- If the ALPN protocol is `ssh`, the connection is directed to the SSH server.
+- If the SNI servername is one of the `SSH_HOSTNAMES` (default: the hostname of the `BASE_URL`, e.g, `yourdomain.example`), the connection is directed to the SSH server.
+- Otherwise, the connection is directed to the HTTP server.
 
-In this deployment scheme, the TLS port is exposed using a [`LoadBalancer-type K8S Service`](https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer). The base hostname `yourdomain.example` is used for tunneling SSH connections and any hostname on the subdomain `*.yourdomain.example` will be used for client requests.
+| Parameter | default | overridable using env var |
+| --------- | ------- | ------------------------- |
+| SSH port | 2222 | `SSH_PORT` |
+| HTTP port | 3000 | `PORT` |
+| TLS port | 8443 | `TLS_PORT` |
+| SNI servername for SSH connections | hostname of `BASE_URL` | `SSH_HOSTNAMES` (comma separated) |
+
+In this example deployment, the TLS port is exposed using a [`LoadBalancer-type K8S Service`](https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer). Using the default configuration, we will specify the base hostname `yourdomain.example` as the `-t` flag in the Preevy CLI for tunneling SSH connections, and the resulting env URLs will have the [hostname](https://livecycle.io/blogs/preevy-proxy-service-1/) from the subdomain `*.yourdomain.example` (e.g, `my-service-my-env-abc123456.yourdomain.example`) which will be used for client requests.
 
 ## Instructions
 
@@ -96,7 +106,7 @@ The address is not guaranteed to be static. According to your Kubernetes provide
 
 ### 7. Use your Tunnel Server instance with the Preevy CLI
 
-The `up` and `urls` commands accept a `-t` flag which can be used to set the Tunnel Server URL. Specify `ssh+tls://yourdomain.example` to use your instance.
+The `up` and `urls` commands accept a `-t` flag which can be used to set the Tunnel Server SSH URL. Specify `ssh+tls://yourdomain.example` to use your instance.
 
 ### 8. Cleanup: Delete the deployed objects
 

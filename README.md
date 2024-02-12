@@ -216,6 +216,8 @@ A free public instance is hosted by Livecycle on `livecycle.run`, and it can be 
 
 A public Docker/OCI image is available: `ghcr.io/livecycle/preevy/tunnel-server`
 
+To host your own Tunnel Server instance, see the [deployment guide](tunnel-server/deployment/k8s/README.md).
+
 ## CI Integration
 
 Preevy is designed to work seamlessly with your CI, by importing a shared preview profile from [AWS S3](https://aws.amazon.com/s3/) [Google Cloud Storage (GCS)](https://cloud.google.com/storage/) and [Azure Blob Storage (AZBlob)](https://azure.microsoft.com/en-us/products/storage/blobs/).
