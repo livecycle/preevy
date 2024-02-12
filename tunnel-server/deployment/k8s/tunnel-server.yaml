@@ -40,7 +40,7 @@ spec:
         - name: NODE_ENV
           value: production
         image: ghcr.io/livecycle/preevy/tunnel-server:main
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         name: tunnel-server
         ports:
         - containerPort: 8888
