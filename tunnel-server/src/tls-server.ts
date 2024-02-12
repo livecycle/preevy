@@ -13,12 +13,12 @@ export const createTlsServer = ({ log, httpServer, sshServer, tlsConfig, sshHost
   log.info('SSH hostnames: %j', sshHostnames)
   const sshHostnamesSet = new Set(sshHostnames)
 
-  return tls.createServer(tlsConfig)
+  return tls.createServer({ ...tlsConfig, ALPNProtocols: ['http/1.1', 'ssh'] })
     .on('error', err => { log.error(err) })
     .on('secureConnection', socket => {
       const { servername } = (socket as { servername?: string })
       log.debug('TLS connection: %j', servername)
-      if (servername && sshHostnamesSet.has(servername)) {
+      if ((servername && sshHostnamesSet.has(servername)) || socket.alpnProtocol === 'ssh') {
         sshServer.injectSocket(socket)
       } else {
         httpServer.emit('connection', socket)
