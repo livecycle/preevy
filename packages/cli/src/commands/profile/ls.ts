@@ -18,7 +18,7 @@ export default class ListProfile extends ProfileCommand<typeof ListProfile> {
   async run(): Promise<unknown> {
     const { profiles, current } = await this.profileConfig.list()
 
-    if (this.flags.json) {
+    if (this.jsonEnabled()) {
       return { profiles, current }
     }
 
