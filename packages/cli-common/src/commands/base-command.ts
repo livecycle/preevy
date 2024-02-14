@@ -119,8 +119,8 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
       oclifSettings.debug = true
     }
     this.#rawArgs = raw
-    this.logger = commandLogger(this, this.jsonEnabled() ? 'stderr' : 'stdout')
     this.stdErrLogger = commandLogger(this, 'stderr')
+    this.logger = this.jsonEnabled() ? this.stdErrLogger : commandLogger(this, 'stdout')
   }
 
   protected logger!: Logger
