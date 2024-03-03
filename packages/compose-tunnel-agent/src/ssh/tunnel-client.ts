@@ -68,7 +68,7 @@ export const sshClient = async ({
       channel.on('close', () => localServiceSocket.destroy())
       localServiceSocket.on('close', () => {
         sockets.delete(localServiceSocket)
-        channel.close()
+        channel.end() // close the channel, but only after the localServiceSocket data has been piped
       })
     })
     localServiceSocket.on('error', err => {
