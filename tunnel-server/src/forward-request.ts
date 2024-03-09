@@ -2,11 +2,11 @@ import { ScriptInjectionSpec } from './proxy/injection/index.js'
 
 export const access = ['private', 'public'] as const
 
-export type Accesss = typeof access[number]
+export type Access = typeof access[number]
 
 export type ForwardRequest = {
   path: string
-  access: Accesss
+  access: Access
   meta: Record<string, unknown>
   inject?: ScriptInjectionSpec[]
 }
@@ -25,7 +25,7 @@ export const parseForwardRequest = (request: string) => {
       if (!(access as readonly string[]).includes(v)) {
         throw new Error(`invalid access "${v}" in request "${request}", allowed values: ${access.join(', ')}`)
       }
-      forwardRequest.access = v as Accesss
+      forwardRequest.access = v as Access
     } else if (k === 'meta') {
       try {
         forwardRequest.meta = decodeJson(v)
