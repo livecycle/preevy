@@ -41,7 +41,6 @@ const uploadFiles = async ({
 const up = async ({
   debug,
   machineStatusCommand,
-  userAndGroup,
   dockerPlatform,
   connection,
   tunnelOpts,
@@ -64,7 +63,6 @@ const up = async ({
 }: {
   debug: boolean
   machineStatusCommand?: MachineStatusCommand
-  userAndGroup: [string, string]
   dockerPlatform: string
   connection: Pick<MachineConnection, 'exec' | 'dockerSocket'>
   tunnelOpts: TunnelOpts
@@ -97,7 +95,6 @@ const up = async ({
     debug,
     log,
     machineStatusCommand,
-    userAndGroup,
     tunnelOpts,
     userSpecifiedProjectName,
     userSpecifiedServices,
@@ -154,7 +151,7 @@ const up = async ({
     'up', '-d', '--remove-orphans', '--no-build',
   ]
 
-  log.info(`Running: docker compose up ${composeArgs.join(' ')}`)
+  log.info(`Running: docker compose ${composeArgs.join(' ')}`)
 
   await using dockerContext = await dockerEnvContext({ connection, log })
 

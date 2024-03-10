@@ -10,7 +10,6 @@ import { EnvId } from '../env-id.js'
 const composeModel = async ({
   debug,
   machineStatusCommand,
-  userAndGroup,
   tunnelOpts,
   userSpecifiedProjectName,
   userSpecifiedServices,
@@ -29,7 +28,6 @@ const composeModel = async ({
 }: {
   debug: boolean
   machineStatusCommand?: MachineStatusCommand
-  userAndGroup: [string, string]
   tunnelOpts: TunnelOpts
   userSpecifiedProjectName: string | undefined
   userSpecifiedServices: string[]
@@ -64,7 +62,6 @@ const composeModel = async ({
     agentSettings: {
       allowedSshHostKeys: hostKey,
       sshTunnelPrivateKey,
-      userAndGroup,
       createCopiedFile,
       envId,
       tunnelOpts,

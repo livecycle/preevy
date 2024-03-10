@@ -164,7 +164,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
     await using cleanup = new AsyncDisposableStack()
 
-    const { machine, connection, userAndGroup, dockerPlatform } = await ensureMachine({
+    const { machine, connection, dockerPlatform } = await ensureMachine({
       log: this.logger,
       debug: this.flags.debug,
       machineDriver: driver,
@@ -182,7 +182,6 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
     await commands.up({
       connection,
       machineStatusCommand,
-      userAndGroup,
       dockerPlatform,
       projectName,
       expectedServiceUrls,

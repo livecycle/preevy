@@ -2,7 +2,7 @@ import yaml from 'yaml'
 import path from 'path'
 import { mapValues } from 'lodash-es'
 import { MMRegExp, makeRe } from 'minimatch'
-import { asyncMap, asyncToArray, compose } from 'iter-tools-es'
+import { asyncMap, asyncToArray } from 'iter-tools-es'
 import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, MachineStatusCommand, ScriptInjection, formatPublicKey } from '@preevy/common'
 import { MachineConnection } from '../driver/index.js'
 import { ComposeFiles, ComposeModel, ComposeSecretOrConfig, composeModelFilename } from './model.js'
@@ -153,7 +153,6 @@ type AgentSettings = {
   tunnelOpts: TunnelOpts
   sshTunnelPrivateKey: string | Buffer
   allowedSshHostKeys: Buffer
-  userAndGroup: [string, string]
   machineStatusCommand?: MachineStatusCommand
   scriptInjections?: Record<string, ScriptInjection>
   createCopiedFile: (filename: string, content: string | Buffer) => Promise<FileToCopy>
@@ -209,7 +208,6 @@ export const remoteComposeModel = async ({
     const {
       envId,
       machineStatusCommand,
-      userAndGroup,
       scriptInjections,
       tunnelOpts,
       version,
@@ -229,7 +227,6 @@ export const remoteComposeModel = async ({
       tunnelOpts,
       sshPrivateKeyPath: path.posix.join(remoteDir, sshPrivateKeyFile.remote),
       knownServerPublicKeyPath: path.posix.join(remoteDir, knownServerPublicKey.remote),
-      user: userAndGroup.join(':'),
       machineStatusCommand,
       envMetadata: await envMetadata({ envId, version }),
       composeModelPath: path.posix.join(remoteDir, composeModelFilename),

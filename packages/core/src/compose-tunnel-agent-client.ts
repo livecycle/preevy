@@ -52,7 +52,6 @@ export const addComposeTunnelAgentService = (
     sshPrivateKeyPath,
     knownServerPublicKeyPath,
     debug,
-    user,
     envId,
     machineStatusCommand,
     envMetadata,
@@ -67,7 +66,6 @@ export const addComposeTunnelAgentService = (
     sshPrivateKeyPath: string
     knownServerPublicKeyPath: string
     debug: boolean
-    user?: string
     envId: EnvId
     machineStatusCommand?: MachineStatusCommand
     envMetadata: EnvMetadata
@@ -122,7 +120,6 @@ export const addComposeTunnelAgentService = (
             bind: { create_host_path: true },
           },
         ],
-        user,
         labels: {
           [COMPOSE_TUNNEL_AGENT_SERVICE_LABELS.ENV_ID]: envId,
           ...profileThumbprint ? { [COMPOSE_TUNNEL_AGENT_SERVICE_LABELS.PROFILE_THUMBPRINT]: profileThumbprint } : {},
