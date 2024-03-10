@@ -1,6 +1,5 @@
 import { profileStore } from '@preevy/core'
 import { ux } from '@oclif/core'
-import { EOL } from 'os'
 import { text } from '@preevy/cli-common'
 import { DriverName } from '../../../drivers.js'
 import ProfileCommand from '../../../profile-command.js'

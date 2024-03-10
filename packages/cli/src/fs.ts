@@ -143,7 +143,7 @@ export const chooseFs: Record<FsType, FsChooser> = {
       ? await (async () => {
         const foundAccount = accounts.find(a => a.name === account)
           ?? await asyncFind(({ name }) => name === account, azure.fs.listStorageAccounts({ subscriptionId }))
-        return foundAccount?.blobDomain ?? inquireDomain()
+        return foundAccount?.blobDomain ?? await inquireDomain()
       })()
       : await inquireDomain()
 

@@ -131,7 +131,7 @@ export const inquireSubscriptionId = async (): Promise<string> => {
   const credential = new DefaultAzureCredential()
   const subscriptionClient = new SubscriptionClient(credential)
   const subscriptions = await asyncToArray(subscriptionClient.subscriptions.list()).catch(() => [])
-  return prompts.selectOrSpecify({
+  return await prompts.selectOrSpecify({
     message: 'Microsoft Azure Subscription ID',
     choices: subscriptions.map(({ subscriptionId, displayName }) => ({ name: `${displayName} (${subscriptionId})`, value: subscriptionId as string })),
     specifyItemLocation: 'bottom',

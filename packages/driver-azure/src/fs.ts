@@ -63,7 +63,6 @@ export const listStorageAccounts = (
 }
 
 const isNotFoundError = (e: unknown): e is RestError => e instanceof RestError && e.statusCode === 404
-const isContainerNotFound = (e: unknown) => isNotFoundError(e) && e.code === 'ContainerNotFound'
 
 const catchNotFoundError = async <T>(fn: () => Promise<T>) => {
   try {
