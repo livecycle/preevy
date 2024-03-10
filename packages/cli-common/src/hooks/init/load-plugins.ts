@@ -1,4 +1,3 @@
-import path from 'path'
 import { Hook as OclifHook, Command, Flags } from '@oclif/core'
 import { Parser } from '@oclif/core/lib/parser/parse.js'
 import { BooleanFlag, Config, Topic } from '@oclif/core/lib/interfaces'

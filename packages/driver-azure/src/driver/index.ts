@@ -131,6 +131,8 @@ export const inquireSubscriptionId = async (): Promise<string> => {
   const credential = new DefaultAzureCredential()
   const subscriptionClient = new SubscriptionClient(credential)
   const subscriptions = await asyncToArray(subscriptionClient.subscriptions.list()).catch(() => [])
+  // eslint false positive here on case-sensitive filesystems due to unknown type
+  // eslint-disable-next-line @typescript-eslint/return-await
   return await prompts.selectOrSpecify({
     message: 'Microsoft Azure Subscription ID',
     choices: subscriptions.map(({ subscriptionId, displayName }) => ({ name: `${displayName} (${subscriptionId})`, value: subscriptionId as string })),
