@@ -1,5 +1,6 @@
 import httpProxy from 'http-proxy'
 import { IncomingMessage } from 'http'
+import Agent from 'agentkeepalive'
 import net from 'net'
 import type { Logger } from 'pino'
 import { inspect } from 'util'
@@ -43,7 +44,14 @@ export const proxy = ({
   authFactory: (client: { publicKey: KeyObject; publicKeyThumbprint: string }) => Authenticator
   loginUrl: ({ env, returnPath }: { env: string; returnPath?: string }) => string
 }) => {
-  const theProxy = httpProxy.createProxyServer({ xfwd: true })
+  const agent = new Agent({
+    maxSockets: 100,
+    keepAlive: true,
+    maxFreeSockets: 10,
+    timeout: 60000,
+  })
+
+  const theProxy = httpProxy.createProxyServer({ xfwd: true, agent })
   const injectionHandlers = proxyInjectionHandlers({ log })
   theProxy.on('proxyRes', injectionHandlers.proxyResHandler)
   theProxy.on('proxyReq', injectionHandlers.proxyReqHandler)
