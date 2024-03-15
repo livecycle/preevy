@@ -1,6 +1,6 @@
-import { describe, it, expect } from '@jest/globals'
+import { describe, it, expect, test } from '@jest/globals'
 import { repeat } from 'lodash-es'
-import { sanitizeLabel, sanitizeLabels } from './labels.js'
+import { isValidRfc1123LabelName, sanitizeLabel, sanitizeLabels } from './labels.js'
 
 describe('labels', () => {
   describe('sanitizeLabel', () => {
@@ -42,6 +42,25 @@ describe('labels', () => {
       it('should replace them', () => {
         expect(sanitizeLabels({ x: '-aBCd!e-' })).toEqual({ x: 'a-aBCd-e-z' })
       })
+    })
+  })
+
+  describe('isValidRfc1123LabelName', () => {
+    test('invalid chars', () => {
+      expect(isValidRfc1123LabelName('A')).toBe(false)
+      expect(isValidRfc1123LabelName('a@')).toBe(false)
+      expect(isValidRfc1123LabelName('-a')).toBe(false)
+    })
+
+    test('invalid length', () => {
+      expect(isValidRfc1123LabelName('')).toBe(false)
+      expect(isValidRfc1123LabelName('a'.repeat(64))).toBe(false)
+    })
+
+    test('valid', () => {
+      expect(isValidRfc1123LabelName('abc-123')).toBe(true)
+      expect(isValidRfc1123LabelName('123-abc')).toBe(true)
+      expect(isValidRfc1123LabelName('a'.repeat(63))).toBe(true)
     })
   })
 })

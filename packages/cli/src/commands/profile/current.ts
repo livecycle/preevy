@@ -15,6 +15,6 @@ export default class CurrentProfile extends ProfileCommand<typeof CurrentProfile
     }
     const { alias, id, location } = currentProfile
     const result = { alias, id, location }
-    return this.flags.json ? result : ux.styledObject(result)
+    return this.jsonEnabled() ? result : ux.styledObject(result)
   }
 }

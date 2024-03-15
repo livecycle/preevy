@@ -35,6 +35,10 @@ export const composeFlags = {
     default: [],
     helpGroup: 'GLOBAL',
   }),
+  'project-directory': Flags.string({
+    required: false,
+    summary: 'Alternate working directory (default: the path of the first specified Compose file)',
+  }),
   ...projectFlag,
 } as const
 
@@ -100,5 +104,9 @@ export const urlFlags = {
   'output-urls-to': Flags.file({
     description: 'Output URLs to file',
     required: false,
+  }),
+  'fetch-urls-timeout': Flags.integer({
+    summary: 'Timeout for fetching URLs request in milliseconds',
+    default: 2500,
   }),
 } as const

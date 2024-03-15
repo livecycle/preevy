@@ -52,7 +52,6 @@ export const addComposeTunnelAgentService = (
     sshPrivateKeyPath,
     knownServerPublicKeyPath,
     debug,
-    user,
     envId,
     machineStatusCommand,
     envMetadata,
@@ -67,7 +66,6 @@ export const addComposeTunnelAgentService = (
     sshPrivateKeyPath: string
     knownServerPublicKeyPath: string
     debug: boolean
-    user?: string
     envId: EnvId
     machineStatusCommand?: MachineStatusCommand
     envMetadata: EnvMetadata
@@ -122,7 +120,6 @@ export const addComposeTunnelAgentService = (
             bind: { create_host_path: true },
           },
         ],
-        user,
         labels: {
           [COMPOSE_TUNNEL_AGENT_SERVICE_LABELS.ENV_ID]: envId,
           ...profileThumbprint ? { [COMPOSE_TUNNEL_AGENT_SERVICE_LABELS.PROFILE_THUMBPRINT]: profileThumbprint } : {},
@@ -164,16 +161,18 @@ export const queryTunnels = async ({
   composeTunnelServiceUrl,
   credentials,
   includeAccessCredentials,
+  fetchTimeout,
 }: {
   composeTunnelServiceUrl: string
   credentials: { user: string; password: string }
   retryOpts?: retry.Options
   includeAccessCredentials: false | 'browser' | 'api'
+  fetchTimeout: number
 }) => {
   const { tunnels } = await retry(async () => {
     const r = await fetch(
       `${composeTunnelServiceUrl}/tunnels`,
-      { signal: AbortSignal.timeout(2500), headers: { Authorization: `Bearer ${credentials.password}` } }
+      { signal: AbortSignal.timeout(fetchTimeout), headers: { Authorization: `Bearer ${credentials.password}` } }
     ).catch(e => { throw new Error(`Failed to connect to docker proxy at ${composeTunnelServiceUrl}: ${e}`, { cause: e }) })
     if (!r.ok) {
       throw new Error(`Failed to connect to docker proxy at ${composeTunnelServiceUrl}: ${r.status}: ${r.statusText}`)

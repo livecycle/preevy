@@ -83,7 +83,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
     ...tunnelServerFlags,
     ...buildFlags,
     'skip-volume': Flags.string({
-      description: 'Additional volume glob patterns to skip copying',
+      description: 'Additional volume glob patterns to skip copying (relative to project directory)',
       multiple: true,
       multipleNonGreedy: true,
       default: [],
@@ -164,7 +164,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
     await using cleanup = new AsyncDisposableStack()
 
-    const { machine, connection, userAndGroup, dockerPlatform } = await ensureMachine({
+    const { machine, connection, dockerPlatform } = await ensureMachine({
       log: this.logger,
       debug: this.flags.debug,
       machineDriver: driver,
@@ -182,7 +182,6 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
     await commands.up({
       connection,
       machineStatusCommand,
-      userAndGroup,
       dockerPlatform,
       projectName,
       expectedServiceUrls,
@@ -199,7 +198,6 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       dataDir: this.config.dataDir,
       sshTunnelPrivateKey: tunnelingKey,
       allowedSshHostKeys: hostKey,
-      cwd: process.cwd(),
       skipUnchangedFiles: flags['skip-unchanged-files'],
       version: this.config.version,
       buildSpec,
@@ -219,6 +217,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
         retries: 10,
         onFailedAttempt: e => { this.logger.debug(`Failed to query tunnels: ${inspect(e)}`) },
       },
+      fetchTimeout: flags['fetch-urls-timeout'],
     }), { text: 'Getting tunnel URLs...' })
 
     const urls = await filterUrls({

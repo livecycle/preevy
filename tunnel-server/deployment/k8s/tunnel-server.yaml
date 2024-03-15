@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tunnel-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tunnel-server
+  template:
+    metadata:
+      labels:
+        app: tunnel-server
+    spec:
+      volumes:
+      - name: ssh
+        secret:
+          defaultMode: 400
+          secretName: tunnel-server-ssh
+      - name: tls-cert
+        secret:
+          defaultMode: 400
+          secretName: tunnel-server-tls
+      containers:
+      - env:
+        - name: COOKIE_SECRETS
+          valueFrom:
+            secretKeyRef:
+              name: tunnel-server-cookies
+              key: cookie_secret
+        - name: SSH_HOST_KEY_PATH
+          value: /etc/livecycle-ssh/ssh_host_key
+        - name: BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: tunnel-server-config
+              key: BASE_URL
+        - name: DEBUG
+          value: "1"
+        - name: NODE_ENV
+          value: production
+        image: ghcr.io/livecycle/preevy/tunnel-server:main
+        imagePullPolicy: Always
+        name: tunnel-server
+        ports:
+        - containerPort: 8888
+          name: metrics
+          protocol: TCP
+        - containerPort: 2222
+          name: ssh
+          protocol: TCP
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        - containerPort: 8443
+          name: tls
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "1"
+            ephemeral-storage: 1Gi
+            memory: 2Gi
+          requests:
+            cpu: "1"
+            ephemeral-storage: 1Gi
+            memory: 2Gi
+        securityContext:
+          capabilities:
+            drop:
+            - NET_RAW
+        volumeMounts:
+        - mountPath: /etc/livecycle-ssh
+          name: ssh
+          readOnly: true
+        - mountPath: /app/tls/cert.pem
+          name: tls-cert
+          readOnly: true
+          subPath: tls.crt
+        - mountPath: /app/tls/key.pem
+          name: tls-cert
+          readOnly: true
+          subPath: tls.key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tunnel-server
+spec:
+  type: LoadBalancer
+  ports:
+  - name: tls
+    port: 443
+    protocol: TCP
+    targetPort: 8443
+  - name: metrics
+    port: 8888
+    protocol: TCP
+    targetPort: 8888
+  selector:
+    app: tunnel-server

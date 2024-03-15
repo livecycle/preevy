@@ -7,8 +7,6 @@ type ForwardSocket = AsyncDisposable & {
   localSocket: string | AddressInfo
 }
 
-type Closable = { close: () => void }
-
 const portForward = (
   { namespace, forward, log }: { namespace: string; forward: k8s.PortForward; log: Logger },
 ) => (
@@ -16,26 +14,19 @@ const portForward = (
   targetPort: number,
   listenAddress: number | string | ListenOptions,
 ) => new Promise<ForwardSocket>((resolve, reject) => {
-  const sockets = new Set<Closable>()
-  const server = net.createServer(async socket => {
+  const sockets = new Set<net.Socket>()
+  const server = net.createServer(socket => {
     socket.on('error', err => { log.debug('forward socket error', err) }) // prevent unhandled rejection
-    const forwardResult = await forward.portForward(namespace, podName, [targetPort], socket, null, socket, 10)
+    sockets.add(socket)
+    socket.unref()
+    socket.on('close', () => { sockets.delete(socket) })
+    socket.on('end', () => { sockets.delete(socket) })
+
+    forward.portForward(namespace, podName, [targetPort], socket, null, socket, 10)
       .catch(err => {
         log.debug('forward api error', err)
         socket.emit('error', err)
       })
-
-    if (!forwardResult) {
-      return
-    }
-
-    const ws = typeof forwardResult === 'function' ? forwardResult() : forwardResult
-    if (!ws) {
-      return
-    }
-    sockets.add(ws)
-    ws.on('close', () => { sockets.delete(ws) })
-    ws.on('error', err => { log.debug('websocket error', err) }) // prevent unhandled rejection
   })
 
   server.on('error', reject)
@@ -46,7 +37,7 @@ const portForward = (
     resolve({
       localSocket: server.address() as string | AddressInfo,
       [Symbol.asyncDispose]: () => {
-        sockets.forEach(ws => ws.close())
+        sockets.forEach(s => s.destroy())
         return closeServer()
       },
     })

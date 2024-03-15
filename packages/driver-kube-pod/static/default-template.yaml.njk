@@ -14,8 +14,7 @@ metadata:
 data:
   daemon.json: |
     {
-      "tls": false,
-      "data-root": "/data/docker"
+      "tls": false
     }
 ---
 apiVersion: apps/v1
@@ -50,7 +49,11 @@ spec:
         - name: docker-config
           mountPath: /etc/docker
         - name: data
-          mountPath: /data
+          subPath: docker
+          mountPath: /var/lib/docker
+        - name: data
+          subPath: preevy
+          mountPath: /var/lib/preevy
       volumes:
       - name: docker-config
         configMap:

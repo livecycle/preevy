@@ -14,8 +14,11 @@ import { asyncConcat, asyncMap } from 'iter-tools-es'
 import { AddressInfo } from 'net'
 import { Readable, Writable } from 'stream'
 import { orderedOutput } from '@preevy/common'
+import { CLIError } from '@oclif/core/lib/errors/index.js'
+import { inspect } from 'util'
 import { StatefulSetMachine, k8sObjectToMachine, DeploymentMachine } from './common.js'
 import { Client, extractName, loadKubeConfig, kubeClient as createClient } from './client/index.js'
+import { isValidRfc1123LabelName } from './client/labels.js'
 
 export type DriverContext = {
   log: Logger
@@ -137,12 +140,22 @@ const machineDriver = (
   },
 })
 
+export const parseRfc1123Flag = async (v: unknown) => {
+  if (v !== undefined && (typeof v !== 'string' || !isValidRfc1123LabelName(v))) {
+    throw new CLIError(`Expected a valid lowercase RFC 1123 subdomain name but received: ${inspect(v)}`, {
+      ref: 'https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names',
+    })
+  }
+  return v
+}
+
 export const flags = {
-  namespace: Flags.string({
+  namespace: Flags.custom<string>({
     description: 'Kubernetes namespace in which resources will be provisioned (needs to exist)',
     required: false,
     default: 'default',
-  }),
+    parse: parseRfc1123Flag,
+  })(),
   kubeconfig: Flags.string({
     description: 'Path to kubeconfig file (will load config from defaults if not specified)',
     required: false,

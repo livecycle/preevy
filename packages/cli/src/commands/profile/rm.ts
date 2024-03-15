@@ -24,6 +24,8 @@ export default class RemoveProfile extends ProfileCommand<typeof RemoveProfile> 
 
   static enableJsonFlag = true
 
+  protected throwOnProfileNotFound = false
+
   async run(): Promise<unknown> {
     const alias = this.args.name
     if (await this.profileConfig.delete(alias, { throwOnNotFound: !this.flags.force })) {

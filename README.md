@@ -69,6 +69,7 @@ Visit The full documentation here: https://preevy.dev/
   - [Tunnel server](#tunnel-server)
 - [CI Integration](#ci-integration)
   - [Faster builds in CI](#faster-builds-in-ci)
+  - [Example repos](#example-repos)
 - [Security](#security)
   - [Private environments](#private-environments)
   - [Exposure of preview environments](#exposure-of-preview-environments)
@@ -215,11 +216,13 @@ A free public instance is hosted by Livecycle on `livecycle.run`, and it can be 
 
 A public Docker/OCI image is available: `ghcr.io/livecycle/preevy/tunnel-server`
 
+To host your own Tunnel Server instance, see the [deployment guide](tunnel-server/deployment/k8s/README.md).
+
 ## CI Integration
 
-Preevy is designed to work seamlessly with your CI, allowing you to easily import a shared preview profile in AWS S3 and Google Cloud Storage (GCS).
+Preevy is designed to work seamlessly with your CI, by importing a shared preview profile from [AWS S3](https://aws.amazon.com/s3/) [Google Cloud Storage (GCS)](https://cloud.google.com/storage/) and [Azure Blob Storage (AZBlob)](https://azure.microsoft.com/en-us/products/storage/blobs/).
 
-Profiles are created using `preevy init`. Choose a S3/GCS URL for storing the profile - Preevy will create a bucket if one doesn't exist.
+Profiles are created using `preevy init`. Choose a S3/GCS/AZBlob URL for storing the profile - Preevy will create a bucket if one doesn't exist.
 
 If you already have a locally stored Preevy Profile, it can be migrated to remote storage using [`preevy profile cp`](https://github.com/livecycle/preevy/blob/main/packages/cli/docs/profile.md#preevy-profile-cp)
 
@@ -230,6 +233,18 @@ Once the profile is created, it can be imported to the CI runtime using `preevy 
 ### Faster builds in CI
 
 Check out our [documentation](https://preevy.dev/recipes/faster-build) to find out how to speed up your builds and reduce the costs of your preview environments by running Preevy with BuildKit Builders in CI.
+
+### Example repos
+
+#### GitHub Actions
+
+- [Preevy on Kubernetes using Google Cloud GKE and GAR](https://github.com/livecycle/preevy-gha-gke-demo)
+- [Preevy on Google Cloud VMs](https://github.com/livecycle/preevy-gha-gce-demo)
+
+#### Shortcut for setting up a cost-efficient Kubernetes cluster on AWS EKS
+
+Don't have a Kubernetes cluster? See an [example repo](https://github.com/livecycle/preevy-terraform-eks-example) for setting up [AWS EKS](https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html) using Terraform. The example includes [Karpenter](https://karpenter.sh/) which can reduce the cost of running Preview Environments by automatically expanding and shrinking your cluster using [EC2 Spot Instances](https://aws.amazon.com/ec2/spot/pricing/)
+
 
 ## Security
 

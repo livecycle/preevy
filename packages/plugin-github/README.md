@@ -39,12 +39,47 @@ This will add the following directives to all services with a `build` section:
 
 At runtime, the plugin will attempt to detect the configuration it needs from environment variables and the git context. Options can be overridden using CLI flags and the Docker Compose file.
 
-| | Environment variable | Flag | Config section | Other sources |
-|---|------|------|-----|----|
-| GitHub token | `GITHUB_TOKEN` | `--github-token` | `token` |
-| Repo (owner/reponame) | `GITHUB_REPOSITORY` | `--github-repo` | `repo` | git context (if `detect` is not `false`) |
-| PR number | `GITHUB_REF` (format: `refs/pull/<number>`) | `--github-pull-request` | `pullRequest` | |
-| Comment template | | `--github-pr-comment-template-file` | `commentTemplate` |  |
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th>Environment variable</th>
+      <th>Flag</th>
+      <th>Config section</th>
+      <th>Other sources</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>GitHub token</td>
+      <td><code>GITHUB_TOKEN</code></td>
+      <td><code>--github-token</code></td>
+      <td><code>token</code></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Repo (owner/reponame)</td>
+      <td><code>GITHUB_REPOSITORY</code></td>
+      <td><code>--github-repo</code></td>
+      <td><code>repo</code></td>
+      <td>git context (if <code>detect</code> is not <code>false</code>)</td>
+    </tr>
+    <tr>
+      <td>PR number</td>
+      <td><code>GITHUB_REF</code> (format: <code>refs/pull/&lt;number&gt;</code>)</td>
+      <td><code>--github-pull-request</code></td>
+      <td><code>pullRequest</code></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>Comment template</td>
+      <td></td>
+      <td><code>--github-pr-comment-template-file</code></td>
+      <td><code>commentTemplate</code></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
 
 ### Configuration from the CI provider context
 

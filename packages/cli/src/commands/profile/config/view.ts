@@ -1,6 +1,5 @@
 import { profileStore } from '@preevy/core'
 import { ux } from '@oclif/core'
-import { EOL } from 'os'
 import { text } from '@preevy/cli-common'
 import { DriverName } from '../../../drivers.js'
 import ProfileCommand from '../../../profile-command.js'
@@ -12,15 +11,18 @@ export default class ViewProfileConfig extends ProfileCommand<typeof ViewProfile
 
   async run(): Promise<unknown> {
     const pStore = profileStore(this.store).ref
-    const driver = this.profile.driver as DriverName
-    const config = await pStore.defaultDriverFlags(driver)
+    const driver = this.profile.driver as DriverName | undefined
     if (!driver) {
-      ux.error([
-        'Missing driver configuration in profile.',
-        `Run ${text.command(this.config, 'profile config update --driver <driver>')} to set the desired machine driver`,
-      ].join(EOL))
+      if (this.jsonEnabled()) {
+        return { driver: null, defaultFlags: {} }
+      }
+      ux.info('No driver specified in profile.')
+      ux.info(`Run ${text.command(this.config, 'profile config update --driver <driver>')} to set a driver`)
+      return undefined
     }
-    if (this.flags.json) {
+
+    const config = await pStore.defaultDriverFlags(driver)
+    if (this.jsonEnabled()) {
       return { driver, defaultFlags: config }
     }
     ux.info(`Current configuration for driver ${text.code(driver)}:`)

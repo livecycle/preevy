@@ -41,9 +41,11 @@ export const initHook: OclifHook<'init'> = async function hook(args) {
     argv,
   } as const).parse()
 
-  const composeFiles = await resolveComposeFiles({
+  const { files: composeFiles, projectDirectory } = await resolveComposeFiles({
     userSpecifiedFiles: flags.file,
     userSpecifiedSystemFiles: flags['system-compose-file'],
+    userSpecifiedProjectDirectory: flags['project-directory'],
+    cwd: process.cwd(),
   })
 
   const userModelOrError = composeFiles.length
@@ -53,7 +55,7 @@ export const initHook: OclifHook<'init'> = async function hook(args) {
       async () => await localComposeClient({
         composeFiles,
         projectName: flags.project,
-        projectDirectory: process.cwd(),
+        projectDirectory,
       }).getModelOrError(),
       {
         text: `Loading compose file${composeFiles.length > 1 ? 's' : ''}: ${composeFiles.join(', ')}`,
@@ -76,7 +78,7 @@ export const initHook: OclifHook<'init'> = async function hook(args) {
   (config as InternalConfig).loadTopics({ commands, topics })
 
   Object.assign(config, {
-    composeFiles,
+    composeFiles: { files: composeFiles, projectDirectory },
     initialUserModel: userModelOrError,
     preevyConfig,
     preevyHooks: hooksFromPlugins(loadedPlugins.map(p => p.initResults)),

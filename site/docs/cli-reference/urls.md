@@ -1,21 +1,22 @@
 `preevy urls`
 =============
 
-Show URLs for an existing environment
+Show urls for an existing environment
 
 * [`preevy urls [SERVICE] [PORT]`](#preevy-urls-service-port)
 
 ## `preevy urls [SERVICE] [PORT]`
 
-Show URLs for an existing environment
+Show urls for an existing environment
 
 ```
 USAGE
   $ preevy urls [SERVICE] [PORT] (--access-credentials-type api|browser --include-access-credentials)
-    [--json] [-D] [-f <value>] [--system-compose-file <value>] [-p <value>] [--enable-plugin <value>] [--disable-plugin
-    <value>] [--profile <value>] [--id <value>] [-t <value>] [--tls-hostname <value>] [--insecure-skip-verify]
-    [--columns <value> | -x] [--filter <value>] [--no-header | [--csv | --no-truncate]] [--output csv|json|yaml |  | ]
-    [--sort <value>] [--show-preevy-service-] [--output-urls-to <value>]
+    [--json] [-D] [-f <value>] [--system-compose-file <value>] [--project-directory <value>] [-p <value>]
+    [--enable-plugin <value>] [--disable-plugin <value>] [--profile <value>] [--id <value>] [-t <value>] [--tls-hostname
+    <value>] [--insecure-skip-verify] [--columns <value> | -x] [--filter <value>] [--no-header | [--csv |
+    --no-truncate]] [--output csv|json|yaml |  | ] [--sort <value>] [--show-preevy-service-] [--output-urls-to <value>]
+    [--fetch-urls-timeout <value>]
 
 ARGUMENTS
   SERVICE  Service name. If not specified, will show all services
@@ -26,11 +27,14 @@ FLAGS
                                           or ssh+tls://hostname[:port]
       --access-credentials-type=<option>  (required) [default: browser] Access credentials type
                                           <options: api|browser>
+      --fetch-urls-timeout=<value>        [default: 2500] Timeout for fetching URLs request in milliseconds
       --id=<value>                        Environment id
       --include-access-credentials        Include access credentials for basic auth for each service URL
       --insecure-skip-verify              Skip TLS or SSH certificate verification
       --output-urls-to=<value>            Output URLs to file
       --profile=<value>                   Run in a specific profile context (either an alias or a URL)
+      --project-directory=<value>         Alternate working directory (default: the path of the first specified Compose
+                                          file)
       --show-preevy-service-urls          Show URLs for internal Preevy services
       --tls-hostname=<value>              Override TLS server name when tunneling via HTTPS
 
@@ -64,4 +68,4 @@ FLAG DESCRIPTIONS
     If not specified, will detect from the current Git context
 ```
 
-_See code: [src/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.58/src/commands/urls.ts)_
+_See code: [src/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/urls.ts)_

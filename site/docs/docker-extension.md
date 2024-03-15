@@ -48,7 +48,7 @@ The Livecycle Docker extension embeds a standalone version of the Preevy CLI, wh
 
    You can choose to between Local and Cloud. The local option will create a tunnel to your local machine, and the cloud option will put your application to the cloud and create a tunnel to it. You can choose depending on your use case. For example, if you want the environment to stay for few amount of time, you can choose the local option. If you want the environment to stay for a longer time, and team can access it over few days, you can choose the cloud option.
 
-   In this flow we will choose the local option, click [here](#Share-to-the-cloud) to learn more about the cloud option. After that, you will be prompted to choose the access level. You can choose between public and private access. If you choose public access, you will get a public URL that you can share with anyone. If you choose private access, you will get a private URL that requires authentication and can only be used by your organization members. Then click on the "Share" button to get the shareable URL.
+   In this flow we will choose the local option, click [here](#Share-to-the-cloud) to learn more about the cloud option. After that, choose the access level. You can choose between public and private access. If you choose public access, you will get a public URL that you can share with anyone. If you choose private access, you will get a private URL that requires authentication and can only be used by your organization members. Then click on the "Share" button to get the shareable URL.
 
    ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/0cd6bd7a-2608-4253-b1b0-e0e6eca496dd)
 
@@ -75,7 +75,11 @@ The Livecycle Docker extension embeds a standalone version of the Preevy CLI, wh
 
 That's it! You have successfully installed the Livecycle Docker Extension and shared your local development environment with your team.
 
-## Share to the cloud
+Also, you can check out the video below for a step-by-step guide how to get started with the Livecycle Docker Extension and use Local Share feature.
+
+<p align="center"><iframe width="816" height="480" src="https://www.youtube.com/embed/SxDn889s5zg?si=6PiAXzPMmLPpF0Bb" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></p>
+
+## Deploy to cloud
 
 With the Livecycle Docker Extension, you can make your local environment accessible to your team members even when your machine is offline. This is achieved by deploying your application to the cloud and creating a tunnel to it. This functionality is particularly useful when you want to share your environment with your team members for an extended period.
 
@@ -95,13 +99,17 @@ Now, you can observe that the environment is successfully deployed to AWS, and y
 
   You can also deploy an existing local environment to the cloud. To do that, simply click on the 3 dots next to the environment name and click on the "Deploy" option. After that, you will be prompted to choose the cloud provider. Choose the cloud provider you want and follow the steps in the [Deploy a new shareable environment to the cloud section](#deploy-a-new-shareable-environment-to-the-cloud) or if you don't get the prompt to choose the cloud provider, it will deploy the provider you choose previously for the environment. Like in my case, I choose AWS previously, so it will deploy to AWS.
 
-  ![Livecycle Docker Extension](https://github.com/Pradumnasaraf/candy/assets/51878265/b350d3a9-4e8c-4236-a28b-88cf4a7a95c5)
+  ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/4fabb9ee-7a1c-46be-8889-01abbe34c751)
 
   After that, a new environment will be created with the same name as the local environment. So, now you have two environments, one local and one cloud. To make sure the environment is deployed to the cloud, you can see the cloud icon next to the environment name. You can also see the environment in the Livecycle dashboard just like the local environment and access terminal, logs, etc.
 
-  ![Livecycle Docker Extension](https://github.com/Pradumnasaraf/candy/assets/51878265/a624018b-0261-46f6-94eb-b32fe1e019f7)
+  ![Livecycle Docker Extension](https://github.com/livecycle/preevy/assets/51878265/aebe08d7-bb33-4171-8ae4-eafeb46bfbae)
 
   If are having any issues or want to give feedback, you can join the [Livecycle Community](https://community.livecycle.io) on Slack.
+
+Also, you can check out the video below for a step-by-step guide how to use Deploy to the cloud feature.
+
+<p align="center"><iframe width="816" height="480" src="https://www.youtube.com/embed/bslCiIkWQ5A?si=1_Mqt0tUdlOic0Bi" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></p>
 
 ## FAQ
 

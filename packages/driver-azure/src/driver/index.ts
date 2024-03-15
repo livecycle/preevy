@@ -1,6 +1,5 @@
 import { Flags, Interfaces } from '@oclif/core'
-import { asyncFirst, asyncMap } from 'iter-tools-es'
-import * as inquirer from '@inquirer/prompts'
+import { asyncMap, asyncToArray } from 'iter-tools-es'
 import inquirerAutoComplete from 'inquirer-autocomplete-standalone'
 import { InferredFlags } from '@oclif/core/lib/interfaces'
 import { Resource, VirtualMachine } from '@azure/arm-compute'
@@ -22,6 +21,7 @@ import {
   Logger,
   machineStatusNodeExporterCommand,
 } from '@preevy/core'
+import { prompts } from '@preevy/cli-common'
 import { pick } from 'lodash-es'
 import { Client, client as createClient, REGIONS } from './client.js'
 import { CUSTOMIZE_BARE_MACHINE } from './scripts.js'
@@ -120,29 +120,43 @@ const flags = {
     required: true,
   }),
   'subscription-id': Flags.string({
-    description: 'Microsoft Azure subscription id',
+    description: 'Microsoft Azure Subscription ID',
     required: true,
   }),
 } as const
 
 type FlagTypes = Omit<Interfaces.InferredFlags<typeof flags>, 'json'>
 
-const inquireFlags = async ({ log: _log }: { log: Logger }) => {
-  const region = await inquirerAutoComplete<string>({
+export const inquireSubscriptionId = async (): Promise<string> => {
+  const credential = new DefaultAzureCredential()
+  const subscriptionClient = new SubscriptionClient(credential)
+  const subscriptions = await asyncToArray(subscriptionClient.subscriptions.list()).catch(() => [])
+  // eslint false positive here on case-sensitive filesystems due to unknown type
+  // eslint-disable-next-line @typescript-eslint/return-await
+  return await prompts.selectOrSpecify({
+    message: 'Microsoft Azure Subscription ID',
+    choices: subscriptions.map(({ subscriptionId, displayName }) => ({ name: `${displayName} (${subscriptionId})`, value: subscriptionId as string })),
+    specifyItemLocation: 'bottom',
+  })
+}
+
+export const inquireRegion = async ({ subscriptionId }: { subscriptionId: string }): Promise<string> => {
+  const credential = new DefaultAzureCredential()
+  const subscriptionClient = new SubscriptionClient(credential)
+  const regions = await asyncToArray(
+    asyncMap(({ name }) => name as string, subscriptionClient.subscriptions.listLocations(subscriptionId)),
+  ).catch(() => REGIONS)
+  return await inquirerAutoComplete<string>({
     message: flags.region.description as string,
-    source: async input => REGIONS.filter(r => !input || r.includes(input.toLowerCase())).map(value => ({ value })),
+    source: async input => regions.filter(r => !input || r.includes(input.toLowerCase())).map(value => ({ value })),
     suggestOnly: true,
     transformer: i => i.toLowerCase(),
   })
+}
 
-  const credential = new DefaultAzureCredential()
-  const subscriptionClient = new SubscriptionClient(credential)
-  const defaultSubscriptionId = (await asyncFirst(subscriptionClient.subscriptions.list()))?.subscriptionId
-
-  const subscriptionId = await inquirer.input({
-    message: flags['subscription-id'].description as string,
-    default: defaultSubscriptionId,
-  })
+const inquireFlags = async ({ log: _log }: { log: Logger }) => {
+  const subscriptionId = await inquireSubscriptionId()
+  const region = await inquireRegion({ subscriptionId })
 
   return { region, 'subscription-id': subscriptionId }
 }

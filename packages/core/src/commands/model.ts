@@ -2,7 +2,7 @@ import { MachineStatusCommand, ScriptInjection } from '@preevy/common'
 import path from 'path'
 import { rimraf } from 'rimraf'
 import { TunnelOpts } from '../ssh/index.js'
-import { ComposeModel, remoteComposeModel } from '../compose/index.js'
+import { ComposeFiles, ComposeModel, remoteComposeModel } from '../compose/index.js'
 import { createCopiedFileInDataDir } from '../remote-files.js'
 import { Logger } from '../log.js'
 import { EnvId } from '../env-id.js'
@@ -10,7 +10,6 @@ import { EnvId } from '../env-id.js'
 const composeModel = async ({
   debug,
   machineStatusCommand,
-  userAndGroup,
   tunnelOpts,
   userSpecifiedProjectName,
   userSpecifiedServices,
@@ -21,7 +20,6 @@ const composeModel = async ({
   dataDir,
   allowedSshHostKeys: hostKey,
   sshTunnelPrivateKey,
-  cwd,
   version,
   envId,
   expectedServiceUrls,
@@ -30,18 +28,16 @@ const composeModel = async ({
 }: {
   debug: boolean
   machineStatusCommand?: MachineStatusCommand
-  userAndGroup: [string, string]
   tunnelOpts: TunnelOpts
   userSpecifiedProjectName: string | undefined
   userSpecifiedServices: string[]
   volumeSkipList: string[]
-  composeFiles: string[]
+  composeFiles: ComposeFiles
   log: Logger
   dataDir: string
   scriptInjections?: Record<string, ScriptInjection>
   sshTunnelPrivateKey: string | Buffer
   allowedSshHostKeys: Buffer
-  cwd: string
   version: string
   envId: EnvId
   expectedServiceUrls: { name: string; port: number; url: string }[]
@@ -60,14 +56,12 @@ const composeModel = async ({
     volumeSkipList,
     composeFiles,
     log,
-    cwd,
     expectedServiceUrls,
     projectName,
     modelFilter,
     agentSettings: {
       allowedSshHostKeys: hostKey,
       sshTunnelPrivateKey,
-      userAndGroup,
       createCopiedFile,
       envId,
       tunnelOpts,

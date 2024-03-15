@@ -5,7 +5,7 @@ import { MMRegExp, makeRe } from 'minimatch'
 import { asyncMap, asyncToArray } from 'iter-tools-es'
 import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME, MachineStatusCommand, ScriptInjection, formatPublicKey } from '@preevy/common'
 import { MachineConnection } from '../driver/index.js'
-import { ComposeModel, ComposeSecretOrConfig, composeModelFilename } from './model.js'
+import { ComposeFiles, ComposeModel, ComposeSecretOrConfig, composeModelFilename } from './model.js'
 import { REMOTE_DIR_BASE, remoteProjectDir } from '../remote-files.js'
 import { TunnelOpts } from '../ssh/index.js'
 import { addComposeTunnelAgentService } from '../compose-tunnel-agent-client.js'
@@ -42,9 +42,9 @@ const toPosix = (x:string) => x.split(path.sep).join(path.posix.sep)
 export type SkippedVolume = { service: string; source: string; matchingRule: string }
 
 const fixModelForRemote = async (
-  { skipServices = [], cwd, remoteBaseDir, volumeSkipList = defaultVolumeSkipList }: {
+  { skipServices = [], projectDirectory, remoteBaseDir, volumeSkipList = defaultVolumeSkipList }: {
     skipServices?: string[]
-    cwd: string
+    projectDirectory: string
     remoteBaseDir: string
     volumeSkipList: string[]
   },
@@ -55,7 +55,7 @@ const fixModelForRemote = async (
   skippedVolumes: SkippedVolume[]
 }> => {
   const volumeSkipRes = volumeSkipList
-    .map(s => makeRe(path.resolve(cwd, s)))
+    .map(s => makeRe(path.resolve(projectDirectory, s)))
     .map((r, i) => {
       if (!r) {
         throw new Error(`Invalid glob pattern in volumeSkipList: "${volumeSkipList[i]}"`)
@@ -70,7 +70,7 @@ const fixModelForRemote = async (
     if (!path.isAbsolute(absolutePath)) {
       throw new Error(`expected absolute path: "${absolutePath}"`)
     }
-    const relativePath = toPosix(path.relative(cwd, absolutePath))
+    const relativePath = toPosix(path.relative(projectDirectory, absolutePath))
 
     return relativePath.startsWith('..')
       ? path.posix.join('absolute', absolutePath)
@@ -153,7 +153,6 @@ type AgentSettings = {
   tunnelOpts: TunnelOpts
   sshTunnelPrivateKey: string | Buffer
   allowedSshHostKeys: Buffer
-  userAndGroup: [string, string]
   machineStatusCommand?: MachineStatusCommand
   scriptInjections?: Record<string, ScriptInjection>
   createCopiedFile: (filename: string, content: string | Buffer) => Promise<FileToCopy>
@@ -166,7 +165,6 @@ export const remoteComposeModel = async ({
   volumeSkipList,
   composeFiles,
   log,
-  cwd,
   expectedServiceUrls,
   projectName,
   agentSettings,
@@ -176,9 +174,8 @@ export const remoteComposeModel = async ({
   userSpecifiedProjectName: string | undefined
   userSpecifiedServices: string[]
   volumeSkipList: string[]
-  composeFiles: string[]
+  composeFiles: ComposeFiles
   log: Logger
-  cwd: string
   expectedServiceUrls: { name: string; port: number; url: string }[]
   projectName: string
   agentSettings?: AgentSettings
@@ -186,15 +183,15 @@ export const remoteComposeModel = async ({
 }) => {
   const remoteDir = remoteProjectDir(projectName)
 
-  log.debug(`Using compose files: ${composeFiles.join(', ')}`)
+  log.debug(`Using compose files: ${composeFiles.files.join(', ')} and project directory "${composeFiles.projectDirectory}"`)
 
   const linkEnvVars = serviceLinkEnvVars(expectedServiceUrls)
 
   const composeClientWithInjectedArgs = localComposeClient({
-    composeFiles,
+    composeFiles: composeFiles.files,
     env: linkEnvVars,
     projectName: userSpecifiedProjectName,
-    projectDirectory: cwd,
+    projectDirectory: composeFiles.projectDirectory,
   })
 
   const services = userSpecifiedServices.length
@@ -202,7 +199,7 @@ export const remoteComposeModel = async ({
     : []
 
   const { model: fixedModel, filesToCopy, skippedVolumes } = await fixModelForRemote(
-    { cwd, remoteBaseDir: remoteDir, volumeSkipList },
+    { projectDirectory: composeFiles.projectDirectory, remoteBaseDir: remoteDir, volumeSkipList },
     await modelFilter(await composeClientWithInjectedArgs.getModel(services)),
   )
 
@@ -211,7 +208,6 @@ export const remoteComposeModel = async ({
     const {
       envId,
       machineStatusCommand,
-      userAndGroup,
       scriptInjections,
       tunnelOpts,
       version,
@@ -231,7 +227,6 @@ export const remoteComposeModel = async ({
       tunnelOpts,
       sshPrivateKeyPath: path.posix.join(remoteDir, sshPrivateKeyFile.remote),
       knownServerPublicKeyPath: path.posix.join(remoteDir, knownServerPublicKey.remote),
-      user: userAndGroup.join(':'),
       machineStatusCommand,
       envMetadata: await envMetadata({ envId, version }),
       composeModelPath: path.posix.join(remoteDir, composeModelFilename),

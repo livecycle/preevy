@@ -16,7 +16,9 @@ services:
 
 Preevy will generate the following environment variable which will contain the generated preview environment URL:
 
-`PREEVY_BASE_URI_SERVICE_NAME_3000`
+```bash
+PREEVY_BASE_URI_SERVICE_NAME_3000=https://service-name-3000-envid-clientid.livecycle.run/
+```
 
 ## Problem
 
@@ -47,7 +49,7 @@ services:
            - 9005:3000
      my-frontend:
           environment:
-          - API_URL=http://localhost:9006
+          - API_URL=http://localhost:9006/
      my-backend:
           ...
           ports:
@@ -64,11 +66,11 @@ services:
            - 9005:3000
      my-frontend:
           environment:
-          - API_URL=${PREEVY_BASE_URI_MY_BACKEND_9006:-http://localhost:9006}
+          - API_URL=${PREEVY_BASE_URI_MY_BACKEND_9006:-http://localhost:9006/}
      my-backend:
           ...
           ports:
            - 9006:3000
 ```
 
-To keep things working normally in local development, where the `PREEVY_BASE_URI` variables are not defined, a [default value](https://docs.docker.com/compose/compose-file/12-interpolation/) of `http://localhost:9006` is given.
+To keep things working normally in local development, where the `PREEVY_BASE_URI` variables are not defined, a [default value](https://docs.docker.com/compose/compose-file/12-interpolation/) of `http://localhost:9006/` is given.

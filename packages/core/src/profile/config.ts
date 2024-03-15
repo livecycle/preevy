@@ -58,6 +58,12 @@ const listPersistence = ({ localDir }: { localDir: string }) => {
   }
 }
 
+export class ProfileLoadError extends Error {
+  constructor(message: string) {
+    super(message)
+  }
+}
+
 export const localProfilesConfig = (
   localDir: string,
   fsFromUrl: (url: string, baseDir: string) => Promise<VirtualFS>,
@@ -74,7 +80,7 @@ export const localProfilesConfig = (
   async function get(alias: string | undefined, opts?: { throwOnNotFound: boolean }): Promise<GetResult | undefined> {
     const throwOrUndefined = () => {
       if (opts?.throwOnNotFound) {
-        throw new Error(`Profile ${alias} not found`)
+        throw new ProfileLoadError(`Profile ${alias} not found`)
       }
       return undefined
     }
@@ -82,14 +88,23 @@ export const localProfilesConfig = (
     const { profiles, current } = await listP.read()
     const aliasToGet = alias ?? current
     if (!aliasToGet) {
-      return throwOrUndefined()
+      if (opts?.throwOnNotFound) {
+        throw new ProfileLoadError('Profile not specified and no current profile is set')
+      }
+      return undefined
     }
     const locationUrl = profiles[aliasToGet]?.location
     if (!locationUrl) {
+      if (opts?.throwOnNotFound) {
+        throw new ProfileLoadError(`No profile with alias ${aliasToGet}`)
+      }
       return throwOrUndefined()
     }
     const tarSnapshotStore = await storeFromUrl(locationUrl)
-    const profileInfo = await profileStore(tarSnapshotStore).ref.info()
+    const profileInfo = await profileStore(tarSnapshotStore).ref.info({ throwOnNotFound: false })
+    if (!profileInfo) {
+      throw new ProfileLoadError(`Could not load profile "${aliasToGet}" at ${locationUrl}. The profile may have been deleted`)
+    }
     return {
       alias: aliasToGet,
       location: locationUrl,
@@ -200,7 +215,10 @@ export const localProfilesConfig = (
         throw new Error(`Profile ${alias} already exists`)
       }
       const tarSnapshotStore = await storeFromUrl(fromLocation)
-      const info = await profileStore(tarSnapshotStore).ref.info()
+      const info = await profileStore(tarSnapshotStore).ref.info({ throwOnNotFound: false })
+      if (!info) {
+        throw new Error(`Cannot import profile from ${fromLocation}. The profile may have been deleted`)
+      }
       const newProfile = {
         id: info.id,
         alias,

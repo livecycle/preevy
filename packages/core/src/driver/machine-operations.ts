@@ -97,8 +97,8 @@ const writeMetadata = async (
     },
   }
   await connection.exec(`mkdir -p "${REMOTE_DIR_BASE}" && chown "${userAndGroup.join(':')}" "${REMOTE_DIR_BASE}"`, { asRoot: true })
-  await connection.exec(`cat > "${REMOTE_DIR_BASE}/${driverMetadataFilename}"`, {
-    stdin: Buffer.from(JSON.stringify(metadata, dateReplacer)),
+  await connection.exec(`tee "${REMOTE_DIR_BASE}/${driverMetadataFilename}"`, {
+    stdin: JSON.stringify(metadata, dateReplacer),
   })
 }
 

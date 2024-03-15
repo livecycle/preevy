@@ -24,6 +24,7 @@ export {
   profileStore, Profile, ProfileStore, ProfileStoreRef, ProfileStoreTransaction, ProfileEditor,
   ProfileEditorOp,
   link, Org, LocalProfilesConfigGetResult,
+  ProfileLoadError,
 } from './profile/index.js'
 export { telemetryEmitter, registerEmitter, wireProcessExit, createTelemetryEmitter, machineId } from './telemetry/index.js'
 export { fsTypeFromUrl, Store, VirtualFS, FsReader, localFsFromUrl, localFs } from './store/index.js'
@@ -31,6 +32,7 @@ export {
   localComposeClient, ComposeModel, resolveComposeFiles, getExposedTcpServicePorts,
   fetchRemoteUserModel as remoteUserModel, NoComposeFilesError,
   addScriptInjectionsToServices as addScriptInjectionsToModel,
+  ComposeFiles,
   defaultVolumeSkipList,
 } from './compose/index.js'
 export { withSpinner } from './spinner.js'

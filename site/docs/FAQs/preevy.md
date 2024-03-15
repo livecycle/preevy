@@ -63,3 +63,15 @@ services:
   ```
 </details>
 
+<details>
+  <summary>Do you have examples for setting up a CI pipeline with Preview Environments using Preevy?</summary>
+
+  Sure! Check out the following repos:
+
+  - GitHub Actions:
+    - [Preevy on Kubernetes using Google Cloud GKE and GAR](https://github.com/livecycle/preevy-gha-gke-demo)
+    - [Preevy on Google Cloud VMs](https://github.com/livecycle/preevy-gha-gce-demo)
+
+  - Don't have a Kubernetes cluster? See an [example repo](https://github.com/livecycle/preevy-terraform-eks-example) for setting up [AWS EKS](https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html) using Terraform. The example includes [Karpenter](https://karpenter.sh/) which can reduce the cost of running Preview Environments by automatically expanding and shrinking your cluster using [EC2 Spot Instances](https://aws.amazon.com/ec2/spot/pricing/)
+
+</details>

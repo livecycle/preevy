@@ -52,7 +52,7 @@ const connectTls = (
   { hostname: host, port, tlsServerName, insecureSkipVerify }: Pick<SshTlsConnectionConfig, 'hostname' | 'port' | 'tlsServerName' | 'insecureSkipVerify'>
 ) => new Promise<TLSSocket>((resolve, reject) => {
   const socket: TLSSocket = tls.connect({
-    servername: tlsServerName,
+    servername: tlsServerName ?? host, // setting the servername to undefined will disable SNI
     rejectUnauthorized: !insecureSkipVerify,
     ALPNProtocols: ['ssh'],
     host,

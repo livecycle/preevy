@@ -66,7 +66,7 @@ export default class UpdateProfileConfig extends ProfileCommand<typeof UpdatePro
     const profileDriver = this.profile.driver as DriverName | undefined
     const driver: DriverName | undefined = (this.flags.driver || profileDriver)
     if (!driver) {
-      ux.error('Missing driver configuration in profile, use the --driver flag to set the desired machine driver')
+      ux.error(`Missing driver configuration in profile, specify the ${text.code('--driver')} flag to set the driver`)
     }
     const { unset } = this.flags
     validateUnset(driver, unset)

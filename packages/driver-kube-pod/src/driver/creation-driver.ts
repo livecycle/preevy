@@ -3,8 +3,10 @@ import * as k8s from '@kubernetes/client-node'
 import { Flags, Interfaces } from '@oclif/core'
 import { Logger, MachineCreationDriver, MachineCreationDriverFactory, telemetryEmitter } from '@preevy/core'
 import { pick } from 'lodash-es'
+import { CLIError } from '@oclif/core/lib/errors/index.js'
+import { inspect } from 'util'
 import { DeploymentMachine, ResourceType, StatefulSetMachine, k8sObjectToMachine } from './common.js'
-import { clientFromConfiguration, listMachines, machineConnection, flags as machineDriverFlags } from './driver.js'
+import { clientFromConfiguration, listMachines, machineConnection, flags as machineDriverFlags, parseRfc1123Flag } from './driver.js'
 import { Client, CreationClient, kubeCreationClient, loadKubeConfig } from './client/index.js'
 import { DEFAULT_TEMPLATE, packageJson } from '../static.js'
 
@@ -23,12 +25,19 @@ export const flags = {
   'storage-class': Flags.string({
     description: 'Storage class to use for Pod data volume',
     required: false,
+    parse: parseRfc1123Flag,
   }),
   'storage-size': Flags.custom<number>({
     description: 'Size of Pod data volume in GiB',
     required: false,
     default: 5,
-    parse: async v => Number(v),
+    parse: async v => {
+      const num = Number(v)
+      if (Number.isNaN(num) || num <= 0) {
+        throw new CLIError(`Expected a positive number but received: ${inspect(v)}`)
+      }
+      return num
+    },
   })(),
 } as const
 

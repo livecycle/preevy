@@ -87,7 +87,6 @@ const extractAuthorizationHeader = (req: IncomingMessage): AuthorizationHeader |
 export const jwtAuthenticator = (
   publicKeyThumbprint: string,
   identityProviders: IdentityProvider[],
-  loginEnabled: boolean,
 ) : Authenticator => async req => {
   const authHeader = extractAuthorizationHeader(req)
   const jwt = match(authHeader)
@@ -120,7 +119,7 @@ export const jwtAuthenticator = (
   return {
     method: { type: 'header', header: 'authorization' },
     isAuthenticated: true,
-    login: loginEnabled && isBrowser(req) && authHeader?.scheme !== 'Bearer',
+    login: isBrowser(req) && authHeader?.scheme !== 'Bearer',
     claims: mapClaims(token.payload, { pkThumbprint: publicKeyThumbprint }),
   }
 }

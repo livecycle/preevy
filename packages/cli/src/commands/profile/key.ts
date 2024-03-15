@@ -47,7 +47,7 @@ export default class Key extends ProfileCommand<typeof Key> {
       throw new Error('Could not find tunneling key in profile store')
     }
     const value = await extractKey(tunnelingKey, this.args.type as KeyType)
-    if (this.flags.json) {
+    if (this.jsonEnabled()) {
       return value
     }
     ux.log(value)

@@ -12,18 +12,21 @@ import { SessionStore } from '../session.js'
 import { BadGatewayError, BadRequestError, BasicAuthUnauthorizedError, RedirectError, UnauthorizedError, errorHandler, errorUpgradeHandler, tryHandler, tryUpgradeHandler } from '../http-server-helpers.js'
 import { TunnelFinder, proxyRouter } from './router.js'
 import { proxyInjectionHandlers } from './injection/index.js'
+import { editUrl } from '../url.js'
 
-const loginRedirectUrl = ({ loginUrl, env, returnPath }: { loginUrl: string; env: string; returnPath?: string }) => {
-  const url = new URL(loginUrl)
-  url.searchParams.set('env', env)
-  if (returnPath) {
-    url.searchParams.set('returnPath', returnPath)
-  }
-  return url.toString()
-}
+export const authHintQueryParam = '_preevy_auth_hint'
 
 const hasBasicAuthQueryParamHint = (url: string) =>
-  new URL(url, 'http://a').searchParams.get('_preevy_auth_hint') === 'basic'
+  new URL(url, 'http://a').searchParams.get(authHintQueryParam) === 'basic'
+
+const removeBasicAuthQueryParamHint = (pathAndSearch: string) => {
+  const u = editUrl(
+    new URL(pathAndSearch, 'http://a'),
+    { removeQueryParams: [authHintQueryParam] },
+  )
+
+  return u.pathname + u.search
+}
 
 export const proxy = ({
   activeTunnelStore,
@@ -31,16 +34,14 @@ export const proxy = ({
   sessionStore,
   log,
   authFactory,
-  loginConfig,
+  loginUrl,
 }: {
   sessionStore: SessionStore<Claims>
-  activeTunnelStore: ActiveTunnelStore
+  activeTunnelStore: Pick<ActiveTunnelStore, 'get'>
   baseHostname: string
   log: Logger
   authFactory: (client: { publicKey: KeyObject; publicKeyThumbprint: string }) => Authenticator
-  loginConfig?: {
-    loginUrl: string
-  }
+  loginUrl: ({ env, returnPath }: { env: string; returnPath?: string }) => string
 }) => {
   const theProxy = httpProxy.createProxyServer({ xfwd: true })
   const injectionHandlers = proxyInjectionHandlers({ log })
@@ -53,9 +54,9 @@ export const proxy = ({
     session: ReturnType<typeof sessionStore>,
   ) => {
     if (!session.user) {
-      const redirectToLoginError = ({ loginUrl }: { loginUrl: string }) => new RedirectError(
+      const redirectToLoginError = () => new RedirectError(
         307,
-        loginRedirectUrl({ loginUrl, env: tunnel.hostname, returnPath: req.url }),
+        loginUrl({ env: tunnel.hostname, returnPath: req.url && removeBasicAuthQueryParamHint(req.url) }),
       )
 
       const authenticate = authFactory(tunnel)
@@ -72,21 +73,16 @@ export const proxy = ({
       }
 
       if (!authResult.isAuthenticated) {
-        if (req.url !== undefined && hasBasicAuthQueryParamHint(req.url)) {
-          throw new BasicAuthUnauthorizedError()
-        }
-
-        throw loginConfig ? redirectToLoginError(loginConfig) : new UnauthorizedError()
+        log.debug('not authenticated: %j', authResult.reason)
+        throw req.url !== undefined && hasBasicAuthQueryParamHint(req.url)
+          ? new BasicAuthUnauthorizedError()
+          : redirectToLoginError()
       }
 
       session.set(authResult.claims)
       if (authResult.login && req.method === 'GET' && !req.headers.upgrade) {
-        if (!loginConfig) {
-          log.error('Login requested for %j, but login is not configured', authResult.claims)
-          throw new UnauthorizedError()
-        }
         session.save()
-        throw redirectToLoginError(loginConfig)
+        throw redirectToLoginError()
       }
 
       if (authResult.method.type === 'header') {
