@@ -1,11 +1,11 @@
 import { AddressInfo } from 'node:net'
 import { describe, expect, beforeAll, afterAll, jest, it } from '@jest/globals'
 import { ChildProcess, spawn, exec } from 'child_process'
-import { pino } from 'pino'
-import pinoPrettyModule from 'pino-pretty'
+import * as pino from 'pino'
+import pinoPretty from 'pino-pretty'
 import Dockerode from 'dockerode'
 import { inspect, promisify } from 'node:util'
-import waitForExpectModule from 'wait-for-expect'
+import waitForExpect from 'wait-for-expect'
 import WebSocket from 'ws'
 import stripAnsi from 'strip-ansi'
 import { createApp } from './index.js'
@@ -13,9 +13,6 @@ import { filteredClient } from '../docker/index.js'
 import { SshState } from '../ssh/index.js'
 import { COMPOSE_PROJECT_LABEL } from '../docker/labels.js'
 
-const PinoPretty = pinoPrettyModule.default
-
-const waitForExpect = waitForExpectModule.default
 const TEST_COMPOSE_PROJECT = 'my-project'
 
 const setupDockerContainer = () => {
@@ -57,9 +54,12 @@ const setupDockerContainer = () => {
 }
 
 const setupApiServer = () => {
-  const log = pino({
-    level: 'debug',
-  }, PinoPretty({ destination: pino.destination(process.stderr) }))
+  const log = pino.pino(
+    { level: 'debug' },
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pinoPretty({ destination: pino.destination(process.stderr) }),
+  )
 
   let app: Awaited<ReturnType<typeof createApp>>
   let serverBaseUrl: string
@@ -134,6 +134,8 @@ describe('docker api', () => {
 
   const waitForContainerId = async () => {
     let containerId = ''
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     await waitForExpect(async () => {
       const containers = await fetchJson(`http://${serverBaseUrl()}/containers`) as { Id: string; Names: string[] }[]
       const container = containers.find(({ Names: names }) => names.includes(`/${containerName()}`))
@@ -153,8 +155,14 @@ describe('docker api', () => {
     describe('tty=true', () => {
       it('should communicate via websocket', async () => {
         const { receivedBuffers, send, close } = await openWebSocket(`ws://${serverBaseUrl()}/containers/${containerId}/exec`)
-        await waitForExpect(() => expect(receivedBuffers.length).toBeGreaterThan(0))
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        await waitForExpect(
+          () => expect(receivedBuffers.length).toBeGreaterThan(0),
+        )
         await send('ls \n')
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         await waitForExpect(() => {
           const received = stripAnsi(Buffer.concat(receivedBuffers).toString('utf-8'))
           expect(received).toMatch(/#/)
@@ -168,6 +176,8 @@ describe('docker api', () => {
     describe('tty=false', () => {
       it('should communicate via websocket', async () => {
         const { receivedBuffers, send, close } = await openWebSocket(`ws://${serverBaseUrl()}/containers/${containerId}/exec`)
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         await waitForExpect(async () => {
           await send('ls\n')
           const received = Buffer.concat(receivedBuffers).toString('utf-8')
@@ -191,8 +201,14 @@ describe('docker api', () => {
       describe(`${s.join(' and ')}`, () => {
         it(`should show the ${s.join(' and ')} logs via websocket`, async () => {
           const { receivedBuffers, close } = await openWebSocket(`ws://${serverBaseUrl()}/containers/${containerId}/logs?${s.map(st => `${st}=true`).join('&')}`)
-          await waitForExpect(() => expect(receivedBuffers.length).toBeGreaterThan(0))
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          await waitForExpect(
+            () => expect(receivedBuffers.length).toBeGreaterThan(0),
+          )
           const length1 = receivedBuffers.length
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
           await waitForExpect(() => {
             const received = Buffer.concat(receivedBuffers).toString('utf-8')
             s.forEach(st => {
@@ -202,6 +218,8 @@ describe('docker api', () => {
               expect(received).not.toContain(`hello ${st}`)
             })
           })
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
           await waitForExpect(() => {
             expect(receivedBuffers.length).toBeGreaterThan(length1)
           })
@@ -217,7 +235,11 @@ describe('docker api', () => {
     describe('timestamps', () => {
       it('should show the logs with a timestamp', async () => {
         const { receivedBuffers, close } = await openWebSocket(`ws://${serverBaseUrl()}/containers/${containerId}/logs?stdout=true&timestamps=true`)
-        await waitForExpect(() => expect(receivedBuffers.length).toBeGreaterThan(0))
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        await waitForExpect(
+          () => expect(receivedBuffers.length).toBeGreaterThan(0),
+        )
         const received = Buffer.concat(receivedBuffers).toString('utf-8')
         expect(received).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d*Z/)
         await close()

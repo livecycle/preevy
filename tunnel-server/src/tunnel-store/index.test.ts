@@ -10,7 +10,12 @@ describe('inMemoryActiveTunnelStore', () => {
   let log: Logger<Level>
 
   beforeEach(() => {
-    log = pino({ level: 'silent' }, pinoPretty.default())
+    log = pino(
+      { level: 'silent' },
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      pinoPretty(),
+    )
     store = inMemoryActiveTunnelStore({ log })
   })
 

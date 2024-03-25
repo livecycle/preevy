@@ -4,8 +4,8 @@ import http from 'http'
 import fs from 'fs'
 import events from 'node:events'
 import path from 'path'
-import pino, { Level } from 'pino'
-import pinoPrettyModule from 'pino-pretty'
+import * as pino from 'pino'
+import pinoPretty from 'pino-pretty'
 import { promisify } from 'node:util'
 import { request, Dispatcher } from 'undici'
 import { calculateJwkThumbprintUri, exportJWK, JWTPayload, SignJWT } from 'jose'
@@ -16,8 +16,6 @@ import { ActiveTunnel, ActiveTunnelStore } from '../tunnel-store/index.js'
 import { EntryWatcher } from '../memory-store.js'
 import { authHintQueryParam, proxy } from '../proxy/index.js'
 import { calcLoginUrl } from './urls.js'
-
-const pinoPretty = pinoPrettyModule.default
 
 const mockFunction = <T extends (...args: never[]) => unknown>(): jest.MockedFunction<T> => (
   jest.fn() as unknown as jest.MockedFunction<T>
@@ -74,9 +72,12 @@ describe('app', () => {
   let activeTunnelStore: MockInterface<Pick<ActiveTunnelStore, 'get' | 'getByPkThumbprint'>>
   let user: Claims | undefined
 
-  const log = pino.default<Level>({
-    level: 'debug',
-  }, pinoPretty({ destination: pino.destination(process.stderr) }))
+  const log = pino.pino<pino.Level>(
+    { level: 'debug' },
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pinoPretty({ destination: pino.destination(process.stderr) }),
+  )
 
   beforeEach(async () => {
     user = undefined

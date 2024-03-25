@@ -42,7 +42,9 @@ describe('createDestroy', () => {
       })
 
       it('emits the close event immediately', async () => {
-        await waitForExpect.default(async () => {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        await waitForExpect(async () => {
           expect(closed).toBe(true)
         }, 1000, 100)
       })
@@ -83,7 +85,9 @@ describe('createDestroy', () => {
       })
 
       it('emits the close event immediately', async () => {
-        await waitForExpect.default(async () => {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        await waitForExpect(async () => {
           expect(closed).toBe(true)
         }, 1000, 100)
       })
