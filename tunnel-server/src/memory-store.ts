@@ -1,4 +1,4 @@
-import { Logger } from 'pino'
+import { Level, Logger } from 'pino'
 import { IEventEmitter, EventEmitter } from 'tseep'
 import { nextTick } from 'process'
 import { idGenerator } from './id-generator.js'
@@ -19,7 +19,7 @@ export interface EntryWatcher {
   once: (event: 'delete', listener: () => void) => this
 }
 
-export const inMemoryStore = <V extends {}>({ log }: { log: Logger }) => {
+export const inMemoryStore = <V extends {}>({ log }: { log: Logger<Level> }) => {
   type MapValue = { value: V; watcher: IEventEmitter<StoreEvents>; setTx: TransactionDescriptor }
   const map = new Map<string, MapValue>()
   const txIdGen = idGenerator()

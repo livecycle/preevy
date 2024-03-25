@@ -3,7 +3,7 @@ import stream from 'stream'
 import { parse as parseContentType } from 'content-type'
 import iconv from 'iconv-lite'
 import { inspect } from 'node:util'
-import { Logger } from 'pino'
+import { Logger, Level } from 'pino'
 import { InjectHtmlScriptTransform } from './inject-transform.js'
 import { addOutgoingEtagSuffix, removeIncomingEtagSuffix } from './etag.js'
 import { streamsForContentEncoding } from './content-encoding.js'
@@ -51,7 +51,7 @@ const proxyWithoutInjection = (
 }
 
 export const proxyInjectionHandlers = (
-  { log }: { log: Logger },
+  { log }: { log: Logger<Level> },
 ) => {
   const injectedContentForReq = new WeakMap<IncomingMessage, InjectedContent>()
   return {

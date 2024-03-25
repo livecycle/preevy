@@ -1,10 +1,10 @@
-import { Logger } from 'pino'
+import { Level, Logger } from 'pino'
 import http from 'http'
 import ssh from 'ssh2'
 import tls from 'tls'
 
 export const createTlsServer = ({ log, httpServer, sshServer, tlsConfig, sshHostnames }: {
-  log: Logger
+  log: Logger<Level>
   httpServer: Pick<http.Server, 'emit'>
   sshServer: Pick<ssh.Server, 'injectSocket'>
   tlsConfig: tls.TlsOptions

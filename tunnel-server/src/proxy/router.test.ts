@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals'
-import pino from 'pino'
+import pino, { Level } from 'pino'
 import pinoPrettyModule from 'pino-pretty'
 import { IncomingMessage } from 'http'
 import { Socket } from 'net'
@@ -8,7 +8,7 @@ import { ActiveTunnelStore } from '../tunnel-store/index.js'
 
 const PinoPretty = pinoPrettyModule.default
 
-const log = pino.default({
+const log = pino.default<Level>({
   level: 'debug',
 }, PinoPretty({ destination: pino.destination(process.stderr) }))
 

@@ -1,5 +1,5 @@
 import { KeyObject } from 'crypto'
-import { Logger } from 'pino'
+import { Level, Logger } from 'pino'
 import { multimap } from '../multimap.js'
 import { Store, TransactionDescriptor, inMemoryStore } from '../memory-store.js'
 import { ScriptInjectionSpec } from '../proxy/injection/index.js'
@@ -24,7 +24,7 @@ export type ActiveTunnelStore = Store<ActiveTunnel> & {
   getByPkThumbprint: (pkThumbprint: string) => Promise<readonly ActiveTunnel[] | undefined>
 }
 
-export const inMemoryActiveTunnelStore = ({ log }: { log: Logger }): ActiveTunnelStore => {
+export const inMemoryActiveTunnelStore = ({ log }: { log: Logger<Level> }): ActiveTunnelStore => {
   const keyToTunnel = inMemoryStore<ActiveTunnel>({ log })
   const pkThumbprintToTunnel = multimap<string, { key: string; tx: TransactionDescriptor }>()
   const { set: storeSet } = keyToTunnel

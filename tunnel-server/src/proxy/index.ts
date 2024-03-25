@@ -2,7 +2,7 @@ import httpProxy from 'http-proxy'
 import { IncomingMessage } from 'http'
 import Agent from 'agentkeepalive'
 import net from 'net'
-import type { Logger } from 'pino'
+import type { Level, Logger } from 'pino'
 import { inspect } from 'util'
 import { KeyObject } from 'crypto'
 import stream from 'stream'
@@ -40,7 +40,7 @@ export const proxy = ({
   sessionStore: SessionStore<Claims>
   activeTunnelStore: Pick<ActiveTunnelStore, 'get'>
   baseHostname: string
-  log: Logger
+  log: Logger<Level>
   authFactory: (client: { publicKey: KeyObject; publicKeyThumbprint: string }) => Authenticator
   loginUrl: ({ env, returnPath }: { env: string; returnPath?: string }) => string
 }) => {

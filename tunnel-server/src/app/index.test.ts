@@ -4,7 +4,7 @@ import http from 'http'
 import fs from 'fs'
 import events from 'node:events'
 import path from 'path'
-import pino from 'pino'
+import pino, { Level } from 'pino'
 import pinoPrettyModule from 'pino-pretty'
 import { promisify } from 'node:util'
 import { request, Dispatcher } from 'undici'
@@ -74,7 +74,7 @@ describe('app', () => {
   let activeTunnelStore: MockInterface<Pick<ActiveTunnelStore, 'get' | 'getByPkThumbprint'>>
   let user: Claims | undefined
 
-  const log = pino.default({
+  const log = pino.default<Level>({
     level: 'debug',
   }, pinoPretty({ destination: pino.destination(process.stderr) }))
 

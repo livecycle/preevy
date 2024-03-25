@@ -1,4 +1,4 @@
-import { Logger } from 'pino'
+import { Level, Logger } from 'pino'
 import { inspect } from 'util'
 import { Gauge } from 'prom-client'
 import { once } from 'lodash-es'
@@ -17,7 +17,7 @@ export const createSshServer = ({
   tunnelsGauge,
   sshConnectionsGauge,
 }: {
-  log: Logger
+  log: Logger<Level>
   sshPrivateKey: string
   socketDir: string
   activeTunnelStore: ActiveTunnelStore
