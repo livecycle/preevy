@@ -43,7 +43,7 @@
     "shx": "^0.3.3",
     "ts-node": "^10.9.1",
     "tslib": "^2.5.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.4.3"
   },
   "scripts": {
     "lint": "eslint . --ext .ts,.tsx --cache",

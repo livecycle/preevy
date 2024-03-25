@@ -52,7 +52,7 @@
     "shx": "^0.3.3",
     "strip-ansi": "6.0.0",
     "tsx": "^3.12.3",
-    "typescript": "^5.3.3",
+    "typescript": "^5.4.3",
     "wait-for-expect": "^3.0.2"
   },
   "scripts": {
