@@ -518,11 +518,6 @@
     ajv-formats "^2.1.1"
     fast-uri "^2.0.0"
 
-"@fastify/busboy@^2.0.0":
-  version "2.1.0"
-  resolved "https://registry.npmjs.org/@fastify/busboy/-/busboy-2.1.0.tgz#0709e9f4cb252351c609c6e6d8d6779a8d25edff"
-  integrity sha512-+KpH+QxZU7O4675t3mnkQKcZZg56u+K/Ct2K+N2AZYNVK8kyeo/bI18tI8aPm3tvNNRyTWfj6s5tnGNlcbQRsA==
-
 "@fastify/cors@^8.3.0":
   version "8.3.0"
   resolved "https://registry.yarnpkg.com/@fastify/cors/-/cors-8.3.0.tgz#f03d745731b770793a1a15344da7220ca0d19619"
@@ -3889,11 +3884,9 @@ undici-types@~5.26.4:
   integrity sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==
 
 undici@^6.4.0:
-  version "6.4.0"
-  resolved "https://registry.npmjs.org/undici/-/undici-6.4.0.tgz#7ca0c3f73e1034f3c79e566183b61bb55b1410ea"
-  integrity sha512-wYaKgftNqf6Je7JQ51YzkEkEevzOgM7at5JytKO7BjaURQpERW8edQSMrr2xb+Yv4U8Yg47J24+lc9+NbeXMFA==
-  dependencies:
-    "@fastify/busboy" "^2.0.0"
+  version "6.10.1"
+  resolved "https://registry.yarnpkg.com/undici/-/undici-6.10.1.tgz#772d1c9d448a4c3ee10294e7328d64e9e821086a"
+  integrity sha512-kSzmWrOx3XBKTgPm4Tal8Hyl3yf+hzlA00SAf4goxv8LZYafKmS6gJD/7Fe5HH/DMNiFTRXvkwhLo7mUn5fuQQ==
 
 universalify@^0.2.0:
   version "0.2.0"
