@@ -1,5 +1,5 @@
 import { IncomingMessage } from 'http'
-import type { Logger } from 'pino'
+import type { Level, Logger } from 'pino'
 import { ActiveTunnel, ActiveTunnelStore } from '../tunnel-store/index.js'
 
 const tunnelPathRe = /^\/proxy\/([^/]+)(\/.*)/
@@ -25,7 +25,7 @@ export type TunnelFinder = (
 ) => Promise<undefined | { path: string; activeTunnel: ActiveTunnel }>
 
 export const proxyRouter = (
-  { log, baseHostname }: { log: Logger; baseHostname: string },
+  { log, baseHostname }: { log: Logger<Level>; baseHostname: string },
 ): ((req: IncomingMessage) => undefined | TunnelFinder) => {
   const tunnelFinderFromHostname = (
     { headers: { host: hostHeader }, method, url }: Pick<IncomingMessage, 'headers' | 'url' | 'method'>,

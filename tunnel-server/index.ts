@@ -1,5 +1,5 @@
 import { promisify } from 'util'
-import pino from 'pino'
+import pino, { Level } from 'pino'
 import { KeyObject, createPublicKey } from 'crypto'
 import { ListenOptions } from 'net'
 import { createApp } from './src/app/index.js'
@@ -24,7 +24,7 @@ type HasListen = {
 const LISTEN_HOST = '0.0.0.0'
 const listen = async <T extends HasListen>({ log, server, port }: {
   server: T
-  log: pino.Logger
+  log: pino.Logger<Level>
   port: number
 }) => {
   try {
@@ -37,7 +37,7 @@ const listen = async <T extends HasListen>({ log, server, port }: {
   return server
 }
 
-const log = pino.default(appLoggerFromEnv())
+const log = pino.default<Level>(appLoggerFromEnv())
 
 const { sshPrivateKey } = await getSSHKeys({
   defaultKeyLocation: './ssh/ssh_host_key',
@@ -92,10 +92,10 @@ const authFactory = (
   baseIdentityProviders.concat(cliIdentityProvider(publicKey, publicKeyThumbprint)),
 )
 
-const activeTunnelStore = inMemoryActiveTunnelStore({ log: log.child({ name: 'tunnel_store' }) })
+const activeTunnelStore = inMemoryActiveTunnelStore({ log: log.child<Level>({ name: 'tunnel_store' }) })
 const sessionStore = cookieSessionStore({ domain: BASE_URL.hostname, schema: claimsSchema, keys: process.env.COOKIE_SECRETS?.split(' ') })
 
-const appLog = log.child({ name: 'app' })
+const appLog = log.child<Level>({ name: 'app' })
 const app = await listen({
   server: await createApp({
     sessionStore,
@@ -123,7 +123,7 @@ const tunnelUrl = (
   tunnel: string,
 ) => editUrl(rootUrl, { hostname: `${activeTunnelStoreKey(clientId, tunnel)}.${rootUrl.hostname}` }).toString()
 
-const sshServerLog = log.child({ name: 'ssh_server' })
+const sshServerLog = log.child<Level>({ name: 'ssh_server' })
 const sshServer = await listen({
   server: createSshServer({
     log: sshServerLog,

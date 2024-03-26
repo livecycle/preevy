@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from 'fastify'
-import { Logger } from 'pino'
+import { Level, Logger } from 'pino'
 import z from 'zod'
 import { KeyObject } from 'crypto'
 import { ActiveTunnelStore } from '../tunnel-store/index.js'
@@ -15,7 +15,7 @@ const loginQueryString = z.object({
 })
 
 export const login: FastifyPluginAsync<{
-  log: Logger
+  log: Logger<Level>
   activeTunnelStore: Pick<ActiveTunnelStore, 'get'>
   sessionStore: SessionStore<Claims>
   baseUrl: URL

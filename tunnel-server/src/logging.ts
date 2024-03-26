@@ -1,6 +1,6 @@
-import pino from 'pino'
+import pino, { Level } from 'pino'
 
-type PinoParams = Parameters<(typeof pino.default)>[0]
+type PinoParams = Parameters<(typeof pino.default<Level>)>[0]
 const envToLogger: Record<string, PinoParams> = {
   development: {
     level: process.env.DEBUG ? 'debug' : 'info',

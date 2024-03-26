@@ -11,7 +11,7 @@
     "patch-package": "^8.0.0",
     "postinstall-postinstall": "^2.1.0",
     "syncpack": "11.2.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.4.3"
   },
   "resolutions": {
     "**/@oclif/core": "^3.15.1"
