@@ -1,6 +1,6 @@
 {
   "name": "@preevy/cli-common",
-  "version": "0.0.63",
+  "version": "0.0.64",
   "description": "Common library for the Preevy CLI and plugins",
   "type": "module",
   "main": "dist/index.js",
@@ -14,7 +14,7 @@
   "dependencies": {
     "@inquirer/prompts": "^3.3.0",
     "@oclif/core": "^3.15.1",
-    "@preevy/core": "0.0.63",
+    "@preevy/core": "0.0.64",
     "chalk": "^4.1.2",
     "iter-tools-es": "^7.5.3",
     "lodash-es": "^4.17.21"

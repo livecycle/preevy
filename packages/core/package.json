@@ -1,6 +1,6 @@
 {
   "name": "@preevy/core",
-  "version": "0.0.63",
+  "version": "0.0.64",
   "description": "Core functionality for Preevy",
   "type": "module",
   "exports": {
@@ -13,8 +13,8 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@inquirer/prompts": "^3.3.0",
-    "@preevy/common": "0.0.63",
-    "@preevy/compose-tunnel-agent": "0.0.63",
+    "@preevy/common": "0.0.64",
+    "@preevy/compose-tunnel-agent": "0.0.64",
     "chalk": "^4.1.2",
     "fast-safe-stringify": "^2.1.1",
     "is-stream": "^2.0.1",
