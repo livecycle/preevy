@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "@jest/globals": "29.7.0",
-    "@types/dockerode": "^3.3.14",
+    "@types/dockerode": "^3.3.26",
     "@types/http-proxy": "^1.17.9",
     "@types/lodash-es": "^4.17.12",
     "@types/node": "18",

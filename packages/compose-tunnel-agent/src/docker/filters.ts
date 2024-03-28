@@ -35,7 +35,7 @@ export const filters = ({
 
   const listContainers = async () => await docker.listContainers({
     all: true,
-    filters: { ...apiFilter },
+    filters: JSON.stringify({ ...apiFilter }),
   })
 
   const adhocFilter = (c: Pick<Docker.ContainerInfo, 'Labels'>): boolean => (
