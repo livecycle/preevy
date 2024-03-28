@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from 'fastify'
-import { Logger } from 'pino'
+import { Level, Logger } from 'pino'
 import z from 'zod'
 import { KeyObject } from 'crypto'
 import { ActiveTunnelStore } from '../tunnel-store/index.js'
@@ -11,7 +11,7 @@ const paramsSchema = z.object({
 })
 
 export const profileTunnels: FastifyPluginAsync<{
-  log: Logger
+  log: Logger<Level>
   activeTunnelStore: Pick<ActiveTunnelStore, 'getByPkThumbprint'>
   authFactory: (client: { publicKey: KeyObject; publicKeyThumbprint: string }) => Authenticator
 }> = async (app, { activeTunnelStore, authFactory }) => {

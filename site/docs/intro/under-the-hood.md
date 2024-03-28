@@ -12,69 +12,79 @@ When provisioning a new environment using the [`up`](/cli-reference#preevy-up-se
   - Read the tunneling key and default flags from the profile.
   - Calculate the environment ID based on the current git branch (or use the `--id` flag.)
   - Connect to the Tunnel Server using the tunneling key to pre-generate the public URLs in env vars
-- Make sure a machine is provisioned:
-  - Query the configured cloud provider for an existing machine
-  - If a machine doesn't exist yet, a new one is provisioned and a Docker server is set up in it
-- Set up an SSH tunnel to the Docker server on the provisioned machine
+- Make sure a deployment target (VM or Kubernetes Pod) is provisioned:
+  - Query the configured cloud provider or Kubernetes cluster for an existing machine
+  - If the deployment target doesn't exist yet, a new one is provisioned
+- Set up an SSH tunnel to the Docker server on the provisioned deployment target
 - Build the Compose project
   - Extract the build information from the specified Compose file(s) and combine it with the specified build options to generate an interim build Compose file.
   - Run `docker buildx bake` with the generated build Compose file.
-    - The resulting images are either loaded to the provisioned machine or written to an image registry.
+  - The resulting images are either loaded to the provisioned machine or written to an image registry.
 - Deploy the Compose services to the machine's Docker server using the `docker compose up` command
   - Local volume mounts are copied to the remote machine first
   - The original Compose project is augmented with a helper service, `preevy_proxy`, responsible for connecting to the [Tunnel Server](/tunnel-server).
 - The `preevy_proxy` service creates a tunnel for each service.
-- Fetch the URLs from the Tunnel Server and output them.
+- Fetch the tunneled URLs from the Tunnel Server and print them.
 
 ## Profile configuration
 
-The Preevy profile provides a mechanism for storing and sharing configuration and state between different machines. This allows sharing of environments between different CI jobs, or different developers.
-Using a shared profile ensures consistent configuration and stable URLs between different CI runs.
-
-Preevy includes built-in support for sharing profiles using[AWS S3](https://aws.amazon.com/s3/) [Google Cloud Storage](https://cloud.google.com/storage/) and [Azure Blob Storage](https://azure.microsoft.com/en-us/products/storage/blobs/). You can also store the profile on the local filesystem and copy it manually.
+The Preevy profile provides a mechanism for storing and sharing configuration and state between different machines. Using a shared profile ensures consistent configuration and stable URLs between different CI runs and different developers.
 
 :::note
 The profile does not contain any cloud provider credentials.
 :::
 
-When using S3, the Preevy CLI uses the local AWS credential chain (e.g, from environment variables, AWS profile, or EC2 role)
+### Creating, viewing, editing and deleting a profile
 
-Similarly, when using Google Cloud Storage or Azure Blob Storage, the Preevy CLI uses the locally stored credentials.
+Create a profile using the [`preevy init`](/cli-reference/init) or [`preevy profile create`](/cli-reference/profile#preevy-profile-create-name-url) commands.
 
-For all storage providers, Preevy needs specific permissions to create the bucket (if it doesn't already exist) and read/write objects on the bucket.
+Import an existing profile using the [`preevy init --from <profile-url>`](/cli-reference/init) or [`preevy profile import <profile-url> --use`](/cli-reference/profile#preevy-profile-import-location) commands.
 
-### Profile URLs
+View the list of imported profiles using the [`preevy profile ls`](/cli-reference/profile#preevy-profile-ls) command.
 
-Profile URLs specify the location of the shared profile on AWS S3 or Google Cloud Storage. A bucket name is always specified. The same bucket can be used to store multiple profiles by specifying a base path.
+Copy a profile between storage locations using the [`preevy profile cp`](/cli-reference/profile#preevy-profile-cp) command.
 
-Example AWS S3 URL:
-```
-s3://preevy-config/profile1?region=us-east-1
-```
+See the [`preevy profile`](cli-reference/profile) subcommands for other operations on profiles, including viewing the profile contents and editing it.
 
-Refers to a profile stored on an S3 bucket named `preevy-config` in the region `us-east-1` under the base path `profile1`.
+### Selecting a profile when running Preevy
 
-Example Google Cloud Storage URL:
+A profile is identified using a URL. Preevy commands which require a profile accept the `--profile` flag. If the flag is not specified, the default profile is used. The default profile is set to the last created or imported profile, and can be explicitly set using the [`preevy profile use`](/cli-reference/profile#preevy-profile-use-name) command.
 
-```
-gs://preevy-config/profile1?project=my-project
-```
+### Remote storage for profiles
 
-Example Azure Blob Storage Storage URL:
+Preevy includes built-in support for storing profiles remotely on [AWS S3](https://aws.amazon.com/s3/), [Google Cloud Storage](https://cloud.google.com/storage/) and [Azure Blob Storage](https://azure.microsoft.com/en-us/products/storage/blobs/). Storing the profile on remote storage makes it easy share the profile and use Preevy in CI.
 
-```
-azblob://preevy-config/profile1?storage_account=myaccount
-```
+#### Required credentials
 
-Refers to a profile stored on a AZBlob [container](https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blobs-introduction#containers) named `preevy-config` in the [storage account](https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blobs-introduction#storage-accounts) `my-project` under the base path `profile1`.
+When using S3, the Preevy CLI uses the local AWS credential chain (e.g, from environment variables, AWS profile, or EC2 role). Similarly, when using Google Cloud Storage or Azure Blob Storage, the Preevy CLI uses the locally stored credentials.
 
-To import a shared profile, specify its URL to the `preevy init` command:
+For all remote storage providers, Preevy needs specific permissions to create the bucket (if it doesn't already exist) and read/write objects on the bucket.
 
-```
-preevy init --from s3://preevy-config/profile1?region=us-east-1
-```
+#### Remote storage profile URLs
 
-List profiles that were already imported using the command [`preevy profile ls`](/cli-reference#preevy-profile-ls).
+Remote storage profile URLs specify a bucket name and and optional base path. By specifying different base paths, the same bucket can be used to store multiple profiles.
+
+Example AWS S3 URLs:
+
+- `s3://my-bucket?region=us-east-1`: S3 bucket named `my-bucket` in the region `us-east-1`
+- `s3://my-bucket/my-path?region=us-east-1`: Same as above, with the base path `my-path`
+
+Example Google Cloud Storage URLs:
+- `gs://my-bucket?project=my-project`: GCS bucket named `my-bucket` in the project `my-project`
+- `gs://my-bucket/my-path?project=my-project` Same as above, with the base path `my-path`
+
+Example Azure Blob Storage Storage URLs:
+- `azblob://my-container?storage_account=myaccount`: AZBlob [container](https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blobs-introduction#containers) named `preevy-config` in the [storage account](https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blobs-introduction#storage-accounts) `my-project`
+- `azblob://my-container/my-path?storage_account=myaccount`: Same as above, with the base path `my-path`
+
+### Local storage for profiles 
+
+You can also store the profile on the local filesystem. When using Preevy in CI, a local profile needs to be copied manually in order to create stable URLs between different CI runs.
+
+Example local storage URL:
+- `local://profile-name`: A local directory (under the OS's local data dir, e.g, `~/.local/share/preevy`) named `profile-name`
+
+To copy a local profile to remote storage, use the [`preevy profile cp`](/cli-reference/profile#preevy-profile-cp) command.
 
 ## Components
 
@@ -94,6 +104,6 @@ For usage examples, you can go over the [CLI reference](/cli-reference)
 #### [Tunnel server](https://github.com/livecycle/preevy/tree/main/packages/tunnel-server)
 
 The tunnel server is a Node.js-based server responsible for exposing friendly HTTPS URLs for the Compose services.
-A free public instance is hosted on `livecycle.run`, and it can be self-hosted as well.
+A free public instance is hosted on `livecycle.run`, and it can be [self-hosted](https://github.com/livecycle/preevy/tree/main/tunnel-server/deployment/k8s) as well.
 
 Read more about it: [Tunnel server](/tunnel-server)

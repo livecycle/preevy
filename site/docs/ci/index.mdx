@@ -101,7 +101,7 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
-      - uses: aws-actions/configure-aws-credentials@v2
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::12345678:role/my-role
           aws-region: eu-west-1
@@ -111,15 +111,11 @@ jobs:
       - uses: livecycle/preevy-up-action@v2.4.0
         id: preevy
         with:
+          install: gh-release
           profile-url: "${{ vars.PREEVY_PROFILE_URL }}"
           docker-compose-yaml-paths: "./docker/docker-compose.yaml"
-
-      # Change `frontend` and `3000` in this step to your main service and port
-      # This will appear as the GH environment URL
-      - id: store_url
-        name: Store URL of frontend
-        run: |
-          echo url=$(jq -r '.[] | select(.service=="frontend" and .port==3000).url' "${{ steps.preevy_up.outputs.urls-file }}") >> "$GITHUB_OUTPUT"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 ```
 
 - For the `Teardown Preevy environment` workflow, create the file `preevy-down.yaml` in the `.github/workflows` directory of your repo:
@@ -140,7 +136,7 @@ jobs:
   teardown:
     runs-on: ubuntu-latest
     steps:
-      - uses: aws-actions/configure-aws-credentials@v2
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::12345678:role/my-role
           aws-region: eu-west-1
@@ -149,14 +145,35 @@ jobs:
       - uses: livecycle/preevy-down-action@v1.4.0
         id: preevy
         with:
+          install: gh-release
           profile-url: "${{ vars.PREEVY_PROFILE_URL }}"
           docker-compose-yaml-paths: "./docker/docker-compose.yaml"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 ```
 
-- Add a [GitHub action configuration variable](https://docs.github.com/en/actions/learn-github-actions/variables#defining-configuration-variables-for-multiple-workflows) named `PREEVY_PROFILE_URL` and set the value to the URL printed at the `preevy init` output.
+- Add a [GitHub action configuration variable](https://docs.github.com/en/actions/learn-github-actions/variables#defining-configuration-variables-for-multiple-workflows) named `PREEVY_PROFILE_URL` and set the value to the URL printed at the `preevy init` (or `preevy profile ls`) output.
 
 ### 4. Get Automatic GitHub Notifications
 
 You're all set! When you open a PR, Preevy will now build preview environments.
 The [Preevy Github Plugin](/github-plugin) will automatically detect the GitHub context and post a comment on your PR with the links to each of the relevant services when they are available for review.
 Teammates can simply click these links and preview your latest changes in their browsers.
+
+## Examples
+
+* [GitHub Actions + Google Kubernetes Engine + Kubernetes builder](https://github.com/livecycle/preevy-gha-gke-demo/tree/main/.github/workflows)
+* [GitHub Actions + Google Cloud](https://github.com/livecycle/preevy-gha-gce-demo/tree/main/.github/workflows)
+
+## Troubleshooting
+
+### Enable debug logging
+
+Add the `--debug` flag to the `args` parameter:
+
+```yaml
+- uses: livecycle/preevy-up-action@v2.4.0
+  id: preevy
+  with:
+    args: "--debug"
+```

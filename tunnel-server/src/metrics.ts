@@ -22,7 +22,7 @@ export const requestsCounter = new Counter({
 
 register.setDefaultLabels({ serviceName: 'preevy-tunnel-server' })
 
-export const metricsServer = ({ log }: { log: pino.Logger }) => {
+export const metricsServer = ({ log }: { log: pino.Logger<pino.Level> }) => {
   const app = fastify({ logger: log })
 
   app.get('/metrics', async (_request, reply) => {

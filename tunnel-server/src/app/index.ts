@@ -1,7 +1,7 @@
 import fastify, { FastifyServerFactory, RawServerDefault } from 'fastify'
 import { fastifyRequestContext } from '@fastify/request-context'
 import http from 'http'
-import { Logger } from 'pino'
+import { Level, Logger } from 'pino'
 import { KeyObject } from 'crypto'
 import { validatorCompiler, serializerCompiler, ZodTypeProvider } from 'fastify-type-provider-zod'
 import { Duplex } from 'stream'
@@ -19,7 +19,7 @@ const serverFactory = ({
   baseUrl,
   proxy,
 }: {
-  log: Logger
+  log: Logger<Level>
   baseUrl: URL
   proxy: Proxy
 }): FastifyServerFactory<RawServerDefault> => handler => {
@@ -67,7 +67,7 @@ export const createApp = async ({
   log,
   authFactory,
 }: {
-  log: Logger
+  log: Logger<Level>
   baseUrl: URL
   saasBaseUrl?: URL
   sessionStore: SessionStore<Claims>

@@ -1,16 +1,21 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals'
 import pinoPretty from 'pino-pretty'
-import { Logger, pino } from 'pino'
+import { Level, Logger, pino } from 'pino'
 import { nextTick } from 'process'
 import { ActiveTunnel, ActiveTunnelStore, inMemoryActiveTunnelStore } from './index.js'
 import { EntryWatcher, TransactionDescriptor } from '../memory-store.js'
 
 describe('inMemoryActiveTunnelStore', () => {
   let store: ActiveTunnelStore
-  let log: Logger
+  let log: Logger<Level>
 
   beforeEach(() => {
-    log = pino({ level: 'silent' }, pinoPretty.default())
+    log = pino(
+      { level: 'silent' },
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      pinoPretty(),
+    )
     store = inMemoryActiveTunnelStore({ log })
   })
 

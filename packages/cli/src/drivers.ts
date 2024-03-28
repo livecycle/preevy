@@ -6,6 +6,7 @@ import kubePod from '@preevy/driver-kube-pod'
 import { Flag } from '@oclif/core/lib/interfaces'
 import { Interfaces } from '@oclif/core'
 import { formatFlagsToArgs } from '@preevy/cli-common'
+import {} from '@preevy/core' // https://github.com/microsoft/TypeScript/issues/47663#issuecomment-1270716220
 
 export const machineDrivers = {
   lightsail,

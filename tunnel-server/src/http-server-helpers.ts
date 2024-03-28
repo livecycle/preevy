@@ -1,4 +1,4 @@
-import { Logger } from 'pino'
+import { Level, Logger } from 'pino'
 import http from 'node:http'
 import stream from 'node:stream'
 import { inspect } from 'node:util'
@@ -93,7 +93,7 @@ export type HttpUpgradeHandler = (req: http.IncomingMessage, socket: stream.Dupl
 export type HttpHandler = (req: http.IncomingMessage, res: http.ServerResponse) => Promise<void>
 
 export const errorHandler = (
-  log: Logger,
+  log: Logger<Level>,
   err: unknown,
   req: http.IncomingMessage,
   res: http.ServerResponse,
@@ -108,7 +108,7 @@ export const errorHandler = (
 }
 
 export const tryHandler = (
-  { log }: { log: Logger },
+  { log }: { log: Logger<Level> },
   f: HttpHandler
 ) => async (req: http.IncomingMessage, res: http.ServerResponse) => {
   try {
@@ -119,7 +119,7 @@ export const tryHandler = (
 }
 
 export const errorUpgradeHandler = (
-  log: Logger,
+  log: Logger<Level>,
   err: unknown,
   req: http.IncomingMessage,
   socket: stream.Duplex,
@@ -133,7 +133,7 @@ export const errorUpgradeHandler = (
 }
 
 export const tryUpgradeHandler = (
-  { log }: { log: Logger },
+  { log }: { log: Logger<Level> },
   f: HttpUpgradeHandler
 ) => async (req: http.IncomingMessage, socket: stream.Duplex, head: Buffer) => {
   try {

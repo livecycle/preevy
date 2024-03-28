@@ -1,11 +1,11 @@
 import path from 'path'
 import fs from 'fs/promises'
 import ssh2 from 'ssh2'
-import { Logger } from 'pino'
+import { Level, Logger } from 'pino'
 
 export async function getSSHKeys({
   defaultKeyLocation, log,
-}: {defaultKeyLocation: string; log: Logger}) {
+}: {defaultKeyLocation: string; log: Logger<Level>}) {
   const sshHostKeyInline = process.env.SSH_HOST_KEY
   let privateKeyContents = ''
   if (sshHostKeyInline) {
