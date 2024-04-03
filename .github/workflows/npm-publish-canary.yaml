@@ -30,6 +30,7 @@ jobs:
         cache: yarn
 
     - run: yarn
+    - run: yarn build
 
     - name: Set NPM token
       env:
