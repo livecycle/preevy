@@ -1,7 +1,7 @@
-import retry from 'p-retry'
 import { COMPOSE_TUNNEL_AGENT_SERVICE_NAME } from '@preevy/common'
-import { generateBasicAuthCredentials, jwtGenerator } from '../credentials/index.js'
+import retry from 'p-retry'
 import { queryTunnels } from '../compose-tunnel-agent-client.js'
+import { generateBasicAuthCredentials, jwtGenerator } from '../credentials/index.js'
 import { FlatTunnel, flattenTunnels } from '../tunneling/index.js'
 
 const tunnelFilter = ({ serviceAndPort, showPreevyService }: {
@@ -26,6 +26,7 @@ export const urls = async ({
   showPreevyService,
   composeTunnelServiceUrl,
   fetchTimeout,
+  expectedServiceNames,
 }: {
   serviceAndPort?: { service: string; port?: number }
   tunnelingKey: string | Buffer
@@ -34,6 +35,7 @@ export const urls = async ({
   showPreevyService: boolean
   composeTunnelServiceUrl: string
   fetchTimeout: number
+  expectedServiceNames?: string[]
 }) => {
   const credentials = await generateBasicAuthCredentials(jwtGenerator(tunnelingKey))
 
@@ -43,6 +45,7 @@ export const urls = async ({
     credentials,
     includeAccessCredentials,
     fetchTimeout,
+    expectedServiceNames,
   })
 
   return flattenTunnels(tunnels).filter(tunnelFilter({ serviceAndPort, showPreevyService }))

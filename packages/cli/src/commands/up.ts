@@ -1,4 +1,6 @@
 import { Args, Flags } from '@oclif/core'
+import { buildFlags, parseBuildFlags, tableFlags, text, tunnelServerFlags } from '@preevy/cli-common'
+import { editUrl, tunnelNameResolver } from '@preevy/common'
 import {
   ComposeModel,
   Logger,
@@ -11,13 +13,11 @@ import {
   telemetryEmitter,
   withSpinner,
 } from '@preevy/core'
-import { buildFlags, parseBuildFlags, tableFlags, text, tunnelServerFlags } from '@preevy/cli-common'
 import { inspect } from 'util'
-import { editUrl, tunnelNameResolver } from '@preevy/common'
-import MachineCreationDriverCommand from '../machine-creation-driver-command.js'
 import { envIdFlags, urlFlags } from '../common-flags.js'
-import { filterUrls, printUrls, writeUrlsToFile } from './urls.js'
+import MachineCreationDriverCommand from '../machine-creation-driver-command.js'
 import { connectToTunnelServerSsh } from '../tunnel-server-client.js'
+import { filterUrls, printUrls, writeUrlsToFile } from './urls.js'
 
 const fetchTunnelServerDetails = async ({
   log,
@@ -179,7 +179,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
     const buildSpec = parseBuildFlags(flags)
 
-    await commands.up({
+    const { composeModel } = await commands.up({
       connection,
       machineStatusCommand,
       dockerPlatform,
@@ -205,6 +205,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
 
     this.log(`Preview environment ${text.code(envId)} provisioned at: ${text.code(machine.locationDescription)}`)
 
+    const expectedServiceNames = Object.keys(composeModel.services ?? {})
     const composeTunnelServiceUrl = findComposeTunnelAgentUrl(expectedServiceUrls)
     const flatTunnels = await withSpinner(() => commands.urls({
       composeTunnelServiceUrl,

@@ -1,17 +1,17 @@
-import path from 'path'
-import retry from 'p-retry'
-import util from 'util'
-import { createRequire } from 'module'
-import { mapValues, merge } from 'lodash-es'
 import { COMPOSE_TUNNEL_AGENT_PORT, COMPOSE_TUNNEL_AGENT_SERVICE_LABELS, COMPOSE_TUNNEL_AGENT_SERVICE_NAME, MachineStatusCommand, ScriptInjection, dateReplacer } from '@preevy/common'
+import { mapValues, merge } from 'lodash-es'
+import { createRequire } from 'module'
+import retry from 'p-retry'
+import path from 'path'
+import util from 'util'
 import { ComposeModel, ComposeService, composeModelFilename } from './compose/model.js'
-import { TunnelOpts } from './ssh/url.js'
-import { Tunnel } from './tunneling/index.js'
+import { addScriptInjectionsToServices } from './compose/script-injection.js'
 import { withBasicAuthCredentials } from './credentials/index.js'
+import { EnvId } from './env-id.js'
 import { EnvMetadata, driverMetadataFilename } from './env-metadata.js'
 import { REMOTE_DIR_BASE } from './remote-files.js'
-import { EnvId } from './env-id.js'
-import { addScriptInjectionsToServices } from './compose/script-injection.js'
+import { TunnelOpts } from './ssh/url.js'
+import { Tunnel } from './tunneling/index.js'
 
 const require = createRequire(import.meta.url)
 const COMPOSE_TUNNEL_AGENT_DIR = path.join(path.dirname(require.resolve('@preevy/compose-tunnel-agent')), '..')
@@ -156,18 +156,31 @@ export const findComposeTunnelAgentUrl = (
   return serviceUrl
 }
 
+const ensureExpectedServices = (
+  { tunnels }: { tunnels: Tunnel[] }, 
+  expectedServiceNames: string[]
+) => {
+  const actualServiceNames = new Set(tunnels.map(tunnel => tunnel.service))
+  const missingServiceNames = expectedServiceNames.filter(name => !actualServiceNames.has(name))
+  if (missingServiceNames.length) {
+    throw new Error(`Expected service names ${missingServiceNames.join(', ')} not found in tunnels: ${util.inspect(tunnels)}`)
+  }
+}
+
 export const queryTunnels = async ({
   retryOpts = { retries: 0 },
   composeTunnelServiceUrl,
   credentials,
   includeAccessCredentials,
   fetchTimeout,
+  expectedServiceNames,
 }: {
   composeTunnelServiceUrl: string
   credentials: { user: string; password: string }
   retryOpts?: retry.Options
   includeAccessCredentials: false | 'browser' | 'api'
   fetchTimeout: number
+  expectedServiceNames?: string[]  
 }) => {
   const { tunnels } = await retry(async () => {
     const r = await fetch(
@@ -177,7 +190,11 @@ export const queryTunnels = async ({
     if (!r.ok) {
       throw new Error(`Failed to connect to docker proxy at ${composeTunnelServiceUrl}: ${r.status}: ${r.statusText}`)
     }
-    return await (r.json() as Promise<{ tunnels: Tunnel[] }>)
+    const tunnelsObj = await (r.json() as Promise<{ tunnels: Tunnel[] }>)
+    if (expectedServiceNames) {
+      ensureExpectedServices(tunnelsObj, expectedServiceNames)
+    }
+    return tunnelsObj
   }, retryOpts)
 
   return tunnels
