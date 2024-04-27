@@ -15,7 +15,10 @@
   "eslint.packageManager": "yarn",
   "eslint.lintTask.enable": true,
   "[typescript]": {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "never",
+    }
   },
   "[javascript]": {
     "editor.defaultFormatter": "dbaeumer.vscode-eslint"
@@ -29,5 +32,8 @@
   "editor.defaultFormatter": "dbaeumer.vscode-eslint",
   "[json]": {
     "editor.defaultFormatter": "vscode.json-language-features"
-  }
+  },
+  "files.exclude": {
+    ".history/**": true,
+  },
 }
