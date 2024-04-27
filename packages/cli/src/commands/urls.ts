@@ -2,7 +2,7 @@ import fs from 'fs'
 import yaml from 'yaml'
 import { Args, ux, Interfaces } from '@oclif/core'
 import { FlatTunnel, Logger, TunnelOpts, addBaseComposeTunnelAgentService, commands, findComposeTunnelAgentUrl, findEnvId, getTunnelNamesToServicePorts, profileStore } from '@preevy/core'
-import { HooksListeners, PluginContext, tableFlags, text, tunnelServerFlags } from '@preevy/cli-common'
+import { HooksListeners, PluginContext, parseTunnelServerFlags, tableFlags, text, tunnelServerFlags } from '@preevy/cli-common'
 import { asyncReduce } from 'iter-tools-es'
 import { tunnelNameResolver } from '@preevy/common'
 import { connectToTunnelServerSsh } from '../tunnel-server-client.js'
@@ -110,11 +110,7 @@ export default class Urls extends ProfileCommand<typeof Urls> {
       log,
     })
 
-    const tunnelOpts = {
-      url: flags['tunnel-url'],
-      tlsServerName: flags['tls-hostname'],
-      insecureSkipVerify: flags['insecure-skip-verify'],
-    }
+    const tunnelOpts = parseTunnelServerFlags(flags)
 
     const pStore = profileStore(this.store).ref
 
