@@ -1,10 +1,13 @@
 import { Flags, ux } from '@oclif/core'
-import { envIdFlags, parseTunnelServerFlags, tableFlags, text, tunnelServerFlags, urlFlags } from '@preevy/cli-common'
-import { AgentFetchError, TunnelOpts, addBaseComposeTunnelAgentService, findComposeTunnelAgentUrl, findEnvId, getTunnelNamesToServicePorts, getUserCredentials, jwtGenerator, profileStore, queryEnvMetadata, readMetadata } from '@preevy/core'
+import { envIdFlags, parseTunnelServerFlags, text, tunnelServerFlags } from '@preevy/cli-common'
+import { TunnelOpts, addBaseComposeTunnelAgentService, findComposeTunnelAgentUrl, findEnvId, getTunnelNamesToServicePorts, getUserCredentials, jwtGenerator, profileStore, queryEnvMetadata, readMetadata } from '@preevy/core'
 import { tunnelNameResolver } from '@preevy/common'
 import { inspect } from 'util'
 import DriverCommand from '../../driver-command.js'
 import { connectToTunnelServerSsh } from '../../tunnel-server-client.js'
+
+type MetadataSource = 'agent' | 'driver'
+type UnknownMetadata = Record<string, unknown>
 
 // eslint-disable-next-line no-use-before-define
 export default class EnvMetadataCommand extends DriverCommand<typeof EnvMetadataCommand> {
@@ -14,9 +17,12 @@ export default class EnvMetadataCommand extends DriverCommand<typeof EnvMetadata
   static flags = {
     ...envIdFlags,
     ...tunnelServerFlags,
-    from: Flags.custom<'driver' | 'agent' | 'agent-or-driver'>({
+    source: Flags.custom<'driver' | 'agent'>({
       summary: 'Show metadata from the driver, the agent, or the driver if the agent is not available',
-      default: 'agent-or-driver',
+      default: ['agent', 'driver'],
+      multiple: true,
+      delimiter: ',',
+      multipleNonGreedy: true,
     })(),
     'fetch-timeout': Flags.integer({
       default: 2500,
@@ -80,60 +86,59 @@ export default class EnvMetadataCommand extends DriverCommand<typeof EnvMetadata
       tunnelingKey,
     )
     const credentials = await getUserCredentials(jwtGenerator(tunnelingKey))
-    try {
-      // eslint-disable-next-line @typescript-eslint/return-await
-      return await queryEnvMetadata({
-        composeTunnelServiceUrl,
-        credentials,
-        fetchTimeout: this.flags['fetch-timeout'],
-        retryOpts: { retries: 2 },
-      })
-    } catch (err) {
-      this.logger.debug('Failed to fetch metadata from agent', inspect(err))
-      if (!(err instanceof AgentFetchError)) {
-        throw err
-      }
-      return undefined
-    }
+    // eslint-disable-next-line @typescript-eslint/return-await
+    return await queryEnvMetadata({
+      composeTunnelServiceUrl,
+      credentials,
+      fetchTimeout: this.flags['fetch-timeout'],
+      retryOpts: { retries: 2 },
+    })
+  }
+
+  metadataFactories: Record<MetadataSource, () => Promise<UnknownMetadata>> = {
+    driver: this.getMetadataFromDriver.bind(this),
+    agent: this.getMetadataFromAgent.bind(this),
   }
 
   async getMetatdata() {
-    const { flags: { from } } = this
-    if (from === 'agent' || from === 'agent-or-driver') {
-      const metadata = await this.getMetadataFromAgent()
-      if (metadata) {
+    const { flags: { source: sources } } = this
+    const errors: { source: MetadataSource; error: unknown }[] = []
+    for (const source of sources) {
+      try {
+        this.logger.debug(`Fetching metadata from ${source}`)
         return {
-          metadata,
-          source: 'agent',
+          // eslint-disable-next-line no-await-in-loop
+          metadata: await this.metadataFactories[source](),
+          errors,
+          source,
         }
+      } catch (err) {
+        errors.push({ source, error: err })
       }
     }
 
-    if ((from === 'driver' || from === 'agent-or-driver')) {
-      const metadata = await this.getMetadataFromDriver()
-      if (metadata) {
-        return {
-          metadata,
-          source: 'driver',
-        }
-      }
-    }
-
-    return undefined
+    return { errors }
   }
 
   async run(): Promise<unknown> {
-    const result = await this.getMetatdata()
-    if (!result) {
-      throw new Error('Could not get metadata. See debug logs for more information')
+    const { metadata, source: metadataSource, errors } = await this.getMetatdata()
+
+    if (!metadata) {
+      throw new Error(`Could not get metadata: ${inspect(errors)}`)
+    }
+
+    if (errors.length) {
+      for (const { source: errorSource, error } of errors) {
+        this.logger.warn(`Error fetching metadata from ${errorSource}: ${error}`)
+      }
     }
 
     if (this.jsonEnabled()) {
-      return { ...result.metadata, _source: result.source }
+      return { ...metadata, _source: metadataSource }
     }
 
-    ux.info(`Metadata from ${text.code(result.source)}`)
-    ux.styledObject(result.metadata)
+    this.logger.info(`Metadata from ${text.code(metadataSource)}`)
+    this.logger.info(inspect(metadata, { depth: null, colors: text.supportsColor !== false }))
     return undefined
   }
 }

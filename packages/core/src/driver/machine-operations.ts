@@ -102,9 +102,9 @@ const writeMetadata = async (
   })
 }
 
-export const readMetadata = async (connection: MachineConnection): Promise<Pick<EnvMetadata, 'machine'> | undefined> => {
-  const { stdout } = await connection.exec(`[ -f "${REMOTE_DIR_BASE}/${driverMetadataFilename}" ] && cat "${REMOTE_DIR_BASE}/${driverMetadataFilename}"`)
-  return stdout && JSON.parse(stdout)
+export const readMetadata = async (connection: MachineConnection): Promise<Pick<EnvMetadata, 'machine'>> => {
+  const { stdout } = await connection.exec(`cat "${REMOTE_DIR_BASE}/${driverMetadataFilename}"`)
+  return JSON.parse(stdout)
 }
 
 export const getUserAndGroup = async (connection: Pick<MachineConnection, 'exec'>) => (

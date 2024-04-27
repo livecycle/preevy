@@ -203,7 +203,7 @@ export const queryTunnels = async ({
     }))
 }
 
-export const queryEnvMetadata = async (fetchOpts: ComposeTunnelAgentFetchOpts): Promise<unknown> => {
+export const queryEnvMetadata = async (fetchOpts: ComposeTunnelAgentFetchOpts): Promise<EnvMetadata> => {
   const r = await fetchFromComposeTunnelAgent({ ...fetchOpts, pathAndQuery: 'env-metadata' })
-  return await r.json()
+  return await r.json() as EnvMetadata
 }
