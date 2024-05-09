@@ -1,6 +1,6 @@
 import { Args, Flags } from '@oclif/core'
 import { jwkThumbprint, commands, profileStore, withSpinner, SshConnection, machineId, validateEnvId, normalizeEnvId, EnvId } from '@preevy/core'
-import { tableFlags, text, tunnelServerFlags, urlFlags } from '@preevy/cli-common'
+import { parseTunnelServerFlags, tableFlags, text, tunnelServerFlags, urlFlags } from '@preevy/cli-common'
 import { inspect } from 'util'
 import { formatPublicKey } from '@preevy/common'
 import { spawn } from 'child_process'
@@ -58,11 +58,7 @@ export default class Connect extends ProfileCommand<typeof Connect> {
     const pStoreRef = pStore.ref
 
     const tunnelingKey = await pStoreRef.tunnelingKey()
-    const tunnelOpts = {
-      url: flags['tunnel-url'],
-      tlsServerName: flags['tls-hostname'],
-      insecureSkipVerify: flags['insecure-skip-verify'],
-    }
+    const tunnelOpts = parseTunnelServerFlags(flags)
     const composeProject = args['compose-project']
     let envId:EnvId
     if (flags.id) {

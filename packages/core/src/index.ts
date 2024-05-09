@@ -19,6 +19,7 @@ export {
   ForwardSocket,
   machineStatusNodeExporterCommand,
   ensureMachine,
+  readMetadata,
 } from './driver/index.js'
 export {
   profileStore, Profile, ProfileStore, ProfileStoreRef, ProfileStoreTransaction, ProfileEditor,
@@ -54,7 +55,9 @@ export {
 export {
   addBaseComposeTunnelAgentService,
   queryTunnels,
+  queryEnvMetadata,
   findComposeTunnelAgentUrl,
+  AgentFetchError,
 } from './compose-tunnel-agent-client.js'
 export * as commands from './commands/index.js'
 export { BuildSpec, ImageRegistry, parseRegistry } from './build/index.js'
@@ -79,3 +82,4 @@ export { pSeries } from './p-series.js'
 export { gitContext, GitContext } from './git.js'
 export * as config from './config.js'
 export { login, getTokensFromLocalFs as getLivecycleTokensFromLocalFs, TokenExpiredError } from './login.js'
+export { EnvMetadata, EnvMachineMetadata } from './env-metadata.js'

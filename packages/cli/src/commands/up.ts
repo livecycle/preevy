@@ -1,5 +1,5 @@
 import { Args, Flags } from '@oclif/core'
-import { buildFlags, parseBuildFlags, tableFlags, text, tunnelServerFlags } from '@preevy/cli-common'
+import { buildFlags, parseBuildFlags, parseTunnelServerFlags, tableFlags, text, tunnelServerFlags } from '@preevy/cli-common'
 import { editUrl, tunnelNameResolver } from '@preevy/common'
 import {
   ComposeModel,
@@ -143,11 +143,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
     )
     const thumbprint = await jwkThumbprint(tunnelingKey)
 
-    const tunnelOpts = {
-      url: flags['tunnel-url'],
-      tlsServerName: flags['tls-hostname'],
-      insecureSkipVerify: flags['insecure-skip-verify'],
-    }
+    const tunnelOpts = parseTunnelServerFlags(flags)
 
     const { expectedServiceUrls, hostKey } = await fetchTunnelServerDetails({
       log: this.logger,
