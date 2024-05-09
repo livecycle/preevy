@@ -28,3 +28,5 @@ oclif.manifest.json
 
 packages/*/dist
 packages/*/tsconfig.tsbuildinfo
+
+.history

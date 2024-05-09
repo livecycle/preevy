@@ -1,14 +1,14 @@
+import { dateReplacer } from '@preevy/common'
 import { EOL } from 'os'
 import retry from 'p-retry'
-import { dateReplacer } from '@preevy/common'
+import { EnvMetadata, driverMetadataFilename } from '../env-metadata.js'
+import { Logger } from '../log.js'
+import { REMOTE_DIR_BASE } from '../remote-files.js'
+import { scriptExecuter } from '../remote-script-executer.js'
 import { withSpinner } from '../spinner.js'
 import { telemetryEmitter } from '../telemetry/index.js'
-import { Logger } from '../log.js'
-import { scriptExecuter } from '../remote-script-executer.js'
-import { EnvMetadata, driverMetadataFilename } from '../env-metadata.js'
-import { REMOTE_DIR_BASE } from '../remote-files.js'
-import { MachineBase, SpecDiffItem, isPartialMachine, machineResourceType } from './machine-model.js'
 import { MachineConnection, MachineCreationDriver, MachineDriver } from './driver.js'
+import { MachineBase, SpecDiffItem, isPartialMachine, machineResourceType } from './machine-model.js'
 
 const machineDiffText = (diff: SpecDiffItem[]) => diff
   .map(({ name, old, new: n }) => `* ${name}: ${old} -> ${n}`).join(EOL)
@@ -100,6 +100,11 @@ const writeMetadata = async (
   await connection.exec(`tee "${REMOTE_DIR_BASE}/${driverMetadataFilename}"`, {
     stdin: JSON.stringify(metadata, dateReplacer),
   })
+}
+
+export const readMetadata = async (connection: MachineConnection): Promise<Pick<EnvMetadata, 'machine'>> => {
+  const { stdout } = await connection.exec(`cat "${REMOTE_DIR_BASE}/${driverMetadataFilename}"`)
+  return JSON.parse(stdout)
 }
 
 export const getUserAndGroup = async (connection: Pick<MachineConnection, 'exec'>) => (
