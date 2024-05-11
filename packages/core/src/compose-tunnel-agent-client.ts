@@ -1,9 +1,9 @@
 import path from 'path'
 import retry from 'p-retry'
-import util from 'util'
+import { inspect } from 'util'
 import { createRequire } from 'module'
 import { mapValues, merge } from 'lodash-es'
-import { COMPOSE_TUNNEL_AGENT_PORT, COMPOSE_TUNNEL_AGENT_SERVICE_LABELS, COMPOSE_TUNNEL_AGENT_SERVICE_NAME, MachineStatusCommand, ScriptInjection, dateReplacer } from '@preevy/common'
+import { COMPOSE_TUNNEL_AGENT_PORT, COMPOSE_TUNNEL_AGENT_SERVICE_LABELS, COMPOSE_TUNNEL_AGENT_SERVICE_NAME, ComposeTunnelAgentState, MachineStatusCommand, ScriptInjection, dateReplacer } from '@preevy/common'
 import { ComposeModel, ComposeService, composeModelFilename } from './compose/model.js'
 import { TunnelOpts } from './ssh/url.js'
 import { Tunnel } from './tunneling/index.js'
@@ -150,7 +150,7 @@ export const findComposeTunnelAgentUrl = (
   )?.url
 
   if (!serviceUrl) {
-    throw new Error(`Cannot find compose tunnel agent API service URL ${COMPOSE_TUNNEL_AGENT_SERVICE_NAME}:${COMPOSE_TUNNEL_AGENT_PORT} in: ${util.inspect(serviceUrls)}`)
+    throw new Error(`Cannot find compose tunnel agent API service URL ${COMPOSE_TUNNEL_AGENT_SERVICE_NAME}:${COMPOSE_TUNNEL_AGENT_PORT} in: ${inspect(serviceUrls)}`)
   }
 
   return serviceUrl
@@ -182,16 +182,27 @@ const fetchFromComposeTunnelAgent = async ({
   return r
 }, retryOpts)
 
+type TunnelsResponse = {
+  tunnels: Tunnel[]
+  state: ComposeTunnelAgentState
+}
+
 export const queryTunnels = async ({
   includeAccessCredentials,
+  waitForAllTunnels,
   ...fetchOpts
 }: ComposeTunnelAgentFetchOpts & {
   includeAccessCredentials: false | 'browser' | 'api'
+  waitForAllTunnels?: boolean
 }) => {
   const r = await fetchFromComposeTunnelAgent({ ...fetchOpts, pathAndQuery: 'tunnels' })
-  const { tunnels } = await (r.json() as Promise<{ tunnels: Tunnel[] }>)
+  const response = await (r.json() as Promise<TunnelsResponse>)
 
-  return tunnels
+  if (waitForAllTunnels && response.state.state !== 'stable') {
+    throw new AgentFetchError(`Not all configured tunnels are ready yet: ${inspect(response, { depth: null })}`)
+  }
+
+  return response.tunnels
     .map(tunnel => ({
       ...tunnel,
       ports: mapValues(

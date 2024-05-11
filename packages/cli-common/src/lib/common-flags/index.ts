@@ -94,4 +94,9 @@ export const urlFlags = {
     summary: 'Timeout for fetching URLs request in milliseconds',
     default: 2500,
   }),
+  wait: Flags.boolean({
+    description: 'Wait for all tunnels to be ready',
+    default: true,
+    allowNo: true,
+  }),
 } as const
