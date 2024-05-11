@@ -16,7 +16,7 @@ import { inspect } from 'util'
 import { editUrl, tunnelNameResolver } from '@preevy/common'
 import MachineCreationDriverCommand from '../machine-creation-driver-command.js'
 import { envIdFlags, urlFlags } from '../common-flags.js'
-import { filterUrls, printUrls, writeUrlsToFile } from './urls.js'
+import { filterUrls, printUrls, urlsRetryOpts, writeUrlsToFile } from './urls.js'
 import { connectToTunnelServerSsh } from '../tunnel-server-client.js'
 
 const fetchTunnelServerDetails = async ({
@@ -207,13 +207,9 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       tunnelingKey,
       includeAccessCredentials: flags['include-access-credentials'] && (flags['access-credentials-type'] as 'api' | 'browser'),
       showPreevyService: flags['show-preevy-service-urls'],
-      retryOpts: {
-        minTimeout: 1000,
-        maxTimeout: 2000,
-        retries: 10,
-        onFailedAttempt: e => { this.logger.debug(`Failed to query tunnels: ${inspect(e)}`) },
-      },
+      retryOpts: urlsRetryOpts(this.logger),
       fetchTimeout: flags['fetch-urls-timeout'],
+      waitForAllTunnels: flags.wait,
     }), { text: 'Getting tunnel URLs...' })
 
     const urls = await filterUrls({

@@ -26,6 +26,7 @@ export const urls = async ({
   showPreevyService,
   composeTunnelServiceUrl,
   fetchTimeout,
+  waitForAllTunnels,
 }: {
   serviceAndPort?: { service: string; port?: number }
   tunnelingKey: string | Buffer
@@ -34,6 +35,7 @@ export const urls = async ({
   showPreevyService: boolean
   composeTunnelServiceUrl: string
   fetchTimeout: number
+  waitForAllTunnels?: boolean
 }) => {
   const credentials = await generateBasicAuthCredentials(jwtGenerator(tunnelingKey))
 
@@ -43,6 +45,7 @@ export const urls = async ({
     credentials,
     includeAccessCredentials,
     fetchTimeout,
+    waitForAllTunnels,
   })
 
   return flattenTunnels(tunnels).filter(tunnelFilter({ serviceAndPort, showPreevyService }))

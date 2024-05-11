@@ -30,6 +30,7 @@ export {
   COMPOSE_TUNNEL_AGENT_PORT,
   COMPOSE_TUNNEL_AGENT_SERVICE_LABELS,
   COMPOSE_TUNNEL_AGENT_SERVICE_NAME,
+  ComposeTunnelAgentState,
 } from './src/compose-tunnel-agent/index.js'
 export { MachineStatusCommand, DockerMachineStatusCommandRecipe } from './src/machine-status-command.js'
 export { ProcessOutputBuffers, orderedOutput, OrderedOutput } from './src/process-output-buffers.js'
