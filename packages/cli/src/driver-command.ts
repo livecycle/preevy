@@ -24,15 +24,17 @@ abstract class DriverCommand<T extends typeof Command> extends ProfileCommand<T>
   protected flags!: Flags<T>
   protected args!: Args<T>
 
-  public async init(): Promise<void> {
-    await super.init()
-    this.#driverName = this.flags.driver ?? this.preevyConfig?.driver as DriverName ?? this.profile.driver as DriverName
-  }
-
   #driverName: DriverName | undefined
   get driverName() : DriverName {
     if (!this.#driverName) {
-      throw new Error("Driver wasn't specified")
+      const driverName = this.flags.driver
+        ?? this.preevyConfig?.driver as DriverName
+        ?? this.profile.driver as DriverName
+
+      if (!driverName) {
+        throw new Error("Driver wasn't specified")
+      }
+      this.#driverName = driverName
     }
     return this.#driverName
   }
