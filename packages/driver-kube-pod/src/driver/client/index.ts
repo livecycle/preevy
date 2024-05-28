@@ -31,7 +31,7 @@ import {
   addAllTypesAnnotation,
   readAllTypesAnnotation,
 } from './metadata.js'
-import { Package } from './common.js'
+import { Package, defaultPackage } from './common.js'
 import { logError } from './log-error.js'
 
 const stringify = stringifyModule.default
@@ -186,7 +186,7 @@ export const kubeCreationClient = ({
   namespace: string
   profileId: string
   template: Buffer | string | Promise<Buffer | string>
-  package: Package | Promise<Package>
+  package: Package | undefined | Promise<Package | undefined>
   storageClass: string | undefined
   storageSize: number
 }) => {
@@ -278,7 +278,7 @@ export const kubeCreationClient = ({
         })
       ),
       strategy: serverSideApply
-        ? applyStrategies.serverSideApply({ fieldManager: (await packageDetails).name })
+        ? applyStrategies.serverSideApply({ fieldManager: (await packageDetails ?? defaultPackage).name })
         : applyStrategies.clientSideApply,
     })
 

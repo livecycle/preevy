@@ -8,7 +8,8 @@ import { inspect } from 'util'
 import { DeploymentMachine, ResourceType, StatefulSetMachine, k8sObjectToMachine } from './common.js'
 import { clientFromConfiguration, listMachines, machineConnection, flags as machineDriverFlags, parseRfc1123Flag } from './driver.js'
 import { Client, CreationClient, kubeCreationClient, loadKubeConfig } from './client/index.js'
-import { DEFAULT_TEMPLATE, packageJson } from '../static.js'
+import { DEFAULT_TEMPLATE, packageJsonPath } from '../static.js'
+import { Package } from './client/common.js'
 
 export const flags = {
   ...machineDriverFlags,
@@ -103,6 +104,14 @@ const machineCreationDriver = (
 
 type FlagTypes = Omit<Interfaces.InferredFlags<typeof flags>, 'json'>
 
+const tryReadPackage = async (): Promise<Package | undefined> => {
+  try {
+    return JSON.parse(await fs.promises.readFile(packageJsonPath, 'utf-8'))
+  } catch (e) {
+    return undefined
+  }
+}
+
 const creationClientFromConfiguration = ({ flags: f, profileId, log, kc }: {
   flags: FlagTypes
   profileId: string
@@ -113,7 +122,7 @@ const creationClientFromConfiguration = ({ flags: f, profileId, log, kc }: {
   namespace: f.namespace,
   kc,
   profileId,
-  package: packageJson,
+  package: tryReadPackage(),
   template: fs.readFileSync(f.template || DEFAULT_TEMPLATE, 'utf-8'),
   storageClass: f['storage-class'],
   storageSize: f['storage-size'],
