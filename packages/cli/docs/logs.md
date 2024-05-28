@@ -11,15 +11,15 @@ Show logs for an existing environment
 
 ```
 USAGE
-  $ preevy logs [SERVICES] [-D] [-f <value>] [--system-compose-file <value>] [--project-directory <value>]
-    [-p <value>] [--enable-plugin <value>] [--disable-plugin <value>] [--profile <value>] [-d
+  $ preevy logs [SERVICES...] [-D] [-f <value>] [--system-compose-file <value>] [--project-directory
+    <value>] [-p <value>] [--enable-plugin <value>] [--disable-plugin <value>] [--profile <value>] [-d
     lightsail|gce|azure|kube-pod] [--lightsail-region <value>] [--gce-project-id <value>] [--gce-zone <value>]
     [--azure-region <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>] [--kube-pod-kubeconfig
     <value>] [--kube-pod-context <value>] [--id <value>] [--follow] [--tail <value>] [--no-log-prefix] [--timestamps]
     [--since <value>] [--until <value>]
 
 ARGUMENTS
-  SERVICES  Service name(s). If not specified, will show all services
+  SERVICES...  Service name(s). If not specified, will show all services
 
 FLAGS
   -d, --driver=<option>            Machine driver to use
@@ -69,4 +69,4 @@ FLAG DESCRIPTIONS
     If not specified, will detect from the current Git context
 ```
 
-_See code: [src/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/logs.ts)_
+_See code: [src/commands/logs.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/logs.ts)_

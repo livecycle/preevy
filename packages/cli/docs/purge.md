@@ -71,4 +71,4 @@ DESCRIPTION
   Delete all cloud provider machines and potentially other resources
 ```
 
-_See code: [src/commands/purge.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/purge.ts)_
+_See code: [src/commands/purge.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/purge.ts)_

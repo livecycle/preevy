@@ -11,7 +11,7 @@ Bring up a preview environment
 
 ```
 USAGE
-  $ preevy up [SERVICE] (--access-credentials-type api|browser --include-access-credentials) [-D] [-f
+  $ preevy up [SERVICE...] (--access-credentials-type api|browser --include-access-credentials) [-D] [-f
     <value>] [--system-compose-file <value>] [--project-directory <value>] [-p <value>] [--enable-plugin <value>]
     [--disable-plugin <value>] [--profile <value>] [-d lightsail|gce|azure|kube-pod] [--lightsail-region <value>]
     [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
@@ -22,13 +22,13 @@ USAGE
     <value>] [--kube-pod-storage-size <value>] [--id <value>] [-t <value>] [--tls-hostname <value>]
     [--insecure-skip-verify] [--no-build] [--no-registry-single-name | [--registry-single-name <value> --registry
     <value>]] [--no-registry-cache ] [--builder <value>] [--no-cache] [--skip-volume <value>] [--skip-unchanged-files]
-    [--show-preevy-service-urls] [--output-urls-to <value>] [--fetch-urls-timeout <value>] [--columns <value> | -x]
-    [--filter <value>] [--no-header | [--csv | --no-truncate]] [--output csv|json|yaml |  | ] [--sort <value>]
+    [--show-preevy-service-urls] [--output-urls-to <value>] [--fetch-urls-timeout <value>] [--wait] [--columns <value> |
+    -x] [--filter <value>] [--no-header | [--csv | --no-truncate]] [--output csv|json|yaml |  | ] [--sort <value>]
     [--github-token <value>] [--github-repo <value>] [--github-pull-request <value>] [--github-pr-comment-template-file
     <value>] [--github-add-build-cache] [--github-pr-comment-enabled auto|no|always]
 
 ARGUMENTS
-  SERVICE  Service name(s). If not specified, will deploy all services
+  SERVICE...  Service name(s). If not specified, will deploy all services
 
 FLAGS
   -d, --driver=<option>                   Machine driver to use
@@ -50,6 +50,7 @@ FLAGS
       --skip-volume=<value>...            [default: ] Additional volume glob patterns to skip copying (relative to
                                           project directory)
       --tls-hostname=<value>              Override TLS server name when tunneling via HTTPS
+      --[no-]wait                         Wait for all tunnels to be ready
 
 GLOBAL FLAGS
   -D, --debug                           Enable debug logging
@@ -128,4 +129,4 @@ FLAG DESCRIPTIONS
     If not specified, will detect from the current Git context
 ```
 
-_See code: [src/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/up.ts)_
+_See code: [src/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/up.ts)_

@@ -30,4 +30,4 @@ DESCRIPTION
   Show Preevy version
 ```
 
-_See code: [src/commands/version.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/version.ts)_
+_See code: [src/commands/version.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/version.ts)_

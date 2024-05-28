@@ -15,8 +15,8 @@ USAGE
     [--json] [-D] [-f <value>] [--system-compose-file <value>] [--project-directory <value>] [-p <value>]
     [--enable-plugin <value>] [--disable-plugin <value>] [--profile <value>] [--id <value>] [-t <value>] [--tls-hostname
     <value>] [--insecure-skip-verify] [--columns <value> | -x] [--filter <value>] [--no-header | [--csv |
-    --no-truncate]] [--output csv|json|yaml |  | ] [--sort <value>] [--show-preevy-service-] [--output-urls-to <value>]
-    [--fetch-urls-timeout <value>]
+    --no-truncate]] [--output csv|json|yaml |  | ] [--sort <value>] [--show-preevy-service-] [--output--to <value>]
+    [--fetch-urls-timeout <value>] [--wait]
 
 ARGUMENTS
   SERVICE  Service name. If not specified, will show all services
@@ -37,6 +37,7 @@ FLAGS
                                           file)
       --show-preevy-service-urls          Show URLs for internal Preevy services
       --tls-hostname=<value>              Override TLS server name when tunneling via HTTPS
+      --[no-]wait                         Wait for all tunnels to be ready
 
 GLOBAL FLAGS
   -D, --debug                           Enable debug logging
@@ -68,4 +69,4 @@ FLAG DESCRIPTIONS
     If not specified, will detect from the current Git context
 ```
 
-_See code: [src/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/urls.ts)_
+_See code: [src/commands/urls.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/urls.ts)_

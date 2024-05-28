@@ -65,4 +65,4 @@ DESCRIPTION
   List preview environments
 ```
 
-_See code: [src/commands/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/ls.ts)_
+_See code: [src/commands/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/ls.ts)_
