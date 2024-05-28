@@ -11,14 +11,14 @@ Execute a command or start an interactive shell inside an environment
 
 ```
 USAGE
-  $ preevy ssh ENVID [-D] [-f <value>] [--system-compose-file <value>] [--project-directory <value>] [-p
-    <value>] [--enable-plugin <value>] [--disable-plugin <value>] [--profile <value>] [-d lightsail|gce|azure|kube-pod]
-    [--lightsail-region <value>] [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>]
-    [--azure-subscription-id <value>] [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-context
-    <value>]
+  $ preevy ssh ENVID... [-D] [-f <value>] [--system-compose-file <value>] [--project-directory <value>]
+    [-p <value>] [--enable-plugin <value>] [--disable-plugin <value>] [--profile <value>] [-d
+    lightsail|gce|azure|kube-pod] [--lightsail-region <value>] [--gce-project-id <value>] [--gce-zone <value>]
+    [--azure-region <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>] [--kube-pod-kubeconfig
+    <value>] [--kube-pod-context <value>]
 
 ARGUMENTS
-  ENVID  Environment id
+  ENVID...  Environment id
 
 FLAGS
   -d, --driver=<option>            Machine driver to use

@@ -11,10 +11,10 @@ Display help for preevy.
 
 ```
 USAGE
-  $ preevy help [COMMANDS] [-n]
+  $ preevy help [COMMANDS...] [-n]
 
 ARGUMENTS
-  COMMANDS  Command to show help for.
+  COMMANDS...  Command to show help for.
 
 FLAGS
   -n, --nested-commands  Include all nested commands in the output.
@@ -23,4 +23,4 @@ DESCRIPTION
   Display help for preevy.
 ```
 
-_See code: [src/commands/help.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/help.ts)_
+_See code: [src/commands/help.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/help.ts)_

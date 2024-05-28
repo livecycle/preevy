@@ -83,7 +83,7 @@ DESCRIPTION
   View and update profile configuration
 ```
 
-_See code: [src/commands/profile/config/update.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/profile/config/update.ts)_
+_See code: [src/commands/profile/config/update.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/profile/config/update.ts)_
 
 ## `preevy profile config view`
 
@@ -111,7 +111,7 @@ DESCRIPTION
   View profile configuration
 ```
 
-_See code: [src/commands/profile/config/view.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/profile/config/view.ts)_
+_See code: [src/commands/profile/config/view.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/profile/config/view.ts)_
 
 ## `preevy profile cp`
 
@@ -145,7 +145,7 @@ DESCRIPTION
   Copy a profile
 ```
 
-_See code: [src/commands/profile/cp.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/profile/cp.ts)_
+_See code: [src/commands/profile/cp.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/profile/cp.ts)_
 
 ## `preevy profile create NAME URL`
 
@@ -153,18 +153,18 @@ Create a new profile
 
 ```
 USAGE
-  $ preevy profile create NAME URL [--json] [-D] [-f <value>] [--system-compose-file <value>] [--project-directory
-    <value>] [-p <value>] [--enable-plugin <value>] [--disable-plugin <value>] [--profile <value>] [--lightsail-region
-    <value>] [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
-    [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>]
-    [--lightsail-availability-zone <value>] [--lightsail-bundle-id
+  $ preevy profile create NAME... URL... [--json] [-D] [-f <value>] [--system-compose-file <value>]
+    [--project-directory <value>] [-p <value>] [--enable-plugin <value>] [--disable-plugin <value>] [--profile <value>]
+    [--lightsail-region <value>] [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>]
+    [--azure-subscription-id <value>] [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-context
+    <value>] [--lightsail-availability-zone <value>] [--lightsail-bundle-id
     nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0] [--gce-machine-type <value>]
     [--azure-vm-size <value>] [--kube-pod-template <value>] [--kube-pod-server-side-apply] [--kube-pod-storage-class
     <value>] [--kube-pod-storage-size <value>] [-d lightsail|gce|azure|kube-pod] [--use]
 
 ARGUMENTS
-  NAME  Name of the new profile
-  URL   URL of the new profile
+  NAME...  Name of the new profile
+  URL...   URL of the new profile
 
 FLAGS
   -d, --driver=<option>            Machine driver to use
@@ -213,7 +213,7 @@ DESCRIPTION
   Create a new profile
 ```
 
-_See code: [src/commands/profile/create.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/profile/create.ts)_
+_See code: [src/commands/profile/create.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/profile/create.ts)_
 
 ## `preevy profile current`
 
@@ -241,7 +241,7 @@ DESCRIPTION
   Display current profile in use
 ```
 
-_See code: [src/commands/profile/current.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/profile/current.ts)_
+_See code: [src/commands/profile/current.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/profile/current.ts)_
 
 ## `preevy profile import LOCATION`
 
@@ -272,7 +272,7 @@ DESCRIPTION
   Import an existing profile
 ```
 
-_See code: [src/commands/profile/import.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/profile/import.ts)_
+_See code: [src/commands/profile/import.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/profile/import.ts)_
 
 ## `preevy profile key [TYPE]`
 
@@ -280,11 +280,11 @@ Show profile key
 
 ```
 USAGE
-  $ preevy profile key [TYPE] [--json] [-D] [-f <value>] [--system-compose-file <value>] [--project-directory
+  $ preevy profile key [TYPE...] [--json] [-D] [-f <value>] [--system-compose-file <value>] [--project-directory
     <value>] [-p <value>] [--enable-plugin <value>] [--disable-plugin <value>] [--profile <value>]
 
 ARGUMENTS
-  TYPE  (private|public-pem|public-ssh|thumbprint|thumbprint-uri) [default: thumbprint-uri] type of the key to show
+  TYPE...  (private|public-pem|public-ssh|thumbprint|thumbprint-uri) [default: thumbprint-uri] type of the key to show
 
 FLAGS
   --profile=<value>            Run in a specific profile context (either an alias or a URL)
@@ -303,7 +303,7 @@ DESCRIPTION
   Show profile key
 ```
 
-_See code: [src/commands/profile/key.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/profile/key.ts)_
+_See code: [src/commands/profile/key.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/profile/key.ts)_
 
 ## `preevy profile link`
 
@@ -334,7 +334,7 @@ DESCRIPTION
   Link the profile to the logged in user's organization
 ```
 
-_See code: [src/commands/profile/link.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/profile/link.ts)_
+_See code: [src/commands/profile/link.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/profile/link.ts)_
 
 ## `preevy profile ls`
 
@@ -374,7 +374,7 @@ DESCRIPTION
   Lists profiles
 ```
 
-_See code: [src/commands/profile/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/profile/ls.ts)_
+_See code: [src/commands/profile/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/profile/ls.ts)_
 
 ## `preevy profile rm NAME`
 
@@ -382,11 +382,11 @@ Remove a profile
 
 ```
 USAGE
-  $ preevy profile rm NAME [--json] [-D] [-f <value>] [--system-compose-file <value>] [--project-directory
+  $ preevy profile rm NAME... [--json] [-D] [-f <value>] [--system-compose-file <value>] [--project-directory
     <value>] [-p <value>] [--enable-plugin <value>] [--disable-plugin <value>] [--profile <value>] [--force]
 
 ARGUMENTS
-  NAME  name of the profile to remove
+  NAME...  name of the profile to remove
 
 FLAGS
   --force                      Do not error if the profile is not found
@@ -406,7 +406,7 @@ DESCRIPTION
   Remove a profile
 ```
 
-_See code: [src/commands/profile/rm.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/profile/rm.ts)_
+_See code: [src/commands/profile/rm.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/profile/rm.ts)_
 
 ## `preevy profile use NAME`
 
@@ -435,4 +435,4 @@ DESCRIPTION
   Set current profile
 ```
 
-_See code: [src/commands/profile/use.ts](https://github.com/livecycle/preevy/blob/v0.0.60/src/commands/profile/use.ts)_
+_See code: [src/commands/profile/use.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/profile/use.ts)_
