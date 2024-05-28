@@ -2,9 +2,10 @@ import fs from 'fs'
 import yaml from 'yaml'
 import { Args, ux, Interfaces } from '@oclif/core'
 import { FlatTunnel, Logger, TunnelOpts, addBaseComposeTunnelAgentService, commands, findComposeTunnelAgentUrl, findEnvId, getTunnelNamesToServicePorts, profileStore } from '@preevy/core'
-import { HooksListeners, PluginContext, tableFlags, text, tunnelServerFlags } from '@preevy/cli-common'
+import { HooksListeners, PluginContext, parseTunnelServerFlags, tableFlags, text, tunnelServerFlags } from '@preevy/cli-common'
 import { asyncReduce } from 'iter-tools-es'
 import { tunnelNameResolver } from '@preevy/common'
+import { inspect } from 'util'
 import { connectToTunnelServerSsh } from '../tunnel-server-client.js'
 import ProfileCommand from '../profile-command.js'
 import { envIdFlags, urlFlags } from '../common-flags.js'
@@ -48,6 +49,15 @@ export const filterUrls = ({ flatTunnels, context, filters }: {
   (urls, f) => f(context, urls),
   filters,
 )
+
+export const urlsRetryOpts = (log: Logger) => ({
+  minTimeout: 1000,
+  maxTimeout: 2000,
+  retries: 10,
+  onFailedAttempt: (e: unknown) => { log.debug(`Failed to query tunnels: ${inspect(e)}`) },
+} as const)
+
+export const noWaitUrlsRetryOpts = { retries: 2 } as const
 
 // eslint-disable-next-line no-use-before-define
 export default class Urls extends ProfileCommand<typeof Urls> {
@@ -110,11 +120,7 @@ export default class Urls extends ProfileCommand<typeof Urls> {
       log,
     })
 
-    const tunnelOpts = {
-      url: flags['tunnel-url'],
-      tlsServerName: flags['tls-hostname'],
-      insecureSkipVerify: flags['insecure-skip-verify'],
-    }
+    const tunnelOpts = parseTunnelServerFlags(flags)
 
     const pStore = profileStore(this.store).ref
 
@@ -132,8 +138,9 @@ export default class Urls extends ProfileCommand<typeof Urls> {
       tunnelingKey,
       includeAccessCredentials: flags['include-access-credentials'] && (flags['access-credentials-type'] as 'api' | 'browser'),
       showPreevyService: flags['show-preevy-service-urls'],
-      retryOpts: { retries: 2 },
+      retryOpts: flags.wait ? urlsRetryOpts(this.logger) : noWaitUrlsRetryOpts,
       fetchTimeout: flags['fetch-urls-timeout'],
+      waitForAllTunnels: flags.wait,
     })
 
     const urls = await filterUrls({

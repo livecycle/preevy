@@ -1,9 +1,9 @@
 import path from 'path'
 import retry from 'p-retry'
-import util from 'util'
+import { inspect } from 'util'
 import { createRequire } from 'module'
 import { mapValues, merge } from 'lodash-es'
-import { COMPOSE_TUNNEL_AGENT_PORT, COMPOSE_TUNNEL_AGENT_SERVICE_LABELS, COMPOSE_TUNNEL_AGENT_SERVICE_NAME, MachineStatusCommand, ScriptInjection, dateReplacer } from '@preevy/common'
+import { COMPOSE_TUNNEL_AGENT_PORT, COMPOSE_TUNNEL_AGENT_SERVICE_LABELS, COMPOSE_TUNNEL_AGENT_SERVICE_NAME, ComposeTunnelAgentState, MachineStatusCommand, ScriptInjection, dateReplacer } from '@preevy/common'
 import { ComposeModel, ComposeService, composeModelFilename } from './compose/model.js'
 import { TunnelOpts } from './ssh/url.js'
 import { Tunnel } from './tunneling/index.js'
@@ -150,44 +150,71 @@ export const findComposeTunnelAgentUrl = (
   )?.url
 
   if (!serviceUrl) {
-    throw new Error(`Cannot find compose tunnel agent API service URL ${COMPOSE_TUNNEL_AGENT_SERVICE_NAME}:${COMPOSE_TUNNEL_AGENT_PORT} in: ${util.inspect(serviceUrls)}`)
+    throw new Error(`Cannot find compose tunnel agent API service URL ${COMPOSE_TUNNEL_AGENT_SERVICE_NAME}:${COMPOSE_TUNNEL_AGENT_PORT} in: ${inspect(serviceUrls)}`)
   }
 
   return serviceUrl
 }
 
-export const queryTunnels = async ({
-  retryOpts = { retries: 0 },
-  composeTunnelServiceUrl,
-  credentials,
-  includeAccessCredentials,
-  fetchTimeout,
-}: {
+export type ComposeTunnelAgentFetchOpts = {
   composeTunnelServiceUrl: string
   credentials: { user: string; password: string }
   retryOpts?: retry.Options
-  includeAccessCredentials: false | 'browser' | 'api'
   fetchTimeout: number
-}) => {
-  const { tunnels } = await retry(async () => {
-    const r = await fetch(
-      `${composeTunnelServiceUrl}/tunnels`,
-      { signal: AbortSignal.timeout(fetchTimeout), headers: { Authorization: `Bearer ${credentials.password}` } }
-    ).catch(e => { throw new Error(`Failed to connect to docker proxy at ${composeTunnelServiceUrl}: ${e}`, { cause: e }) })
-    if (!r.ok) {
-      throw new Error(`Failed to connect to docker proxy at ${composeTunnelServiceUrl}: ${r.status}: ${r.statusText}`)
-    }
-    return await (r.json() as Promise<{ tunnels: Tunnel[] }>)
-  }, retryOpts)
+}
 
-  return tunnels
+export class AgentFetchError extends Error {}
+
+const fetchFromComposeTunnelAgent = async ({
+  retryOpts = { retries: 0 },
+  composeTunnelServiceUrl,
+  credentials,
+  fetchTimeout,
+  pathAndQuery,
+}: ComposeTunnelAgentFetchOpts & { pathAndQuery: string }) => await retry(async () => {
+  const r = await fetch(
+    `${composeTunnelServiceUrl}/${pathAndQuery}`,
+    { signal: AbortSignal.timeout(fetchTimeout), headers: { Authorization: `Bearer ${credentials.password}` } }
+  ).catch(e => { throw new AgentFetchError(`Failed to connect to preevy agent at ${composeTunnelServiceUrl}: ${e}`, { cause: e }) })
+  if (!r.ok) {
+    throw new AgentFetchError(`Failed to connect to preevy agent at ${composeTunnelServiceUrl}: ${r.status}: ${r.statusText}`)
+  }
+  return r
+}, retryOpts)
+
+type TunnelsResponse = {
+  tunnels: Tunnel[]
+  state: ComposeTunnelAgentState
+}
+
+export const queryTunnels = async ({
+  includeAccessCredentials,
+  waitForAllTunnels,
+  ...fetchOpts
+}: ComposeTunnelAgentFetchOpts & {
+  includeAccessCredentials: false | 'browser' | 'api'
+  waitForAllTunnels?: boolean
+}) => {
+  const r = await fetchFromComposeTunnelAgent({ ...fetchOpts, pathAndQuery: 'tunnels' })
+  const response = await (r.json() as Promise<TunnelsResponse>)
+
+  if (waitForAllTunnels && response.state.state !== 'stable') {
+    throw new AgentFetchError(`Not all configured tunnels are ready yet: ${inspect(response, { depth: null })}`)
+  }
+
+  return response.tunnels
     .map(tunnel => ({
       ...tunnel,
       ports: mapValues(
         tunnel.ports,
         includeAccessCredentials
-          ? withBasicAuthCredentials(credentials, includeAccessCredentials)
+          ? withBasicAuthCredentials(fetchOpts.credentials, includeAccessCredentials)
           : x => x,
       ),
     }))
+}
+
+export const queryEnvMetadata = async (fetchOpts: ComposeTunnelAgentFetchOpts): Promise<EnvMetadata> => {
+  const r = await fetchFromComposeTunnelAgent({ ...fetchOpts, pathAndQuery: 'env-metadata' })
+  return await r.json() as EnvMetadata
 }

@@ -8,6 +8,7 @@ import { inspect, promisify } from 'node:util'
 import waitForExpect from 'wait-for-expect'
 import WebSocket from 'ws'
 import stripAnsi from 'strip-ansi'
+import { ComposeTunnelAgentState } from '@preevy/common'
 import { createApp } from './index.js'
 import { filteredClient } from '../docker/index.js'
 import { SshState } from '../ssh/index.js'
@@ -71,7 +72,7 @@ const setupApiServer = () => {
       docker,
       dockerFilter: filteredClient({ docker, composeProject: TEST_COMPOSE_PROJECT }),
       composeModelPath: '',
-      currentSshState: () => Promise.resolve({} as unknown as SshState),
+      tunnels: () => Promise.resolve({} as unknown as SshState & { state: ComposeTunnelAgentState }),
     })
     await app.listen({ port: 0 })
     const { port } = app.server.address() as AddressInfo

@@ -1,7 +1,7 @@
 import { detectCiProvider } from './ci-providers/index.js'
 import { gitContext } from './git.js'
 import { ComposeModel } from './compose/model.js'
-import { Logger } from './log.js'
+import { LogLevel, Logger } from './log.js'
 
 export type EnvId = string & {
   __tag: 'EnvId'
@@ -74,8 +74,9 @@ export const findProjectName = async ({ userSpecifiedProjectName, userModel }: {
   }
 }
 
-export const findEnvIdByProjectName = async ({ log, projectName, projectNameBasedOn }: {
+export const findEnvIdByProjectName = async ({ log, explanationLogLevel = 'info', projectName, projectNameBasedOn }: {
   log: Logger
+  explanationLogLevel?: LogLevel
   projectName: string
   projectNameBasedOn?: string
 }) => {
@@ -86,12 +87,13 @@ export const findEnvIdByProjectName = async ({ log, projectName, projectNameBase
     basedOn,
   ].join(' and ')
 
-  log.info(`Using environment ID ${envId}, based on ${envIdBaseOn}`)
+  log[explanationLogLevel](`Using environment ID ${envId}, based on ${envIdBaseOn}`)
   return envId as EnvId
 }
 
-export async function findEnvId({ log, userSpecifiedEnvId, userSpecifiedProjectName, userModel }: {
+export async function findEnvId({ log, explanationLogLevel = 'info', userSpecifiedEnvId, userSpecifiedProjectName, userModel }: {
   log: Logger
+  explanationLogLevel?: LogLevel
   userSpecifiedEnvId: string | undefined
   userSpecifiedProjectName: string | undefined
   userModel: ComposeModel | (() => Promise<ComposeModel>)
@@ -105,5 +107,5 @@ export async function findEnvId({ log, userSpecifiedEnvId, userSpecifiedProjectN
     ? { projectName: userSpecifiedProjectName, projectNameBasedOn: undefined }
     : await findProjectName({ userSpecifiedProjectName, userModel })
 
-  return await findEnvIdByProjectName({ log, projectName, projectNameBasedOn })
+  return await findEnvIdByProjectName({ log, explanationLogLevel, projectName, projectNameBasedOn })
 }

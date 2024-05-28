@@ -11,12 +11,12 @@ import {
   telemetryEmitter,
   withSpinner,
 } from '@preevy/core'
-import { buildFlags, parseBuildFlags, tableFlags, text, tunnelServerFlags } from '@preevy/cli-common'
+import { buildFlags, parseBuildFlags, parseTunnelServerFlags, tableFlags, text, tunnelServerFlags } from '@preevy/cli-common'
 import { inspect } from 'util'
 import { editUrl, tunnelNameResolver } from '@preevy/common'
 import MachineCreationDriverCommand from '../machine-creation-driver-command.js'
 import { envIdFlags, urlFlags } from '../common-flags.js'
-import { filterUrls, printUrls, writeUrlsToFile } from './urls.js'
+import { filterUrls, printUrls, urlsRetryOpts, writeUrlsToFile } from './urls.js'
 import { connectToTunnelServerSsh } from '../tunnel-server-client.js'
 
 const fetchTunnelServerDetails = async ({
@@ -143,11 +143,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
     )
     const thumbprint = await jwkThumbprint(tunnelingKey)
 
-    const tunnelOpts = {
-      url: flags['tunnel-url'],
-      tlsServerName: flags['tls-hostname'],
-      insecureSkipVerify: flags['insecure-skip-verify'],
-    }
+    const tunnelOpts = parseTunnelServerFlags(flags)
 
     const { expectedServiceUrls, hostKey } = await fetchTunnelServerDetails({
       log: this.logger,
@@ -211,13 +207,9 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       tunnelingKey,
       includeAccessCredentials: flags['include-access-credentials'] && (flags['access-credentials-type'] as 'api' | 'browser'),
       showPreevyService: flags['show-preevy-service-urls'],
-      retryOpts: {
-        minTimeout: 1000,
-        maxTimeout: 2000,
-        retries: 10,
-        onFailedAttempt: e => { this.logger.debug(`Failed to query tunnels: ${inspect(e)}`) },
-      },
+      retryOpts: urlsRetryOpts(this.logger),
       fetchTimeout: flags['fetch-urls-timeout'],
+      waitForAllTunnels: flags.wait,
     }), { text: 'Getting tunnel URLs...' })
 
     const urls = await filterUrls({

@@ -3,7 +3,7 @@ import { ensureDefined, extractDefined, randomString, truncatePrefix } from '@pr
 import { pick } from 'lodash-es'
 import { tryParseJson } from '@preevy/common'
 import { sanitizeLabel, sanitizeLabels } from './labels.js'
-import { HasMetadata, Package } from './common.js'
+import { HasMetadata, Package, defaultPackage } from './common.js'
 import { KubernetesType } from './dynamic/index.js'
 
 export const MAX_LABEL_LENGTH = 63
@@ -70,12 +70,12 @@ export const addAllTypesAnnotation = (
 }
 
 export const addEnvMetadata = (
-  { profileId, envId, createdAt, instance, package: { name, version }, templateHash }: {
+  { profileId, envId, createdAt, instance, package: { name, version } = defaultPackage, templateHash }: {
     profileId: string
     envId: string
     createdAt: Date
     instance: string
-    package: Package
+    package?: Package
     templateHash: string
   },
 ) => (

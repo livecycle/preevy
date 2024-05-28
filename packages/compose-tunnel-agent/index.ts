@@ -4,6 +4,7 @@ import Docker from 'dockerode'
 import { rimraf } from 'rimraf'
 import { pino } from 'pino'
 import pinoPrettyModule from 'pino-pretty'
+import yaml from 'yaml'
 import {
   requiredEnv,
   formatPublicKey,
@@ -20,11 +21,13 @@ import { runMachineStatusCommand } from './src/machine-status.js'
 import { envMetadata } from './src/metadata.js'
 import { readAllFiles } from './src/files.js'
 import { eventsClient as dockerEventsClient, filteredClient as dockerFilteredClient } from './src/docker/index.js'
+import { tunnelsStateCalculator } from './src/tunnels-state.js'
 
 const PinoPretty = pinoPrettyModule.default
 
 const homeDir = process.env.HOME || '/root'
 const dockerSocket = '/var/run/docker.sock'
+const COMPOSE_FILE_PATH = '/preevy/docker-compose.yaml'
 
 const targetComposeProject = process.env.COMPOSE_PROJECT
 const defaultAccess = process.env.DEFAULT_ACCESS_LEVEL === 'private' ? 'private' : 'public'
@@ -106,22 +109,39 @@ const main = async () => {
   })
 
   sshLog.info('ssh client connected to %j', sshUrl)
-  let currentTunnels = dockerClient.getRunningServices().then(services => sshClient.updateTunnels(services))
+  let currentState = dockerClient.getRunningServices().then(async runningServices => ({
+    runningServices,
+    sshTunnels: await sshClient.updateTunnels(runningServices),
+  }))
 
   void dockerClient.startListening({
-    onChange: async services => {
-      currentTunnels = sshClient.updateTunnels(services)
+    onChange: runningServices => {
+      currentState = (async () => ({
+        runningServices,
+        sshTunnels: await sshClient.updateTunnels(runningServices),
+      }))()
     },
+  })
+
+  const calcTunnelsState = tunnelsStateCalculator({
+    composeProject: targetComposeProject,
+    composeModelReader: async () => yaml.parse(await fs.promises.readFile(COMPOSE_FILE_PATH, { encoding: 'utf8' })),
   })
 
   const app = await createApp({
     log: log.child({ name: 'api' }),
-    currentSshState: async () => (await currentTunnels),
+    tunnels: async () => {
+      const { sshTunnels, runningServices } = await currentState
+      return {
+        ...sshTunnels,
+        state: await calcTunnelsState(runningServices),
+      }
+    },
     machineStatus: machineStatusCommand
       ? async () => await runMachineStatusCommand({ log, docker })(machineStatusCommand)
       : undefined,
     envMetadata: await envMetadata({ env: process.env, log }),
-    composeModelPath: '/preevy/docker-compose.yaml',
+    composeModelPath: COMPOSE_FILE_PATH,
     docker,
     dockerFilter: dockerFilteredClient({ docker, composeProject: targetComposeProject }),
   })

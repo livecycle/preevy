@@ -94,9 +94,9 @@
     "topicSeparator": " ",
     "update": {
       "node": {
-        "version": "18.19.0",
+        "version": "20.13.1",
         "options": [
-          "--no-warnings=ExperimentalWarning",
+          "--disable-warning=ExperimentalWarning",
           "--enable-source-maps"
         ]
       },
