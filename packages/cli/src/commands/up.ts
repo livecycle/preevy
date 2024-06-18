@@ -210,6 +210,7 @@ export default class Up extends MachineCreationDriverCommand<typeof Up> {
       retryOpts: urlsRetryOpts(this.logger),
       fetchTimeout: flags['fetch-urls-timeout'],
       waitForAllTunnels: flags.wait,
+      log: this.logger,
     }), { text: 'Getting tunnel URLs...' })
 
     const urls = await filterUrls({

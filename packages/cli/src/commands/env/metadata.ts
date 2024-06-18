@@ -92,6 +92,7 @@ export default class EnvMetadataCommand extends DriverCommand<typeof EnvMetadata
       credentials,
       fetchTimeout: this.flags['fetch-timeout'],
       retryOpts: { retries: 2 },
+      log: this.logger,
     })
   }
 
