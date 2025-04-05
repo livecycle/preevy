@@ -189,7 +189,7 @@ const client = ({
           ...commonArgs,
           instanceSnapshotName,
         })
-        : ls.createInstances({ ...commonArgs, blueprintId: 'ubuntu_20_04' })
+        : ls.createInstances({ ...commonArgs, blueprintId: 'ubuntu_24_04' })
 
       await waitUntilAllOperationsSucceed(
         { client: lsClient, maxWaitTime: 150 },
