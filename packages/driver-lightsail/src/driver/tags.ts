@@ -1,7 +1,7 @@
 import { inspect } from 'util'
 import { extractDefined } from '@preevy/core'
 
-export const CURRENT_MACHINE_VERSION = 'm-2023-08-02'
+export const CURRENT_MACHINE_VERSION = 'm-2025-04-04'
 
 export const TAGS = {
   PROFILE_ID: 'preevy-profile-id',
