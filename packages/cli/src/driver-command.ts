@@ -5,7 +5,7 @@ import { Flag } from '@oclif/core/lib/interfaces/index.js'
 import { DriverFlags, DriverName, FlagType, addDriverPrefix, flagsForAllDrivers, machineDrivers, removeDriverPrefix } from './drivers.js'
 import ProfileCommand from './profile-command.js'
 
-// eslint-disable-next-line no-use-before-define
+
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof DriverCommand['baseFlags'] & T['flags']>
 export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>
 
@@ -99,7 +99,7 @@ abstract class DriverCommand<T extends typeof Command> extends ProfileCommand<T>
       throw new Error(`No machine found for envId ${envId}`)
     }
     // eslint false positive here on case-sensitive filesystems due to unknown type
-    // eslint-disable-next-line @typescript-eslint/return-await
+
     return await driver.connect(machine, { log: this.logger, debug: this.flags.debug })
   }
 }

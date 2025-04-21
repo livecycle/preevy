@@ -10,7 +10,7 @@ function generateInsecureSecret() {
     .slice(0, 32)
 }
 
-export function cookieSessionStore<T>(opts: {domain: string; schema: z.ZodSchema<T>; keys?: string[] }) {
+export function cookieSessionStore<T>(opts: { domain: string; schema: z.ZodSchema<T>; keys?: string[] }) {
   const keys = opts.keys ?? [generateInsecureSecret()]
   return function getSession(
     req: IncomingMessage,

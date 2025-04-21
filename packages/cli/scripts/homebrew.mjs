@@ -60,7 +60,7 @@ const readManifest = ({ os, arch }) => {
     throw new Error(`Missing ${os} ${arch} build manifest`)
   }
   const manifest = JSON.parse(fs.readFileSync(filename, 'utf8'))
-  const requiredProp = (prop) => {
+  const requiredProp = prop => {
     if (!manifest[prop]) {
       throw new Error(`Missing ${prop} in manifest: ${filename}`)
     }
@@ -78,7 +78,7 @@ const main = async () => {
       context.version = version
       context[os][arch] = {
         sha,
-        url: url({ os, arch, version })
+        url: url({ os, arch, version }),
       }
     })
   })

@@ -25,18 +25,18 @@ const readyPodPredicate = (p: k8s.V1Pod) => Boolean(p.status?.conditions?.some(c
 const completeMissingListFields = <T extends k8s.KubernetesObject>(
   { kind, apiVersion }: { kind: string; apiVersion: string },
 ) => (o: T) => {
-    o.kind ??= o.metadata?.annotations?.[ANNOTATIONS.KUBERNETES_KIND] ?? kind
-    o.apiVersion ??= o.metadata?.annotations?.[ANNOTATIONS.KUERBETES_API_VERSION] ?? apiVersion
-    return o
-  }
+  o.kind ??= o.metadata?.annotations?.[ANNOTATIONS.KUBERNETES_KIND] ?? kind
+  o.apiVersion ??= o.metadata?.annotations?.[ANNOTATIONS.KUERBETES_API_VERSION] ?? apiVersion
+  return o
+}
 
 const completeMissingListFieldsAsyncIter = <T extends k8s.KubernetesObject>(
   fields: { kind: string; apiVersion: string },
   asyncIterator: AsyncIterable<T>,
 ) => asyncMap(
-    completeMissingListFields(fields),
-    asyncIterator,
-  )
+  completeMissingListFields(fields),
+  asyncIterator,
+)
 
 export const storageV1ApiHelpers = (
   storageApi: k8s.StorageV1Api,

@@ -147,7 +147,7 @@ export const proxy = ({
       mutatedReq,
       res,
       {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
         // @ts-ignore
         target: {
           socketPath: activeTunnel.target,
@@ -175,7 +175,7 @@ export const proxy = ({
           socket,
           head,
           {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
             // @ts-ignore
             target: {
               socketPath: activeTunnel.target,

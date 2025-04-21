@@ -99,7 +99,7 @@ export const telemetryEmitter = async ({ dataDir, version, debug, filename }: {
   }
 
   const group = ({ type: groupType, id: groupId } :
-     {type: GroupIdentityType; id?: string}, props: TelemetryProperties = {}) => {
+  { type: GroupIdentityType; id?: string }, props: TelemetryProperties = {}) => {
     if (groupId) {
       groupIdentities[groupType] = groupId
     }

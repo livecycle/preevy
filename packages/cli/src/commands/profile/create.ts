@@ -10,7 +10,7 @@ import {
 import ProfileCommand from '../../profile-command.js'
 import DriverCommand from '../../driver-command.js'
 
-// eslint-disable-next-line no-use-before-define
+
 export default class CreateProfile extends ProfileCommand<typeof CreateProfile> {
   static description = 'Create a new profile'
 

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import yaml, { DocumentOptions, ParseOptions, SchemaOptions, ToJSOptions } from 'yaml'
 
 type Reviver = (this: any, key: string, value: any) => any

@@ -15,14 +15,14 @@ class StringWritable extends stream.Writable {
     this.data = ''
   }
 
-  // eslint-disable-next-line no-underscore-dangle
+
   _write(chunk: Buffer | string, encoding: BufferEncoding | 'buffer', callback: (error?: Error | null) => void) {
     const c = encoding === 'buffer' ? this.decoder.write(chunk as Buffer) : chunk
     this.data += c
     callback()
   }
 
-  // eslint-disable-next-line no-underscore-dangle
+
   _final(callback: () => void) {
     this.data += this.decoder.end()
     callback()

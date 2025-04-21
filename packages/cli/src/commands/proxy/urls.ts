@@ -5,7 +5,7 @@ import { pick } from 'lodash-es'
 import PreevyUrlsCmd from '../urls.js'
 import ProfileCommand from '../../profile-command.js'
 
-// eslint-disable-next-line no-use-before-define
+
 export default class Urls extends ProfileCommand<typeof Urls> {
   static description = 'Show urls for tunneled local compose application'
 
@@ -28,7 +28,7 @@ export default class Urls extends ProfileCommand<typeof Urls> {
 
   static enableJsonFlag = true
 
-  // eslint-disable-next-line class-methods-use-this
+
   async run(): Promise<unknown> {
     const { args, flags } = this
     const composeInspector = commands.proxy.inspectRunningComposeApp(args['compose-project'])

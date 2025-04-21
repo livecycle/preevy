@@ -9,8 +9,7 @@ import kubectlExec from './kubectl.js'
 export { BaseExecOpts } from './common.js'
 
 export default (
-  { kubeconfigLocation, kubeConfig, namespace, log }: {
-    kubeconfigLocation?: string
+  { kubeconfigLocation, kubeConfig, namespace, log }: { kubeconfigLocation?: string
     namespace: string
     kubeConfig: k8s.KubeConfig
     log: Logger },

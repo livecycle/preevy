@@ -5,7 +5,7 @@ export type Page<T> = {
 
 export const paginationIterator = <
   T,
-  P extends Page<T>,
+  P extends Page<T>
 >(fetch: (continueToken?: string) => Promise<P>): AsyncIterableIterator<T> => {
   let currentResponsePromise = fetch()
   let currentPageIter: Iterator<T> | null = null

@@ -8,7 +8,7 @@ import { connectToTunnelServerSsh } from '../../tunnel-server-client.js'
 import ProfileCommand from '../../profile-command.js'
 import { filterUrls, printUrls, writeUrlsToFile } from '../urls.js'
 
-// eslint-disable-next-line no-use-before-define
+
 export default class Connect extends ProfileCommand<typeof Connect> {
   static description = 'Tunnel existing local compose application'
 
@@ -50,7 +50,7 @@ export default class Connect extends ProfileCommand<typeof Connect> {
 
   static enableJsonFlag = true
 
-  // eslint-disable-next-line class-methods-use-this
+
   async run(): Promise<unknown> {
     const { flags, args, store } = this
 

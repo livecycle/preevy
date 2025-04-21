@@ -74,7 +74,7 @@ describe('app', () => {
 
   const log = pino.pino<pino.Level>(
     { level: 'debug' },
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
     // @ts-ignore
     pinoPretty({ destination: pino.destination(process.stderr) }),
   )

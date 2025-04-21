@@ -59,7 +59,7 @@ export const urlsRetryOpts = (log: Logger) => ({
 
 export const noWaitUrlsRetryOpts = { retries: 2 } as const
 
-// eslint-disable-next-line no-use-before-define
+
 export default class Urls extends ProfileCommand<typeof Urls> {
   static description = 'Show urls for an existing environment'
 

@@ -57,7 +57,7 @@ export const jwtGenerator = (privateKey: string | Buffer) => {
   const alg = getAsymmetricKeyAlg(key)
   const thumbprint = memoize(async () => await calculateJwkThumbprintUri(await exportJWK(key)))
 
-  return async ({ claims = {}, exp = '60d' }: {claims?:JWTPayload; exp?: string} = {}) => await (new SignJWT(claims).setProtectedHeader({ alg })
+  return async ({ claims = {}, exp = '60d' }: { claims?: JWTPayload; exp?: string } = {}) => await (new SignJWT(claims).setProtectedHeader({ alg })
     .setIssuedAt()
     .setIssuer(`preevy://${await thumbprint()}`)
     .setExpirationTime(exp)

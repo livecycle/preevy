@@ -11,7 +11,7 @@ export const flagsDef = {
     required: false,
     helpGroup: HELP_GROUP,
   }),
-  repo: Flags.custom<{owner: string; repo: string}>({
+  repo: Flags.custom<{ owner: string; repo: string }>({
     description: 'GitHub repo name in the format owner/repo. Will auto-detect if not specified',
     required: false,
     helpGroup: HELP_GROUP,

@@ -41,7 +41,7 @@ const validateUnset = (driver: DriverName, unset: string[]) => {
   }
 }
 
-// eslint-disable-next-line no-use-before-define
+
 export default class UpdateProfileConfig extends ProfileCommand<typeof UpdateProfileConfig> {
   static description = 'View and update profile configuration'
 

@@ -5,7 +5,7 @@ export const tunnelServerFlags = {
   'tunnel-url': Flags.string({
     summary: 'Tunnel url, specify ssh://hostname[:port] or ssh+tls://hostname[:port]',
     char: 't',
-    default: process.env.PREVIEW_TUNNEL_OVERRIDE ?? 'ssh+tls://livecycle.run'
+    default: process.env.PREVIEW_TUNNEL_OVERRIDE ?? 'ssh+tls://livecycle.run',
   }),
   'tls-hostname': Flags.string({
     summary: 'Override TLS server name when tunneling via HTTPS',

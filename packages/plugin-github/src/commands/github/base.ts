@@ -4,11 +4,11 @@ import { CiProvider, detectCiProvider, findEnvId } from '@preevy/core'
 import { PluginConfig, loadGithubConfig } from '../../config.js'
 import { flagsDef } from '../../flags.js'
 
-// eslint-disable-next-line no-use-before-define
+
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof BaseGithubCommand['baseFlags'] & T['flags']>
 export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>
 
-// eslint-disable-next-line no-use-before-define
+
 abstract class BaseGithubCommand<T extends typeof Command> extends BaseCommand<T> {
   static baseFlags = {
     ...BaseCommand.baseFlags,

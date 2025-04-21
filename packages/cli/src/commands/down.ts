@@ -3,7 +3,7 @@ import { findEnvId, machineResourceType, withSpinner } from '@preevy/core'
 import MachineCreationDriverCommand from '../machine-creation-driver-command.js'
 import { envIdFlags } from '../common-flags.js'
 
-// eslint-disable-next-line no-use-before-define
+
 export default class Down extends MachineCreationDriverCommand<typeof Down> {
   static description = 'Delete preview environments'
 

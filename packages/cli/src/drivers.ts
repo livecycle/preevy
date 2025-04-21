@@ -23,13 +23,13 @@ export type FlagType = 'flags' | 'machineCreationFlags'
 
 export type DriverFlagName<
   Name extends DriverName,
-  Type extends FlagType,
+  Type extends FlagType
 > = keyof MachineDrivers[Name][Type] extends string ? keyof MachineDrivers[Name][Type] : never
 
 export type DriverFlag<
   Name extends DriverName,
   Type extends FlagType,
-  FlagName extends DriverFlagName<Name, Type>,
+  FlagName extends DriverFlagName<Name, Type>
 > = MachineDrivers[Name][Type][FlagName]
 
 export type DriverFlags<Name extends DriverName, Type extends FlagType> = {

@@ -26,7 +26,7 @@ const extractKey = (key: Buffer, type: KeyType) => {
   throw new Error(`Invalid key type "${type}"`)
 }
 
-// eslint-disable-next-line no-use-before-define
+
 export default class Key extends ProfileCommand<typeof Key> {
   static description = 'Show profile key'
   static strict = false

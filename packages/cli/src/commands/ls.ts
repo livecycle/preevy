@@ -4,7 +4,7 @@ import { commands } from '@preevy/core'
 import { tableFlags } from '@preevy/cli-common'
 import DriverCommand from '../driver-command.js'
 
-// eslint-disable-next-line no-use-before-define
+
 export default class Ls extends DriverCommand<typeof Ls> {
   static description = 'List preview environments'
 

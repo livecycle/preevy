@@ -15,7 +15,7 @@ export type AliasEvent = BaseEvent<'$create_alias'> & {
 
 export type IdentifyEvent<
   PersonProperties extends TelemetryProperties = TelemetryProperties,
-  EventProperties extends TelemetryProperties = TelemetryProperties,
+  EventProperties extends TelemetryProperties = TelemetryProperties
 > = BaseEvent<'$identify'> & {
   '$set': PersonProperties
   properties: EventProperties
@@ -23,7 +23,7 @@ export type IdentifyEvent<
 
 export type CaptureEvent<
   T extends string,
-  P extends TelemetryProperties = TelemetryProperties,
+  P extends TelemetryProperties = TelemetryProperties
 > = BaseEvent<T> & {
   properties: P
 }

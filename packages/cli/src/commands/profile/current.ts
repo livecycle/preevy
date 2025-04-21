@@ -1,7 +1,7 @@
 import { ux } from '@oclif/core'
 import ProfileCommand from '../../profile-command.js'
 
-// eslint-disable-next-line no-use-before-define
+
 export default class CurrentProfile extends ProfileCommand<typeof CurrentProfile> {
   static description = 'Display current profile in use'
   static strict = false

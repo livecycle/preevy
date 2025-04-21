@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import originalPLimit from 'p-limit'
 
 type LimitFunc<Arguments extends any[], ReturnType> = (

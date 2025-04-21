@@ -4,7 +4,7 @@ import { text } from '@preevy/cli-common'
 import { DriverName } from '../../../drivers.js'
 import ProfileCommand from '../../../profile-command.js'
 
-// eslint-disable-next-line no-use-before-define
+
 export default class ViewProfileConfig extends ProfileCommand<typeof ViewProfileConfig> {
   static description = 'View profile configuration'
   static enableJsonFlag = true

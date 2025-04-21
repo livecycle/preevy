@@ -12,14 +12,14 @@ export type ScriptInjection = {
 const parseBooleanLabelValue = (s:string) => s === 'true' || s === '1'
 
 const parseScriptInjection = (o: Record<string, string>): ScriptInjection | Error => {
-  // eslint-disable-next-line camelcase
+
   const { src, defer, async, path_regex } = o
   try {
     if (!src) {
       throw new Error('missing src')
     }
     return {
-      // eslint-disable-next-line camelcase
+
       ...path_regex && { pathRegex: new RegExp(path_regex) },
       ...defer && { defer: parseBooleanLabelValue(defer) },
       ...async && { async: parseBooleanLabelValue(async) },

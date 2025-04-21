@@ -74,7 +74,7 @@ const fetchTunnelServerDetails = async ({
   return { expectedServiceUrls, hostKey }
 }
 
-// eslint-disable-next-line no-use-before-define
+
 export default class Up extends MachineCreationDriverCommand<typeof Up> {
   static description = 'Bring up a preview environment'
 

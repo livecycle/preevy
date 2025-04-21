@@ -2,7 +2,7 @@ import { Args } from '@oclif/core'
 import { commands } from '@preevy/core'
 import DriverCommand from '../driver-command.js'
 
-// eslint-disable-next-line no-use-before-define
+
 export default class Shell extends DriverCommand<typeof Shell> {
   static description = 'Execute a command or start an interactive shell inside an environment'
   static aliases = ['ssh']

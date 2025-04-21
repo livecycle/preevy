@@ -57,7 +57,7 @@ const setupDockerContainer = () => {
 const setupApiServer = () => {
   const log = pino.pino(
     { level: 'debug' },
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
     // @ts-ignore
     pinoPretty({ destination: pino.destination(process.stderr) }),
   )
@@ -135,7 +135,7 @@ describe('docker api', () => {
 
   const waitForContainerId = async () => {
     let containerId = ''
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
     // @ts-ignore
     await waitForExpect(async () => {
       const containers = await fetchJson(`http://${serverBaseUrl()}/containers`) as { Id: string; Names: string[] }[]
@@ -156,13 +156,13 @@ describe('docker api', () => {
     describe('tty=true', () => {
       it('should communicate via websocket', async () => {
         const { receivedBuffers, send, close } = await openWebSocket(`ws://${serverBaseUrl()}/containers/${containerId}/exec`)
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
         // @ts-ignore
         await waitForExpect(
           () => expect(receivedBuffers.length).toBeGreaterThan(0),
         )
         await send('ls \n')
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
         // @ts-ignore
         await waitForExpect(() => {
           const received = stripAnsi(Buffer.concat(receivedBuffers).toString('utf-8'))
@@ -177,7 +177,7 @@ describe('docker api', () => {
     describe('tty=false', () => {
       it('should communicate via websocket', async () => {
         const { receivedBuffers, send, close } = await openWebSocket(`ws://${serverBaseUrl()}/containers/${containerId}/exec`)
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
         // @ts-ignore
         await waitForExpect(async () => {
           await send('ls\n')
@@ -202,13 +202,13 @@ describe('docker api', () => {
       describe(`${s.join(' and ')}`, () => {
         it(`should show the ${s.join(' and ')} logs via websocket`, async () => {
           const { receivedBuffers, close } = await openWebSocket(`ws://${serverBaseUrl()}/containers/${containerId}/logs?${s.map(st => `${st}=true`).join('&')}`)
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
           // @ts-ignore
           await waitForExpect(
             () => expect(receivedBuffers.length).toBeGreaterThan(0),
           )
           const length1 = receivedBuffers.length
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
           // @ts-ignore
           await waitForExpect(() => {
             const received = Buffer.concat(receivedBuffers).toString('utf-8')
@@ -219,7 +219,7 @@ describe('docker api', () => {
               expect(received).not.toContain(`hello ${st}`)
             })
           })
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
           // @ts-ignore
           await waitForExpect(() => {
             expect(receivedBuffers.length).toBeGreaterThan(length1)
@@ -236,7 +236,7 @@ describe('docker api', () => {
     describe('timestamps', () => {
       it('should show the logs with a timestamp', async () => {
         const { receivedBuffers, close } = await openWebSocket(`ws://${serverBaseUrl()}/containers/${containerId}/logs?stdout=true&timestamps=true`)
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
         // @ts-ignore
         await waitForExpect(
           () => expect(receivedBuffers.length).toBeGreaterThan(0),

@@ -10,7 +10,7 @@ import { composeFlags, pluginFlags } from '../lib/common-flags/index.js'
 import { PreevyConfig } from '../../../core/src/config.js'
 import { errorToJson } from '../lib/errors.js'
 
-// eslint-disable-next-line no-use-before-define
+
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof BaseCommand['baseFlags'] & T['flags']>
 export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>
 
@@ -147,11 +147,11 @@ abstract class BaseCommand<T extends typeof Command=typeof Command> extends Comm
     })
     emitter.unref()
     await emitter.flush()
-    // eslint-disable-next-line @typescript-eslint/return-await
+
     return await super.catch(error)
   }
 
-  // eslint-disable-next-line class-methods-use-this
+
   protected toErrorJson(err: unknown) {
     return { error: errorToJson(err) }
   }

@@ -1,4 +1,4 @@
-/* eslint-disable jest/no-standalone-expect */
+
 import { it, describe, expect } from '@jest/globals'
 import { createHash } from 'crypto'
 import { activeTunnelStoreKey } from './key.js'

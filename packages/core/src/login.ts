@@ -1,4 +1,4 @@
-/* eslint-disable no-await-in-loop */
+
 import * as jose from 'jose'
 import { z } from 'zod'
 import open from 'open'

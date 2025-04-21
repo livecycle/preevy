@@ -9,7 +9,7 @@ import { connectToTunnelServerSsh } from '../../tunnel-server-client.js'
 type MetadataSource = 'agent' | 'driver'
 type UnknownMetadata = Record<string, unknown>
 
-// eslint-disable-next-line no-use-before-define
+
 export default class EnvMetadataCommand extends DriverCommand<typeof EnvMetadataCommand> {
   static description = 'Show metadata for a preview environment'
   static enableJsonFlag = true
@@ -86,7 +86,7 @@ export default class EnvMetadataCommand extends DriverCommand<typeof EnvMetadata
       tunnelingKey,
     )
     const credentials = await getUserCredentials(jwtGenerator(tunnelingKey))
-    // eslint-disable-next-line @typescript-eslint/return-await
+
     return await queryEnvMetadata({
       composeTunnelServiceUrl,
       credentials,
@@ -107,7 +107,7 @@ export default class EnvMetadataCommand extends DriverCommand<typeof EnvMetadata
       try {
         this.logger.debug(`Fetching metadata from ${source}`)
         return {
-          // eslint-disable-next-line no-await-in-loop
+
           metadata: await this.metadataFactories[source](),
           errors,
           source,

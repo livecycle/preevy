@@ -1,4 +1,4 @@
-/* eslint-disable no-underscore-dangle */
+
 import stream from 'stream'
 import { Parser } from 'htmlparser2'
 
