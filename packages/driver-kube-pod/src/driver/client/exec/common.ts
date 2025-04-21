@@ -17,7 +17,7 @@ export class ReadableBufferStream extends Readable {
 
   isRead = false
 
-  // eslint-disable-next-line no-underscore-dangle
+
   _read(): void {
     if (this.isRead || !this.buffer) {
       this.push(null)

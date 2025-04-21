@@ -68,7 +68,7 @@ export type ProfileEditor = {
 
 export type ProfileEditorOp<
   T extends ProfileKey = ProfileKey,
-  Result = void,
+  Result = void
 > = (pe: Pick<ProfileEditor, T>) => Promise<Result>
 
 const profileEditor = (

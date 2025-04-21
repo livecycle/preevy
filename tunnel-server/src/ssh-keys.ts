@@ -5,7 +5,7 @@ import { Level, Logger } from 'pino'
 
 export async function getSSHKeys({
   defaultKeyLocation, log,
-}: {defaultKeyLocation: string; log: Logger<Level>}) {
+}: { defaultKeyLocation: string; log: Logger<Level> }) {
   const sshHostKeyInline = process.env.SSH_HOST_KEY
   let privateKeyContents = ''
   if (sshHostKeyInline) {

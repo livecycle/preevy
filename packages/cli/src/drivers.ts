@@ -3,7 +3,7 @@ import lightsail from '@preevy/driver-lightsail'
 import gce from '@preevy/driver-gce'
 import azure from '@preevy/driver-azure'
 import kubePod from '@preevy/driver-kube-pod'
-import { Flag } from '@oclif/core/lib/interfaces'
+import { Flag } from '@oclif/core/lib/interfaces/index.js'
 import { Interfaces } from '@oclif/core'
 import { formatFlagsToArgs } from '@preevy/cli-common'
 import {} from '@preevy/core' // https://github.com/microsoft/TypeScript/issues/47663#issuecomment-1270716220
@@ -23,13 +23,13 @@ export type FlagType = 'flags' | 'machineCreationFlags'
 
 export type DriverFlagName<
   Name extends DriverName,
-  Type extends FlagType,
+  Type extends FlagType
 > = keyof MachineDrivers[Name][Type] extends string ? keyof MachineDrivers[Name][Type] : never
 
 export type DriverFlag<
   Name extends DriverName,
   Type extends FlagType,
-  FlagName extends DriverFlagName<Name, Type>,
+  FlagName extends DriverFlagName<Name, Type>
 > = MachineDrivers[Name][Type][FlagName]
 
 export type DriverFlags<Name extends DriverName, Type extends FlagType> = {

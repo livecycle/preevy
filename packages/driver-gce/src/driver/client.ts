@@ -19,7 +19,7 @@ const ignoreNotFound = (e: Error) => {
 const callOpts: CallOptions = { retry: { retryCodes: ['ECONNRESET'] as unknown as number[] } }
 const MAX_INSTANCE_NAME_LENGTH = 62
 
-// eslint-disable-next-line no-use-before-define
+
 export const instanceError = (instance: Instance) => {
   if (instance.status === 'RUNNING') {
     return undefined
@@ -43,7 +43,7 @@ const client = ({
   const waitForOperation = async (op: Operation) => {
     let { done } = op
     while (!done) {
-      // eslint-disable-next-line no-await-in-loop
+
       const [{ status }] = await zoc.wait({ zone, project: projectId, operation: op.name }, callOpts)
       done = status === 'DONE'
     }

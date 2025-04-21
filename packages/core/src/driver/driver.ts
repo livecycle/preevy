@@ -16,7 +16,7 @@ export type MachineConnection = Disposable & {
 }
 
 export type MachineDriver<
-  Machine extends MachineBase = MachineBase,
+  Machine extends MachineBase = MachineBase
 > = {
   customizationScripts?: string[]
   friendlyName: string
@@ -42,7 +42,7 @@ export type MachineCreationResult<Machine extends MachineBase = MachineBase> = {
 
 export type MachineCreationDriver<
   Machine extends MachineBase = MachineBase,
-  ResourceType extends string = string,
+  ResourceType extends string = string
 > = {
   metadata: Record<string, unknown>
 
@@ -61,7 +61,7 @@ export type MachineCreationDriver<
 
 export type MachineDriverFactory<
   Flags,
-  Machine extends MachineBase = MachineBase,
+  Machine extends MachineBase = MachineBase
 > = ({ flags, profile, store, log, debug }: {
   flags: Flags
   profile: Profile
@@ -73,7 +73,7 @@ export type MachineDriverFactory<
 export type MachineCreationDriverFactory<
   Flags,
   Machine extends MachineBase,
-  ResourceType extends string = string,
+  ResourceType extends string = string
 > = ({ flags, profile, store, log, debug }: {
   flags: Flags
   profile: Profile

@@ -2,7 +2,7 @@ import { Args, ux } from '@oclif/core'
 import { BaseCommand, text } from '@preevy/cli-common'
 import { loadProfileConfig } from '../../profile-command.js'
 
-// eslint-disable-next-line no-use-before-define
+
 export default class UseProfile extends BaseCommand<typeof UseProfile> {
   static description = 'Set current profile'
 

@@ -11,10 +11,10 @@ export type ComposeBindVolume = {
   type: 'bind'
   source: string
   target: string
-  // eslint-disable-next-line camelcase
+
   read_only?: boolean
   bind?: {
-    // eslint-disable-next-line camelcase
+
     create_host_path?: boolean
   }
 }

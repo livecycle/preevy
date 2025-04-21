@@ -91,10 +91,10 @@ const apply = (
     : pSeries
 
   // eslint false positive here on case-sensitive filesystems due to unknown type
-  // eslint-disable-next-line @typescript-eslint/return-await
+
   return await concurrencyFunc(filteredSpecs.map(spec => wrap(async () => {
     const o = await bodyOrUndefined<k8s.KubernetesObject>(
-      client.read(spec as { metadata: { name: string; namespace: string }})
+      client.read(spec as { metadata: { name: string; namespace: string } })
     )
     return await strategy(o, spec, client)
   })))

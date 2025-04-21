@@ -30,7 +30,7 @@ export const loadProfileConfig = ({ dataDir }: { dataDir: string }): LocalProfil
   return localProfilesConfig(profileRoot, fsFromUrl)
 }
 
-// eslint-disable-next-line no-use-before-define
+
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof ProfileCommand['baseFlags'] & T['flags']>
 export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>
 
@@ -51,7 +51,7 @@ const findProfile = async (
   const profileUrl = tryParseUrl(profileFlag || '')
   if (!profileUrl) {
     // eslint false positive here on case-sensitive filesystems due to unknown type
-    // eslint-disable-next-line @typescript-eslint/return-await
+
     return await profileConfig.get(profileFlag)
   }
 
@@ -60,7 +60,7 @@ const findProfile = async (
   const found = Object.values(profiles).find(p => p.location === profileFlag)
   if (found) {
     // eslint false positive here on case-sensitive filesystems due to unknown type
-    // eslint-disable-next-line @typescript-eslint/return-await
+
     return await profileConfig.get(found.alias)
   }
 
@@ -70,7 +70,7 @@ const findProfile = async (
   })
 
   // eslint false positive here on case-sensitive filesystems due to unknown type
-  // eslint-disable-next-line @typescript-eslint/return-await
+
   return await profileConfig.importExisting(newAlias, profileUrl.toString())
 }
 

@@ -4,7 +4,7 @@ import { BaseCommand } from '@preevy/cli-common'
 import DriverCommand from './driver-command.js'
 import { machineCreationflagsForAllDrivers, machineDrivers } from './drivers.js'
 
-// eslint-disable-next-line no-use-before-define
+
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof MachineCreationDriverCommand['baseFlags'] & T['flags']>
 export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>
 

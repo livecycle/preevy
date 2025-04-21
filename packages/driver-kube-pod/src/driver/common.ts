@@ -14,9 +14,9 @@ export type ResourceType = typeof machineResourceType
 export const k8sObjectToMachine = <T extends k8s.KubernetesObject>(
   kubernetesObject: T,
 ): KubernetesMachine<T> => ({
-    type: machineResourceType,
-    providerId: extractInstance(kubernetesObject),
-    locationDescription: `${kubernetesObject.kind}/${extractName(kubernetesObject)} of namespace ${extractNamespace(kubernetesObject)}`,
-    envId: extractEnvId(kubernetesObject),
-    kubernetesObject,
-  })
+  type: machineResourceType,
+  providerId: extractInstance(kubernetesObject),
+  locationDescription: `${kubernetesObject.kind}/${extractName(kubernetesObject)} of namespace ${extractNamespace(kubernetesObject)}`,
+  envId: extractEnvId(kubernetesObject),
+  kubernetesObject,
+})

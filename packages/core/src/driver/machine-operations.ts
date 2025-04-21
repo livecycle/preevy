@@ -142,7 +142,7 @@ const customizeNewMachine = ({
   for (const script of machineDriver.customizationScripts ?? []) {
     i += 1
     spinner.text = `Executing customization scripts (${i}/${machineDriver.customizationScripts?.length})`
-    // eslint-disable-next-line no-await-in-loop
+
     await execScript(script)
   }
 

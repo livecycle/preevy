@@ -4,7 +4,7 @@ import { BaseCommand, text } from '@preevy/cli-common'
 import { EOL } from 'os'
 import { loadProfileConfig, onProfileChange } from '../../profile-command.js'
 
-// eslint-disable-next-line no-use-before-define
+
 export default class ImportProfile extends BaseCommand<typeof ImportProfile> {
   static description = 'Import an existing profile'
 

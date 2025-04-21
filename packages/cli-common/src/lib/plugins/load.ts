@@ -1,5 +1,5 @@
 import { Config } from '@oclif/core'
-import { InferredFlags } from '@oclif/core/lib/interfaces'
+import { InferredFlags } from '@oclif/core/lib/interfaces/index.js'
 import { config as coreConfig } from '@preevy/core'
 import { InitResults, PluginModule } from './model.js'
 import { PluginInitContext } from './context.js'

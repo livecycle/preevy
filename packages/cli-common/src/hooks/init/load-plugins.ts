@@ -1,6 +1,6 @@
 import { Hook as OclifHook, Command, Flags } from '@oclif/core'
 import { Parser } from '@oclif/core/lib/parser/parse.js'
-import { BooleanFlag, Config, Topic } from '@oclif/core/lib/interfaces'
+import { BooleanFlag, Config, Topic } from '@oclif/core/lib/interfaces/index.js'
 import { localComposeClient, ComposeModel, resolveComposeFiles, withSpinner, NoComposeFilesError } from '@preevy/core'
 import { cloneDeep } from 'lodash-es'
 import { composeFlags, pluginFlags } from '../../lib/common-flags/index.js'
@@ -51,7 +51,7 @@ export const initHook: OclifHook<'init'> = async function hook(args) {
   const userModelOrError = composeFiles.length
     ? await withSpinner(
       // eslint false positive here on case-sensitive filesystems due to unknown type
-      // eslint-disable-next-line @typescript-eslint/return-await
+
       async () => await localComposeClient({
         composeFiles,
         projectName: flags.project,

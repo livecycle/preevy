@@ -34,7 +34,7 @@ const confirmPurge = async (
   return await carefulBooleanPrompt(message)
 }
 
-// eslint-disable-next-line no-use-before-define
+
 export default class Purge extends MachineCreationDriverCommand<typeof Purge> {
   static description = 'Delete all cloud provider machines and potentially other resources'
 

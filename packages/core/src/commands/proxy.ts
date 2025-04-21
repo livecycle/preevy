@@ -28,13 +28,13 @@ export function inspectRunningComposeApp(projectName: string) {
       .then(x => x.split('\n').filter(n => n).map(n => JSON.parse(n) as {
         Name: string
         Labels: string
-        }))
+      }))
     const getNetworkName = (labels: string) => labels.split(',').map(l => l.split('=')).find(l => l[0] === 'com.docker.compose.network')?.[1]
     return Object.fromEntries(composeNetworks.map(x => ([getNetworkName(x.Labels), { name: x.Name }])))
   }
 
   function parseJSONContainer(s: string) {
-    const ctr = JSON.parse(s) as {Names: string; ID: string; Labels: string }
+    const ctr = JSON.parse(s) as { Names: string; ID: string; Labels: string }
     return { names: ctr.Names, id: ctr.ID, labels: Object.fromEntries(ctr.Labels.split(',').map(l => l.split('='))) as Record<string, string> }
   }
 
@@ -117,7 +117,7 @@ export async function initProxyComposeModel(opts: {
   return {
     data: newComposeModel,
     async write({ tunnelingKey, knownServerPublicKey } :
-      {tunnelingKey: string | Buffer; knownServerPublicKey: string | Buffer}) {
+    { tunnelingKey: string | Buffer; knownServerPublicKey: string | Buffer }) {
       const composeTmpDir = await mkdtemp(path.join(tmpdir(), 'preevy-compose-tunnel-proxy-'))
       await Promise.all([
         writeFile(`${composeTmpDir}/tunnel_server_public_key`, knownServerPublicKey),

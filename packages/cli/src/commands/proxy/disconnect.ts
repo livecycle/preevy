@@ -3,7 +3,7 @@ import { commands, execPromiseStdout } from '@preevy/core'
 import { tableFlags } from '@preevy/cli-common'
 import ProfileCommand from '../../profile-command.js'
 
-// eslint-disable-next-line no-use-before-define
+
 export default class Disconnect extends ProfileCommand<typeof Disconnect> {
   static description = 'Disconnect tunneled local compose application'
 
@@ -21,7 +21,7 @@ export default class Disconnect extends ProfileCommand<typeof Disconnect> {
     }),
   }
 
-  // eslint-disable-next-line class-methods-use-this
+
   async run(): Promise<unknown> {
     const { args } = this
     const inspector = commands.proxy.inspectRunningComposeApp(args['compose-project'])

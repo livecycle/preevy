@@ -1,5 +1,5 @@
 import { FlagProps } from '@oclif/core/lib/interfaces/parser.js'
-import { Topic } from '@oclif/core/lib/interfaces'
+import { Topic } from '@oclif/core/lib/interfaces/index.js'
 import { Command } from '@oclif/core'
 import { ComposeFiles, ComposeModel, config as coreConfig } from '@preevy/core'
 import { PluginInitContext } from './context.js'
@@ -32,7 +32,7 @@ declare module '@oclif/core/lib/config/config.js' {
   }
 }
 
-declare module '@oclif/core/lib/interfaces' {
+declare module '@oclif/core/lib/interfaces/index.js' {
   export interface Config {
     initialUserModel: ComposeModel | Error
     preevyHooks: HooksListeners

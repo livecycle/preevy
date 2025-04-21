@@ -13,9 +13,6 @@
     "syncpack": "11.2.1",
     "typescript": "^5.4.3"
   },
-  "resolutions": {
-    "**/@oclif/core": "^3.15.1"
-  },
   "scripts": {
     "test": "yarn -s run lerna -- run test --",
     "lint": "yarn -s run lerna -- run lint --parallel --",

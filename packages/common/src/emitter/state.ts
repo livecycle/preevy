@@ -22,7 +22,7 @@ export const stateEmitter = <T>(initial?: T) => {
     filter: async (predicate: (state: T) => boolean) => {
       let state: T = await self.current()
       while (!predicate(state)) {
-        // eslint-disable-next-line no-await-in-loop
+
         state = await self.next()
       }
 

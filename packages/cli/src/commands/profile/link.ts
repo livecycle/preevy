@@ -4,7 +4,7 @@ import * as inquirer from '@inquirer/prompts'
 import ProfileCommand from '../../profile-command.js'
 import { LC_API_URL } from '../../defaults.js'
 
-// eslint-disable-next-line no-use-before-define
+
 export default class Link extends ProfileCommand<typeof Link> {
   static flags = {
     'lc-api-url': Flags.string({ required: false, default: LC_API_URL, env: 'LC_API_URL', description: "The Livecycle API URL'" }),

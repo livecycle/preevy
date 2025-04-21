@@ -1,6 +1,6 @@
 import { HookFunc, HookName } from '@preevy/cli-common'
 import { Octokit } from 'octokit'
-import { Config as OclifConfig } from '@oclif/core/lib/interfaces'
+import { Config as OclifConfig } from '@oclif/core/lib/interfaces/index.js'
 import { Logger, detectCiProvider } from '@preevy/core'
 import { mapValues, memoize } from 'lodash-es'
 import { upsertPreevyComment, Content } from './lib/github-comment.js'

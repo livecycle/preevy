@@ -36,7 +36,7 @@ export const fsWalker = <T extends { local: string | FileInfo | DirInfo }>(
     const fi = await normalizeFile(file.local)
     visitor.visit(file, fi)
     if (isDir(fi)) {
-      // eslint-disable-next-line no-use-before-define
+
       void walkFiles(fi.entries.map(e => visitor.directoryEntry(file, e)))
     }
   }

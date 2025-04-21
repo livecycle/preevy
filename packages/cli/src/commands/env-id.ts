@@ -3,7 +3,7 @@ import { findEnvId } from '@preevy/core'
 import ProfileCommand from '../profile-command.js'
 import { envIdFlags } from '../common-flags.js'
 
-// eslint-disable-next-line no-use-before-define
+
 export default class EnvId extends ProfileCommand<typeof EnvId> {
   static description = 'Show the Preevy environment ID for the current Compose project'
 

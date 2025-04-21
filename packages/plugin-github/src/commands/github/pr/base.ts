@@ -11,11 +11,11 @@ const ensureConfig = <T extends GithubConfig>(config: T | undefined) => {
   return config
 }
 
-// eslint-disable-next-line no-use-before-define
+
 export type Flags<T extends typeof Command> = Interfaces.InferredFlags<typeof BaseGithubPrCommand['baseFlags'] & T['flags']>
 export type Args<T extends typeof Command> = Interfaces.InferredArgs<T['args']>
 
-// eslint-disable-next-line no-use-before-define
+
 abstract class BaseGithubPrCommand<T extends typeof Command> extends BaseGithubCommand<T> {
   static description = 'GitHub Pull Requests integration'
 

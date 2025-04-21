@@ -18,7 +18,7 @@ const chooseTargetAlias = async (defaultAlias: string) => await inquirer.input({
   default: defaultAlias,
 })
 
-// eslint-disable-next-line no-use-before-define
+
 export default class CopyProfile extends BaseCommand<typeof CopyProfile> {
   static description = 'Copy a profile'
 
@@ -29,7 +29,7 @@ export default class CopyProfile extends BaseCommand<typeof CopyProfile> {
       description: 'Source profile name, defaults to the current profile',
       required: false,
     }),
-    // eslint-disable-next-line no-restricted-globals
+
     'target-location': Flags.custom<{ location: string; fsType: FsType }>({
       description: 'Target profile location URL',
       required: false,

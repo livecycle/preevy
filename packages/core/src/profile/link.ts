@@ -3,7 +3,7 @@ import crypto from 'crypto'
 import { Logger } from '../log.js'
 import { jwtGenerator } from '../credentials/index.js'
 
-export type Org = {id: string; name: string; role: string; slug: string}
+export type Org = { id: string; name: string; role: string; slug: string }
 
 const keyTypeToArgs = {
   rsa: 'RS256',

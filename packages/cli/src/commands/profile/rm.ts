@@ -2,7 +2,7 @@ import { Args, Flags, ux } from '@oclif/core'
 import { text } from '@preevy/cli-common'
 import ProfileCommand from '../../profile-command.js'
 
-// eslint-disable-next-line no-use-before-define
+
 export default class RemoveProfile extends ProfileCommand<typeof RemoveProfile> {
   static description = 'Remove a profile'
 

@@ -1,7 +1,7 @@
 import { Flags, Interfaces } from '@oclif/core'
 import { asyncMap, asyncToArray } from 'iter-tools-es'
 import inquirerAutoComplete from 'inquirer-autocomplete-standalone'
-import { InferredFlags } from '@oclif/core/lib/interfaces'
+import { InferredFlags } from '@oclif/core/lib/interfaces/index.js'
 import { Resource, VirtualMachine } from '@azure/arm-compute'
 import { inspect } from 'util'
 import { DefaultAzureCredential } from '@azure/identity'
@@ -68,9 +68,8 @@ const requireTagValue = (tags: Resource['tags'], key: string) => {
 const SSH_KEYPAIR_ALIAS = 'azure' as const
 
 const machineFromVm = (
-  { publicIPAddress, vm }: {
-    publicIPAddress: string
-    vm: VirtualMachine}
+  { publicIPAddress, vm }: { publicIPAddress: string
+    vm: VirtualMachine }
 ): SshMachine & { envId: string } => {
   if (!vm.id || !vm.osProfile?.adminUsername) {
     throw new Error('Could not create a machine from instance')
@@ -132,7 +131,7 @@ export const inquireSubscriptionId = async (): Promise<string> => {
   const subscriptionClient = new SubscriptionClient(credential)
   const subscriptions = await asyncToArray(subscriptionClient.subscriptions.list()).catch(() => [])
   // eslint false positive here on case-sensitive filesystems due to unknown type
-  // eslint-disable-next-line @typescript-eslint/return-await
+
   return await prompts.selectOrSpecify({
     message: 'Microsoft Azure Subscription ID',
     choices: subscriptions.map(({ subscriptionId, displayName }) => ({ name: `${displayName} (${subscriptionId})`, value: subscriptionId as string })),

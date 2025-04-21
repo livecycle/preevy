@@ -1,4 +1,4 @@
-import { Config as OclifConfig } from '@oclif/core/lib/interfaces'
+import { Config as OclifConfig } from '@oclif/core/lib/interfaces/index.js'
 import { ComposeModel, Logger, config } from '@preevy/core'
 
 import PreevyConfig = config.PreevyConfig

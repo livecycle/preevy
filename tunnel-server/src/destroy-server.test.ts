@@ -1,4 +1,4 @@
-/* eslint-disable jest/no-standalone-expect */
+
 import net from 'node:net'
 import events from 'node:events'
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals'
@@ -42,7 +42,7 @@ describe('createDestroy', () => {
       })
 
       it('emits the close event immediately', async () => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
         // @ts-ignore
         await waitForExpect(async () => {
           expect(closed).toBe(true)
@@ -85,7 +85,7 @@ describe('createDestroy', () => {
       })
 
       it('emits the close event immediately', async () => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+
         // @ts-ignore
         await waitForExpect(async () => {
           expect(closed).toBe(true)

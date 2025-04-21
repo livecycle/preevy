@@ -1,5 +1,5 @@
 import { Flags } from '@oclif/core'
-import { InferredFlags } from '@oclif/core/lib/interfaces'
+import { InferredFlags } from '@oclif/core/lib/interfaces/index.js'
 import { BuildSpec, parseRegistry } from '@preevy/core'
 
 const helpGroup = 'BUILD'
