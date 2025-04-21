@@ -85,11 +85,11 @@ jobs:
 
       - name: Pack tarballs
         working-directory: packages/cli
-        run: yarn oclif pack tarballs --parallel --no-xz --targets $TARBALL_TARGETS
+        run: npx --yes oclif@v4 pack tarballs --parallel --no-xz --targets $TARBALL_TARGETS
 
       - name: Upload tarballs
         working-directory: packages/cli
-        run: yarn oclif upload tarballs --no-xz --targets $TARBALL_TARGETS
+        run: npx --yes oclif@v4 upload tarballs --no-xz --targets $TARBALL_TARGETS
 
       - name: Rename tarballs to remove git sha
         working-directory: packages/cli/dist
