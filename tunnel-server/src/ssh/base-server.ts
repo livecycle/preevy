@@ -99,7 +99,12 @@ export const baseSshServer = (
       const end = async () => {
         if (!ended) {
           await new Promise(resolve => {
-            client.once('end', resolve)
+            client.once(
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              'end', 
+              resolve,
+            )
             client.end()
           })
         }
