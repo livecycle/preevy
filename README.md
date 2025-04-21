@@ -23,6 +23,7 @@
 
 https://github.com/Pradumnasaraf/preevy/assets/51878265/a699a356-f524-48fc-9b6d-49f2e42e7ec7
 
+<!--lint disable no-multiple-toplevel-headings-->
 # Preevy
 
 Preevy is a Command Line Interface (CLI) tool designed to simplify the process of creating ephemeral preview environments from Dockerized applications. Integrate Preevy into your CI flow to deploy Pull Requests as preview environments, using your existing cloud provider or Kubernetes cluster.
