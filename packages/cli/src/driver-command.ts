@@ -1,7 +1,7 @@
 import { Command, Flags, Interfaces } from '@oclif/core'
 import { MachineConnection, MachineDriver, isPartialMachine, profileStore } from '@preevy/core'
 import { mapValues, pickBy } from 'lodash-es'
-import { Flag } from '@oclif/core/lib/interfaces'
+import { Flag } from '@oclif/core/lib/interfaces/index.js'
 import { DriverFlags, DriverName, FlagType, addDriverPrefix, flagsForAllDrivers, machineDrivers, removeDriverPrefix } from './drivers.js'
 import ProfileCommand from './profile-command.js'
 

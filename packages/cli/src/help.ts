@@ -1,5 +1,5 @@
 import { CommandHelp as BaseCommandHelp, Command, Help as OclifHelp } from '@oclif/core'
-import { HelpOptions, Config, Topic } from '@oclif/core/lib/interfaces'
+import { HelpOptions, Config, Topic } from '@oclif/core/lib/interfaces/index.js'
 import { BaseCommand, text } from '@preevy/cli-common'
 
 class GlobalFlagsHelp extends BaseCommandHelp {

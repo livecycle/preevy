@@ -1,11 +1,11 @@
 import { Flags } from '@oclif/core'
-import { InferredFlags } from '@oclif/core/lib/interfaces'
+import { InferredFlags } from '@oclif/core/lib/interfaces/index.js'
 
 export const tunnelServerFlags = {
   'tunnel-url': Flags.string({
     summary: 'Tunnel url, specify ssh://hostname[:port] or ssh+tls://hostname[:port]',
     char: 't',
-    default: 'ssh+tls://livecycle.run' ?? process.env.PREVIEW_TUNNEL_OVERRIDE,
+    default: process.env.PREVIEW_TUNNEL_OVERRIDE ?? 'ssh+tls://livecycle.run'
   }),
   'tls-hostname': Flags.string({
     summary: 'Override TLS server name when tunneling via HTTPS',

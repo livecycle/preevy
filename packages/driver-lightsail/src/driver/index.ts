@@ -3,7 +3,7 @@ import { asyncConcat, asyncMap } from 'iter-tools-es'
 
 import { Flags } from '@oclif/core'
 import { randomBytes } from 'crypto'
-import { InferredFlags } from '@oclif/core/lib/interfaces'
+import { InferredFlags } from '@oclif/core/lib/interfaces/index.js'
 import inquirerAutoComplete from 'inquirer-autocomplete-standalone'
 import {
   telemetryEmitter,

@@ -1,7 +1,7 @@
 import { Flags, Interfaces } from '@oclif/core'
 import { asyncMap, asyncToArray } from 'iter-tools-es'
 import inquirerAutoComplete from 'inquirer-autocomplete-standalone'
-import { InferredFlags } from '@oclif/core/lib/interfaces'
+import { InferredFlags } from '@oclif/core/lib/interfaces/index.js'
 import { Resource, VirtualMachine } from '@azure/arm-compute'
 import { inspect } from 'util'
 import { DefaultAzureCredential } from '@azure/identity'
