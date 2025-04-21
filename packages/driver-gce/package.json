@@ -1,6 +1,6 @@
 {
   "name": "@preevy/driver-gce",
-  "version": "0.0.64",
+  "version": "0.0.66",
   "description": "Google Compute Engine driver for Preevy",
   "type": "module",
   "exports": {
@@ -17,7 +17,7 @@
     "@google-cloud/storage": "^6.9.5",
     "@inquirer/prompts": "^3.3.0",
     "@oclif/core": "^3.15.1",
-    "@preevy/core": "0.0.64",
+    "@preevy/core": "0.0.66",
     "google-auth-library": "^8.7.0",
     "google-gax": "^4.0.5",
     "inquirer-autocomplete-standalone": "^0.8.1",
