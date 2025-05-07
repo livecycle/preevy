@@ -128,6 +128,7 @@ export default class Connect extends ProfileCommand<typeof Connect> {
         onFailedAttempt: e => { this.logger.debug(`Failed to query tunnels: ${inspect(e)}`) },
       },
       fetchTimeout: flags['fetch-urls-timeout'],
+      log: this.logger,
     }), { text: 'Getting tunnel URLs...' })
 
     const urls = await filterUrls({
