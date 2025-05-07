@@ -38,7 +38,7 @@ describe('inMemoryActiveTunnelStore', () => {
       expect(watcher).toBeDefined()
     })
 
-    describe('when getting a non-existant key', () => {
+    describe('when getting a non-existent key', () => {
       it('returns undefined', async () => {
         expect(await store.get('bar')).toBeUndefined()
       })
@@ -85,7 +85,7 @@ describe('inMemoryActiveTunnelStore', () => {
       })
     })
 
-    describe('when deleting a non-existant value', () => {
+    describe('when deleting a non-existent value', () => {
       let deleteResult: boolean
       beforeEach(async () => {
         deleteResult = await store.delete('bar')
