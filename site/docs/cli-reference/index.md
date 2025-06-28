@@ -20,7 +20,7 @@ $ npm install -g preevy
 $ preevy COMMAND
 running command...
 $ preevy (--version)
-preevy/0.0.64 darwin-arm64 node-v18.19.1
+preevy/0.0.67 darwin-arm64 node-v22.14.0
 $ preevy --help [COMMAND]
 USAGE
   $ preevy COMMAND

@@ -11,8 +11,9 @@ Initialize or import a new profile
 
 ```
 USAGE
-  $ preevy init [PROFILE-ALIAS] [-D] [-f <value>] [--system-compose-file <value>] [--project-directory
-    <value>] [-p <value>] [--enable-plugin <value>] [--disable-plugin <value>] [--from <value>]
+  $ preevy init [PROFILE-ALIAS] [-D] [-f <value>...] [--system-compose-file <value>...]
+    [--project-directory <value>] [-p <value>] [--enable-plugin <value>...] [--disable-plugin <value>...] [--from
+    <value>]
 
 ARGUMENTS
   PROFILE-ALIAS  Name of the profile
@@ -33,4 +34,4 @@ DESCRIPTION
   Initialize or import a new profile
 ```
 
-_See code: [src/commands/init.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/init.ts)_
+_See code: [src/commands/init.ts](https://github.com/livecycle/preevy/blob/v0.0.67/src/commands/init.ts)_

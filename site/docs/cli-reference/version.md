@@ -11,8 +11,8 @@ Show Preevy version
 
 ```
 USAGE
-  $ preevy version [--json] [-D] [-f <value>] [--system-compose-file <value>] [--project-directory <value>]
-    [-p <value>] [--enable-plugin <value>] [--disable-plugin <value>]
+  $ preevy version [--json] [-D] [-f <value>...] [--system-compose-file <value>...] [--project-directory
+    <value>] [-p <value>] [--enable-plugin <value>...] [--disable-plugin <value>...]
 
 FLAGS
   --project-directory=<value>  Alternate working directory (default: the path of the first specified Compose file)
@@ -30,4 +30,4 @@ DESCRIPTION
   Show Preevy version
 ```
 
-_See code: [src/commands/version.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/version.ts)_
+_See code: [src/commands/version.ts](https://github.com/livecycle/preevy/blob/v0.0.67/src/commands/version.ts)_
