@@ -63,7 +63,7 @@ const composeClient = (
     throw e
   })
 
-  const getModel = async (services: string[] = []) => yaml.parse(await execComposeCommand(['convert', ...services])) as ComposeModel
+  const getModel = async (services: string[] = []) => yaml.parse(await execComposeCommand(['config', ...services])) as ComposeModel
 
   return {
     getModel,
