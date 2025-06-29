@@ -97,7 +97,7 @@
     "topicSeparator": " ",
     "update": {
       "node": {
-        "version": "20.13.1",
+        "version": "20.19.3",
         "options": [
           "--disable-warning=ExperimentalWarning",
           "--enable-source-maps"
