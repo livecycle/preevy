@@ -4,6 +4,7 @@ import { circleCiProvider } from './circle.js'
 import { githubActionsCiProvider } from './github-actions.js'
 import { gitlabActionsCiProvider } from './gitlab.js'
 import { travisCiProvider } from './travis.js'
+import { bitbucketPipelinesCiProvider } from './bitbucket-pipelines.js'
 
 export const ciProviders = {
   githubActions: githubActionsCiProvider(),
@@ -11,6 +12,7 @@ export const ciProviders = {
   travis: travisCiProvider(),
   circle: circleCiProvider(),
   azurePipelines: azurePipelinesCiProvider(),
+  bitbucketPipelines: bitbucketPipelinesCiProvider()
 }
 
 export const detectCiProvider = (): CiProvider | undefined => Object.values(ciProviders)
