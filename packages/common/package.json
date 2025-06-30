@@ -28,7 +28,7 @@
     "@stylistic/eslint-plugin-ts": "^4.2.0",
     "@types/dockerode": "^3.3.26",
     "@types/lodash-es": "^4.17.12",
-    "@types/node": "18",
+    "@types/node": "24",
     "@types/shell-escape": "^0.2.1",
     "@types/ssh2": "^1.11.8",
     "@typescript-eslint/eslint-plugin": "8.30.1",

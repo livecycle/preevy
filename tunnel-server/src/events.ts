@@ -21,7 +21,7 @@ export async function onceWithTimeout <T = unknown>(
   { milliseconds, fallback }: { milliseconds: number; fallback?: () => T | Promise<T> },
 ): Promise<T | void> {
   const signal = AbortSignal.timeout(milliseconds)
-  return await events.once(target, event, { signal }).then(
+  return await events.once(target as NodeJS.EventEmitter, event, { signal }).then(
     () => undefined,
     async e => {
       if (!signal.aborted || (e as Error).name !== 'AbortError') {
