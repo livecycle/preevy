@@ -11,12 +11,12 @@ Show metadata for a preview environment
 
 ```
 USAGE
-  $ preevy env metadata [--json] [-D] [-f <value>] [--system-compose-file <value>] [--project-directory <value>]
-    [-p <value>] [--enable-plugin <value>] [--disable-plugin <value>] [--profile <value>] [-d
+  $ preevy env metadata [--json] [-D] [-f <value>...] [--system-compose-file <value>...] [--project-directory
+    <value>] [-p <value>] [--enable-plugin <value>...] [--disable-plugin <value>...] [--profile <value>] [-d
     lightsail|gce|azure|kube-pod] [--lightsail-region <value>] [--gce-project-id <value>] [--gce-zone <value>]
     [--azure-region <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>] [--kube-pod-kubeconfig
     <value>] [--kube-pod-context <value>] [--id <value>] [-t <value>] [--tls-hostname <value>] [--insecure-skip-verify]
-    [--source <value>] [--fetch-timeout <value>]
+    [--source <value>...] [--fetch-timeout <value>]
 
 FLAGS
   -d, --driver=<option>            Machine driver to use
@@ -68,4 +68,4 @@ FLAG DESCRIPTIONS
     If not specified, will detect from the current Git context
 ```
 
-_See code: [src/commands/env/metadata.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/env/metadata.ts)_
+_See code: [src/commands/env/metadata.ts](https://github.com/livecycle/preevy/blob/v0.0.67/src/commands/env/metadata.ts)_

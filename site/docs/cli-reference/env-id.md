@@ -11,8 +11,8 @@ Show the Preevy environment ID for the current Compose project
 
 ```
 USAGE
-  $ preevy env-id [--json] [-D] [-f <value>] [--system-compose-file <value>] [--project-directory <value>]
-    [-p <value>] [--enable-plugin <value>] [--disable-plugin <value>] [--profile <value>] [--id <value>]
+  $ preevy env-id [--json] [-D] [-f <value>...] [--system-compose-file <value>...] [--project-directory
+    <value>] [-p <value>] [--enable-plugin <value>...] [--disable-plugin <value>...] [--profile <value>] [--id <value>]
 
 FLAGS
   --id=<value>                 Environment id
@@ -38,4 +38,4 @@ FLAG DESCRIPTIONS
     If not specified, will detect from the current Git context
 ```
 
-_See code: [src/commands/env-id.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/env-id.ts)_
+_See code: [src/commands/env-id.ts](https://github.com/livecycle/preevy/blob/v0.0.67/src/commands/env-id.ts)_

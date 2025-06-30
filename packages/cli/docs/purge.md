@@ -11,14 +11,14 @@ Delete all cloud provider machines and potentially other resources
 
 ```
 USAGE
-  $ preevy purge [--json] [-D] [-f <value>] [--system-compose-file <value>] [--project-directory <value>]
-    [-p <value>] [--enable-plugin <value>] [--disable-plugin <value>] [--profile <value>] [-d
+  $ preevy purge [--json] [-D] [-f <value>...] [--system-compose-file <value>...] [--project-directory
+    <value>] [-p <value>] [--enable-plugin <value>...] [--disable-plugin <value>...] [--profile <value>] [-d
     lightsail|gce|azure|kube-pod] [--lightsail-region <value>] [--gce-project-id <value>] [--gce-zone <value>]
     [--azure-region <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>] [--kube-pod-kubeconfig
     <value>] [--kube-pod-context <value>] [--lightsail-availability-zone <value>] [--lightsail-bundle-id
     nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0] [--gce-machine-type <value>]
     [--azure-vm-size <value>] [--kube-pod-template <value>] [--kube-pod-server-side-apply] [--kube-pod-storage-class
-    <value>] [--kube-pod-storage-size <value>] [--all] [--type <value>] [--force] [--wait]
+    <value>] [--kube-pod-storage-size <value>] [--all] [--type <value>...] [--force] [--wait]
 
 FLAGS
   -d, --driver=<option>            Machine driver to use
@@ -71,4 +71,4 @@ DESCRIPTION
   Delete all cloud provider machines and potentially other resources
 ```
 
-_See code: [src/commands/purge.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/purge.ts)_
+_See code: [src/commands/purge.ts](https://github.com/livecycle/preevy/blob/v0.0.67/src/commands/purge.ts)_

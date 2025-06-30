@@ -11,8 +11,8 @@ List preview environments
 
 ```
 USAGE
-  $ preevy ls [--json] [-D] [-f <value>] [--system-compose-file <value>] [--project-directory <value>]
-    [-p <value>] [--enable-plugin <value>] [--disable-plugin <value>] [--profile <value>] [-d
+  $ preevy ls [--json] [-D] [-f <value>...] [--system-compose-file <value>...] [--project-directory
+    <value>] [-p <value>] [--enable-plugin <value>...] [--disable-plugin <value>...] [--profile <value>] [-d
     lightsail|gce|azure|kube-pod] [--lightsail-region <value>] [--gce-project-id <value>] [--gce-zone <value>]
     [--azure-region <value>] [--azure-subscription-id <value>] [--kube-pod-namespace <value>] [--kube-pod-kubeconfig
     <value>] [--kube-pod-context <value>] [--columns <value> | -x] [--filter <value>] [--no-header | [--csv |
@@ -65,4 +65,4 @@ DESCRIPTION
   List preview environments
 ```
 
-_See code: [src/commands/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/ls.ts)_
+_See code: [src/commands/ls.ts](https://github.com/livecycle/preevy/blob/v0.0.67/src/commands/ls.ts)_

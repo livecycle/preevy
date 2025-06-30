@@ -12,20 +12,20 @@ Bring up a preview environment
 ```
 USAGE
   $ preevy up [SERVICE...] (--access-credentials-type api|browser --include-access-credentials) [-D] [-f
-    <value>] [--system-compose-file <value>] [--project-directory <value>] [-p <value>] [--enable-plugin <value>]
-    [--disable-plugin <value>] [--profile <value>] [-d lightsail|gce|azure|kube-pod] [--lightsail-region <value>]
-    [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
+    <value>...] [--system-compose-file <value>...] [--project-directory <value>] [-p <value>] [--enable-plugin
+    <value>...] [--disable-plugin <value>...] [--profile <value>] [-d lightsail|gce|azure|kube-pod] [--lightsail-region
+    <value>] [--gce-project-id <value>] [--gce-zone <value>] [--azure-region <value>] [--azure-subscription-id <value>]
     [--kube-pod-namespace <value>] [--kube-pod-kubeconfig <value>] [--kube-pod-context <value>]
     [--lightsail-availability-zone <value>] [--lightsail-bundle-id
     nano_2_0|micro_2_0|small_2_0|medium_2_0|large_2_0|xlarge_2_0|2xlarge_2_0] [--gce-machine-type <value>]
     [--azure-vm-size <value>] [--kube-pod-template <value>] [--kube-pod-server-side-apply] [--kube-pod-storage-class
     <value>] [--kube-pod-storage-size <value>] [--id <value>] [-t <value>] [--tls-hostname <value>]
     [--insecure-skip-verify] [--no-build] [--no-registry-single-name | [--registry-single-name <value> --registry
-    <value>]] [--no-registry-cache ] [--builder <value>] [--no-cache] [--skip-volume <value>] [--skip-unchanged-files]
-    [--show-preevy-service-urls] [--output-urls-to <value>] [--fetch-urls-timeout <value>] [--wait] [--columns <value> |
-    -x] [--filter <value>] [--no-header | [--csv | --no-truncate]] [--output csv|json|yaml |  | ] [--sort <value>]
-    [--github-token <value>] [--github-repo <value>] [--github-pull-request <value>] [--github-pr-comment-template-file
-    <value>] [--github-add-build-cache] [--github-pr-comment-enabled auto|no|always]
+    <value>]] [--no-registry-cache ] [--builder <value>] [--no-cache] [--skip-volume <value>...]
+    [--skip-unchanged-files] [--show-preevy-service-urls] [--output-urls-to <value>] [--fetch-urls-timeout <value>]
+    [--wait] [--columns <value> | -x] [--filter <value>] [--no-header | [--csv | --no-truncate]] [--output csv|json|yaml
+    |  | ] [--sort <value>] [--github-token <value>] [--github-repo <value>] [--github-pull-request <value>]
+    [--github-pr-comment-template-file <value>] [--github-add-build-cache] [--github-pr-comment-enabled auto|no|always]
 
 ARGUMENTS
   SERVICE...  Service name(s). If not specified, will deploy all services
@@ -129,4 +129,4 @@ FLAG DESCRIPTIONS
     If not specified, will detect from the current Git context
 ```
 
-_See code: [src/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.64/src/commands/up.ts)_
+_See code: [src/commands/up.ts](https://github.com/livecycle/preevy/blob/v0.0.67/src/commands/up.ts)_
