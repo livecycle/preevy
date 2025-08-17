@@ -20,7 +20,7 @@ jobs:
     if: github.event.pull_request.head.repo.owner.login == 'livecycle' || github.event.repository.owner.login == 'livecycle'
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         ref: ${{ github.event.pull_request.head.sha }}
 
