@@ -141,6 +141,7 @@ export default class Urls extends ProfileCommand<typeof Urls> {
       retryOpts: flags.wait ? urlsRetryOpts(this.logger) : noWaitUrlsRetryOpts,
       fetchTimeout: flags['fetch-urls-timeout'],
       waitForAllTunnels: flags.wait,
+      log: this.logger,
     })
 
     const urls = await filterUrls({

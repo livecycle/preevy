@@ -3,7 +3,7 @@ import retry from 'p-retry'
 import { inspect } from 'util'
 import { createRequire } from 'module'
 import { mapValues, merge } from 'lodash-es'
-import { COMPOSE_TUNNEL_AGENT_PORT, COMPOSE_TUNNEL_AGENT_SERVICE_LABELS, COMPOSE_TUNNEL_AGENT_SERVICE_NAME, ComposeTunnelAgentState, MachineStatusCommand, ScriptInjection, dateReplacer } from '@preevy/common'
+import { COMPOSE_TUNNEL_AGENT_PORT, COMPOSE_TUNNEL_AGENT_SERVICE_LABELS, COMPOSE_TUNNEL_AGENT_SERVICE_NAME, ComposeTunnelAgentState, Logger, MachineStatusCommand, ScriptInjection, dateReplacer } from '@preevy/common'
 import { ComposeModel, ComposeService, composeModelFilename } from './compose/model.js'
 import { TunnelOpts } from './ssh/url.js'
 import { Tunnel } from './tunneling/index.js'
@@ -161,6 +161,7 @@ export type ComposeTunnelAgentFetchOpts = {
   credentials: { user: string; password: string }
   retryOpts?: retry.Options
   fetchTimeout: number
+  log: Logger
 }
 
 export class AgentFetchError extends Error {}
@@ -171,10 +172,15 @@ const fetchFromComposeTunnelAgent = async ({
   credentials,
   fetchTimeout,
   pathAndQuery,
+  log,
 }: ComposeTunnelAgentFetchOpts & { pathAndQuery: string }) => await retry(async () => {
+  const headers = { Authorization: `Bearer ${credentials.password}` }
+  // TODO: sensitive data in logs for debugging, remove in release
+  log.debug(`Fetching from compose tunnel agent at ${composeTunnelServiceUrl}/${pathAndQuery}, headers: ${inspect(headers)}`)
+  const normalizedComposeTunnelServiceUrl = composeTunnelServiceUrl.replace(/\/$/, '')
   const r = await fetch(
-    `${composeTunnelServiceUrl}/${pathAndQuery}`,
-    { signal: AbortSignal.timeout(fetchTimeout), headers: { Authorization: `Bearer ${credentials.password}` } }
+    `${normalizedComposeTunnelServiceUrl}/${pathAndQuery}`,
+    { signal: AbortSignal.timeout(fetchTimeout), headers }
   ).catch(e => { throw new AgentFetchError(`Failed to connect to preevy agent at ${composeTunnelServiceUrl}: ${e}`, { cause: e }) })
   if (!r.ok) {
     throw new AgentFetchError(`Failed to connect to preevy agent at ${composeTunnelServiceUrl}: ${r.status}: ${r.statusText}`)
