@@ -8,16 +8,61 @@ export const defaultBucketName = (
 
 const isNotFoundError = (err: unknown) => err instanceof S3ServiceException && err.$metadata.httpStatusCode === 404
 
+const createS3Error = (operation: string, bucket: string, key: string | undefined, originalError: unknown): Error => {
+  if (originalError instanceof S3ServiceException) {
+    const { $metadata, message, name } = originalError
+    const statusCode = $metadata.httpStatusCode
+    const location = key ? `s3://${bucket}/${key}` : `s3://${bucket}`
+
+    let errorMessage = `Failed to ${operation} on S3 bucket`
+
+    if (statusCode === 403) {
+      errorMessage = `Access denied when trying to ${operation} on Preevy profile S3 bucket. Please check your AWS permissions for the ${operation} operation.`
+    } else if (statusCode === 404) {
+      errorMessage = `S3 resource not found when trying to ${operation}.`
+    } else {
+      errorMessage = `S3 operation failed when trying to ${operation}.`
+    }
+
+    errorMessage += `\nLocation: ${location}`
+    errorMessage += `\nS3 Operation: ${operation}`
+    errorMessage += `\nHTTP Status: ${statusCode || 'unknown'}`
+    errorMessage += `\nAWS Error: ${name || 'UnknownError'}`
+    if (message && message !== name) {
+      errorMessage += `\nDetails: ${message}`
+    }
+
+    const wrappedError = new Error(errorMessage)
+    // Preserve original error properties for debugging
+    ;(wrappedError as any).originalError = originalError
+    ;(wrappedError as any).statusCode = statusCode
+    ;(wrappedError as any).awsErrorName = name
+
+    return wrappedError
+  }
+
+  // For non-S3 errors, provide basic context
+  const location = key ? `s3://${bucket}/${key}` : `s3://${bucket}`
+  const errorMessage = `Failed to ${operation} on Preevy profile S3 bucket.\nLocation: ${location}\nOriginal error: ${originalError}`
+  const wrappedError = new Error(errorMessage)
+  ;(wrappedError as any).originalError = originalError
+  return wrappedError
+}
+
 async function ensureBucketExists(s3: S3, bucket: string) {
   try {
     await s3.headBucket({ Bucket: bucket })
     return
   } catch (err) {
     if (!isNotFoundError(err)) {
-      throw err
+      throw createS3Error('check bucket permissions (HeadBucket)', bucket, undefined, err)
     }
   }
-  await s3.createBucket({ Bucket: bucket })
+  try {
+    await s3.createBucket({ Bucket: bucket })
+  } catch (err) {
+    throw createS3Error('create bucket (CreateBucket)', bucket, undefined, err)
+  }
 }
 
 function parseS3Url(s3Url: string) {
@@ -50,16 +95,17 @@ export const s3fs = async (s3Url: string): Promise<VirtualFS> => {
     // TODO: add cache using if-match header
     async read(filename: string) {
       let result: GetObjectCommandOutput
+      const key = path.posix.join(prefix, filename)
       try {
         result = await s3.getObject({
           Bucket: bucket,
-          Key: path.posix.join(prefix, filename),
+          Key: key,
         })
       } catch (err) {
         if (isNotFoundError(err)) {
           return undefined
         }
-        throw err
+        throw createS3Error('read file (GetObject)', bucket, key, err)
       }
 
       const byteArray = await result.Body?.transformToByteArray()
@@ -70,23 +116,29 @@ export const s3fs = async (s3Url: string): Promise<VirtualFS> => {
       return Buffer.from(byteArray)
     },
     async write(filename: string, content: Buffer | string) {
-      await s3.putObject({
-        Bucket: bucket,
-        Key: path.posix.join(prefix, filename),
-        Body: content,
-      })
+      const key = path.posix.join(prefix, filename)
+      try {
+        await s3.putObject({
+          Bucket: bucket,
+          Key: key,
+          Body: content,
+        })
+      } catch (err) {
+        throw createS3Error('write file (PutObject)', bucket, key, err)
+      }
     },
     async delete(filename: string) {
+      const key = path.posix.join(prefix, filename)
       try {
         await s3.deleteObject({
           Bucket: bucket,
-          Key: path.posix.join(prefix, filename),
+          Key: key,
         })
       } catch (err) {
         if (isNotFoundError(err)) {
           return undefined
         }
-        throw err
+        throw createS3Error('delete file (DeleteObject)', bucket, key, err)
       }
       return undefined
     },
