@@ -308,6 +308,71 @@ Just like with the `docker compose` CLI, you can use the global `--file | -f` co
 
 In addition to the project compose files, an optional Preevy-specific Compose file can be used. Preevy attempts to load files named `compose.preevy.yaml`, `compose.preevy.yml`, `docker-compose.preevy.yaml` or `docker-compose.preevy.yml`. If one of these exists, it is loaded BEFORE the project composes file(s). The name of the Preevy-specific compose file can be overridden by specifying the argument `--system-compose-file`.
 
+### Environment Variables
+
+Preevy supports all Docker Compose environment variable features. You can pass environment variables to your preview environments in multiple ways:
+
+#### Setting environment variables in Compose files
+
+You can set environment variables directly in your `docker-compose.yml` or `compose.yml` files using standard Docker Compose syntax:
+
+```yaml
+services:
+  web:
+    environment:
+      # Assign a fixed value to MY_ENV_VAR
+      - MY_ENV_VAR=production
+      
+      # Load the value of EXTERNAL_ENV_VAR from the host environment
+      # and assign it to MY_ENV_VAR in the container
+      - MY_ENV_VAR=${EXTERNAL_ENV_VAR}
+      
+      # Pass MY_ENV_VAR directly from the host environment to the container
+      # (equivalent to MY_ENV_VAR=${MY_ENV_VAR} if MY_ENV_VAR exists in the host environment)
+      - MY_ENV_VAR
+      
+      # Set MY_ENV_VAR to the value from the host if it exists, 
+      # otherwise use "production" as a default value in the container
+      - MY_ENV_VAR=${MY_ENV_VAR:-production}
+```
+
+#### Using .env files
+
+Docker Compose supports loading environment variables from `.env` files. Preevy supports this feature:
+
+```yaml
+services:
+  web:
+    env_file:
+      - .env              # Base environment variables
+      - .env.override     # Override specific values
+      - ${ENV_NAME}.env   # Environment-specific variables (e.g., dev.env, prod.env)
+```
+
+#### Passing environment variables from the host
+
+When running `preevy up`, environment variables from your local machine (or CI environment) are automatically available for Docker Compose interpolation. This means you can:
+
+1. Set environment variables in your terminal:
+   ```bash
+   export DATABASE_URL=postgres://user:pass@host:5432/db
+   export API_KEY=your-secret-key
+   preevy up
+   ```
+
+2. Set environment variables in your CI environment and they will be automatically passed through to your preview environment.
+
+3. Use environment variables in GitHub Actions:
+   ```yaml
+   - name: Deploy preview environment
+     uses: livecycle/preevy-up-action@v2.4.0
+     env:
+       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+       API_KEY: ${{ secrets.API_KEY }}
+   ```
+
+For more details, see the [Docker Compose environment variables documentation](https://docs.docker.com/compose/how-tos/environment-variables/set-environment-variables/).
+
 ### `x-preevy`: Preevy-specific configuration in the Compose file(s)
 
 A `x-preevy` top-level element can be added to the Compose file(s).

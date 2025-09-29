@@ -122,6 +122,33 @@ LIGHTSAIL DRIVER FLAGS
 DESCRIPTION
   Bring up a preview environment
 
+ENVIRONMENT VARIABLES
+  Preevy supports all Docker Compose environment variable features:
+  
+  • Environment variables set in your shell are automatically available to Docker Compose
+  • Use .env files to define environment variables
+  • Set environment variables directly in your compose files
+  
+  Examples:
+  
+  1. Pass environment variables from your shell:
+     $ export DATABASE_URL=postgres://localhost/mydb
+     $ preevy up
+  
+  2. Use environment variable substitution in compose files:
+     services:
+       web:
+         environment:
+           - DATABASE_URL=${DATABASE_URL}
+           - NODE_ENV=${NODE_ENV:-production}
+  
+  3. Use .env files:
+     services:
+       web:
+         env_file:
+           - .env
+           - .env.production
+
 FLAG DESCRIPTIONS
   --id=<value>  Environment id
 
