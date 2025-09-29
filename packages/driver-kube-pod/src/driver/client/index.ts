@@ -38,14 +38,67 @@ const stringify = stringifyModule.default
 
 export const loadKubeConfig = ({ kubeconfig, context }: { kubeconfig?: string; context?: string }) => {
   const kc = new k8s.KubeConfig()
-  if (kubeconfig) {
-    kc.loadFromFile(kubeconfig)
-  } else {
-    kc.loadFromDefault()
+
+  try {
+    if (kubeconfig) {
+      kc.loadFromFile(kubeconfig)
+    } else {
+      kc.loadFromDefault()
+    }
+  } catch (error: any) {
+    if (error.message?.includes('ENOENT') || error.message?.includes('no such file')) {
+      throw new Error(
+        'Kubernetes configuration file not found. ' +
+        (kubeconfig
+          ? `The specified kubeconfig file "${kubeconfig}" does not exist. `
+          : 'No kubeconfig found in default locations (~/.kube/config, $KUBECONFIG). '
+        ) +
+        'Please ensure your Kubernetes configuration is properly set up.\n\n' +
+        'This is a Kubernetes configuration issue, not a tunnel server problem.'
+      )
+    }
+
+    throw new Error(
+      `Failed to load Kubernetes configuration: ${error.message}\n\n` +
+      'Please check your kubeconfig file for syntax errors or corruption. ' +
+      'This is a Kubernetes configuration issue, not a tunnel server problem.'
+    )
   }
+
   if (context) {
-    kc.setCurrentContext(context)
+    try {
+      kc.setCurrentContext(context)
+    } catch (error: any) {
+      throw new Error(
+        `Kubernetes context "${context}" not found in configuration. ` +
+        'Please check that the specified context exists in your kubeconfig file.\n\n' +
+        'This is a Kubernetes configuration issue, not a tunnel server problem.'
+      )
+    }
   }
+
+  // Validate that we have a current context
+  try {
+    const currentContext = kc.getCurrentContext()
+    if (!currentContext) {
+      throw new Error(
+        'No current Kubernetes context is set. ' +
+        'Please set a default context in your kubeconfig file or specify one with the --context flag.\n\n' +
+        'This is a Kubernetes configuration issue, not a tunnel server problem.'
+      )
+    }
+  } catch (error: any) {
+    if (error.message?.includes('No current context')) {
+      throw error // Re-throw our own error as-is
+    }
+
+    throw new Error(
+      `Failed to get current Kubernetes context: ${error.message}\n\n` +
+      'Please check your kubeconfig file. ' +
+      'This is a Kubernetes configuration issue, not a tunnel server problem.'
+    )
+  }
+
   return kc
 }
 
@@ -315,3 +368,4 @@ export type CreationClient = ReturnType<typeof kubeCreationClient>
 
 export { extractInstance, extractEnvId, extractName, extractNamespace, extractTemplateHash } from './metadata.js'
 export { DeploymentNotReadyError, DeploymentNotReadyErrorReason } from './k8s-helpers.js'
+export { KubernetesConnectionError } from './log-error.js'
