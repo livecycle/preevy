@@ -20,11 +20,11 @@ jobs:
     if: github.event.pull_request.head.repo.owner.login == 'livecycle' || github.event.repository.owner.login == 'livecycle'
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         ref: ${{ github.event.pull_request.head.sha }}
 
-    - uses: actions/setup-node@v4
+    - uses: actions/setup-node@v6
       with:
         node-version: '20.x'
         cache: yarn
